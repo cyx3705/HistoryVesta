@@ -1,0 +1,41 @@
+STEP 转换到 Solid Edge
+日期: 星期二,七月 01,2025 07:52下午
+源文件: C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\7000-控制盒\7200-控制面板\按钮\2ZTN-448-004_SW0001.stp
+作者: Unknown
+组织: Unknown
+源系统: Solid Edge
+
+硬件:
+处理器: Intel(R) Core(TM) i7-14650HX
+操作系统: Windows 10
+已装内存: 15.71 GB
+
+软件信息
+Parasolid 版本: 31.1.255
+PSBodyShop 版本: 31.1.110
+步骤转换器版本: 5.0.48
+Solid Edge 版本: 220.00.00.104 x64
+
+STEP 导入选项
+导入小平面体: 开
+导入检查体: 关
+导入曲线: 开
+Import DoNotSave: 开
+导入多个体为单个零件文件: 开
+导入缝合曲面: 开
+导入布尔体: 开
+建立基本特征: 开
+简化几何体: 开
+导入压印曲线: 开
+导入驱动: C:
+导入缝合曲面: 开
+导入曲面: 开
+导入输出路径: C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\7000-控制盒\7200-控制面板\按钮
+导入启用默认输出路径: 开
+导入 PMI: 关
+导入路径: 
+
+正在转换为 Parasolid 数据类型...
+正在放置 C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\7000-控制盒\7200-控制面板\按钮\2ZTN-448-004_SW0001.par
+转换过程结束
+转换和后处理所需的总时间:00 : 00 : 02

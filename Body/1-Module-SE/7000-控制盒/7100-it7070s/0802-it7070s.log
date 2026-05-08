@@ -1,0 +1,84 @@
+STEP 转换到 Solid Edge
+日期: 星期一,五月 12,2025 12:20下午
+源文件: C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s\0802-it7070s.stp
+作者: Unknown
+组织: Unknown
+源系统: Solid Edge
+
+硬件:
+处理器: Intel(R) Core(TM) i7-14650HX
+操作系统: Windows 10
+已装内存: 15.71 GB
+
+软件信息
+Parasolid 版本: 31.1.255
+PSBodyShop 版本: 31.1.110
+步骤转换器版本: 5.0.48
+Solid Edge 版本: 220.00.00.104 x64
+
+STEP 导入选项
+导入小平面体: 开
+导入检查体: 关
+导入曲线: 开
+Import DoNotSave: 开
+导入多个体为单个零件文件: 开
+导入缝合曲面: 开
+导入布尔体: 开
+建立基本特征: 开
+简化几何体: 开
+导入压印曲线: 开
+导入驱动: C:
+导入缝合曲面: 开
+导入曲面: 开
+导入输出路径: C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s
+导入启用默认输出路径: 开
+导入 PMI: 关
+导入路径: 
+
+正在转换为 Parasolid 数据类型...
++开始装配: 1
++创建 SE 装配文件 C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s\0802-it7070s.asm
+|--+开始装配: 2
+|--+创建 SE 装配文件 C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s\001-IT7070S-SUJIAO_ASM.asm
+|  |--+创建 SE 零件文件 C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s\20211677.par
+|  |--+创建 SE 零件文件 C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s\20211691.par
+|--+全部零件: 4
+|--+装配: 0
+|--+实体: 4
+|--+片体: 0
+|--+结束装配: 2
+|--+开始装配: 2
+|--+创建 SE 装配文件 C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s\001-IT7070S-QIJIAN_ASM.asm
+|  |--+创建 SE 零件文件 C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s\20340349.par
+|--+全部零件: 2
+|--+装配: 0
+|--+实体: 2
+|--+片体: 0
+|--+结束装配: 2
+|--+开始装配: 2
+|--+创建 SE 装配文件 C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s\001-IT7070-PCB_ASM.asm
+|  |--+创建 SE 零件文件 C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s\02026417.par
+|--+全部零件: 14
+|--+装配: 0
+|--+实体: 14
+|--+片体: 0
+|--+结束装配: 2
+|--+创建 SE 零件文件 C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s\22010021.par
+|--+正在重用文件 C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s\22010021.par
+|--+正在重用文件 C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s\22010021.par
+|--+正在重用文件 C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s\22010021.par
+|--+开始装配: 2
+|--+创建 SE 装配文件 C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s\001-IT7070-JIEKOU_ASM.asm
+|  |--+创建 SE 零件文件 C:\Users\hp\Desktop\OD\OneDrive\1-XLJ\SE-5\0800-显示屏\0802-it7070s\15020042.par
+|--+全部零件: 2
+|--+装配: 0
+|--+实体: 2
+|--+片体: 0
+|--+结束装配: 2
++全部零件: 9
++装配: 4
++实体: 5
++片体: 0
++结束装配: 1
+转换过程结束
+转换和后处理所需的总时间:00 : 00 : 11

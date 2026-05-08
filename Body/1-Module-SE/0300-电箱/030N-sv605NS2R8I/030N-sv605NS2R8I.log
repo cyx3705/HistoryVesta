@@ -1,0 +1,65 @@
+STEP 转换到 Solid Edge
+日期: 星期六,五月 24,2025 09:34下午
+源文件: C:\Users\ASUS\Desktop\xlj\OneDrive\1-XLJ\SE-5\0300-电箱\030N-sv605NS2R8I\030N-sv605NS2R8I.stp
+作者: 10017337
+组织: 未知
+源系统: CREO PARAMETRIC BY PTC INC, 2015290
+
+硬件:
+处理器: 13th Gen Intel(R) Core(TM) i9-13980HX
+操作系统: Windows 10
+已装内存: 31.62 GB
+
+软件信息
+Parasolid 版本: 31.1.255
+PSBodyShop 版本: 31.1.110
+步骤转换器版本: 5.0.48
+Solid Edge 版本: 220.00.00.104 x64
+
+STEP 导入选项
+导入小平面体: 开
+导入检查体: 关
+导入曲线: 开
+Import DoNotSave: 开
+导入多个体为单个零件文件: 开
+导入缝合曲面: 开
+导入布尔体: 开
+建立基本特征: 开
+简化几何体: 开
+导入压印曲线: 开
+导入驱动: C:
+导入缝合曲面: 开
+导入曲面: 开
+导入输出路径: C:\Users\ASUS\Desktop\xlj\OneDrive\1-XLJ\SE-5\0300-电箱\030N-sv605NS2R8I
+导入启用默认输出路径: 开
+导入 PMI: 关
+导入路径: 
+
+正在转换为 Parasolid 数据类型...
++开始装配: 1
++创建 SE 装配文件 C:\Users\ASUS\Desktop\xlj\OneDrive\1-XLJ\SE-5\0300-电箱\030N-sv605NS2R8I\030N-sv605NS2R8I.asm
+|--+开始装配: 2
+|--+创建 SE 装配文件 C:\Users\ASUS\Desktop\xlj\OneDrive\1-XLJ\SE-5\0300-电箱\030N-sv605NS2R8I\000_SV600ENS2R8I_400W_ASM_3_ASM_ASM.asm
+|  |--+开始装配: 3
+|  |--+创建 SE 装配文件 C:\Users\ASUS\Desktop\xlj\OneDrive\1-XLJ\SE-5\0300-电箱\030N-sv605NS2R8I\20214223_ASM_1_ASM_2_ASM.asm
+|  |  |--+创建 SE 零件文件 C:\Users\ASUS\Desktop\xlj\OneDrive\1-XLJ\SE-5\0300-电箱\030N-sv605NS2R8I\20214221_6_1.par
+|  |  |--+创建 SE 零件文件 C:\Users\ASUS\Desktop\xlj\OneDrive\1-XLJ\SE-5\0300-电箱\030N-sv605NS2R8I\20210736_1_1.par
+|  |--+全部零件: 4
+|  |--+装配: 0
+|  |--+实体: 4
+|  |--+片体: 0
+|  |--+结束装配: 3
+|  |--+创建 SE 零件文件 C:\Users\ASUS\Desktop\xlj\OneDrive\1-XLJ\SE-5\0300-电箱\030N-sv605NS2R8I\9EDGKD-HC-5_0-10P-1Y-00A_H_.par
+|  |--+创建 SE 零件文件 C:\Users\ASUS\Desktop\xlj\OneDrive\1-XLJ\SE-5\0300-电箱\030N-sv605NS2R8I\PJC-45_NEX02-N2B.par
+|--+全部零件: 5
+|--+装配: 1
+|--+实体: 4
+|--+片体: 0
+|--+结束装配: 2
++全部零件: 1
++装配: 1
++实体: 0
++片体: 0
++结束装配: 1
+转换过程结束
+转换和后处理所需的总时间:00 : 00 : 09
