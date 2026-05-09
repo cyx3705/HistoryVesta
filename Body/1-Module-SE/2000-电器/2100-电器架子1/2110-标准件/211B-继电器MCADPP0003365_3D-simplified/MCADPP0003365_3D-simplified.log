@@ -1,0 +1,41 @@
+STEP 转换到 Solid Edge
+日期: 星期三,十月 29,2025 08:52下午
+源文件: \\win-daolaj3j0nc\F\internal class\N2500-25N\N2531-AGV\N2531-1-SE图\2000-电器\2100-电器架以及电器（主）\2110-标准件\211B-继电器\MCADPP0003365_3D-simplified.stp
+作者: SESA231906
+组织: Schneider-Electric
+源系统: PRO/ENGINEER BY PARAMETRIC TECHNOLOGY CORPORATION, 2011410
+
+硬件:
+处理器: AMD Ryzen 5 7500F 6-Core Processor             
+操作系统: Windows 10
+已装内存: 15.60 GB
+
+软件信息
+Parasolid 版本: 31.1.255
+PSBodyShop 版本: 31.1.110
+步骤转换器版本: 5.0.48
+Solid Edge 版本: 220.00.00.104 x64
+
+STEP 导入选项
+导入小平面体: 开
+导入检查体: 关
+导入曲线: 开
+Import DoNotSave: 开
+导入多个体为单个零件文件: 开
+导入缝合曲面: 开
+导入布尔体: 开
+建立基本特征: 开
+简化几何体: 开
+导入压印曲线: 开
+导入驱动: C:
+导入缝合曲面: 开
+导入曲面: 开
+导入输出路径: \\win-daolaj3j0nc\F\internal class\N2500-25N\N2531-AGV\N2531-1-SE图\2000-电器\2100-电器架以及电器（主）\2110-标准件\211B-继电器
+导入启用默认输出路径: 开
+导入 PMI: 关
+导入路径: 
+
+正在转换为 Parasolid 数据类型...
+正在放置 \\win-daolaj3j0nc\F\internal class\N2500-25N\N2531-AGV\N2531-1-SE图\2000-电器\2100-电器架以及电器（主）\2110-标准件\211B-继电器\SB105175_3D-SOFTWARE_COLOUR.par
+转换过程结束
+转换和后处理所需的总时间:00 : 00 : 01
