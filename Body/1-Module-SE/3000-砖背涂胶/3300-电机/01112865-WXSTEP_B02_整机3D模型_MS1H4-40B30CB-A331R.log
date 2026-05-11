@@ -1,0 +1,41 @@
+STEP 转换到 Solid Edge
+日期: 星期三,四月 23,2025 03:10下午
+源文件: C:\Users\Administrator\OneDrive\CZJ\SE\3000-砖背涂胶\3300-电机\01112865-WXSTEP_B02_整机3D模型_MS1H4-40B30CB-A331R.stp
+作者: 10052761
+组织: 未知
+源系统: CREO PARAMETRIC BY PTC INC, 2015290
+
+硬件:
+处理器: 13th Gen Intel(R) Core(TM) i9-13900HX
+操作系统: Windows 10 Professional
+已装内存: 31.74 GB
+
+软件信息
+Parasolid 版本: 31.1.255
+PSBodyShop 版本: 31.1.110
+步骤转换器版本: 5.0.48
+Solid Edge 版本: 220.00.00.104 x64
+
+STEP 导入选项
+导入小平面体: 开
+导入检查体: 关
+导入曲线: 开
+Import DoNotSave: 开
+导入多个体为单个零件文件: 开
+导入缝合曲面: 开
+导入布尔体: 开
+建立基本特征: 开
+简化几何体: 开
+导入压印曲线: 开
+导入驱动: C:
+导入缝合曲面: 开
+导入曲面: 开
+导入输出路径: C:\Users\Administrator\OneDrive\CZJ\SE\3000-砖背涂胶\3300-电机
+导入启用默认输出路径: 开
+导入 PMI: 关
+导入路径: 
+
+正在转换为 Parasolid 数据类型...
+正在放置 C:\Users\Administrator\OneDrive\CZJ\SE\3000-砖背涂胶\3300-电机\PRT0012.par
+转换过程结束
+转换和后处理所需的总时间:00 : 00 : 02
