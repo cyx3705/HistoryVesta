@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SystemProperties>
+  <SystemName>IRB2600_12_165</SystemName>
+  <SerialNo>VIRTUAL_USE</SerialNo>
+  <UsedMedia>
+    <Media path="G:\Users\cyx\AppData\Local\ABB\RobotWare\RobotWare_6.12.1014" name="RobotWare" version="6.12.1014">
+    </Media>
+  </UsedMedia>
+  <ControlModule>
+    <Option descr="RobotWare Base">
+    </Option>
+    <Option descr="Chinese">
+    </Option>
+    <Option descr="709-1 DeviceNet Master/Slave">
+    </Option>
+  </ControlModule>
+  <DriveModule>
+    <Name>Robot1</Name>
+    <Option descr="Drive System IRB 2600/390/4400/6400R">
+    </Option>
+    <Option descr="ADU-790A in position X3">
+    </Option>
+    <Option descr="ADU-790A in position Y3">
+    </Option>
+    <Option descr="ADU-790A in position Z3">
+    </Option>
+    <Option descr="Axis Calibration">
+    </Option>
+    <Option descr="IRB 2600-12/1.65 Type C">
+    </Option>
+  </DriveModule>
+</SystemProperties>

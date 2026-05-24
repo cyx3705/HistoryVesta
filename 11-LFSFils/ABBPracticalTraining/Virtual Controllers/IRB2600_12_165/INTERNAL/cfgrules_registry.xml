@@ -1,0 +1,16 @@
+<?xml version = "1.0" encoding="utf-8" ?>
+<cfgrules_registry xmlns="urn:abb-robotics-registry-cfg-rules">
+<entry domain="EIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/rules/cfg/" postpath="cir_eio_cfgrules.xml"/>
+<entry domain="MOC" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/rules/cfg/" postpath="moc_cfgrules.xml"/>
+<entry domain="EIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/rules/cfg/" postpath="eio_cfgrules.xml"/>
+<entry domain="SIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/rules/cfg/" postpath="sio_cfgrules.xml"/>
+<entry domain="SIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/rules/cfg/" postpath="sio_net_cfgrules.xml"/>
+<entry domain="SYS" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/rules/cfg/" postpath="cir_sys_cfgrules.xml"/>
+<entry domain="DBG" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/rules/cfg/" postpath="dbg_cfgrules.xml"/>
+<entry domain="MMC" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/rules/cfg/" postpath="cir_mmc_cfgrules.xml"/>
+<entry domain="SYS" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/rules/cfg/" postpath="cir_sys_st_cfgrules.xml"/>
+<entry domain="EIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/options/enms" postpath="/en_base_cfgrules.xml"/>
+<entry domain="EIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/options/dnmss" postpath="/dn_master_cfgrules.xml"/>
+<entry domain="EIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/options/dnmss" postpath="/dn_slave_cfgrules.xml"/>
+<entry domain="SIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/options/rse/" postpath="rse_cfgrules.xml"/>
+</cfgrules_registry>

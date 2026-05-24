@@ -1,0 +1,16 @@
+<?xml version = "1.0" encoding="utf-8" ?>
+<cfgtext_registry xmlns="urn:abb-robotics-registry-cfg-text">
+<entry domain="EIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/language/install/../" postpath="/controller/cfg/cir_eio_cfgtext.xml"/>
+<entry domain="EIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/language/install/../" postpath="/controller/cfg/eio_cfgtext.xml"/>
+<entry domain="SIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/language/install/../" postpath="/controller/cfg/sio_cfgtext.xml"/>
+<entry domain="SIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/language/install/../" postpath="/controller/cfg/sio_net_cfgtext.xml"/>
+<entry domain="SYS" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/language/install/../" postpath="/controller/cfg/cir_sys_cfgtext.xml"/>
+<entry domain="DBG" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/language/install/../" postpath="/controller/cfg/dbg_cfgtext.xml"/>
+<entry domain="MOC" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/language/install/../" postpath="/controller/cfg/moc_cfgtext.xml"/>
+<entry domain="MMC" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/language/install/../" postpath="/controller/cfg/cir_mmc_cfgtext.xml"/>
+<entry domain="SYS" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/language/install/../" postpath="/controller/cfg/cir_sys_st_cfgtext.xml"/>
+<entry domain="EIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/options/enms/language/" postpath="/en_cfgtext.xml"/>
+<entry domain="EIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/options/dnmss/language/" postpath="/dn_master_cfgtext.xml"/>
+<entry domain="EIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/options/dnmss/language/" postpath="/dn_slave_cfgtext.xml"/>
+<entry domain="SIO" prepath="G:/Users/cyx/AppData/Local/ABB/RobotWare/RobotWare_6.12.1014/options/rse/language/" postpath="/rse_cfgtext.xml"/>
+</cfgtext_registry>
