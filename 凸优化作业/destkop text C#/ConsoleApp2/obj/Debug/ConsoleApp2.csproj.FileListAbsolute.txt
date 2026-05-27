@@ -1,0 +1,11 @@
+C:\Users\202509007D\Desktop\C#个人text\text\destkop text\ConsoleApp2\obj\Debug\ConsoleApp2.csproj.AssemblyReference.cache
+C:\Users\202509007D\Desktop\C#个人text\text\destkop text\ConsoleApp2\obj\Debug\ConsoleApp2.csproj.CoreCompileInputs.cache
+C:\Users\202509007D\Desktop\C#个人text\text\destkop text\ConsoleApp2\bin\Debug\ConsoleApp2.exe.config
+C:\Users\202509007D\Desktop\C#个人text\text\destkop text\ConsoleApp2\bin\Debug\ConsoleApp2.exe
+C:\Users\202509007D\Desktop\C#个人text\text\destkop text\ConsoleApp2\bin\Debug\ConsoleApp2.pdb
+C:\Users\202509007D\Desktop\C#个人text\text\destkop text\ConsoleApp2\bin\Debug\MathNet.Numerics.dll
+C:\Users\202509007D\Desktop\C#个人text\text\destkop text\ConsoleApp2\bin\Debug\MathNet.Numerics.xml
+C:\Users\202509007D\Desktop\C#个人text\text\destkop text\ConsoleApp2\obj\Debug\ConsoleA.D5FB4C91.Up2Date
+C:\Users\202509007D\Desktop\C#个人text\text\destkop text\ConsoleApp2\obj\Debug\ConsoleApp2.exe
+C:\Users\202509007D\Desktop\C#个人text\text\destkop text\ConsoleApp2\obj\Debug\ConsoleApp2.pdb
+C:\Users\202509007D\Desktop\C#个人text\text\destkop text\ConsoleApp2\obj\Debug\ConsoleApp2.exe.config

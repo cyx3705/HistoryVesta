@@ -1,0 +1,36 @@
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.csproj.AssemblyReference.cache
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.Properties.Resources.resources
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.csproj.GenerateResource.cache
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\HT1.exe.config
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\HT1.exe
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\HT1.pdb
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\OxyPlot.dll
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\OxyPlot.WindowsForms.dll
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\OxyPlot.xml
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\OxyPlot.WindowsForms.xml
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.csproj.Up2Date
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.exe
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.pdb
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\Hanging Solver.exe
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\Hanging Solver.pdb
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\Hanging Solver.exe.config
+C:\Users\Administrator\Desktop\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.exe.config
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\HT1.exe.config
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\HT1.exe
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\HT1.pdb
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\Hanging Solver.exe
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\OxyPlot.dll
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\OxyPlot.WindowsForms.dll
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\Hanging Solver.pdb
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\Hanging Solver.exe.config
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\OxyPlot.xml
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\bin\Debug\OxyPlot.WindowsForms.xml
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.csproj.AssemblyReference.cache
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.exe.config
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.Properties.Resources.resources
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.csproj.GenerateResource.cache
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.csproj.CoreCompileInputs.cache
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.csproj.Up2Date
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.exe
+C:\Users\202509007D\OneDrive\2-第五学期\控制工程作业\良子开车\Hanging Solver\HT1\obj\Debug\HT1.pdb

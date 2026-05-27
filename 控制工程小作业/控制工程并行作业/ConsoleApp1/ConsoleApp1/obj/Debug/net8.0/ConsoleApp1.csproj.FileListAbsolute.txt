@@ -1,0 +1,14 @@
+C:\Users\202509007D\OneDrive\1-第五学期\控制工程作业\控制工程并行作业\ConsoleApp1\ConsoleApp1\bin\Debug\net8.0\ConsoleApp1.exe
+C:\Users\202509007D\OneDrive\1-第五学期\控制工程作业\控制工程并行作业\ConsoleApp1\ConsoleApp1\bin\Debug\net8.0\ConsoleApp1.deps.json
+C:\Users\202509007D\OneDrive\1-第五学期\控制工程作业\控制工程并行作业\ConsoleApp1\ConsoleApp1\bin\Debug\net8.0\ConsoleApp1.runtimeconfig.json
+C:\Users\202509007D\OneDrive\1-第五学期\控制工程作业\控制工程并行作业\ConsoleApp1\ConsoleApp1\bin\Debug\net8.0\ConsoleApp1.dll
+C:\Users\202509007D\OneDrive\1-第五学期\控制工程作业\控制工程并行作业\ConsoleApp1\ConsoleApp1\bin\Debug\net8.0\ConsoleApp1.pdb
+C:\Users\202509007D\OneDrive\1-第五学期\控制工程作业\控制工程并行作业\ConsoleApp1\ConsoleApp1\obj\Debug\net8.0\ConsoleApp1.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\202509007D\OneDrive\1-第五学期\控制工程作业\控制工程并行作业\ConsoleApp1\ConsoleApp1\obj\Debug\net8.0\ConsoleApp1.AssemblyInfoInputs.cache
+C:\Users\202509007D\OneDrive\1-第五学期\控制工程作业\控制工程并行作业\ConsoleApp1\ConsoleApp1\obj\Debug\net8.0\ConsoleApp1.AssemblyInfo.cs
+C:\Users\202509007D\OneDrive\1-第五学期\控制工程作业\控制工程并行作业\ConsoleApp1\ConsoleApp1\obj\Debug\net8.0\ConsoleApp1.csproj.CoreCompileInputs.cache
+C:\Users\202509007D\OneDrive\1-第五学期\控制工程作业\控制工程并行作业\ConsoleApp1\ConsoleApp1\obj\Debug\net8.0\ConsoleApp1.dll
+C:\Users\202509007D\OneDrive\1-第五学期\控制工程作业\控制工程并行作业\ConsoleApp1\ConsoleApp1\obj\Debug\net8.0\refint\ConsoleApp1.dll
+C:\Users\202509007D\OneDrive\1-第五学期\控制工程作业\控制工程并行作业\ConsoleApp1\ConsoleApp1\obj\Debug\net8.0\ConsoleApp1.pdb
+C:\Users\202509007D\OneDrive\1-第五学期\控制工程作业\控制工程并行作业\ConsoleApp1\ConsoleApp1\obj\Debug\net8.0\ConsoleApp1.genruntimeconfig.cache
+C:\Users\202509007D\OneDrive\1-第五学期\控制工程作业\控制工程并行作业\ConsoleApp1\ConsoleApp1\obj\Debug\net8.0\ref\ConsoleApp1.dll
