@@ -1,0 +1,96 @@
+﻿报表名称: E:\BDBS\学习\作业\第四学期\机械原理\装夹\report.txt
+报表时间: 2025/3/5 20:37:24
+报表选项:
+    零件名称
+
+选择集 #1:
+    连杆3.par:1
+    连杆3.par:2
+    连杆3.par:3
+    连杆3.par:4
+    轴.par:1
+    轴承.par:1
+    轴承.par:2
+    mm16.par:1
+    mm16.par:2
+    轴.par:1
+    轴承.par:1
+    轴承.par:2
+    mm16.par:1
+    mm16.par:2
+    轴.par:1
+    轴承.par:1
+    轴承.par:2
+    mm16.par:1
+    mm16.par:2
+    轴.par:1
+    轴承.par:1
+    轴承.par:2
+    mm16.par:1
+    mm16.par:2
+    轴.par:1
+    轴承.par:1
+    轴承.par:2
+    mm16.par:1
+    mm16.par:2
+    轴.par:1
+    轴承.par:2
+    mm16.par:1
+    mm16.par:2
+    轴.par:1
+    轴承.par:1
+    轴承.par:2
+    mm16.par:1
+    mm16.par:2
+    轴.par:1
+    轴承.par:1
+    轴承.par:2
+    mm16.par:1
+    mm16.par:2
+
+选择集 #2:
+    主轴.par:1
+    连接.par:1
+    连接杆1.par:1
+    轴承.par:1
+    mm16.par:1
+    轴 2.par:1
+    连接杆1.par:2
+    连接杆1.par:3
+    轴承.par:1
+    mm16.par:1
+    轴 2.par:1
+    轴承.par:1
+    mm16.par:1
+    轴 2.par:1
+    连接杆1.par:4
+    连杆2.par:1
+    连杆2.par:2
+    连杆2 -2本.par:1
+    连杆2 -2本.par:2
+    轴承.par:1
+    mm16.par:1
+    轴 2.par:1
+    mm30.par:1
+    轴.par:1
+    轴承.par:1
+    轴承.par:2
+    mm16.par:1
+    mm16.par:2
+    轴.par:1
+    轴承.par:1
+    轴承.par:2
+    mm16.par:1
+    mm16.par:2
+    轴承.par:1
+
+干涉:
+    1 / 2
+    轴承.par:1
+    连杆2 -2本.par:1
+
+    2 / 2
+    mm16.par:1
+    连杆2 -2本.par:1
+
+    2 检测到干涉
