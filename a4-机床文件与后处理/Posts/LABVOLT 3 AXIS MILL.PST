@@ -1,0 +1,1963 @@
+[POST_VERSION] #DO NOT MOVE OR ALTER THIS LINE# V22.00 P0 E1 W22.00 T1550094729 M22.00 I0 O0
+scncpost_revision     := "22.80" # Internal revision number for use by CNC Software only.  Please do not change this number.
+scustpost_revision    := "0"  # Revision number for use by Resellers or customers.
+# Post Name           : Labvolt 3 axis mill
+# Product             : MILL
+# Machine Name        : D&M CNC MILL
+# Control Name        : D&M 4 CNC
+# Description         : D&M COMPUTING INC. FANUC STYLE POST
+# 4-axis/Axis subs.   : NO
+# 5-axis              : NO
+# Subprograms         : No
+# Executable          : mp.dll
+#
+# WARNING: THIS POST IS GENERIC AND IS INTENDED FOR MODIFICATION TO
+# THE MACHINE TOOL REQUIREMENTS AND PERSONAL PREFERENCE.
+#
+# Associated File List$
+#
+# LAB VOLT 3 AXIS MILL.mcam-mmd
+# LABVOLT 3 AXIS MILL.mcam-control
+#
+# Associated File List$
+#
+# --------------------------------------------------------------------------
+# Revision log:
+# --------------------------------------------------------------------------
+# CNC 06/06/18  -  (21.80) Initial post update for Mastercam 2019
+# CNC 02/14/19  -  (22.80) Initial post update for Mastercam 2020
+#
+# --------------------------------------------------------------------------
+# Features:
+# --------------------------------------------------------------------------
+# Users Note:
+#
+# Following Misc_Reals & Misc_Integers are used:
+#
+# mi2 - Absolute, or Incremental Positioning
+#        0 = absolute
+#        1 = incremental
+
+# Options / Usage:
+# It is recommended to start and end cutter compensation on a linear move.
+# If the Home Position is specified in the nci file, the tool will move
+#   to the home position during tool changes.
+# This post is associated with the D&M.cfg configuration file.  This will
+#   set the NC Program file extention to *.m3
+
+# Note:
+# Because the call to 'pwrtt' occurs after reading previous motion blocks
+# the values are valid only for the preceeding tool.  The last tool
+# information is captured in 'psof' after the NCI is rewound.
+
+# END_HEADER$
+#
+# --------------------------------------------------------------------------
+# DEBUG/PROGRAM SWITCHES, debugging and program switches
+# --------------------------------------------------------------------------
+bug1$   : 1      # 1 = Output post to screen, 2 = output leader to screen
+bug2$   : 0      # Append postline labels, non-zero is column position?
+bug4$   : 0      # Append NCI line no. to each NC line?
+whatno$ : yes$    # Do not perform whatline branches?
+linktolvar$    : 1     #Associate X tolerance variables to V9- variable?
+linkplnvar$    : 1     #Associate X plane specific variables to V9- variable?
+linklvar$      : 1     #Associate X lathe specific variables to V9- variable?
+cant_tlchng$   : 1     #Ignore cantext entry on move with tlchng_aft?
+
+rpd_typ_v7$ : 1     #Use Version 7 style contour flags?
+strtool_v7$ : 2  # Use Version 7 toolname, 1= path components, 2=string
+get_1004$   : 1  # Find gcode 1004 with getnextop?
+
+fastmode$  : yes$ # Optimize processing time (set to no for debugging)
+arcoutput$ : 0   # 0 = IJK, 1 = R no sign, 2 = R signed neg. over 180
+breakarcs$ : 0   #Break arcs, 0 = no, 1 = quadrants, 2 = 180deg. max arcs
+
+use_gear  : no$  # Set to yes to output gear range codes
+tplnout   : no$  # Output plane code at sof, and tlchg (G17,G18,& G19)
+                # Note: Tooltable must be set to 'yes'
+add_rad   : 1   # 0 = No, 1 = add radius to Z in Axis Subs, -1 Subtract Rad
+                # Only valid for Axis Substitution
+
+# --------------------------------------------------------------------------
+# FORMAT STATEMENTS - n=nonmodal, l=leading, t=trailing, i=inc, d=delta
+# --------------------------------------------------------------------------
+fs  1  0.4      #Decimal, absolute, 4 place
+fs  2  0.4d     #Decimal, delta
+fs  3  1 0      #Integer, not leading
+fs  4  2 0l     #Integer, two leading
+fs  5  3 0l     #Integer, three leading
+fs  6  4 0l     #Integer, four leading
+fs  7  0.1      #Decimal, absolute, 1 place
+fs  8  0.2      #Decimal, absolute, 2 place
+fs  9  0.3      #Decimal, absolute, 3 place
+fs  10 0 4t     #No decimal, absolute, four trailing
+fs  11 0.4t     #Decimal, absolute, four trailing
+fs  12 0.3d     #Decimal, delta, 3 place
+fs  13 1.3lt    #Decimal, one leading, three trailing
+fs  14 0.4n     #Decimal, absolute, 4 place, non-modal
+
+# --------------------------------------------------------------------------
+# FORMAT ASSIGNMENTS
+# --------------------------------------------------------------------------
+# Axis output formats - Linear
+# --------------------------------------------------------------------------
+fmt  "X" 1 xabs  # X axis position absolute output variable
+fmt  "Y" 1 yabs  # Y axis position absolute output variable
+fmt  "Z" 1 zabs  # Z axis position absolute output variable
+fmt  "X" 2 xinc  # X axis position incremental output variable
+fmt  "Y" 2 yinc  # Y axis position incremental output variable
+fmt  "Z" 2 zinc  # Z axis position incremental output variable
+
+fmt  "X" 1 x$      # X axis position
+fmt  "Y" 1 y$      # Y axis position
+fmt  "Z" 1 z$      # Z axis position
+fmt  "X" 1 xr$     # X rapid position from tool change
+fmt  "Y" 1 yr$     # Y rapid position from tool change
+fmt  "Z" 1 zr$     # Z rapid position from tool change
+fmt  "X" 1 xh$     # X home position
+fmt  "Y" 1 yh$     # Y home position
+fmt  "Z" 1 zh$     # Z home position
+
+# --------------------------------------------------------------------------
+# Axis output formats - Circular
+# --------------------------------------------------------------------------
+fmt  "X" 2 i$       # Arc center description in X
+fmt  "Y" 2 j$       # Arc center description in Y
+fmt  "Z" 2 k$       # Arc center description in Z
+fmt  "R" 1 arcrad$  # Arc Radius
+fmt  "R-" 1 arcradm# Arc Radius over 180 degree sweep
+
+# --------------------------------------------------------------------------
+# Program & Sequence number format
+# --------------------------------------------------------------------------
+fmt  "O" 6 progno$     # Program number
+fmt  "N" 3 n$          # Sequence nos.
+
+# --------------------------------------------------------------------------
+# Tool format
+# --------------------------------------------------------------------------
+fmt  "T" 3 t$         # Tool No
+fmt  "T" 3 first_tool$# First Tool Used (bldnxtool: yes)
+fmt  "T" 3 next_tool$ # Next Tool Used  (bldnxtool: yes)
+fmt  "D" 3 tloffno$   # Diameter Offset No
+fmt  "H" 3 tlngno$    # Length Offset No
+
+fmt  "TOOL - " 4 tnote        # Note format
+fmt  "DIA. OFF. - " 4 toffnote    # Note format
+fmt  "LENGTH - " 4 tlngnote   # Note format
+fmt  "DIA. - " 11 tldia$           # Note format
+
+# --------------------------------------------------------------------------
+# Spindle Speeds & Feedrate output formats
+# --------------------------------------------------------------------------
+fmt    3 speed      # Spindle Speed
+fmt  "M07 " 8 fr$    # Feedrate
+fmt  "M" 3 gear     # Gear range
+
+# --------------------------------------------------------------------------
+# Drill variable formats
+# --------------------------------------------------------------------------
+fmt  "G" 3 drillref # Initial / Reference Toggle (G98/G99)
+fmt  "T" 10 dwell$   # Dwell
+fmt  "Z" 1 initht$   # Initial Height
+fmt  "Z" 1 refht$    # Reference Height
+fmt  "Z" 1 depth$    # Depth
+fmt  "Z" 1 refout   # Reference Height
+fmt  "Z" 1 depthout # Depth
+fmt    8 peck1$      # First peck increment (positive)
+fmt    1 peck2$      # Second or last peck (positive)
+fmt    1 peckclr$    # Safety distance
+fmt    1 retr$       # Retract height
+fmt  "F" 8 frplunge$ # Plunge feedrate in drill cycles
+
+# --------------------------------------------------------------------------
+# Miscellaneous output formats
+# --------------------------------------------------------------------------
+fmt  "M" 5 ssrange  # Spindle Speed Range
+fmt  "C" 4 coolant$  # Coolant
+
+fmt   13 stck_ht$    # Stock Dimension X
+fmt   13 stck_wdth$  # Stock Dimension Y
+fmt   13 stck_thck$  # Stock Dimension Z
+
+# --------------------------------------------------------------------------
+# INITIALIZE - initialize system variables and define user variables
+# --------------------------------------------------------------------------
+arctype$   : 1      # Arc center 1=abs, 2=St-Ctr, 3=Ctr-St, 4=unsigned inc.
+do_full_arc$ : 0     #Allow full circle output? 0=no, 1=yes
+helix_arc$   : 2     #Support helix arc output, 0=no, 1=all planes, 2=XY plane only
+helix_tol$  : 0.0001
+met_helix_tol$  : 0.001
+dec_seq_right$  : 0
+dec_seq_left$  : 0
+rotfeed4$  : 1
+rotfeed5$  : 1
+lrotfeed4$ : 1
+lrotfeed5$ : 1
+sub_level$  : 0
+
+
+bldnxtool$ : yes$    # Build next tool table
+ldrcode$   : 65     # Leader character dec. equiv. (fleader outputs code)
+ncldr$     : 20     # No. of leader characters (fleader outputs code)
+nobrk$     : no$     # Omit breakup of x/y & z rapid moves LEAVE AS NO!!!
+omitcrlf$  : no$     # Omit CR/LF
+omitrefht : no$     # Don't use reference height on first non-canned Z move
+
+omitseq$   : yes$    # Omit sequence no.
+omitz     : no$     # Omit first Z movement for non-canned-cycles
+
+progname$  : 1      # Use uppercase for program name
+scalex$    : 1.     # Scaling of .NCI at input - x,y,z,i,j,k
+scaley$    : 1.     # Scaling of .NCI at input - x,y,z,i,j,k
+scalez$    : 1.     # Scaling of .NCI at input - x,y,z,i,j,k
+seqmax$    : 9999   # Max. sequence no.
+skipmotest$: no$     # Skip motion test in linear
+spaces$    : 1      # No. of spaces to add between fields
+tooltable$ : 1      # Read for tool table and pwrtt
+absinc$    : 0      # Absolute / Incremental
+absswp    : 0      # Absolute sweep
+drlgsel   :  -1    # Drill Select Initialize
+maxfrdeg  : 999    # Limit for feed in deg/min
+tcnt      : 0      # Count the number of tool changes
+
+startflg  : 1      # Flag for first XYZ position
+newglobal$ : 1      # Error Check (Leave this variable set to 1)
+nobrk_sav : 0      # Saved Value
+xtotal    : 0      # Test Variable
+ytotal    : 0      # Test Variable
+ztotal    : 0      # Test Variable
+m_one     :  -1    # Define Constant
+zero      : 0      # Define Constant
+one       : 1      # Define Constant
+two       : 2      # Define Constant
+three     : 3      # Define Constant
+c9k       : 9999   # Define Constant
+
+error_msg$   : 1     #0=file and prompt, 1=to screen, 2=one to screen
+err_file$    : 1     #0=fatal, 1=all errors, 2=inc mprint, 3=inc prompts, 4=always
+
+getnextop$  : yes$   # Gets next move information
+planetest  : 0     # Test variable for ptplane post block
+metric     : 0     # 0=in., 1=mm.
+skip       : 0
+result     : 0     # Test Variable
+
+snull      : ""      # Null character string
+smaterial : ""       # Material string
+
+# --------------------------------------------------------------------------
+# FORMULAS - global formulas
+# --------------------------------------------------------------------------
+ssrange   = mi3$              # Gear Range Select
+speed     = abs(ss$)          # Absolute spindle speed
+arcradm   = arcrad$           # Negative arcrad
+spdlsel   = fsg3(ss$)         # Spindle on selector based on pos. or neg. ss
+
+# --------------------------------------------------------------------------
+# CANNED CYCLES - select long or short code
+# --------------------------------------------------------------------------
+usecandrill$ : yes$  # Use canned cycle for drill
+usecanpeck$  : yes$  # Use canned cycle for Peck
+usecanchip$  : no$   # Use canned cycle for Chip Break
+usecantap$   : no$   # Use canned cycle for Tap
+usecanbore1$ : no$   # Use canned cycle for Bore1
+usecanbore2$ : no$   # Use canned cycle for Bore2
+usecanmisc1$ : no$   # Use canned cycle for Misc1
+usecanmisc2$ : no$   # Use canned cycle for Misc2
+
+# --------------------------------------------------------------------------
+# Buffer 1 - Holds the variable 'ttplane' for each toolpath segment
+# --------------------------------------------------------------------------
+rc1     : 2
+wc1     : 1
+fbuf 1 0 1 0 0  # Buffer 1
+
+# --------------------------------------------------------------------------
+# Question format statements
+# --------------------------------------------------------------------------
+#fq 1 stdesc1 Enter Comment
+
+# --------------------------------------------------------------------------
+# Lookup table definitions - for math functions FLOOK and FRANGE
+# --------------------------------------------------------------------------
+flktbl    1     3  # Lookup table definitions - table no. - no. entries
+         40  1000  # Low gear range
+         41  2500  # Med gear range
+         42  5000  # Hi gear range
+
+# --------------------------------------------------------------------------
+# Strings - String labels must start with 's' - they are not pre-assigned
+# --------------------------------------------------------------------------
+#Select operation note
+sop00   : "NULL"              # String definition
+sop01   : "2D-CONTOUR"        #    "       "
+sop02   : "3D-CONTOUR"        #    "       "
+sop03   : "DRILL/MISC"        #    "       "
+sop04   : "POCKET...."        #    "       "
+sop05   : "RULED....."        #    "       "
+sop06   : "2D-SWEPT.."        #    "       "
+sop07   : "3D-SWEPT.."        #    "       "
+sop08   : "REVOLVED.."        #    "       "
+sop09   : "LOFT......"        #    "       "
+sop10   : "COONS....."        #    "       "
+sop11   : "FILLET...."        #    "       "
+sop12   : "FLOWLINE.."        #    "       "
+sop13   : "M.ROUGH..."        #    "       "
+sop14   : "M.FINISH.."        #    "       "
+sop15   : "POINT....."        #    "       "
+sop16   : "DRILL5AX.."        #    "       "
+sop17   : "CURVE5AX.."        #    "       "
+sop18   : "OP18......"        #    "       "
+sop19   : "OP19......"        #    "       "
+sop20   : "OP20......"        #    "       "
+
+sopnote : ""                  # Target string
+
+fstrsel  sop00 opcode$ sopnote 21 -1
+
+# --------------------------------------------------------------------------
+# Select motion G code
+sg00    : "G00"     # Linear movement at rapid feedrate
+sg01    : "G01"     # Linear movement at feedrate
+sg02    : "G02"     # Circular interpolation CW
+sg03    : "G03"     # Circular interpolation CCW
+
+sgcode : ""        # Target string
+
+fstrsel  sg00 gcode$ sgcode 4 -1
+
+# --------------------------------------------------------------------------
+# Select incremental or absolute G code
+sg90    : "G90"    # Absolute G code
+sg91    : "G91"    # Incremental G code
+
+sgabsinc : ""      # Target string
+
+fstrsel  sg90 absinc$ sgabsinc 2 -1
+
+# --------------------------------------------------------------------------
+# Select spindle start
+sm04    : "M04"    # Spindle reverse
+sm05    : "M05"    # Spindle off
+sm03    : "M04"    # Spindle forward
+
+spdlon : ""        # Target string
+
+fstrsel  sm04 spdlsel spdlon 3 -1
+
+# --------------------------------------------------------------------------
+# Cutter compensation code
+scc0    : ""    # Cutter compensation state not changed
+sg40    : "G40"    # Cancel cutter compensation
+sg41    : "G41"    # Cutter compensation left
+sg42    : "G42"    # Cutter compensation right
+sg140   : "G40"    # Last linear move cancel cutter comp (see note)
+              # Note: to cancel comp after last move, remove G40 string
+              # with sg140 and remove "#" at the postline call "pcancelcc"
+
+sccomp : ""        # Target string
+
+fstrsel  scc0 ccomp$ sccomp 5 -1
+
+# --------------------------------------------------------------------------
+# Select work plane G code
+sg17    : "G17"    # XY plane code
+sg19    : "G19"    # XZ plane code
+sg18    : "G18"    # YZ plane code
+
+sgplane : ""       # Target string
+
+fstrsel  sg17 plane$ sgplane 3 -1
+
+# --------------------------------------------------------------------------
+# Work coordinate system
+sg50    : "G92"    # Work coordinate system G code
+sg51    : "G92"    #  "       "        "    "  "
+sg52    : "G92"    #  "       "        "    "  "
+sg53    : "G92"    #  "       "        "    "  "
+sg54    : "G54"    #  "       "        "    "  "
+sg55    : "G55"    #  "       "        "    "  "
+sg56    : "G56"    #  "       "        "    "  "
+sg57    : "G57"    #  "       "        "    "  "
+sg58    : "G58"    #  "       "        "    "  "
+sg59    : "G59"    #  "       "        "    "  "
+
+sgwcs : ""         # Target string
+
+fstrsel  sg50 mi1$ sgwcs 10 -1
+
+# --------------------------------------------------------------------------
+# Canned drill cycle string select
+sg81     : "G81"   #  drill      - no dwell
+sg81d    : "G81"   #  drill      - with dwell
+sg83     : "G82"   #  peck drill - no dwell
+sg83d    : "G82"   #  peck drill - with dwell
+sg73     : "G73"   #  chip break - no dwell
+sg73d    : "G73"   #  chip break - with dwell
+sg84     : "G84"   #  tap        - no dwell
+sg84d    : "G74"   #  tap        - with dwell (selects left hand)
+sg85     : "G85"   #  bore #1    - no dwell
+sg85d    : "G89"   #  bore #1    - with dwell
+sg86     : "G86"   #  bore #2    - no dwell
+sg86d    : "G86"   #  bore #2    - with dwell
+sgm1     : "G81"   #  misc #1    - no dwell
+sgm1d    : "G82"   #  misc #1    - with dwell
+sgm2     : "G81"   #  misc #2    - no dwell
+sgm2d    : "G82"   #  misc #2    - with dwell
+
+sgdrill : ""       #  Target string
+
+drlgsel = drillcyc$ * 2 + fsg2 ( dwell$ )  # 16 possible combinations:
+                                     #   drillcyc = 0..7
+                                     #   dwell    = 0 or non-zero (2 states)
+fstrsel  sg81 drlgsel sgdrill 16 -1
+
+# --------------------------------------------------------------------------
+# Generate 'sgear' string
+sgear0      : "M**"    # auto gear range
+sgear1      : "M41"    # Low gear range
+sgear2      : "M42"    # Med gear range
+sgear3      : "M43"    # High gear range - selected in parameters by mi3
+sgear : ""
+
+fstrsel sgear0 gear sgear 4 -1
+
+# --------------------------------------------------------------------------
+# POSTLINES, USER-DEFINED -  Postline labels start with 'p'.
+# End a line with ',' to continue on the next line.
+# End a line with ', e' to generate carriage return and linefeed.
+# --------------------------------------------------------------------------
+# Program general output control, user defined
+# --------------------------------------------------------------------------
+pinit      # Initialize Vars
+             prv_fr$ = 999.999
+             prv_frplunge$ = 999.999
+             !gcode$
+             absinc$ = mi2$
+             linarc$ = 0
+
+pcooloff   # Coolant off "M" code output
+             if prv_coolant$ > 0, "M09"
+
+pcoolon    # Coolant off "M" code output
+             if coolant$ = 1, "M08"     # Flood
+             if coolant$ = 2, "M08"     # Mist
+
+pcoolnl    # Coolant off "M" code output
+             if coolant$ = 0, "M09"     # Off
+             if coolant$ = 1, "M08"     # Flood
+             if coolant$ = 2, "M08"     # Mist
+
+pfr        # Feedrate W/O Negative Feedrates
+             if fr$ > 0, fr$
+
+pcan       # Canned text - cantext = 0, 1, 2, 3
+             if cantext$ = 1, "G04", "T1"  #Dwell
+             if cantext$ = 2, " "          #user option
+             if cantext$ = 3, " "          #user option
+
+# --------------------------------------------------------------------------
+# Work coordinate output, user defined
+# --------------------------------------------------------------------------
+pg92_sof     # G92 coordinate setting at start
+             "/", n$, pinc, "G28", "Z0.", e$
+             "/", n$, "G28", "X0.", "Y0.", e$
+             "/", n$, *sgwcs, *xh$, *yh$, *zh$, e$
+
+pg92_out   # G92 coordinate setting at tool change
+             "/", n$, "G28", "X0.", "Y0.", e$
+             if gcode$ <> 1003, "/", n$, *sgwcs, *xh$, *yh$, *zh$, e$
+
+pwcs       # G54+ coordinate setting
+             if mi1$ >= 4, *sgwcs
+
+# --------------------------------------------------------------------------
+# Gear selection control, user defined
+# --------------------------------------------------------------------------
+pgear      # Find spindle range
+             gear = frange (1, speed)
+             *gear
+
+prange     # Find spindle range
+             if use_gear = 1, pgear
+
+# --------------------------------------------------------------------------
+# Cutter comp. output control, user defined
+# --------------------------------------------------------------------------
+pccdia2    # Cutter Compensation2
+             if ccomp$ <> 4, tloffno$
+
+pccdia     # Cutter Compensation
+             if ccomp$ <> 0, pccdia2
+
+# --------------------------------------------------------------------------
+# Axis substitution motion, user defined
+# --------------------------------------------------------------------------
+pdrlxyrot  # Substitute Axis X/Y with Rotary axis w/ drilling
+           pxycalc
+           if rotaxis$ = 0, pxout, pyout
+
+pdrlxyrotf # Substitute Axis X/Y with Rotary axis w/ drilling
+           pxycalc
+           if rotaxis$ = 0, pxoutf, pyoutf
+
+# --------------------------------------------------------------------------
+# Absolute / Incremental Calculations and Output
+# --------------------------------------------------------------------------
+pstartxyz  # Start Incremental Calculations
+           x$ = xr$
+           y$ = yr$
+           z$ = zr$
+
+pxycalc    # Calculate Output variables X, Y, and Z
+           #@x$, @y$, @z$, @xs$, @ys$
+           xabs = x$
+           yabs = y$
+           zabs = z$
+           xinc = x$ - prv_x$
+           yinc = y$ - prv_y$
+           zinc = z$ - prv_z$
+           xtotal = xtotal + xinc
+           ytotal = ytotal + yinc
+           ztotal = ztotal + zinc
+           !x$, !y$, !z$, !xs$, !ys$
+
+pzcalc     # Calculate Output variables (Z Only)
+           #@z$
+           zabs = z$
+           zinc = z$ - prv_z$
+           !z$
+
+pxout      # Calculate Output variables
+           if absinc$ = 0, xabs
+           if absinc$ = 1, xinc
+           !x$, !xabs, !xinc
+
+pyout      # Calculate Output variables
+           if absinc$ = 0, yabs
+           if absinc$ = 1, yinc
+           !y$, !yabs, !yinc
+
+pzout      # Calculate Output variables
+           if absinc$ = 0, zabs
+           if absinc$ = 1, zinc
+           !z$, !zabs, !zinc
+
+pxoutf     # Calculate Output variables
+           if absinc$ = 0, *xabs
+           if absinc$ = 1, *xinc
+           !x$, !xabs, !xinc
+
+pyoutf     # Calculate Output variables
+           if absinc$ = 0, *yabs
+           if absinc$ = 1, *yinc
+           !y$, !yabs, !yinc
+
+pzoutf     # Calculate Output variables
+           if absinc$ = 0, *zabs
+           if absinc$ = 1, *zinc
+           !z$, !zabs, !zinc
+
+pabs       # Forced Absolute G code output
+           absinc$ = 0
+           *sgabsinc
+           absinc$ = mi2$
+
+pinc       # Forced Incremental G code output
+           absinc$ = 1
+           *sgabsinc
+           absinc$ = mi2$
+
+# --------------------------------------------------------------------------
+# Axis linear/circular motion, user defined
+# --------------------------------------------------------------------------
+parctyp2   # Arc output for R w/ sign over 180 degree sweep
+           absswp = abs ( sweep$ )
+           !absswp
+           if absswp <= 180, *arcrad$
+           if absswp > 180, *arcradm
+
+parctyp1   # Arc output for R w/ no sign
+           *arcrad$
+
+parctyp0   # Arc output for IJK
+           if plane$ = 0, *i$, *j$, k$, "FEED", *sgabsinc
+           if plane$ = 1, i$, *j$, *k$, "FEED", *sgabsinc
+           if plane$ = 2, *i$, j$, *k$, "FEED", *sgabsinc
+
+parctyp    # Select the arc output
+           if arcoutput$ = 0, parctyp0
+           if arcoutput$ = 1, parctyp1
+           if arcoutput$ = 2, parctyp2
+
+prapidm    # Linear line movement - at rapid feedrate
+           pxycalc
+           if x$=prv_x$ & y$=prv_y$ & z$=prv_z$, skip = 1
+           if skip=0, n$, *sgcode, e$
+           if skip=0, n$, pxout, pyout, pzout, "RAPID", *sgabsinc, e$, n$, pcan, e$
+           skip=0
+
+plinm      # Linear line movement - at feedrate
+           pxycalc
+           n$, pfr, e$
+           n$, *sgcode, e$
+           n$, pxout, pyout, pzout, "FEED", *sgabsinc, e$, n$, pcan, e$
+
+pcirm      # Circular interpolation
+           pxycalc
+           n$, pfr, e$
+           n$, sgplane, e$
+           n$, *sgcode, e$
+           n$, parctyp0, e$
+           n$, pxout, pyout, pzout, "FEED", *sgabsinc, e$, n$, pcan, e$
+
+pstartpos  # First Rapid Move in Contour
+            if gcode$ > 4, gcode$ = 0
+            pstartabs                   # force generic absolute start point
+            startflg = 0
+            nobrk$ = nobrk_sav
+
+pstartabs  # First Move in contour (forced Absolute)
+           if opcode$ = 3, pstartxyz
+           pxycalc
+           if gcode$ > 1, gcode$ = 0
+
+           spaces$ = 0
+           n$, *spdlon, " ", *speed, e$
+           spaces$ = 1
+           n$, *sgcode, e$
+
+           #n, "X0", "Y0", "Z0", e  #Move to WCS Zero
+           #n, "G92", e  #Set WCS to current position
+
+           n$, *xabs, *yabs, "RAPID", pabs, e$, n$, pcan, e$
+           n$, *zabs, "RAPID", pabs, e$
+           n$, pcoolon, e$
+
+           #n, *sgcode, pabs, pwcs, *xabs, *yabs, *speed, *spdlon, prange, pcan, e
+           #n, "G43", tlngno, *zabs, pcoolon, e
+
+           !x$, !y$, !z$, !xinc, !yinc, !zinc
+
+# --------------------------------------------------------------------------
+# Drilling, user defined
+# --------------------------------------------------------------------------
+pdrillclc  # Determine depth and reference
+           if absinc$ = 1, depthout = depth$ - refht$
+              else, depthout = depth$
+           if absinc$ = 1, refout = refht$ - zr$
+              else, refout = refht$
+           !depth$, !refht$
+
+pdrillref  # Determine G98 or G99
+           if initht$ <> refht$, drillref = 98
+           if initht$ = refht$, drillref = 99
+
+pdwell     # Determine whether to output dwell
+           if dwell$ <> 0, *dwell$
+
+ptlchg0dr2 # Null tool change for drilling
+           gcode$ = 0
+           if zinc < 0, n$, *sgcode, e$
+           if zinc < 0, n$, pxout, pyout, "RAPID", *sgabsinc, e$
+           n$, *sgcode, e$
+           n$, pzout, "RAPID", *sgabsinc, e$
+
+ptlchg0drl # Null tool change for drilling
+           pstartxyz
+           pxycalc
+           if prv_opcode$ = 3 & zinc <> 0, ptlchg0dr2
+
+# --------------------------------------------------------------------------
+# POSTLINES, PRE-DEFINED - Postline names are pre-assigned.
+# Lines do not need to end with ', e' for carriage return and linefeed.
+# --------------------------------------------------------------------------
+pparameter$ # Run parameter table
+
+
+pcomment$   # Manual Entry - COMMENTS (on a block by itself) 1005,1006
+           if scomm$<>snull, "\", scomm$,e$
+
+pheader$    # File header
+           spaces$ = 0
+           stck_matl$ = ucase(stck_matl$)
+           "@A=MASTERCAM",e$               #Authour
+           "@M=", *stck_matl$, e$          #Material
+           "@D=", *progno$,e$               #Drawing no.
+           if stck_ht$<>0, "@X=",*stck_ht$," IN.",e$     #Width
+           if stck_wdth$<>0, "@Y=",*stck_wdth$," IN.",e$ #Depth
+           if stck_thck$<>0, "@Z=",*stck_thck$," IN.",e$ #Height
+           "\ MASTERCAM CAD/CAM SOFTWARE",e$
+           "\ PROGRAM NAME - ", *sprogname$, e$
+           "\ PROGRAM NUM. - ", *progno$,e$
+           "\ DATE ", date$, "  TIME ", time$,e$
+           spaces$ = 1
+
+psof0$      # Start of file for tool zero
+           psof$
+
+psof$       # Start of file for non-zero tool number
+           if tplnout = 1, ttplane$ = wbuf(1,wc1)
+           pinit
+           !opcode$, !coolant$
+
+           if metric = 1, "G71",e$
+             else, "G70",e$
+
+           comment$
+           #n, "G01 G40 G49 G80", *sgabsinc
+
+           prv_absinc$ = 999
+           #if mi1 <= 3, pg92_sof
+
+           #n, "M06", *t  #Tool Change
+
+           if tplnout = 1, ptplane$
+           startflg = 1
+           nobrk_sav = nobrk$
+           nobrk$ = 1
+
+ptlchg0$    # Null tool change
+           if opcode$ = 3, ptlchg0drl
+
+           if opcode$ <> 3, xabs = nextx$
+           if opcode$ <> 3, yabs = nexty$
+           if opcode$ <> 3, zabs = zr$
+
+           if opcode$ <> 3, n$, *xabs, *yabs, "RAPID", pabs, e$, n$, pcan, e$
+
+           spaces$=0
+           if ss$ <> prv_ss$, n$, *spdlon, " ", *speed, e$
+           spaces$=1
+           if coolant$ <> prv_coolant$, n$, pcoolnl,e$
+           !opcode$, !coolant$
+           if tplnout = 1, ptplane$
+
+ptlchg$     # Tool change
+           pinit
+           !opcode$
+           n$, "M05",e$
+           n$, pcooloff,e$
+
+           if zh$<>0, n$, *zh$, e$  #Home position in Z
+           n$, *xh$, *yh$, e$  #Home position in XY
+
+           #n, pinc, "G28", "Z0.", pcooloff
+           #if absinc = 1, n, "G28", "X0.", "Y0."
+           #if mi1 <= 3 & mi1 > 0, pg92_out
+
+           n$, "M06", *t$,e$#Tool Change
+
+           comment$
+           if tplnout = 1, ptplane$
+           startflg = 1
+           nobrk_sav = nobrk$
+           nobrk$ = 1
+           !coolant$
+
+peof0$      # End of file for tool zero
+           peof$
+
+peof$       # End of file for non-zero tool
+           n$, "M05",e$
+           n$, pcooloff,e$
+           #n, pinc, "G28", "Z0.", pcooloff
+           #if mi1 <= 3 & mi1 <> 0 & absinc = 0, pg92_out
+           #if absinc = 1, n, pinc, "G28", "X0.", "Y0."
+           #n, pabs
+           n$, "M30",e$
+
+# --------------------------------------------------------------------------
+# Axis motion
+# --------------------------------------------------------------------------
+prot0$      # Toolplane postline - Custom post required
+
+prot$       # Toolplane postline - Custom post required
+
+prapid$     # Linear line movement - at rapid feedrate
+           if startflg = 1, pstartpos
+           prapidm
+
+pzrapid$    # Linear movement in Z axis only - at rapid feedrate
+           pzcalc
+           n$, *sgcode, e$
+           n$, pzout, "RAPID", *sgabsinc, e$
+
+plin$       # Linear line movement - at feedrate
+           if startflg = 1, pstartpos
+           plinm
+
+pz$         # Linear movement in Z axis only - at feedrate
+           pzcalc
+           n$, pfr, e$
+           n$, *sgcode, e$,
+           n$, pzout, "FEED", *sgabsinc, e$
+
+pcir$       # Circular interpolation
+           if startflg = 1, "ERROR - FIRST MOVE IN CONTOUR =", *sgcode, e$
+           pcirm
+
+# --------------------------------------------------------------------------
+# Drilling
+# --------------------------------------------------------------------------
+pdrill$     # Canned Drill Cycle
+           pdrillclc
+           if startflg = 1, pstartpos
+           n$, *refout, "RAPID", *sgabsinc, e$
+           n$, pfr, e$
+           n$, *sgdrill, e$
+           n$, pdrlxyrotf, *depthout, "FEED", *sgabsinc, e$
+
+ppeck$      # Canned Peck Drill Cycle
+           pdrillclc
+           if startflg = 1, pstartpos
+           n$, *refout, "RAPID", *sgabsinc, e$
+           n$, pfr, e$
+           spaces$ = 0
+           n$, *sgdrill, " ", *peck1$, e$
+           spaces$ = 1
+           n$, pdrlxyrotf, *depthout, "FEED", *sgabsinc, e$
+
+pchpbrk$    # Canned Chip Break Cycle
+           pdrillclc
+           if startflg = 1, pstartpos
+           pdrillref
+           frplunge$ = fr$
+       n$, *drillref, *sgdrill, pdrlxyrot, *depthout, *refout, *peck1$, *frplunge$,e$
+
+ptap$       # Canned Tap Cycle
+           pdrillclc
+           if startflg = 1, pstartpos
+           pdrillref
+           frplunge$ = fr$
+       n$, *drillref, *sgdrill, pdrlxyrot, *depthout, *refout, *frplunge$,e$
+
+pbore1$     # Canned Bore #1 Cycle
+           pdrillclc
+           if startflg = 1, pstartpos
+           pdrillref
+           frplunge$ = fr$
+       n$, *drillref, *sgdrill, pdrlxyrot, *depthout, *refout, pdwell, *frplunge$,e$
+
+pbore2$     # Canned Bore #2 Cycle
+           pdrillclc
+           if startflg = 1, pstartpos
+           pdrillref
+           frplunge$ = fr$
+       n$, *drillref, *sgdrill, pdrlxyrot, *depthout, *refout, *frplunge$,e$
+
+pmisc1$     # Canned Misc #1 Cycle (User Option)
+           pdrill$
+
+pmisc2$     # Canned Misc #2 Cycle (User Option)
+           pdrill$
+
+pdrill_2$   # Canned Drill Cycle
+           pdrillclc
+           n$, pdrlxyrotf, *depthout, "FEED", *sgabsinc, e$
+
+ppeck_2$    # Canned Peck Drill Cycle
+           pdrill_2$
+
+pchpbrk_2$  # Canned Chip Break Cycle
+           pdrill_2$
+
+ptap_2$     # Canned Tap Cycle
+           pdrill_2$
+
+pbore1_2$   # Canned Bore #1 Cycle
+           pdrill_2$
+
+pbore2_2$   # Canned Bore #2 Cycle
+           pdrill_2$
+
+pmisc1_2$   # Canned Misc #1 Cycle
+           pdrill_2$
+
+pmisc2_2$   # Canned Misc #2 Cycle
+           pdrill_2$
+
+pcanceldc$  # Cancel canned drill cycle
+           !gcode$
+           n$, "G80",e$
+           n$, "G00", e$
+           n$, *initht$, "RAPID", *sgabsinc, e$
+
+pcancelcc$  # Cancel cutter comp.
+           #n, "G40"
+
+ptplane$    # Output plane codes at PSOF, and PTLCHG
+           if tplnout = 0, ex$
+           planetest = rbuf(1,0)
+           if rc1<=planetest, plane$ = rbuf(1,rc1)
+             else, plane$ = 0
+           if plane$ >= 0, n$, *sgplane, e$
+              else, "ERROR - G18/G19 ARCS FOUND IN TOOLPATH SEGMENT",e$
+
+pwrtt$      # Write tool table, scans entire file, null tools are negative
+           if tplnout = 1, ttplane$ = wbuf(1,wc1)
+           tnote = t$
+           toffnote = tloffno$
+           tlngnote = tlngno$
+           #if t >= 0, "\", *tnote, " ", *toffnote, " ", *tlngnote, " ", *tldia, " ", *sopnote
+           if t$ >= 0, tcnt = tcnt + 1
+
+# --------------------------------------------------------------------------
+# Numbered questions for Mastercam --  Used by Mill 6
+# --------------------------------------------------------------------------
+38. Rapid feedrate? 300.0
+1538. Rapid feedrate (metric)? 10000.0
+
+#76. Name of associated cfg file?
+80. Communications port number for receive and transmit (1 or 2) ? 2
+81. Data rate (110,150,300,600,1200,2400,4800,9600,14400,19200,38400)? 300
+82. Parity (E/O/N)? E
+83. Data bits (7 or 8)? 7
+84. Stop bits (1 or 2)? 2
+85. Strip line feeds? N
+86. Delay after end of line (seconds)? 0
+87. Ascii, Eia, or Binary (A/E/B)? A
+88. Echo keyboard to screen in terminal emulation? n
+89. Strip carriage returns? N
+90. Drive and subdirectory for NC files?
+91. Name of executable post processor? MP
+92. Name of reverse post processor? RP
+93. Reverse post PST file name? RPFAN
+100. Number of places BEFORE the decimal point for sequence numbers? 0
+101. Number of places AFTER the decimal point for sequence numbers? 0
+103. Maximum spindle speed? 5000
+107. Average time for tool change (seconds)? 2.0
+#110. Default tool library? TOOLS.MTL
+161. Enable Home Position button? y
+162. Enable Reference Point button? n
+163. Enable Misc. Values button? y
+164. Enable Rotary Axis button? n
+165. Enable Tool Plane button? n
+166. Enable Construction Plane button? n
+167. Enable Tool Display button? y
+168. Check tplane during automatic work origin creation? n
+
+
+# --------------------------------------------------------------------------
+# Default Miscellaneous Real Values
+# -------------------------------------------------------------------------
+201. Default miscellaneous real variable 1 (mr1)? 0.0
+202. Default miscellaneous real variable 2 (mr2)? 0.0
+203. Default miscellaneous real variable 3 (mr3)? 0.0
+204. Default miscellaneous real variable 4 (mr4)? 0.0
+205. Default miscellaneous real variable 5 (mr5)? 0.0
+206. Default miscellaneous real variable 6 (mr6)? 0.0
+207. Default miscellaneous real variable 7 (mr7)? 0.0
+208. Default miscellaneous real variable 8 (mr8)? 0.0
+209. Default miscellaneous real variable 9 (mr9)? 0.0
+210. Default miscellaneous real variable 10 (mr10)? 0.0
+
+# --------------------------------------------------------------------------
+# Default Miscellaneous Real Values (METRIC)
+# --------------------------------------------------------------------------
+1601. Default miscellaneous real variable 1 (mr1) (metric)? 0.0
+1602. Default miscellaneous real variable 2 (mr2) (metric)? 0.0
+1603. Default miscellaneous real variable 3 (mr3) (metric)? 0.0
+1604. Default miscellaneous real variable 4 (mr4) (metric)? 0.0
+1605. Default miscellaneous real variable 5 (mr5) (metric)? 0.0
+1606. Default miscellaneous real variable 6 (mr6) (metric)? 0.0
+1607. Default miscellaneous real variable 7 (mr7) (metric)? 0.0
+1608. Default miscellaneous real variable 8 (mr8) (metric)? 0.0
+1609. Default miscellaneous real variable 9 (mr9) (metric)? 0.0
+1610. Default miscellaneous real variable 10 (mr10) (metric)? 0.0
+
+# --------------------------------------------------------------------------
+# Enable/Disable Miscellaneous Real Variable switches
+# --------------------------------------------------------------------------
+1611. Enable miscellaneous real variable 1? y
+1612. Enable miscellaneous real variable 2? y
+1613. Enable miscellaneous real variable 3? y
+1614. Enable miscellaneous real variable 4? y
+1615. Enable miscellaneous real variable 5? y
+1616. Enable miscellaneous real variable 6? y
+1617. Enable miscellaneous real variable 7? y
+1618. Enable miscellaneous real variable 8? y
+1619. Enable miscellaneous real variable 9? y
+1620. Enable miscellaneous real variable 10? y
+
+
+# --------------------------------------------------------------------------
+# Default Miscellaneous Integer Values
+# --------------------------------------------------------------------------
+301. Miscellaneous integer variable 1 (mi1)? 0
+302. Absolute or Incremental [0=ABS,1=INC] (mi2)? 0
+303. Miscellaneous integer variable 3 (mi3)? 0
+304. Miscellaneous integer variable 4 (mi4)? 0
+305. Miscellaneous integer variable 5 (mi5)? 0
+306. Miscellaneous integer variable 6 (mi6)? 0
+307. Miscellaneous integer variable 7 (mi7)? 0
+308. Miscellaneous integer variable 8 (mi8)? 0
+309. Miscellaneous integer variable 9 (mi9)? 0
+310. Miscellaneous integer variable 10 (mi10)? 0
+
+# --------------------------------------------------------------------------
+# Enable/Disable Miscellaneous Integer Variable switches
+# --------------------------------------------------------------------------
+1621. Enable miscellaneous integer variable 1? y
+1622. Enable miscellaneous integer variable 2? y
+1623. Enable miscellaneous integer variable 3? y
+1624. Enable miscellaneous integer variable 4? y
+1625. Enable miscellaneous integer variable 5? y
+1626. Enable miscellaneous integer variable 6? y
+1627. Enable miscellaneous integer variable 7? y
+1628. Enable miscellaneous integer variable 8? y
+1629. Enable miscellaneous integer variable 9? y
+1630. Enable miscellaneous integer variable 10? y
+
+
+# --------------------------------------------------------------------------
+# Configuration File association parameters (default is "y")
+# --------------------------------------------------------------------------
+#400. Name of associated cfg file?
+401. Read SYSTEM COLORS section? y
+402. Read ALLOCATIONS section? y
+403. Read TOLERANCES section? y
+404. Read DATA PATHS section? y
+405. Read COMMUNICATIONS section? y
+406. Read DRAFT SETTINGS section? y
+407. Read MISCELLANEOUS section? y
+408. Read NC SETTINGS section? y
+409. Read DIALOG SCRIPTS section? y
+410. Read DESIGN SETTINGS section? y
+411. Read PLOTTER SETTINGS section? y
+412. Read ALT-KEY ASSIGNMENTS section? y
+413. Read CAD section? y
+414. Read START/EXIT section? y
+415. Read SCREEN section? y
+416. Read FILE NAMES section? y
+
+1500. Chook to execute from 'Misc. values' button?
+1501. Insert parameter information in the ascii NCI? y
+1502. Write operation information to binary file (.ops)? n
+
+1520. Display a warning when cutter compensation in control simulation finds an error? n
+
+# Do NOT manually change the answer for Q.1999 !
+1999. Product major version number that post supports? 9
+
+3001. Machine acceleration? 2
+3002. timing size? .1
+
+[CTRL_TEXT_XML_BEGIN]  # Post text edits MUST be made with Control Definition Manager.
+<?xml version="1.0" encoding="UTF-8"?>
+<mp_xml_post_text xml:space="preserve">
+	<control>
+		<control_label>CTRL_MILL|DEFAULT</control_label>
+		<language>en-US</language>
+		<misc_integers>
+			<misc_2>
+				<text>Absolute or Incremental [0=ABS,1=INC]</text>
+			</misc_2>
+		</misc_integers>
+		<simple_drill>
+			<description>
+				<text>G81 Drilling Cycle</text>
+			</description>
+			<feed_rate>
+				<text>Feedrate</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>Initial height</text>
+			</clearance>
+			<retract>
+				<text>Reference height</text>
+			</retract>
+			<depth>
+				<text>Depth</text>
+			</depth>
+			<first_peck>
+				<text>""</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+			<shift>
+				<text>""</text>
+			</shift>
+		</simple_drill>
+		<peck_drill>
+			<description>
+				<text>G82 Peck Drilling Cycle</text>
+			</description>
+			<feed_rate>
+				<text>Feedrate</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>Initial height</text>
+			</clearance>
+			<retract>
+				<text>Reference height</text>
+			</retract>
+			<depth>
+				<text>Depth</text>
+			</depth>
+			<first_peck>
+				<text>Peck increment</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+			<shift>
+				<text>""</text>
+			</shift>
+		</peck_drill>
+		<chip_break>
+			<description>
+				<text>""</text>
+			</description>
+			<feed_rate>
+				<text>""</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>""</text>
+			</clearance>
+			<retract>
+				<text>""</text>
+			</retract>
+			<depth>
+				<text>""</text>
+			</depth>
+			<first_peck>
+				<text>""</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+			<shift>
+				<text>""</text>
+			</shift>
+		</chip_break>
+		<tap>
+			<description>
+				<text>""</text>
+			</description>
+			<feed_rate>
+				<text>""</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>""</text>
+			</clearance>
+			<retract>
+				<text>""</text>
+			</retract>
+			<depth>
+				<text>""</text>
+			</depth>
+			<first_peck>
+				<text>""</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+			<shift>
+				<text>""</text>
+			</shift>
+		</tap>
+		<bore1>
+			<description>
+				<text>""</text>
+			</description>
+			<feed_rate>
+				<text>""</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>""</text>
+			</clearance>
+			<retract>
+				<text>""</text>
+			</retract>
+			<depth>
+				<text>""</text>
+			</depth>
+			<first_peck>
+				<text>""</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+		</bore1>
+		<bore2>
+			<description>
+				<text>""</text>
+			</description>
+			<feed_rate>
+				<text>""</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>""</text>
+			</clearance>
+			<retract>
+				<text>""</text>
+			</retract>
+			<depth>
+				<text>""</text>
+			</depth>
+			<first_peck>
+				<text>""</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+		</bore2>
+		<misc1>
+			<description>
+				<text>""</text>
+			</description>
+			<feed_rate>
+				<text>""</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>""</text>
+			</clearance>
+			<retract>
+				<text>""</text>
+			</retract>
+			<depth>
+				<text>""</text>
+			</depth>
+			<first_peck>
+				<text>""</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+		</misc1>
+		<misc2>
+			<description>
+				<text>""</text>
+			</description>
+			<feed_rate>
+				<text>""</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>""</text>
+			</clearance>
+			<retract>
+				<text>""</text>
+			</retract>
+			<depth>
+				<text>""</text>
+			</depth>
+			<first_peck>
+				<text>""</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+		</misc2>
+		<simple_drill_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 1</text>
+			</description>
+		</simple_drill_custom_parameters>
+		<peck_drill_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 2</text>
+			</description>
+		</peck_drill_custom_parameters>
+		<chip_break_drill_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 3</text>
+			</description>
+		</chip_break_drill_custom_parameters>
+		<tap_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 4</text>
+			</description>
+		</tap_custom_parameters>
+		<bore1_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 5</text>
+			</description>
+		</bore1_custom_parameters>
+		<bore2_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 6</text>
+			</description>
+		</bore2_custom_parameters>
+		<misc1_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 7</text>
+			</description>
+		</misc1_custom_parameters>
+		<misc2_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 8</text>
+			</description>
+		</misc2_custom_parameters>
+		<drill_cycle_9_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 9</text>
+			</description>
+		</drill_cycle_9_custom_parameters>
+		<drill_cycle_10_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 10</text>
+			</description>
+		</drill_cycle_10_custom_parameters>
+		<drill_cycle_11_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 11</text>
+			</description>
+		</drill_cycle_11_custom_parameters>
+		<drill_cycle_12_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 12</text>
+			</description>
+		</drill_cycle_12_custom_parameters>
+		<drill_cycle_13_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 13</text>
+			</description>
+		</drill_cycle_13_custom_parameters>
+		<drill_cycle_14_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 14</text>
+			</description>
+		</drill_cycle_14_custom_parameters>
+		<drill_cycle_15_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 15</text>
+			</description>
+		</drill_cycle_15_custom_parameters>
+		<drill_cycle_16_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 16</text>
+			</description>
+		</drill_cycle_16_custom_parameters>
+		<drill_cycle_17_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 17</text>
+			</description>
+		</drill_cycle_17_custom_parameters>
+		<drill_cycle_18_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 18</text>
+			</description>
+		</drill_cycle_18_custom_parameters>
+		<drill_cycle_19_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 19</text>
+			</description>
+		</drill_cycle_19_custom_parameters>
+		<drill_cycle_20_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 20</text>
+			</description>
+		</drill_cycle_20_custom_parameters>
+		<drill_cycle_descriptions>
+			<simple_drill>
+				<text>G81 Drilling Cycle</text>
+			</simple_drill>
+			<peck_drill>
+				<text>G82 Peck Drilling Cycle</text>
+			</peck_drill>
+			<chip_break>
+				<text>""</text>
+			</chip_break>
+			<tapping>
+				<text>""</text>
+			</tapping>
+			<boring_1>
+				<text>""</text>
+			</boring_1>
+			<boring_2>
+				<text>""</text>
+			</boring_2>
+			<misc_drill_1>
+				<text>""</text>
+			</misc_drill_1>
+			<misc_drill_2>
+				<text>""</text>
+			</misc_drill_2>
+			<custom_drill_9>
+				<text>canned #8</text>
+			</custom_drill_9>
+			<custom_drill_10>
+				<text>canned #9</text>
+			</custom_drill_10>
+			<custom_drill_11>
+				<text>canned #10</text>
+			</custom_drill_11>
+			<custom_drill_12>
+				<text>canned #11</text>
+			</custom_drill_12>
+			<custom_drill_13>
+				<text>canned #12</text>
+			</custom_drill_13>
+			<custom_drill_14>
+				<text>canned #13</text>
+			</custom_drill_14>
+			<custom_drill_15>
+				<text>canned #14</text>
+			</custom_drill_15>
+		</drill_cycle_descriptions>
+		<canned_text>
+			<canned_text_1>
+				<text>Dwell</text>
+			</canned_text_1>
+			<canned_text_2>
+				<text>Text2</text>
+			</canned_text_2>
+			<canned_text_3>
+				<text>Text3</text>
+			</canned_text_3>
+			<canned_text_4>
+				<text>Text4</text>
+			</canned_text_4>
+			<canned_text_5>
+				<text>Text5</text>
+			</canned_text_5>
+			<canned_text_6>
+				<text>Text6</text>
+			</canned_text_6>
+			<canned_text_7>
+				<text>Text7</text>
+			</canned_text_7>
+			<canned_text_8>
+				<text>Text8</text>
+			</canned_text_8>
+			<canned_text_9>
+				<text>Text9</text>
+			</canned_text_9>
+			<canned_text_10>
+				<text>Text10</text>
+			</canned_text_10>
+		</canned_text>
+	</control>
+<control>
+		<control_label>CTRL_MILL|D&amp;M</control_label>
+		<language>en-US</language>
+		<misc_integers>
+			<misc_2>
+				<text>Absolute or Incremental [0=ABS,1=INC]</text>
+			</misc_2>
+		</misc_integers>
+		<simple_drill>
+			<description>
+				<text>G81 Drilling Cycle</text>
+			</description>
+			<feed_rate>
+				<text>Feedrate</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>Initial height</text>
+			</clearance>
+			<retract>
+				<text>Reference height</text>
+			</retract>
+			<depth>
+				<text>Depth</text>
+			</depth>
+			<first_peck>
+				<text>""</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+			<shift>
+				<text>""</text>
+			</shift>
+		</simple_drill>
+		<peck_drill>
+			<description>
+				<text>G82 Peck Drilling Cycle</text>
+			</description>
+			<feed_rate>
+				<text>Feedrate</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>Initial height</text>
+			</clearance>
+			<retract>
+				<text>Reference height</text>
+			</retract>
+			<depth>
+				<text>Depth</text>
+			</depth>
+			<first_peck>
+				<text>Peck increment</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+			<shift>
+				<text>""</text>
+			</shift>
+		</peck_drill>
+		<chip_break>
+			<description>
+				<text>""</text>
+			</description>
+			<feed_rate>
+				<text>""</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>""</text>
+			</clearance>
+			<retract>
+				<text>""</text>
+			</retract>
+			<depth>
+				<text>""</text>
+			</depth>
+			<first_peck>
+				<text>""</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+			<shift>
+				<text>""</text>
+			</shift>
+		</chip_break>
+		<tap>
+			<description>
+				<text>""</text>
+			</description>
+			<feed_rate>
+				<text>""</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>""</text>
+			</clearance>
+			<retract>
+				<text>""</text>
+			</retract>
+			<depth>
+				<text>""</text>
+			</depth>
+			<first_peck>
+				<text>""</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+			<shift>
+				<text>""</text>
+			</shift>
+		</tap>
+		<bore1>
+			<description>
+				<text>""</text>
+			</description>
+			<feed_rate>
+				<text>""</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>""</text>
+			</clearance>
+			<retract>
+				<text>""</text>
+			</retract>
+			<depth>
+				<text>""</text>
+			</depth>
+			<first_peck>
+				<text>""</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+		</bore1>
+		<bore2>
+			<description>
+				<text>""</text>
+			</description>
+			<feed_rate>
+				<text>""</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>""</text>
+			</clearance>
+			<retract>
+				<text>""</text>
+			</retract>
+			<depth>
+				<text>""</text>
+			</depth>
+			<first_peck>
+				<text>""</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+		</bore2>
+		<misc1>
+			<description>
+				<text>""</text>
+			</description>
+			<feed_rate>
+				<text>""</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>""</text>
+			</clearance>
+			<retract>
+				<text>""</text>
+			</retract>
+			<depth>
+				<text>""</text>
+			</depth>
+			<first_peck>
+				<text>""</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+		</misc1>
+		<misc2>
+			<description>
+				<text>""</text>
+			</description>
+			<feed_rate>
+				<text>""</text>
+			</feed_rate>
+			<dwell>
+				<text>""</text>
+			</dwell>
+			<clearance>
+				<text>""</text>
+			</clearance>
+			<retract>
+				<text>""</text>
+			</retract>
+			<depth>
+				<text>""</text>
+			</depth>
+			<first_peck>
+				<text>""</text>
+			</first_peck>
+			<subsequent_peck>
+				<text>""</text>
+			</subsequent_peck>
+			<peck_clearance>
+				<text>""</text>
+			</peck_clearance>
+			<retract_amount>
+				<text>""</text>
+			</retract_amount>
+		</misc2>
+		<simple_drill_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 1</text>
+			</description>
+		</simple_drill_custom_parameters>
+		<peck_drill_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 2</text>
+			</description>
+		</peck_drill_custom_parameters>
+		<chip_break_drill_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 3</text>
+			</description>
+		</chip_break_drill_custom_parameters>
+		<tap_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 4</text>
+			</description>
+		</tap_custom_parameters>
+		<bore1_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 5</text>
+			</description>
+		</bore1_custom_parameters>
+		<bore2_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 6</text>
+			</description>
+		</bore2_custom_parameters>
+		<misc1_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 7</text>
+			</description>
+		</misc1_custom_parameters>
+		<misc2_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 8</text>
+			</description>
+		</misc2_custom_parameters>
+		<drill_cycle_9_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 9</text>
+			</description>
+		</drill_cycle_9_custom_parameters>
+		<drill_cycle_10_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 10</text>
+			</description>
+		</drill_cycle_10_custom_parameters>
+		<drill_cycle_11_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 11</text>
+			</description>
+		</drill_cycle_11_custom_parameters>
+		<drill_cycle_12_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 12</text>
+			</description>
+		</drill_cycle_12_custom_parameters>
+		<drill_cycle_13_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 13</text>
+			</description>
+		</drill_cycle_13_custom_parameters>
+		<drill_cycle_14_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 14</text>
+			</description>
+		</drill_cycle_14_custom_parameters>
+		<drill_cycle_15_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 15</text>
+			</description>
+		</drill_cycle_15_custom_parameters>
+		<drill_cycle_16_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 16</text>
+			</description>
+		</drill_cycle_16_custom_parameters>
+		<drill_cycle_17_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 17</text>
+			</description>
+		</drill_cycle_17_custom_parameters>
+		<drill_cycle_18_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 18</text>
+			</description>
+		</drill_cycle_18_custom_parameters>
+		<drill_cycle_19_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 19</text>
+			</description>
+		</drill_cycle_19_custom_parameters>
+		<drill_cycle_20_custom_parameters>
+			<description>
+				<text>Custom Drill Parameters 20</text>
+			</description>
+		</drill_cycle_20_custom_parameters>
+		<drill_cycle_descriptions>
+			<simple_drill>
+				<text>G81 Drilling Cycle</text>
+			</simple_drill>
+			<peck_drill>
+				<text>G82 Peck Drilling Cycle</text>
+			</peck_drill>
+			<chip_break>
+				<text>""</text>
+			</chip_break>
+			<tapping>
+				<text>""</text>
+			</tapping>
+			<boring_1>
+				<text>""</text>
+			</boring_1>
+			<boring_2>
+				<text>""</text>
+			</boring_2>
+			<misc_drill_1>
+				<text>""</text>
+			</misc_drill_1>
+			<misc_drill_2>
+				<text>""</text>
+			</misc_drill_2>
+			<custom_drill_9>
+				<text>canned #8</text>
+			</custom_drill_9>
+			<custom_drill_10>
+				<text>canned #9</text>
+			</custom_drill_10>
+			<custom_drill_11>
+				<text>canned #10</text>
+			</custom_drill_11>
+			<custom_drill_12>
+				<text>canned #11</text>
+			</custom_drill_12>
+			<custom_drill_13>
+				<text>canned #12</text>
+			</custom_drill_13>
+			<custom_drill_14>
+				<text>canned #13</text>
+			</custom_drill_14>
+			<custom_drill_15>
+				<text>canned #14</text>
+			</custom_drill_15>
+		</drill_cycle_descriptions>
+		<canned_text>
+			<canned_text_1>
+				<text>Dwell</text>
+			</canned_text_1>
+			<canned_text_2>
+				<text>Text2</text>
+			</canned_text_2>
+			<canned_text_3>
+				<text>Text3</text>
+			</canned_text_3>
+			<canned_text_4>
+				<text>Text4</text>
+			</canned_text_4>
+			<canned_text_5>
+				<text>Text5</text>
+			</canned_text_5>
+			<canned_text_6>
+				<text>Text6</text>
+			</canned_text_6>
+			<canned_text_7>
+				<text>Text7</text>
+			</canned_text_7>
+			<canned_text_8>
+				<text>Text8</text>
+			</canned_text_8>
+			<canned_text_9>
+				<text>Text9</text>
+			</canned_text_9>
+			<canned_text_10>
+				<text>Text10</text>
+			</canned_text_10>
+		</canned_text>
+	</control>
+</mp_xml_post_text>
+[CTRL_TEXT_XML_END]

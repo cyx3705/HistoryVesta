@@ -1,0 +1,815 @@
+[POST_VERSION] #DO NOT MOVE OR ALTER THIS LINE# V22.00 P0 E1 W22.00 T1550094717 M22.00 I0 O0
+scncpost_revision     := "22.80" # Internal revision number for use by CNC Software only.  Please do not change this number.
+scustpost_revision    := "0"  # Revision number for use by Resellers or customers.
+# Post Name           : Mill2.set
+# Product             : Mill
+# Machine Name        : Generic
+# Control Name        : Generic
+# Description         : Generic setup sheet for Mill, outputs simple operation list
+# 4-axis/Axis subs.   : No
+# 5-axis              : No
+# Executable          : mp.dll
+#
+# WARNING: THIS POST IS GENERIC AND IS INTENDED FOR MODIFICATION TO
+# THE MACHINE TOOL REQUIREMENTS AND PERSONAL PREFERENCE.
+#
+# --------------------------------------------------------------------------
+# Revision log:
+# --------------------------------------------------------------------------
+# CNC 04/28/05  -  Initial Setup for Version X.
+# CNC 11/15/05  -  Modified header section and layout, added new functionality
+# CNC 01/20/06  -  Fixed buffer logic to correctly handle null toolchanges
+# CNC 02/22/06  -  Added switch for operation description output
+#               -  Reworked information output by various tool paths
+# CNC 03/14/06  -  Modified pdrillcyc to use nextdc$ rather than drillcyc$
+# CNC 06/26/06  -  Initial post setup for Mastercam X2
+# CNC 10/31/07  -  Added sub_level$ override to pprep$
+# CNC 12/18/07  -  Modified EOB (End of Block) in pprep$ postblock
+# CNC 04/08/08  -  X3 release - no changes made
+# CNC 01/22/09  -  Initial post update for Mastercam X4
+# CNC 02/03/10  -  Initial post update for Mastercam X5
+# CNC 08/17/10  -  Removed CD_VAR variables
+# CNC 05/20/11  -  Initial post update for Mastercam X6
+# CNC 10/16/12  -  Initial post update for Mastercam X7
+# CNC 02/06/14  -  Initial post update for Mastercam X8
+# CNC 12/23/14  -  Initial post update for Mastercam X9
+# CNC 11/09/15  -  Initial post update for Mastercam 2017
+# CNC 10/14/16  -  Initial post update for Mastercam 2018
+# CNC 04/24/17  -  (20.80) Initial revision number assigned.
+#               -  Removed [CTRL_TEXT_END] - Not needed for Mastercam 2018
+# CNC 09/13/17  -  (21.80) Initial post update for Mastercam 2019
+# CNC 02/14/19  -  (22.80) Initial post update for Mastercam 2020
+#
+# --------------------------------------------------------------------------
+# Features:
+# --------------------------------------------------------------------------
+# This post supports output for 3 and 4 axis milling.
+# It is designed to support the features of Mastercam X Mill.
+#
+# NEW FEATURES FOR X:
+# - Supports X comments including machine name, group name and group comment output (see pcomment2)
+#     Output of these comments is controlled by setting outputxcom in the Optional Output Settings area.
+# - Enhanced output control via post switches (see Optional Output Settings area)
+#
+# --------------------------------------------------------------------------
+# Misc. Values:
+# --------------------------------------------------------------------------
+# Integers:
+#
+# mi1 - mi10 (NOT USED)
+#
+# Reals:
+#
+# mr1 - mr10 (NOT USED)
+#
+# --------------------------------------------------------------------------
+# Additional Notes:
+# --------------------------------------------------------------------------
+# File extension (.doc) is set internally in MP.  Use pprep$ postblock to override this setting.
+#
+# Rapid traverse times are determined by maximum rapid feedrates set in the selected Machine Definition
+# Time estimates will be wrong if these settings are incorrect.
+#
+# END_HEADER$
+#
+# --------------------------------------------------------------------------
+# Debugging and Factory Set Program Switches
+# --------------------------------------------------------------------------
+# Define constants
+m_one        := -1
+zero         := 0
+one          := 1
+two          := 2
+three        := 3
+four         := 4
+five         := 5
+c9k          := 9999
+m_c9k        := -99999
+
+bug1$        : 2     #0=No display, 1=Generic list box, 2=Editor
+bug4$        : 1     #Debug output with the tilde '~'.
+                     #A value greater the zero applies the variable formatting with
+                     #debug output (default is typically FS 1 but not a guarantee).
+                     #A value of zero gets the value directly with NO formatting.
+
+linktolvar$  : 0     #Associate X tolerance variables to V9- variable?
+linkplnvar$  : 1     #Associate X plane specific variables to V9- variable?
+
+skp_lead_flgs$ : 0   #Do NOT use v9+ style contour flags
+get_1004$    : 0     #Find gcode 1004 with getnextop?
+rpd_typ_v7$  : 0     #Use Version 7 style contour flags/processing?
+strtool_v7$  : 2     #Use Version 7+ toolname?
+tlchng_aft$  : 2     #Delay call to toolchange until move line
+cant_tlchng$ : 1     #Ignore cantext entry on move with tlchng_aft
+newglobal$   : 1     #Error checking for global variables
+getnextop$   : 1     #Build the next variable table
+tooltable$   : 3     #Pre-read, call the pwrtt postblock (DO NOT CHANGE!)
+
+# --------------------------------------------------------------------------
+# General Output Settings
+# --------------------------------------------------------------------------
+linarc$      : yes$  #Linearize arcs? (DO NOT CHANGE!)
+progname$    : 1     #Use uppercase for program name (sprogname)
+
+# --------------------------------------------------------------------------
+# Optional Output Settings
+# --------------------------------------------------------------------------
+output_comments : yes$  #Output Operation Comments in tool list?
+output_optype   : yes$  #Output operation type in tool list?
+
+outputxcom   : yes$  #Output new X comments? (Machine name, Group comment, Group name)
+
+xyz_limits   : 2     #Output Max/Min X,Y,Z information?
+                     #0 = Do NOT output ANY Max/Min X,Y,Z information.
+                     #1 = Output Max/Min X,Y,Z info. ONLY for EACH tool (not Program)
+                     #2 = Output Max/Min X,Y,Z info. ONLY for entire Program
+                     #3 = Output Max/Min X,Y,Z info. for EACH tool AND Program (if > 1 tool)
+
+# Individual axis output (if xyz_limits > 0)
+X_limits     : yes$  #Output Max/Min values for the X axis?
+Y_limits     : yes$  #Output Max/Min values for the Y axis?
+Z_limits     : yes$  #Output Max/Min values for the Z axis?
+
+# Specific setting to allow tuning the cycle time calculations
+# Set the time it takes for machine to do a toolchange
+tlchgtime    : 0.1   #Tool Change Time (* in Minutes *)
+
+time_est     : 3     #Output operation and/or cycle times?
+                     #0 = Do NOT output time estimates (including det_time estimates below)
+                     #1 = Output operation time ONLY for EACH tool (not Program)
+                     #2 = Output comeplete cycle time ONLY for entire Program
+                     #3 = Output operation time for EACH tool AND cycle time for Program (if > 1 tool)
+
+# The 'det_time' switch allows selecting the output of "Detailed Times".
+# In addition to the usual 'Cycle Time' you can get the time spent at
+# RAPID and at FEEDRATE during the program.
+# *IMPORTANT* -
+# Note that the Program TOTAL TIME includes the Toolchange time(s),
+# so it will be longer than the Total RAPID time + Total FEED time!
+det_time     : 2     #Output Rapid/Feedrate times? (Requires time_est > 0)
+                     #0 = Do NOT output ANY Rapid/Feedrate time breakdown.
+                     #1 = Output Rapid/Feedrate times ONLY for EACH tool (not Program)
+                     #2 = Output Rapid/Feedrate times ONLY at end for entire program
+                     #3 = Output Rapid/Feedrate times for EACH tool AND Program (if > 1 tool)
+
+fr_limits    : 2     #Output Max/Min Feedrate information?
+                     #0 = Do NOT output ANY Max/Min Feedrate information.
+                     #1 = Output Max/Min Feedrate info. ONLY for EACH tool (not Program)
+                     #2 = Output Max/Min Feedrate info. ONLY at end for entire program
+                     #3 = Output Max/Min Feedrate info. for EACH tool AND Program (if > 1 tool)
+
+show_lengths : 2     #Output Feed/Rapid path length information?
+                     #0 = Do NOT output ANY Feed/Rapid path length information.
+                     #1 = Output Feed/Rapid path length info. ONLY for EACH tool (not Program)
+                     #2 = Output Feed/Rapid path length info. ONLY at end for entire program
+                     #3 = Output Feed/Rapid path length info. for EACH tool AND Program (if > 1 tool)
+
+stock_info   : yes$  #Display stock material and size/location?
+
+# --------------------------------------------------------------------------
+# Common User-defined Variable Initializations (not switches!)
+# --------------------------------------------------------------------------
+drlgsel      : -1    #Selector variable for drill cycle string
+tol          : 0.0001#Tolerence for feed rates set to zero
+ttltime      : 0     #Total operation time
+tltime       : 0     #Feed time
+trtime       : 0     #Rapid time
+total        : 0     #Total machine time
+tot_ltime    : 0     #Total FEED time
+tot_rtime    : 0     #Total RAPID time
+len          : 0     #Length for calculation
+dx           : 0     #Delta x
+dy           : 0     #Delta y
+dz           : 0     #Delta z
+result       : 0     #Test Variable
+tool_end     : no$   #End flag when scanning for CDC settings at Null tlchgs
+toolop       : 0     #Modified tool_op$ for string selector lookup
+
+# --------------------------------------------------------------------------
+#String and string selector definitions for NC output
+# --------------------------------------------------------------------------
+#Spacing strings
+spaceit      : ""    #0 or 1 spaces depending on Inch/Metric output format
+space1       : " "   #1 space
+scommentspc  : "                                    "  #Space for comments
+
+#Seperator lines
+sepline      : "--------------------------------------------------------------"
+sepline2     : "========================================="
+sepline3     : "=============================================================="
+
+#Comment strings
+snull        : ""    #Null string
+smachname    : ""    #Machine name
+sgrpcomm     : ""    #Group comment
+sgrpname     : ""    #Group name
+sopcomment   : ""    #Operation comment
+
+soptype      : ""    #Surface machining operation type
+# --------------------------------------------------------------------------
+# General String select tables
+# --------------------------------------------------------------------------
+#Select operation note
+sop00   : "Null"
+sop01   : "Contour"
+sop02   : "Contour"
+sop03   : "Drill Cycle - "
+sop04   : "Pocket"
+sop05   : "Ruled"
+sop06   : "2D-Swept"
+sop07   : "3D-Swept"
+sop08   : "Revolved"
+sop09   : "Loft"
+sop10   : "Coons"
+sop11   : "Trim "
+sop12   : "Flowline"
+sop13   : "Surface Finish "
+sop14   : "Surface Rough "
+sop15   : "Point"
+sop16   : "Drill-5ax"
+sop17   : "Curve-5ax"
+sop18   : "Swarf-5ax"
+sop19   : "Facing"
+sop20   : "OP20?"
+sopnote : ""         #Target string
+
+fstrsel sop00 opcode$ sopnote 21 -1
+# --------------------------------------------------------------------------
+#Select drill operation note
+sdr00   : "Simple"       #drill - no dwell
+sdrd0   : "Counterbore"  #drill - with dwell
+sdr01   : "Peck"         #peck drill - no dwell
+sdrd1   : "Peck"         #peck drill - with dwell
+sdr02   : "Chip Break"   #chip break - no dwell
+sdrd2   : "Chip Break"   #chip break - with dwell
+sdr03   : "Tap"          #tap - right hand
+sdrd3   : "Tap"          #tap - left hand
+sdr04   : "Simple Bore"  #bore #1 - no dwell
+sdrd4   : "Bore W/Dwell" #bore #1 - with dwell
+sdr05   : "Bore W/Stop"  #bore #2 - no dwell
+sdrd5   : "Bore W/Stop"  #bore #2 - with dwell
+sdr06   : "Misc_1"       #misc #1 - no dwell
+sdrd6   : "Misc_1"       #misc #1 - with dwell
+sdr07   : "Misc_2"       #misc #2 - right hand
+sdrd7   : "Misc_2"       #misc #2 - left hand
+sdrillcyc : ""           #Target string
+
+fstrsel sdr00 drlgsel sdrillcyc 16 -1
+# --------------------------------------------------------------------------
+#Surface toolpath type selector
+sfin0   : "" #Leave blank
+sfin5   : "Parallel"
+sfin6   : "Radial"
+sfin7   : "Project"
+sfin8   : "Flowline"
+sfin9   : "Contour"
+sfin10  : "Pocket"
+sfin11  : "Parallel"
+sfin12  : "Radial"
+sfin13  : "Project"
+sfin14  : "Flowline"
+sfin15  : "Contour"
+sfin39  : "Pencil"
+sfin40  : "Leftover"
+sfin41  : "Parallel Steep"
+sfin42  : "Shallow"
+sfin43  : "Scallop"
+sfin44  : "Plunge"
+sfin107 : "Restmill"
+sfin108 : ""
+sfin109 : "Blend"
+ssurftype : ""       #Target string
+
+fstrsel sfin0 toolop ssurftype 21 -1
+# --------------------------------------------------------------------------
+#Select stock orientation note
+stk0    : "At Center, Z at Top"
+stk1    : "Upper Left corner, Z at Top"
+stk2    : "Upper Right corner, Z at Top"
+stk3    : "Lower Right corner, Z at Top"
+stk4    : "Lower Left corner, Z at Top"
+stk5    : "Upper Left corner, Z at Bottom"
+stk6    : "Upper Right corner, Z at Bottom"
+stk7    : "Lower Right corner, Z at Bottom"
+stk8    : "Lower Left corner, Z at Bottom"
+stknote : ""         #Target string
+
+fstrsel stk0 stck_crnr$ stknote 9 -1
+# --------------------------------------------------------------------------
+# Month selector
+smon0   : ""
+smon1   : "Jan."
+smon2   : "Feb."
+smon3   : "Mar."
+smon4   : "Apr."
+smon5   : "May."
+smon6   : "Jun."
+smon7   : "Jul."
+smon8   : "Aug."
+smon9   : "Sep."
+smon10  : "Oct."
+smon11  : "Nov."
+smon12  : "Dec."
+smonth  : ""         #Target string
+
+fstrsel smon0 month$ smonth 13 -1
+# --------------------------------------------------------------------------
+# Format statements - n=nonmodal, l=leading, t=trailing, i=inc, d=delta
+# --------------------------------------------------------------------------
+fs2  1  0.4 0.3      #Decimal, absolute, 4/3 place, default for initialize (:)
+fs2  2  0.4 0.3n     #Decimal, absolute, 4/3 place, non-modal
+fs2  3  1 0 1 0n     #Integer, not leading, non-modal
+fs2  4  0.2 0.2n     #Decimal, absolute, 2 place, non-modal
+fs2  5  1.4 1.3ltn   #Decimal, absolute, 4/3 place, leading&trailing, non-modal
+fs2  6 +1.4 1.3ltn   #Decimal, absolute, 4/3 place, leading&trailing with SIGN
+fs2  7  0.4 0.3ltn   #Decimal, 4/3 place, trailing, non-modal
+fs2  8  0^2 0^2n     #Decimal, 2 place, omit decimal if whole number, non-modal
+fs2  9  4 0 4 0l     #Integer, force four leading
+
+# These formats used for 'Date' & 'Time'
+fs2 17  1 0 1 0      #Integer, not leading
+fs2 18  2.2 2.2lt    #Decimal, force two leading & two trailing (time2)
+fs2 19  2 0 2 0t     #Integer, force trailing                   (hour)
+fs2 20  0 2 0 2lt    #Integer, force leading & trailing         (min)
+
+# --------------------------------------------------------------------------
+# Format assignments
+# --------------------------------------------------------------------------
+fmt     9   progno$     #Program number
+fmt     3   t$          #Tool number
+fmt     7   tldia$      #Tool diameter
+fmt     7   tcr$        #Tool corner radius
+fmt     3   tloffno$    #Diameter offset number
+fmt     3   tlngno$     #Length offset number
+fmt     3   ss$         #Spindle speed
+fmt     4   fr_pos$     #Feedrate
+fmt     2   llen        #Feed cut length
+fmt     2   rlen        #Rapid traverse cut length
+fmt     2   llen_total  #Feed cut length (program total)
+fmt     2   rlen_total  #Rapid traverse cut length (program total)
+fmt     2   total       #Total part time
+fmt     2   ttltime     #Total operation time
+fmt     3   thrs        #Time in hours
+fmt     3   tmin        #Time in minutes
+fmt     8   tsec        #Time in seconds
+fmt     3   tcnt        #Tool Counter
+fmt     3   custcycle   #Custom Cycle number
+fmt     4   tmax_fr     #Max Feedrate in current Tool
+fmt     4   tmin_fr     #Min Feedrate in current Tool
+fmt     4   pmax_fr     #Max Feedrate in Program
+fmt     4   pmin_fr     #Min Feedrate in Program
+fmt  "X" 7  stck_ht$    #X - Stock Height
+fmt  "Y" 7  stck_wdth$  #Y - Stock Width
+fmt  "Z" 7  stck_thck$  #Z - Stock Thickness
+fmt  "X" 2  stck_x$     #X origin of block
+fmt  "Y" 2  stck_y$     #Y origin of block
+fmt  "Z" 2  stck_z$     #Z origin of block
+fmt     2   stck_crnr$  #Origin corner of stock
+# --------------------------------------------------------------------------
+#Format the variables used to output the X,Y,Z Max/Min values
+fmt     6   max_Xpos
+fmt     6   min_Xpos
+fmt     6   max_Ypos
+fmt     6   min_Ypos
+fmt     6   max_Zpos
+fmt     6   min_Zpos
+# --------------------------------------------------------------------------
+fmt     17  year2       #Calculated year value
+fmt     18  time2       #Capture 24-hour time value into 'time2' variable
+fmt     19  hour        #Hour
+fmt     20  min         #Minutes
+year2 = year$ + 2000
+
+# --------------------------------------------------------------------------
+# Tool Comment / Manual Entry Section
+# --------------------------------------------------------------------------
+pcomment$        #Comment from manual entry (must call pcomment2)
+      pcomment2  #Required if doing boolean 'if' logic testing!
+
+pcomment2        #Output Comment from manual entry
+      sopcomment = snull
+      #scomm$ = ucase(scomm$)
+      if gcode$ = 1051, smachname = scomm$   #Machine name
+      if gcode$ = 1052, sgrpcomm = scomm$    #Group comment
+      if gcode$ = 1053, sgrpname = scomm$    #Group name
+      if gcode$ = 1008, sopcomment = scomm$  #Operation comment
+
+psurfop          #Output surface machining operation type if programmed
+      if opcode$ = 13 | opcode$ = 14,
+        [
+        if tool_op$ < 16, toolop = tool_op$ - 4
+        if tool_op$ > 38 & tool_op$ < 45, toolop = tool_op$ - 27
+        if tool_op$ > 106 & tool_op$ < 110, toolop = tool_op$ - 89
+        *ssurftype
+        ]
+
+pdrillcyc        #Output drillcycle type note if canned cycle was programmed
+      if opcode$ = three,
+        [
+        if nextdc$ = three | nextdc$ = 7, drlgsel = fsg1(-ss$) + nextdc$ * two
+        else, drlgsel = fsg2(dwell$) + nextdc$ * two
+        if drlgsel > 15,  #Custom canned cycle was programmed
+          [
+          custcycle = drlgsel - 7  #Shift it
+          "Custom Cycle ", 35, *custcycle
+          ]
+        else, *sdrillcyc
+        ]
+
+# --------------------------------------------------------------------------
+# Start of File and Toolchange Setup
+# --------------------------------------------------------------------------
+ptimecalc        #Convert 24-hour time format into 12-hour AM/PM format
+      if time$ >= 13, time2 = (time$ - 12)
+      else, time2 = time$
+      hour = int(time2), min = frac(time2)
+      *hour, ":", *min,
+      if time$ > 12, " PM"
+      else, " AM"
+
+pheader$         #Call before start of file
+      if pst_rpd_fr$ <= 0, pst_rpd_fr$ = 300  #Make it greater than ZERO !
+      if met_tool$ = one, spaceit = space1    #1 additional space for Metric output format
+      tmax_fr = fr_pos$  #Initialize (max fr used in current tool)
+      tmin_fr = fr_pos$  #Initialize (min fr used in current tool)
+      pmax_fr = fr_pos$  #Initialize (max fr used in program)
+      pmin_fr = fr_pos$  #Initialize (min fr used in program)
+      "Customizable Mill Setup Sheet - MILL2.SET", e$
+      sepline2, e$
+      " ", e$  #Blank line
+      "Program Name   = ", *sprogname$, e$
+      if progno$ > zero, "Program Number = ", *progno$, e$
+      #Date/Time output
+      #"Date Processed = ", month$, "-", day$, "-", year$, e$   #Date output as month,day,year - Ex. 02-12-05
+      "Date Processed = ", *smonth, " ", day$, " ", *year2, e$  #Date output as month,day,year - Ex. Feb. 12 2005
+      #"Date Processed (DD-MM-YY) = ", date$, " Time(HH:MM) = ", time$, e$  #Date and time output Ex. 12-02-05 15:52
+      #"Time           = ", time$, e$                           #24 hour time output - Ex. 15:52
+      "Time           = ", ptimecalc, e$                        #12 hour time output 3:52 PM
+      pstock_info  #Stock information output
+      comment$
+      if outputxcom,  #If start of file and outputxcom = yes$
+        [
+        if smachname <> snull, "Machine Name   = ", smachname, e$  #Machine name
+        if sgrpcomm <> snull, "Group Comment  = ", sgrpcomm, e$    #Group comment
+        if sgrpname <> snull, "Group Name     = ", sgrpname, e$    #Group name
+        ]
+      " ", e$  #Blank line
+      "                    Tool List", e$
+      "                    ---------", e$
+      " ", e$  #Blank line
+      "Num.  Dia.   Len.  CRC   Max Depth  Description/Comments", e$
+
+psof0$           #Start of file for tool zero
+      psof$
+
+psof$            #Start of file for non-zero tool number
+      psetup  #Call for toolchange info output
+      !op_id$
+
+ptlchg0$         #Call from NCI null tool change (tool number repeats)
+      !gcode$
+      if op_id$ <> prv_op_id$, ptlchg$
+      !op_id$
+
+ptlchg$          #Tool change - Output of time calculations for the last tool run
+      if op_id$ = prv_op_id$, ex$
+      ptooldata          #Total ending data for tool (Path Length and Times)
+      tmax_fr = fr_pos$  #Initialize (max fr used in current tool)
+      tmin_fr = fr_pos$  #Initialize (min fr used in current tool)
+      comment$
+      psetup             #Call for toolchange info output
+      !op_id$
+
+peof0$           #End of file for tool zero
+      peof$
+
+peof$            #End of file for non-zero tool - Output of time calculations for the last tool and total time
+      ptooldata  #Total ending data for tool (Path Length and Times)
+      #Supress Program totals if only one tool or no output selected
+      if tcnt > one & (fr_limits | xyz_limits | show_lengths | time_est),
+        [
+        sepline3, e$
+        " ", e$  #Blank line
+        "Program Totals (", *tcnt, " Tools):", e$
+        sepline, e$  #Output the separator '----' line
+
+        #Output Max/Min Feedrate information
+        if fr_limits = two | fr_limits = three,
+          [
+          "Feedrates: Max = ", *pmax_fr, "  Min = ", *pmin_fr, e$
+          #sepline, e$  #Output the separator '----' line
+          ]
+
+        #Output Max/Min X,Y,Z information
+        if xyz_limits = two | xyz_limits = three,
+          [
+          preadbuf1e   #Read Buffer 1 (get X,Y,Z extents of entire program)
+          pMaxMin      #Output Max/Min X,Y,Z coords for entire program
+          #sepline, e$  #Output the separator '----' line
+          ]
+
+        #Output Feed/Rapid path lengths
+        if show_lengths = two | show_lengths = three,
+          [
+          "Total Feed Cut Length = ", *llen_total, e$
+          "Total Rapid Traverse Length = ", *rlen_total, e$
+          #sepline, e$  #Output the separator '----' line
+          ]
+
+        #Output Rapid/Feedrate times
+        if time_est > 0 & (det_time = two | det_time = three),
+          [
+          ttltime = tot_rtime
+          "Total Rapid Time = ", ptimeout, e$
+          ttltime = tot_ltime
+          "Total Feed  Time = ", ptimeout, e$
+          #sepline, e$  #Output the separator '----' line
+          ]
+
+        #Output Cycle Time information
+        if time_est = two | time_est = three,
+          [
+          ttltime = total                #Transfer TOTAL program time
+          "Cycle Time = ", ptimeout, e$  #Program Total time output
+          ]
+        ]
+
+ptspace          #Creates spaces based on tool number
+      if t$ < 10, space1
+
+phspace          #Creates spaces based on length offset number
+      if tlngno$ < 10, space1
+
+pdspace          #Creates spaces based on diameter offset number
+      if tloffno$ < 10, space1
+
+pdiamspc         #Creates spaces based on diameter offset number
+      if tldia$ < 10, space1
+
+psetup           #Output of toolchange information
+      !gcode$
+      tcnt = tcnt + one  #Tool Counter
+      preadbuf1t     #Read Buffer 1 (get XYZ extents)
+      sepline, e$  #Output the separator '----' line
+      ptspace, *t$, "  ", pdiamspc, *tldia$, "  ", spaceit, phspace, *tlngno$,
+        "    ", pdspace, *tloffno$, "   ", min_Zpos, "   ", *strtool$, e$
+      sepline, e$  #Output the separator '----' line
+      if output_optype,
+        [
+        "Operation Type = "
+        if tool_op$ = 16, "C-Hook Created Operation", e$
+        else,
+          [
+          if tool_op$ = 132, "Surface High Speed", e$
+          else, *sopnote, pdrillcyc, psurfop, e$
+          ]
+        ]
+      if output_comments & sopcomment <> snull, scommentspc, sopcomment, e$  #Operation comment
+      #sepline, e$     #Output the separator '----' line
+      llen = zero     #Reset counter for next tool
+      rlen = zero     #Reset counter for next tool
+      tltime = zero   #Reset counter for next tool
+      trtime = zero   #Reset counter for next tool
+      ttltime = zero  #Reset counter for next tool
+      x$ = xh$, y$ = yh$, z$ = zh$
+      !x$, !y$, !z$, !fr_pos$  #Update previous [prv_?] variables
+
+ptooldata        #Total ending data for tool (Path Length and Times)
+      #Output Max/Min Feedrate used during prior toolpath
+      if opcode$ <> three & (fr_limits = one | fr_limits = three),
+        [
+        "Feedrates: Max = ", tmax_fr, " Min = ", tmin_fr, e$
+        #"MAX FEEDRATE IN TOOLPATH = ", tmax_fr, e
+        #"MIN FEEDRATE IN TOOLPATH = ", tmin_fr, e
+        #sepline, e$  #Output the separator '----' line
+        ]
+
+      #Output Max/Min X,Y,Z information
+      if xyz_limits = one | xyz_limits = three,
+        [
+        pMaxMin      #Output Max/Min X,Y,Z coords during this tool operation
+        #sepline, e$  #Output the separator '----' line
+        ]
+
+      #Output Feed/Rapid path lengths
+      if show_lengths = one | show_lengths = three,
+        [
+        "Tool Feed Cut Length = ", *llen, e$
+        "Tool Rapid Traverse Length = ", *rlen, e$
+        #sepline, e$  #Output the separator '----' line
+        ]
+      llen_total = llen_total + llen  #Keep running total for Program
+      rlen_total = rlen_total + rlen  #Keep running total for Program
+
+      #Output Rapid/Feedrate times
+      if time_est > 0 & (det_time = one | det_time = three),
+        [
+        ttltime = trtime
+        "Rapid Time = ", ptimeout, e$  #Time at RAPID RATE (for last tool)
+        ttltime = tltime
+        "Feed Time  = ", ptimeout, e$  #Time at FEEDRATE (for last tool)
+        #sepline, e$  #Output the separator '----' line
+        ]
+
+      pttltime  #Total tool times
+      #Output Cycle Time information
+      if time_est = one | time_est = three,
+        [
+        "Operation Time = ", ptimeout, e$  #This operations time output
+        #sepline, e$  #Output the separator '----' line
+        ]
+
+pthrminsec       #Convert minutes to hr/min/sec format
+      thrs = int(ttltime / 60)
+      tmin = int(ttltime - thrs * 60)
+      tsec = (ttltime - thrs * 60 - tmin) * 60
+
+pttltime         #Total tool times and total program time
+      tot_ltime = tot_ltime + tltime      #Total FEED time
+      tot_rtime = tot_rtime + trtime      #Total RAPID time
+      ttltime = tltime + trtime           #Calc. current Tool Time
+      total = ttltime + total + tlchgtime #Calc. total Program Time
+
+ptimeout         #Output "times"
+      pthrminsec  #Convert minutes to hr/min/sec format
+      #Output 'HOURS'
+      if thrs = one, *thrs, " Hour, "
+      if thrs > one, *thrs, " Hours, "
+      #Output 'MINUTES'
+      if tmin = one, *tmin, " Minute, "
+      if tmin > one, *tmin, " Minutes, "
+      #Output 'SECONDS'
+      if tsec > zero, *tsec, " Seconds"
+
+ptimer           #Rapid time and length calc
+      rlen = rlen + len            #Running total RAPID length
+      trtime = rlen / pst_rpd_fr$  #Running total RAPID time
+
+ptimel           #Feed time and length calc
+      if fr_pos$ < zero, fr_pos$ = prv_fr_pos$
+      if fr_pos$ < tol, fr_pos$ = tol
+      llen = llen + len
+      tltime = tltime + len / fr_pos$
+
+ptime            #Distance calculations
+      dx = x$ - prv_x$
+      dy = y$ - prv_y$
+      dz = z$ - prv_z$
+      len = sqrt(dx^2 + dy^2 + dz^2)
+      if gcode$ = zero, ptimer  #RAPID time and length calc
+      if gcode$ = one, ptimel   #FEED  time and length calc
+      !x$, !y$, !z$, !fr_pos$   #Update previous [prv_?] variables
+      if fr_limits, pfrcheck    #Track MAX/MIN Feedrates if requested
+
+pfrcheck         #Track Feedrates (Max/Min)
+      if fr_pos$ > zero,
+        [
+        if fr_pos$ < tmin_fr, tmin_fr = fr_pos$  #Tool MIN
+        if fr_pos$ > tmax_fr, tmax_fr = fr_pos$  #Tool MAX
+        if fr_pos$ < pmin_fr, pmin_fr = fr_pos$  #Program MIN
+        if fr_pos$ > pmax_fr, pmax_fr = fr_pos$  #Program MAX
+        ]
+
+pstock_info      #Output stock information if requested
+      if stock_info,
+        [
+        "Material Type  = "
+        if stck_matl$ = "None" | stck_matl$ = "", "*Not Defined*", e$  #No material type was selected
+        else, stck_matl$, e$
+        ]
+      if stock_info & tlplnno$ <= one, #ONLY if in TOP plane
+        [
+        #If any stock values are empty, disable don't output
+        if stck_ht$ > 0 & stck_wdth$ > 0 & stck_thck$ > 0,
+          [
+          "Stock Size     = ", stck_ht$, " ", stck_wdth$, " ", stck_thck$, e$
+          "Stock Origin   = ", stck_x$, " ", stck_y$, " ", stck_z$, "(", *stknote, ")", e$
+          ]
+        ]
+
+pMaxMin          #Output Max/Min X,Y, Z coordinates
+      #Output MAX/MIN positions in the X,Y and Z axis
+      if X_limits = yes$, "Max_X = ", *max_Xpos, "  Min_X = ", *min_Xpos, e$
+      if Y_limits = yes$, "Max_Y = ", *max_Ypos, "  Min_Y = ", *min_Ypos, e$
+      if Z_limits = yes$, "Max_Z = ", *max_Zpos, "  Min_Z = ", *min_Zpos, e$
+
+# --------------------------------------------------------------------------
+# Motion NC output
+# --------------------------------------------------------------------------
+prapid$          #Output to NC of linear movement - rapid
+      ptime
+
+pzrapid$         #Output to NC of linear movement - rapid Z only
+      ptime
+
+plin$            #Output to NC of linear movement - feed
+      ptime
+
+pz$              #Output to NC of linear movement - feed Z only
+      ptime
+
+# --------------------------------------------------------------------------
+# Parameter read postblocks:
+# --------------------------------------------------------------------------
+pprep$           #Pre-process postblock
+#Allows post instructions after the post is parsed but before the NC and NCI file are opened.
+#DO NOT ATTEMPT TO OUTPUT TO THE NC FILE IN THIS POSTBLOCK (OR ANY POSTBLOCKS YOU MAY CALL FROM HERE)
+#BECAUSE THE NC OUTPUT FILE IS NOT YET OPENED!
+      sub_level$ = 0     #Force subs off
+      subout$ = 0        #Force output stream to NC file
+      comm_filter$ = 0   #Allow output of all comments
+      #sextnc$ = ".doc"  #Uncomment and change extension here to override
+      #Force longhand drilling cycles for proper time estimate
+      usecandrill$ = no$   #Use canned cycle for drill
+      usecanpeck$  = no$   #Use canned cycle for Peck
+      usecanchip$  = no$   #Use canned cycle for Chip Break
+      usecantap$   = no$   #Use canned cycle for Tap
+      usecanbore1$ = no$   #Use canned cycle for Bore1
+      usecanbore2$ = no$   #Use canned cycle for Bore2
+      usecanmisc1$ = no$   #Use canned cycle for Misc1
+      usecanmisc2$ = no$   #Use canned cycle for Misc2
+      spaces$ = 0
+      use_alt_eob$ = no$
+
+pwrtt$           #Pre-read NCI file
+      pwritbuf1  #Write MAX/MIN X,Y,Z values to Buffer 1
+      !op_id$
+
+pparameter$      #Read operation parameters
+      #rd_params is used to call pparameter postblock and read the parameters of the operation specified in rd_param_op_no
+      #"pparameter", ~prmcode$, ~sparameter$, e$
+
+# --------------------------------------------------------------------------
+# Buffer 1 definition (for Max/Min X,Y,Z storage)
+# --------------------------------------------------------------------------
+rc1          : 2     #Buffer1 READ pointer (YES, '2' is correct for this case!)
+wc1          : 1     #Buffer1 WRITE pointer
+size1        : 0     #To hold 'size' of Buffer 1
+
+b1_gcode     : 0     #Stored in Buffer #1
+b1_tcode     : 0     #        "
+b1_xmax      : 0     #        "
+b1_xmin      : 0     #        "
+b1_ymax      : 0     #        "
+b1_ymin      : 0     #        "
+b1_zmax      : 0     #        "
+b1_zmin      : 0     #        "
+
+fbuf 1 0 8 0 0       #Declare Buffer1 to hold Min/Max X,Y,Z axis info.
+
+# --------------------------------------------------------------------------
+# Buffer 1  Read / Write Routines
+# --------------------------------------------------------------------------
+pinit            #Initialize the limit checking variables
+      max_Xpos = m_c9k  #Initialize
+      min_Xpos = c9k    #     "
+      max_Ypos = m_c9k  #     "
+      min_Ypos = c9k    #     "
+      max_Zpos = m_c9k  #     "
+      min_Zpos = c9k    #     "
+
+plimits          #Check for NEW X,Y,Z limits
+      if b1_xmax > max_Xpos, max_Xpos = b1_xmax
+      if b1_xmin < min_Xpos, min_Xpos = b1_xmin
+      if b1_ymax > max_Ypos, max_Ypos = b1_ymax
+      if b1_ymin < min_Ypos, min_Ypos = b1_ymin
+      if b1_zmax > max_Zpos, max_Zpos = b1_zmax
+      if b1_zmin < min_Zpos, min_Zpos = b1_zmin
+
+pwritbuf1        #Write Buffer 1
+      b1_gcode = gcode$
+      if gcode$ = 1002 & op_id$ = prv_op_id$, b1_gcode = 1000
+      if gcode$ = 1000 & op_id$ <> prv_op_id$, b1_gcode = 1002
+      b1_tcode = t$
+      b1_xmax  = x_max$
+      b1_xmin  = x_min$
+      b1_ymax  = y_max$
+      b1_ymin  = y_min$
+      b1_zmax  = z_max$
+      b1_zmin  = z_min$
+      b1_gcode = wbuf(one, wc1)  #Write the record
+
+preadbuf1t       #Read Buffer 1 (at the toolchanges for X,Y,Z limits)
+      pinit                      #Initialize the limit checking variables
+      b1_gcode = rbuf(one, rc1)  #Read a record from the Buffer
+      plimits                    #Check for NEW limits
+
+      #Loop thru possible NULL toolchanges
+      while b1_gcode = 1000,  #Find the next NON-NULL toolchange
+        [
+        b1_gcode = rbuf(one, rc1)  #Read the next record from the Buffer
+        plimits                    #Check for NEW limits
+        ]
+
+preadbuf1e       #Read Buffer 1 (at the END of Program for X,Y,Z limits)
+      pinit                    #Initialize the limit checking variables
+      size1 = rbuf(one, zero)  #Get the size of the Buffer 1
+      rc1 = two                #Reset read pointer (SKIP 1st record!)
+      while rc1 <= size1,      #Loop thru entire program
+        [
+        b1_gcode = rbuf(one, rc1)  #Read a record from the Buffer
+        plimits                    #Check for NEW limits
+        ]
+
+# --------------------------------------------------------------------------
+
