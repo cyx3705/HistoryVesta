@@ -1,0 +1,45 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\OneHistory\\OneHistory-Projects\\2026-005-\u5C0F\u578B\u4F5C\u4E1A\u96C6\u5408\\a12-\u673A\u5668\u4EBA\u5B66\u5BFC\u8BBA\u4F5C\u4E1A\\Python code\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{C275B7D7-A928-4C3A-8136-22A26C1F29DB}|Python code\\Python code.pyproj|C:\\OneHistory\\OneHistory-Projects\\2026-005-\u5C0F\u578B\u4F5C\u4E1A\u96C6\u5408\\a12-\u673A\u5668\u4EBA\u5B66\u5BFC\u8BBA\u4F5C\u4E1A\\Python code\\Python code\\Python_code.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{C275B7D7-A928-4C3A-8136-22A26C1F29DB}|Python code\\Python code.pyproj|solutionrelative:Python code\\Python_code.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Python_code.py",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-005-\u5C0F\u578B\u4F5C\u4E1A\u96C6\u5408\\a12-\u673A\u5668\u4EBA\u5B66\u5BFC\u8BBA\u4F5C\u4E1A\\Python code\\Python code\\Python_code.py",
+              "RelativeDocumentMoniker": "Python code\\Python_code.py",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-005-\u5C0F\u578B\u4F5C\u4E1A\u96C6\u5408\\a12-\u673A\u5668\u4EBA\u5B66\u5BFC\u8BBA\u4F5C\u4E1A\\Python code\\Python code\\Python_code.py",
+              "RelativeToolTip": "Python code\\Python_code.py",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-06-26T10:19:59.514Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
