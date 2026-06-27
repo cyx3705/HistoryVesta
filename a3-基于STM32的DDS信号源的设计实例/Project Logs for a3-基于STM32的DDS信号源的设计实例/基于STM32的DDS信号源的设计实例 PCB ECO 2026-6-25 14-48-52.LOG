@@ -1,0 +1,21 @@
+Added Component: Designator=D1(D0805+)
+Add component (AddParameter): Name = "LatestRevisionDate"; Value = "17-Jul-2002"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "LatestRevisionNote"; Value = "Re-released for DXP Platform."; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "PackageDescription"; Value = "SM LED; 2 Flat Leads"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "PackageReference"; Value = "3.2X1.6X1.1"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "PackageVersion"; Value = "Feb-2002"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Published"; Value = "8-Jun-2000"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Publisher"; Value = "Altium Limited"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=GND Pin=D1-K
+Add Pin To Net: Unknown Pin: Pin p3-2
+Add Pin To Net: Unknown Pin: Pin p3-3
+Add Pin To Net: Unknown Pin: Pin p3-4
+Add Pin To Net: Unknown Pin: Pin p3-5
+Added Pin To Net: NetName=NetD1_A Pin=D1-A
+Added Pin To Net: NetName=NetD1_A Pin=R15-1
+Added Net: Name=NetD1_A
+Added Pin To Net: NetName=Netp3_1 Pin=U5-6
+Added Pin To Net: NetName=Netp3_1 Pin=U5-7
+Added Net: Name=Netp3_1
+Added Member To Class: ClassName=基于STM32的DDS信号源的设计实例 Member=Component D1 LED2
+Add Class Member: Failed to add class member : Component p3 SMA

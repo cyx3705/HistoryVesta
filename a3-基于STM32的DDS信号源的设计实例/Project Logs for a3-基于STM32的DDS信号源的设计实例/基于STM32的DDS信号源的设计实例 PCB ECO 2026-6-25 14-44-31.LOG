@@ -1,0 +1,74 @@
+Add component: Footprint Not Found D0805+
+Added Component: Designator=U2(1.3-TFT-TPS)
+Added Component: Designator=U3(SO8_N)
+Added Component: Designator=U4(TQFP-48)
+Add component (AddParameter): Name = "BOM名称"; Value = "32位STM单片机"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "学习资源"; Value = "www.ooocke.com"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "版权归属"; Value = "源创客"; VariantName = "[No Variations]"
+Add Pin To Net: Unknown Pin: Pin D?-A
+Add Pin To Net: Unknown Pin: Pin D?-K
+Add Pin To Net: Unknown Pin: Pin p?-1
+Add Pin To Net: Unknown Pin: Pin p?-2
+Add Pin To Net: Unknown Pin: Pin p?-3
+Add Pin To Net: Unknown Pin: Pin p?-4
+Add Pin To Net: Unknown Pin: Pin p?-5
+Added Pin To Net: NetName=GND Pin=U2-1
+Added Pin To Net: NetName=NetR1_2 Pin=U2-2
+Added Pin To Net: NetName=VCC Pin=U2-3
+Added Pin To Net: NetName=VCC Pin=U2-4
+Added Pin To Net: NetName=GND Pin=U2-5
+Added Pin To Net: NetName=GND Pin=U2-6
+Added Pin To Net: NetName=D/C Pin=U2-7
+Added Pin To Net: NetName=GND Pin=U2-8
+Added Pin To Net: NetName=SLC Pin=U2-9
+Added Pin To Net: NetName=SDA Pin=U2-10
+Added Pin To Net: NetName=R\E\S\ Pin=U2-11
+Added Pin To Net: NetName=GND Pin=U2-12
+Added Pin To Net: NetName=NetC6_1 Pin=U3-2
+Added Pin To Net: NetName=GND Pin=U3-3
+Added Pin To Net: NetName=NetC6_2 Pin=U3-4
+Added Pin To Net: NetName=-5 Pin=U3-5
+Added Pin To Net: NetName=GND Pin=U3-6
+Added Pin To Net: NetName=+5 Pin=U3-8
+Added Pin To Net: NetName=OSC-IN Pin=U4-5
+Added Pin To Net: NetName=OSC-OUT Pin=U4-6
+Added Pin To Net: NetName=NRST Pin=U4-7
+Added Pin To Net: NetName=GND Pin=U4-8
+Added Pin To Net: NetName=VCC Pin=U4-9
+Added Pin To Net: NetName=AD9850-D0 Pin=U4-10
+Added Pin To Net: NetName=AD9850-D1 Pin=U4-11
+Added Pin To Net: NetName=AD9850-D2 Pin=U4-12
+Added Pin To Net: NetName=AD9850-D3 Pin=U4-13
+Added Pin To Net: NetName=AD9850-D4 Pin=U4-14
+Added Pin To Net: NetName=AD9850-D5 Pin=U4-15
+Added Pin To Net: NetName=AD9850-D6 Pin=U4-16
+Added Pin To Net: NetName=AD9850-D7 Pin=U4-17
+Added Pin To Net: NetName=DDSWCLK Pin=U4-18
+Added Pin To Net: NetName=D\D\S\R\S\T\ Pin=U4-19
+Added Pin To Net: NetName=NetR2_2 Pin=U4-20
+Added Pin To Net: NetName=DDSFQUP Pin=U4-21
+Added Pin To Net: NetName=GND Pin=U4-23
+Added Pin To Net: NetName=VCC Pin=U4-24
+Added Pin To Net: NetName=D/C Pin=U4-25
+Added Pin To Net: NetName=SLC Pin=U4-26
+Added Pin To Net: NetName=SDA Pin=U4-27
+Added Pin To Net: NetName=R\E\S\ Pin=U4-28
+Added Pin To Net: NetName=USB-D-N Pin=U4-32
+Added Pin To Net: NetName=USB-D-P Pin=U4-33
+Added Pin To Net: NetName=SDIO Pin=U4-34
+Added Pin To Net: NetName=GND Pin=U4-35
+Added Pin To Net: NetName=VCC Pin=U4-36
+Added Pin To Net: NetName=SCLK Pin=U4-37
+Added Pin To Net: NetName=KEY1 Pin=U4-41
+Added Pin To Net: NetName=KEY2 Pin=U4-42
+Added Pin To Net: NetName=KEY3 Pin=U4-43
+Added Pin To Net: NetName=NetR8_1 Pin=U4-44
+Added Pin To Net: NetName=KEY4 Pin=U4-45
+Added Pin To Net: NetName=KEY5 Pin=U4-46
+Added Pin To Net: NetName=GND Pin=U4-47
+Added Pin To Net: NetName=VCC Pin=U4-48
+Add Class Member: Failed to add class member : Component D? LED2
+Add Class Member: Failed to add class member : Component p? SMA
+Added Member To Class: ClassName=基于STM32的DDS信号源的设计实例 Member=Component U2 1.3寸TFT液晶
+Added Member To Class: ClassName=基于STM32的DDS信号源的设计实例 Member=Component U3 ICL7660
+Added Member To Class: ClassName=基于STM32的DDS信号源的设计实例 Member=Component U4 STM32F103C8
