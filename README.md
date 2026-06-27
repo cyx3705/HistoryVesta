@@ -10,7 +10,7 @@
 
 ### 项目效果图
 
-![轻型 AGV 小车效果图](./8-Picture/效果图.png)
+![轻型 AGV 小车效果图](./b-Picture/效果图.png)
 
 *轻型 AGV 小车 - 实物渲染效果*
 
@@ -33,20 +33,10 @@
 - 内壳拼接处螺栓安装不便
 - 下一步计划：继续迭代模型、完成第二版 BOM 表（机械+电气）
 
-### 📍 快速导航（快捷方式）
-**[Body](./Body)** 项目核心文件（设计图纸、3D模型、装配图等 
-**[Body/1-Module-SE](./Body/1-Module-SE)** 机械结构模块 
-**[Body/10-References](./Body/10-References)** 参考资料、手册、PDF
-**[Body/5-Office](./Body/5-Office)** 项目报告bom等
-**[11-LFSFiles](./11-LFSFiles)** 大文件专区（视频、PR工程、大模型文件）
-**[README.md](./README.md)** 本项目说明（当前页面） 
-
-
-
 ## 保留内容
 - 本模板项目介绍：此为最初的准备的项目模板
     每个分支项目都会由他去继承
 - 作者：Pinavia - 2025
 
-![logo](./Body/8-Picture/Logo.png)
+![logo](./Logo.png)
 *OneHistory*
