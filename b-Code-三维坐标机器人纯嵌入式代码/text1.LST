@@ -1,0 +1,386 @@
+C51 COMPILER V9.60.7.0   TEXT1                                                             07/02/2026 17:34:03 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE TEXT1
+OBJECT MODULE PLACED IN text1.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE text1.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include "STC8A8K64D4.H"
+   2          
+   3          /*
+   4           * Buttons (active-low):
+   5           *   P0.0 -> direction key (released=1, pressed=0)
+   6           *   P0.1 -> X jog
+   7           *   P0.2 -> Y jog
+   8           *   P0.3 -> Z jog
+   9           *   P0.5 -> scan start
+  10           *   P0.4 -> stop / replay trigger
+  11           *
+  12           * Outputs:
+  13           *   P2.0 -> X CLK
+  14           *   P2.1 -> X DIR
+  15           *   P2.2 -> Y CLK
+  16           *   P2.3 -> Y DIR
+  17           *   P2.4 -> Z CLK
+  18           *   P2.5 -> Z DIR
+  19           */
+  20          
+  21          #define CLK_MASK 0x15  /* P2.0 / P2.2 / P2.4 */
+  22          #define X_CLK_BIT 0x01
+  23          #define Y_CLK_BIT 0x04
+  24          #define Z_CLK_BIT 0x10
+  25          
+  26          #define DIR_X_BIT 0x02
+  27          #define DIR_Y_BIT 0x08
+  28          #define DIR_Z_BIT 0x20
+  29          
+  30          /* keep same style as your stable reference and tune for ~1200Hz */
+  31          #define HALF_DELAY_COUNT 350
+  32          #define SCAN_Z_PREMOVE_PULSES 120
+  33          #define SCAN_X_FORWARD 0
+  34          #define KEY_DEBOUNCE_MS 20
+  35          
+  36          typedef signed long i32;
+  37          
+  38          static void IO_Init(void);
+  39          static bit key_pressed(unsigned char mask);
+  40          static void set_axis_dir_x(bit forward);
+  41          static void set_axis_dir_y(bit forward);
+  42          static void set_axis_dir_z(bit forward);
+  43          static void clear_clk(void);
+  44          static void phase_delay(void);
+  45          static void delay_ms(unsigned int ms);
+  46          static bit any_replay_remaining(void);
+  47          static void pre_move_z_on_scan_start(void);
+  48          
+  49          /* scan records: pulse counts by axis+direction */
+  50          static i32 rec_x_pos = 0;
+  51          static i32 rec_x_neg = 0;
+  52          static i32 rec_y_pos = 0;
+  53          static i32 rec_y_neg = 0;
+  54          static i32 rec_z_pos = 0;
+  55          static i32 rec_z_neg = 0;
+C51 COMPILER V9.60.7.0   TEXT1                                                             07/02/2026 17:34:03 PAGE 2   
+
+  56          
+  57          /* replay remaining counts */
+  58          static i32 play_x_pos = 0;
+  59          static i32 play_x_neg = 0;
+  60          static i32 play_y_pos = 0;
+  61          static i32 play_y_neg = 0;
+  62          static i32 play_z_pos = 0;
+  63          static i32 play_z_neg = 0;
+  64          
+  65          /* motion_state: 0=stop/idle, 1=scan running, 2=replay running */
+  66          static unsigned char motion_state = 0;
+  67          
+  68          static void IO_Init(void)
+  69          {
+  70   1          P_SW2 |= 0x80;
+  71   1      
+  72   1          /* P2.0~P2.5 push-pull outputs */
+  73   1          P2M0 |= 0x3F;
+  74   1          P2M1 &= ~0x3F;
+  75   1      
+  76   1          /* P0.0~P0.5 quasi inputs with pull-up */
+  77   1          P0M0 &= ~0x3F;
+  78   1          P0M1 &= ~0x3F;
+  79   1          P0 |= 0x3F;
+  80   1      
+  81   1          /* all CLK low, default DIR high */
+  82   1          P2 &= (unsigned char)(~0x3F);
+  83   1          P2 |= (DIR_X_BIT | DIR_Y_BIT | DIR_Z_BIT);
+  84   1      }
+  85          
+  86          static bit key_pressed(unsigned char mask)
+  87          {
+  88   1          return (P0 & mask) ? 0 : 1;
+  89   1      }
+  90          
+  91          static void set_axis_dir_x(bit forward)
+  92          {
+  93   1          if (forward) P2 |= DIR_X_BIT;
+  94   1          else         P2 &= (unsigned char)(~DIR_X_BIT);
+  95   1      }
+  96          
+  97          static void set_axis_dir_y(bit forward)
+  98          {
+  99   1          if (forward) P2 |= DIR_Y_BIT;
+ 100   1          else         P2 &= (unsigned char)(~DIR_Y_BIT);
+ 101   1      }
+ 102          
+ 103          static void set_axis_dir_z(bit forward)
+ 104          {
+ 105   1          if (forward) P2 |= DIR_Z_BIT;
+ 106   1          else         P2 &= (unsigned char)(~DIR_Z_BIT);
+ 107   1      }
+ 108          
+ 109          static void clear_clk(void)
+ 110          {
+ 111   1          P2 &= (unsigned char)(~CLK_MASK);
+ 112   1      }
+ 113          
+ 114          static void phase_delay(void)
+ 115          {
+ 116   1          unsigned int i;
+ 117   1          for (i = 0; i < HALF_DELAY_COUNT; i++)
+C51 COMPILER V9.60.7.0   TEXT1                                                             07/02/2026 17:34:03 PAGE 3   
+
+ 118   1          {
+ 119   2          }
+ 120   1      }
+ 121          
+ 122          static void delay_ms(unsigned int ms)
+ 123          {
+ 124   1          unsigned int a, b;
+ 125   1          for (a = 0; a < ms; a++)
+ 126   1          {
+ 127   2              for (b = 0; b < 800; b++)
+ 128   2              {
+ 129   3              }
+ 130   2          }
+ 131   1      }
+ 132          
+ 133          static bit any_replay_remaining(void)
+ 134          {
+ 135   1          return (play_x_pos > 0 || play_x_neg > 0 ||
+ 136   1                  play_y_pos > 0 || play_y_neg > 0 ||
+ 137   1                  play_z_pos > 0 || play_z_neg > 0);
+ 138   1      }
+ 139          
+ 140          static void pre_move_z_on_scan_start(void)
+ 141          {
+ 142   1          i32 i;
+ 143   1          for (i = 0; i < SCAN_Z_PREMOVE_PULSES; i++)
+ 144   1          {
+ 145   2              /* one full pulse period on Z only */
+ 146   2              clear_clk();
+ 147   2              P2 |= Z_CLK_BIT;
+ 148   2              phase_delay();
+ 149   2      
+ 150   2              clear_clk();
+ 151   2              phase_delay();
+ 152   2          }
+ 153   1      }
+ 154          
+ 155          void main(void)
+ 156          {
+ 157   1          bit phase_high = 0;
+ 158   1      
+ 159   1          bit latch_scan = 0;
+ 160   1          bit latch_stop = 0;
+ 161   1      
+ 162   1          IO_Init();
+ 163   1      
+ 164   1          while (1)
+ 165   1          {
+ 166   2              bit dir_pressed = key_pressed(0x01);  /* P0.0 */
+ 167   2              bit x_pressed   = key_pressed(0x02);  /* P0.1 */
+ 168   2              bit y_pressed   = key_pressed(0x04);  /* P0.2 */
+ 169   2              bit z_pressed   = key_pressed(0x08);  /* P0.3 */
+ 170   2              bit stop_pressed= key_pressed(0x10);  /* P0.4 */
+ 171   2              bit scan_pressed= key_pressed(0x20);  /* P0.5 */
+ 172   2      
+ 173   2              bit scan_event = 0;
+ 174   2              bit stop_event = 0;
+ 175   2      
+ 176   2              unsigned char clk_out = 0;
+ 177   2              bit dir_manual_forward = dir_pressed ? 0 : 1;
+ 178   2      
+ 179   2              if (scan_pressed && !latch_scan)
+C51 COMPILER V9.60.7.0   TEXT1                                                             07/02/2026 17:34:03 PAGE 4   
+
+ 180   2              {
+ 181   3                  delay_ms(KEY_DEBOUNCE_MS);
+ 182   3                  if (key_pressed(0x20))
+ 183   3                  {
+ 184   4                      scan_event = 1;
+ 185   4                      latch_scan = 1;
+ 186   4                  }
+ 187   3              }
+ 188   2              else if (!scan_pressed && latch_scan)
+ 189   2              {
+ 190   3                  delay_ms(KEY_DEBOUNCE_MS);
+ 191   3                  if (!key_pressed(0x20))
+ 192   3                      latch_scan = 0;
+ 193   3              }
+ 194   2      
+ 195   2              if (stop_pressed && !latch_stop)
+ 196   2              {
+ 197   3                  delay_ms(KEY_DEBOUNCE_MS);
+ 198   3                  if (key_pressed(0x10))
+ 199   3                  {
+ 200   4                      stop_event = 1;
+ 201   4                      latch_stop = 1;
+ 202   4                  }
+ 203   3              }
+ 204   2              else if (!stop_pressed && latch_stop)
+ 205   2              {
+ 206   3                  delay_ms(KEY_DEBOUNCE_MS);
+ 207   3                  if (!key_pressed(0x10))
+ 208   3                      latch_stop = 0;
+ 209   3              }
+ 210   2      
+ 211   2              if (scan_event && motion_state != 1)
+ 212   2              {
+ 213   3                  /* reset record and start scan */
+ 214   3                  rec_x_pos = rec_x_neg = 0;
+ 215   3                  rec_y_pos = rec_y_neg = 0;
+ 216   3                  rec_z_pos = rec_z_neg = 0;
+ 217   3                  play_x_pos = play_x_neg = 0;
+ 218   3                  play_y_pos = play_y_neg = 0;
+ 219   3                  play_z_pos = play_z_neg = 0;
+ 220   3      
+ 221   3                  /* scan starts with a small +Z pre-move and record it */
+ 222   3                  set_axis_dir_z(1);
+ 223   3                  pre_move_z_on_scan_start();
+ 224   3                  rec_z_pos += SCAN_Z_PREMOVE_PULSES;
+ 225   3      
+ 226   3                  motion_state = 1;
+ 227   3                  phase_high = 0;
+ 228   3                  clear_clk();
+ 229   3              }
+ 230   2      
+ 231   2              /* global 3-state stop/replay button:
+ 232   2               * state 1 -> 0 (stop), then state 0 -> 2 (replay) */
+ 233   2              if (stop_event)
+ 234   2              {
+ 235   3                  if (motion_state == 1)
+ 236   3                  {
+ 237   4                      motion_state = 0;
+ 238   4                      phase_high = 0;
+ 239   4                      clear_clk();
+ 240   4                  }
+ 241   3                  else if (motion_state == 0)
+C51 COMPILER V9.60.7.0   TEXT1                                                             07/02/2026 17:34:03 PAGE 5   
+
+ 242   3                  {
+ 243   4                      play_x_neg = rec_x_pos;
+ 244   4                      play_x_pos = rec_x_neg;
+ 245   4                      play_y_neg = rec_y_pos;
+ 246   4                      play_y_pos = rec_y_neg;
+ 247   4                      play_z_neg = rec_z_pos;
+ 248   4                      play_z_pos = rec_z_neg;
+ 249   4                      motion_state = 2;
+ 250   4                      phase_high = 0;
+ 251   4                      clear_clk();
+ 252   4                  }
+ 253   3              }
+ 254   2      
+ 255   2              if (motion_state == 2)
+ 256   2              {
+ 257   3                  /* set per-axis replay direction and choose active axes */
+ 258   3                  if (play_x_neg > 0) { set_axis_dir_x(0); clk_out |= X_CLK_BIT; }
+ 259   3                  else if (play_x_pos > 0) { set_axis_dir_x(1); clk_out |= X_CLK_BIT; }
+ 260   3      
+ 261   3                  if (play_y_neg > 0) { set_axis_dir_y(0); clk_out |= Y_CLK_BIT; }
+ 262   3                  else if (play_y_pos > 0) { set_axis_dir_y(1); clk_out |= Y_CLK_BIT; }
+ 263   3      
+ 264   3                  if (play_z_neg > 0) { set_axis_dir_z(0); clk_out |= Z_CLK_BIT; }
+ 265   3                  else if (play_z_pos > 0) { set_axis_dir_z(1); clk_out |= Z_CLK_BIT; }
+ 266   3              }
+ 267   2              else
+ 268   2              {
+ 269   3                  /* manual directions for Y/Z, X direction overridden when scanning */
+ 270   3                  set_axis_dir_y(dir_manual_forward);
+ 271   3                  set_axis_dir_z(dir_manual_forward);
+ 272   3                  if (motion_state == 1) set_axis_dir_x(SCAN_X_FORWARD);
+ 273   3                  else set_axis_dir_x(dir_manual_forward);
+ 274   3      
+ 275   3                  if (motion_state == 1)
+ 276   3                  {
+ 277   4                      /* during scan X always moves +, others still manually operable */
+ 278   4                      clk_out |= X_CLK_BIT;
+ 279   4                      if (y_pressed) clk_out |= Y_CLK_BIT;
+ 280   4                      if (z_pressed) clk_out |= Z_CLK_BIT;
+ 281   4                  }
+ 282   3                  else
+ 283   3                  {
+ 284   4                      /* idle manual jog */
+ 285   4                      if (x_pressed) clk_out |= X_CLK_BIT;
+ 286   4                      if (y_pressed) clk_out |= Y_CLK_BIT;
+ 287   4                      if (z_pressed) clk_out |= Z_CLK_BIT;
+ 288   4                  }
+ 289   3              }
+ 290   2      
+ 291   2              if (clk_out == 0)
+ 292   2              {
+ 293   3                  phase_high = 0;
+ 294   3                  clear_clk();
+ 295   3                  continue;
+ 296   3              }
+ 297   2      
+ 298   2              phase_high = !phase_high;
+ 299   2              clear_clk();
+ 300   2      
+ 301   2              if (phase_high)
+ 302   2              {
+ 303   3                  P2 |= clk_out;
+C51 COMPILER V9.60.7.0   TEXT1                                                             07/02/2026 17:34:03 PAGE 6   
+
+ 304   3      
+ 305   3                  /* count one pulse on rising phase */
+ 306   3                  if (motion_state == 2)
+ 307   3                  {
+ 308   4                      if ((clk_out & X_CLK_BIT) != 0)
+ 309   4                      {
+ 310   5                          if (play_x_neg > 0) play_x_neg--;
+ 311   5                          else if (play_x_pos > 0) play_x_pos--;
+ 312   5                      }
+ 313   4                      if ((clk_out & Y_CLK_BIT) != 0)
+ 314   4                      {
+ 315   5                          if (play_y_neg > 0) play_y_neg--;
+ 316   5                          else if (play_y_pos > 0) play_y_pos--;
+ 317   5                      }
+ 318   4                      if ((clk_out & Z_CLK_BIT) != 0)
+ 319   4                      {
+ 320   5                          if (play_z_neg > 0) play_z_neg--;
+ 321   5                          else if (play_z_pos > 0) play_z_pos--;
+ 322   5                      }
+ 323   4      
+ 324   4                      if (!any_replay_remaining())
+ 325   4                      {
+ 326   5                          motion_state = 0;
+ 327   5                          phase_high = 0;
+ 328   5                          clear_clk();
+ 329   5                      }
+ 330   4                  }
+ 331   3                  else if (motion_state == 1)
+ 332   3                  {
+ 333   4                      if ((clk_out & X_CLK_BIT) != 0)
+ 334   4                      {
+ 335   5                          if (SCAN_X_FORWARD) rec_x_pos++;
+ 336   5                          else rec_x_neg++;
+ 337   5                      }
+ 338   4                      if ((clk_out & Y_CLK_BIT) != 0)
+ 339   4                      {
+ 340   5                          if (dir_manual_forward) rec_y_pos++;
+ 341   5                          else rec_y_neg++;
+ 342   5                      }
+ 343   4                      if ((clk_out & Z_CLK_BIT) != 0)
+ 344   4                      {
+ 345   5                          if (dir_manual_forward) rec_z_pos++;
+ 346   5                          else rec_z_neg++;
+ 347   5                      }
+ 348   4                  }
+ 349   3              }
+ 350   2      
+ 351   2              phase_delay();
+ 352   2          }
+ 353   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1414    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     49       5
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----      15
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

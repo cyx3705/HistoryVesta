@@ -1,0 +1,139 @@
+C51 COMPILER V9.60.7.0   TEXT1                                                             06/29/2026 20:59:09 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE TEXT1
+OBJECT MODULE PLACED IN text1.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE text1.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          // STC8A8K64D4 串口协议处理程序
+   2          // 通信规则：数据以 ### 结尾，收到完整帧再转发
+   3          // 时钟：11.064MHz  波特率：9600 8N1
+   4          #include <reg51.h>
+   5          
+   6          sfr AUXR  = 0x8E;
+   7          sfr P_SW1 = 0xA2;
+   8          
+   9          #define FOSC        11064000UL   // 芯片校准后真实频率
+  10          #define BAUD        9600UL        // 波特率
+  11          #define BUF_SIZE    64            // 单帧最大长度，可根据需求增大
+  12          
+  13          unsigned char recv_buf[BUF_SIZE];  // 接收缓冲区
+  14          unsigned char recv_cnt = 0;        // 接收计数
+  15          
+  16          void UART_Init(void);
+  17          void Send_Byte(unsigned char dat);
+  18          void Send_Str(const char *str);
+  19          void Send_Buf(unsigned char *buf, unsigned char len);
+  20          void Delay_ms(unsigned int ms);
+  21          
+  22          void main(void)
+  23          {
+  24   1          UART_Init();
+  25   1          Send_Str("\r\n=== 串口协议就绪 ===\r\n");
+  26   1          Send_Str("格式：内容 + ### 结束\r\n\r\n");
+  27   1      
+  28   1          while(1)
+  29   1          {
+  30   2              if(RI)
+  31   2              {
+  32   3                  RI = 0;
+  33   3                  if(recv_cnt < BUF_SIZE)
+  34   3                  {
+  35   4                      recv_buf[recv_cnt++] = SBUF;
+  36   4      
+  37   4                      // 检测结束标记 ###
+  38   4                      if(recv_cnt >= 3 &&
+  39   4                         recv_buf[recv_cnt-3] == '#' &&
+  40   4                         recv_buf[recv_cnt-2] == '#' &&
+  41   4                         recv_buf[recv_cnt-1] == '#')
+  42   4                      {
+  43   5                          recv_cnt -= 3;  // 去掉结束符
+  44   5      
+  45   5                          Send_Str("[收到完整帧] 长度=");
+  46   5                          Send_Byte((recv_cnt / 10) + '0');
+  47   5                          Send_Byte((recv_cnt % 10) + '0');
+  48   5                          Send_Str(" 内容：");
+  49   5                          Send_Buf(recv_buf, recv_cnt);
+  50   5                          Send_Str("\r\n[转发完成]\r\n\r\n");
+  51   5      
+  52   5                          recv_cnt = 0;   // 清空缓冲区，准备下一帧
+  53   5                      }
+  54   4                  }
+  55   3                  else
+C51 COMPILER V9.60.7.0   TEXT1                                                             06/29/2026 20:59:09 PAGE 2   
+
+  56   3                  {
+  57   4                      recv_cnt = 0;
+  58   4                      Send_Str("[警告] 数据超出缓冲区，已重置\r\n\r\n");
+  59   4                  }
+  60   3              }
+  61   2              else
+  62   2              {
+  63   3                  // 每2秒发送一次心跳，确认程序运行正常
+  64   3                  static unsigned int t = 0;
+  65   3                  if(++t >= 2000)
+  66   3                  {
+  67   4                      t = 0;
+  68   4                      Send_Str("[心跳] 运行正常\r\n");
+  69   4                  }
+  70   3                  Delay_ms(1);
+  71   3              }
+  72   2          }
+  73   1      }
+  74          
+  75          void UART_Init(void)
+  76          {
+  77   1          P_SW1 &= ~0xC0;                // 固定映射到 P3.0(RXD) / P3.1(TXD)
+  78   1          SCON  = 0x50;                  // 模式1，8位数据，允许接收
+  79   1          AUXR &= ~0x04;                 // 定时器1时钟 = FOSC / 12
+  80   1          AUXR &= ~0x01;                 // 关闭1T模式，保证配置匹配
+  81   1          TMOD &= 0x0F;
+  82   1          TMOD |= 0x20;                  // 定时器1 8位自动重装
+  83   1          TH1 = (unsigned char)(256UL - FOSC / 12UL / 32UL / BAUD);
+  84   1          TL1 = TH1;
+  85   1          TR1 = 1;                       // 启动定时器1
+  86   1      }
+  87          
+  88          void Send_Byte(unsigned char dat)
+  89          {
+  90   1          SBUF = dat;
+  91   1          while(!TI);
+  92   1          TI = 0;
+  93   1      }
+  94          
+  95          void Send_Str(const char *str)
+  96          {
+  97   1          while(*str) Send_Byte((unsigned char)*str++);
+  98   1      }
+  99          
+ 100          void Send_Buf(unsigned char *buf, unsigned char len)
+ 101          {
+ 102   1          unsigned char i;
+ 103   1          for(i = 0; i < len; i++)
+ 104   1              Send_Byte(buf[i]);
+ 105   1      }
+ 106          
+ 107          void Delay_ms(unsigned int ms)
+ 108          {
+ 109   1          unsigned int i, j;
+ 110   1          for(i = ms; i > 0; i--)
+ 111   1              for(j = 960; j > 0; j--);
+ 112   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    349    ----
+   CONSTANT SIZE    =    145    ----
+C51 COMPILER V9.60.7.0   TEXT1                                                             06/29/2026 20:59:09 PAGE 3   
+
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     67       6
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

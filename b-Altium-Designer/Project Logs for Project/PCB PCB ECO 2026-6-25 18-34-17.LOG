@@ -1,0 +1,3 @@
+Change Component Designator: OldDesignator=V1 NewDesignator=Vin
+Change Component Designator: OldDesignator=V2 NewDesignator=Vout
+Added Member To Class: ClassName=SCH Member=Component D1 LED3

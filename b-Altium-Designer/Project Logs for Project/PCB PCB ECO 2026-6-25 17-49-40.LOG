@@ -1,0 +1,68 @@
+Removed Pin From Net: NetName=RST Pin=E2-1
+Removed Member From Class: ClassName=SCH Member=D??
+Removed Member From Class: ClassName=SCH Member=E2
+Change Component Comment : Designator=D?? Old Comment=Diode New Comment=SS34
+Change Component Designator: OldDesignator=D?? NewDesignator=D1
+Added Component: Designator=*(电解电容)
+Added Component: Designator=4(POLAR0.8)
+Add component (AddParameter): Name = "LatestRevisionDate"; Value = "17-Jul-2002"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "LatestRevisionNote"; Value = "Re-released for DXP Platform."; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "PackageDescription"; Value = "Polarized Capacitor; 2 Leads"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "PackageReference"; Value = "POLAR0.8"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Published"; Value = "8-Jun-2000"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Publisher"; Value = "Altium Limited"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Value"; Value = "100u"; VariantName = "[No Variations]"
+Added Component: Designator=C5(0603/C)
+Added Component: Designator=C6(0603/C)
+Added Component: Designator=C7(0603/C)
+Added Component: Designator=E3(POLAR0.8)
+Add component (AddParameter): Name = "LatestRevisionDate"; Value = "17-Jul-2002"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "LatestRevisionNote"; Value = "Re-released for DXP Platform."; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "PackageDescription"; Value = "Polarized Capacitor; 2 Leads"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "PackageReference"; Value = "POLAR0.8"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Published"; Value = "8-Jun-2000"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Publisher"; Value = "Altium Limited"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Value"; Value = "50v 100uF"; VariantName = "[No Variations]"
+Add component: Footprint Not Found C1005-0402
+Add component: Footprint Not Found BCY-W2/D3.1
+Added Pin To Net: NetName=RST Pin=*-1
+Added Pin To Net: NetName=RST Pin=4-1
+Added Pin To Net: NetName=RST Pin=4-2
+Added Pin To Net: NetName=RST Pin=C5-1
+Added Pin To Net: NetName=RST Pin=C6-1
+Added Pin To Net: NetName=RST Pin=C6-2
+Added Pin To Net: NetName=RST Pin=C7-1
+Added Pin To Net: NetName=RST Pin=C7-2
+Added Pin To Net: NetName=RST Pin=D1-1
+Added Pin To Net: NetName=RST Pin=E3-2
+Add Pin To Net: Unknown Pin: Pin L1-2
+Add Pin To Net: Unknown Pin: Pin LM-3
+Add Pin To Net: Unknown Pin: Pin LM-4
+Add Pin To Net: Unknown Pin: Pin LM-5
+Add Pin To Net: Unknown Pin: Pin LM-6
+Add Pin To Net: Unknown Pin: Pin V1-2
+Add Pin To Net: Unknown Pin: Pin V2-1
+Add Pin To Net: Unknown Pin: Pin V2-2
+Add Pin To Net: Unknown Pin: Pin XTAL-1
+Add Pin To Net: Unknown Pin: Pin XTAL-2
+Added Pin To Net: NetName=9-24V Pin=C5-2
+Added Pin To Net: NetName=9-24V Pin=E3-1
+Added Net: Name=9-24V
+Added Pin To Net: NetName=Net*_2 Pin=*-2
+Added Pin To Net: NetName=Net*_2 Pin=R1-2
+Added Net: Name=Net*_2
+Added Pin To Net: NetName=NetD1_2 Pin=D1-2
+Added Net: Name=NetD1_2
+Added Member To Class: ClassName=SCH Member=Component * 电解电容
+Added Member To Class: ClassName=SCH Member=Component 4 Cap Pol2
+Added Member To Class: ClassName=SCH Member=Component C5 63V0.1u
+Added Member To Class: ClassName=SCH Member=Component C6 104
+Added Member To Class: ClassName=SCH Member=Component C7 103
+Added Member To Class: ClassName=SCH Member=Component D1 LED3
+Added Member To Class: ClassName=SCH Member=Component E3 Cap Pol2
+Add Class Member: Failed to add class member : Component L1 Inductor
+Add Class Member: Failed to add class member : Component LM LM2576
+Add Class Member: Failed to add class member : Component V1 Vin
+Add Class Member: Failed to add class member : Component V2 Vout
+Add Class Member: Failed to add class member : Component XTAL 4.0MHZ
+Added Rule: Name=Schematic Supply Nets

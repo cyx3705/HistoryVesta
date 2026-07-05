@@ -84,7 +84,7 @@ GenerateClassCluster=0
 DocumentUniqueId=EMRYNOED
 
 [Document3]
-DocumentPath=SCHL.SchLib
+DocumentPath=..\..\2026-016-AD学习\z-AD库文件汇总\Mylib.SchLib
 AnnotationEnabled=1
 AnnotateStartValue=1
 AnnotationIndexControlEnabled=0
@@ -98,10 +98,10 @@ ClassGenCCAutoRoomEnabled=0
 ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
-DocumentUniqueId=DMVMFARL
+DocumentUniqueId=UVTSUNSU
 
 [Document4]
-DocumentPath=PCBL.PcbLib
+DocumentPath=..\..\2026-016-AD学习\z-AD库文件汇总\Mylib.PcbLib
 AnnotationEnabled=1
 AnnotateStartValue=1
 AnnotationIndexControlEnabled=0
@@ -115,7 +115,7 @@ ClassGenCCAutoRoomEnabled=0
 ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
-DocumentUniqueId=DPJARQUR
+DocumentUniqueId=XYBDHBIB
 
 [Configuration1]
 Name=Sources

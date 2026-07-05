@@ -1,0 +1,9 @@
+Added Component: Designator=V1(V)
+Added Component: Designator=V2(V)
+Added Pin To Net: NetName=9-24V Pin=V1-1
+Added Pin To Net: NetName=RST Pin=V1-2
+Added Pin To Net: NetName=RST Pin=V2-1
+Added Pin To Net: NetName=RST Pin=V2-2
+Added Member To Class: ClassName=SCH Member=Component D1 LED3
+Added Member To Class: ClassName=SCH Member=Component V1 Vin
+Added Member To Class: ClassName=SCH Member=Component V2 Vout

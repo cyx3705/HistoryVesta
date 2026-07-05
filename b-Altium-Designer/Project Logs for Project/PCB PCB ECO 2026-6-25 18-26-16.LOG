@@ -1,0 +1,15 @@
+Added Component: Designator=LM(TO-263-5)
+Added Pin To Net: NetName=9-24V Pin=LM-1
+Added Pin To Net: NetName=NetD1_2 Pin=LM-2
+Added Pin To Net: NetName=RST Pin=LM-3
+Added Pin To Net: NetName=RST Pin=LM-4
+Added Pin To Net: NetName=RST Pin=LM-5
+Added Pin To Net: NetName=RST Pin=LM-6
+Add Pin To Net: Unknown Pin: Pin V1-1
+Add Pin To Net: Unknown Pin: Pin V1-2
+Add Pin To Net: Unknown Pin: Pin V2-1
+Add Pin To Net: Unknown Pin: Pin V2-2
+Added Member To Class: ClassName=SCH Member=Component D1 LED3
+Added Member To Class: ClassName=SCH Member=Component LM LM2576
+Add Class Member: Failed to add class member : Component V1 Vin
+Add Class Member: Failed to add class member : Component V2 Vout

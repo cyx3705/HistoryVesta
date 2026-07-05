@@ -1,0 +1,258 @@
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                    06/29/2026  16:38:41  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22.4.0, INVOKED BY:
+C:\KEIL_V5\C51\BIN\BL51.EXE STARTUP.obj, text1.obj TO text1 RAMSIZE (256)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  STARTUP.obj (?C_STARTUP)
+  text1.obj (TEXT1)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C_INIT)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C?CLDOPTR)
+
+
+LINK MAP OF MODULE:  text1 (?C_STARTUP)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            DATA    0008H     0008H     UNIT         ?DT?TEXT1
+            DATA    0010H     0003H     UNIT         _DATA_GROUP_
+            IDATA   0013H     0001H     UNIT         ?STACK
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     008CH     UNIT         ?C_C51STARTUP
+            CODE    008FH     002DH     UNIT         ?C?LIB_CODE
+            CODE    00BCH     0025H     UNIT         ?PR?MAIN?TEXT1
+            CODE    00E1H     0023H     UNIT         ?PR?MAX7219_INIT?TEXT1
+            CODE    0104H     0022H     UNIT         ?PR?_MAX7219_DISPLAY_GRAPH?TEXT1
+            CODE    0126H     0020H     UNIT         ?PR?_DELAY_MS?TEXT1
+            CODE    0146H     001DH     UNIT         ?PR?_MAX7219_WRITEBYTE?TEXT1
+            CODE    0163H     000FH     UNIT         ?PR?_MAX7219_WRITE?TEXT1
+            CODE    0172H     000EH     UNIT         ?PR?MAX7219_CLEAR?TEXT1
+            CODE    0180H     000BH     UNIT         ?C_INITSEG
+            CODE    018BH     000AH     UNIT         ?PR?IO_INIT?TEXT1
+
+
+
+OVERLAY MAP OF MODULE:   text1 (?C_STARTUP)
+
+
+SEGMENT                                    DATA_GROUP 
+  +--> CALLED SEGMENT                    START    LENGTH
+--------------------------------------------------------
+?C_C51STARTUP                            -----    -----
+  +--> ?PR?MAIN?TEXT1
+  +--> ?C_INITSEG
+
+?PR?MAIN?TEXT1                           -----    -----
+  +--> ?PR?IO_INIT?TEXT1
+  +--> ?PR?MAX7219_INIT?TEXT1
+  +--> ?PR?MAX7219_CLEAR?TEXT1
+  +--> ?PR?_MAX7219_DISPLAY_GRAPH?TEXT1
+  +--> ?PR?_DELAY_MS?TEXT1
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  06/29/2026  16:38:41  PAGE 2
+
+
+
+?PR?MAX7219_INIT?TEXT1                   -----    -----
+  +--> ?PR?_MAX7219_WRITE?TEXT1
+
+?PR?_MAX7219_WRITE?TEXT1                 -----    -----
+  +--> ?PR?_MAX7219_WRITEBYTE?TEXT1
+
+?PR?MAX7219_CLEAR?TEXT1                  -----    -----
+  +--> ?PR?_MAX7219_WRITE?TEXT1
+
+?PR?_MAX7219_DISPLAY_GRAPH?TEXT1         0010H    0003H
+  +--> ?PR?_MAX7219_WRITE?TEXT1
+
+
+
+SYMBOL TABLE OF MODULE:  text1 (?C_STARTUP)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        ?C_STARTUP
+  C:0003H         SEGMENT       ?C_C51STARTUP
+  I:0013H         SEGMENT       ?STACK
+  C:0000H         PUBLIC        ?C_STARTUP
+  D:00E0H         SYMBOL        ACC
+  D:00F0H         SYMBOL        B
+  D:0083H         SYMBOL        DPH
+  D:0082H         SYMBOL        DPL
+  N:0000H         SYMBOL        IBPSTACK
+  N:0100H         SYMBOL        IBPSTACKTOP
+  N:0080H         SYMBOL        IDATALEN
+  C:0006H         SYMBOL        IDATALOOP
+  N:0000H         SYMBOL        PBPSTACK
+  N:0100H         SYMBOL        PBPSTACKTOP
+  N:0000H         SYMBOL        PDATALEN
+  N:0000H         SYMBOL        PDATASTART
+  N:0000H         SYMBOL        PPAGE
+  N:0000H         SYMBOL        PPAGEENABLE
+  D:00A0H         SYMBOL        PPAGE_SFR
+  D:0081H         SYMBOL        SP
+  C:0003H         SYMBOL        STARTUP1
+  N:0000H         SYMBOL        XBPSTACK
+  N:0000H         SYMBOL        XBPSTACKTOP
+  N:0000H         SYMBOL        XDATALEN
+  N:0000H         SYMBOL        XDATASTART
+  C:0000H         LINE#         126
+  C:0003H         LINE#         133
+  C:0005H         LINE#         134
+  C:0006H         LINE#         135
+  C:0007H         LINE#         136
+  C:0009H         LINE#         185
+  C:000CH         LINE#         196
+  -------         ENDMOD        ?C_STARTUP
+
+  -------         MODULE        TEXT1
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0096H         PUBLIC        P2M0
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  06/29/2026  16:38:41  PAGE 3
+
+
+  D:0080H         PUBLIC        P0
+  D:0095H         PUBLIC        P2M1
+  D:0090H         PUBLIC        P1
+  D:00A0H         PUBLIC        P2
+  D:00B0H         PUBLIC        P3
+  D:00C0H         PUBLIC        P4
+  D:00C8H         PUBLIC        P5
+  C:0172H         PUBLIC        MAX7219_Clear
+  D:00E8H         PUBLIC        P6
+  D:00F8H         PUBLIC        P7
+  D:00BAH         PUBLIC        P_SW2
+  D:00A8H         PUBLIC        IE
+  D:0008H         PUBLIC        heart
+  D:00B8H         PUBLIC        IP
+  D:00D8H         PUBLIC        CCON
+  C:00BCH         PUBLIC        main
+  C:0163H         PUBLIC        _MAX7219_Write
+  C:018BH         PUBLIC        IO_init
+  C:00E1H         PUBLIC        MAX7219_Init
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+  C:0146H         PUBLIC        _MAX7219_WriteByte
+  D:00F0H         PUBLIC        B
+  D:00E0H         PUBLIC        ACC
+  C:0104H         PUBLIC        _MAX7219_Display_Graph
+  C:0126H         PUBLIC        _delay_ms
+  D:00D0H         PUBLIC        PSW
+  -------         PROC          IO_INIT
+  C:018BH         LINE#         20
+  C:018BH         LINE#         21
+  C:018BH         LINE#         22
+  C:018EH         LINE#         23
+  C:0191H         LINE#         24
+  C:0194H         LINE#         25
+  -------         ENDPROC       IO_INIT
+  -------         PROC          _MAX7219_WRITEBYTE
+  D:0007H         SYMBOL        dat
+  -------         DO            
+  D:0006H         SYMBOL        i
+  -------         ENDDO         
+  C:0146H         LINE#         27
+  C:0146H         LINE#         28
+  C:0146H         LINE#         30
+  C:0148H         LINE#         31
+  C:0148H         LINE#         32
+  C:014BH         LINE#         33
+  C:0154H         LINE#         34
+  C:0157H         LINE#         35
+  C:015BH         LINE#         36
+  C:015EH         LINE#         37
+  C:0162H         LINE#         38
+  -------         ENDPROC       _MAX7219_WRITEBYTE
+  -------         PROC          _MAX7219_WRITE
+  D:0007H         SYMBOL        addr
+  D:0005H         SYMBOL        dat
+  C:0163H         LINE#         40
+  C:0163H         LINE#         41
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  06/29/2026  16:38:41  PAGE 4
+
+
+  C:0163H         LINE#         42
+  C:0166H         LINE#         43
+  C:0169H         LINE#         44
+  C:016EH         LINE#         45
+  C:0171H         LINE#         46
+  -------         ENDPROC       _MAX7219_WRITE
+  -------         PROC          MAX7219_INIT
+  C:00E1H         LINE#         48
+  C:00E1H         LINE#         49
+  C:00E1H         LINE#         50
+  C:00E8H         LINE#         51
+  C:00EFH         LINE#         52
+  C:00F6H         LINE#         53
+  C:00FDH         LINE#         54
+  -------         ENDPROC       MAX7219_INIT
+  -------         PROC          MAX7219_CLEAR
+  -------         DO            
+  D:0004H         SYMBOL        i
+  -------         ENDDO         
+  C:0172H         LINE#         57
+  C:0172H         LINE#         58
+  C:0172H         LINE#         60
+  C:017FH         LINE#         61
+  -------         ENDPROC       MAX7219_CLEAR
+  -------         PROC          _MAX7219_DISPLAY_GRAPH
+  D:0010H         SYMBOL        graph
+  -------         DO            
+  D:0004H         SYMBOL        i
+  -------         ENDDO         
+  C:0104H         LINE#         63
+  C:010AH         LINE#         64
+  C:010AH         LINE#         66
+  C:010CH         LINE#         67
+  C:010CH         LINE#         68
+  C:0121H         LINE#         69
+  C:0125H         LINE#         70
+  -------         ENDPROC       _MAX7219_DISPLAY_GRAPH
+  -------         PROC          _DELAY_MS
+  D:0006H         SYMBOL        ms
+  -------         DO            
+  D:0004H         SYMBOL        a
+  D:0002H         SYMBOL        b
+  -------         ENDDO         
+  C:0126H         LINE#         72
+  C:0126H         LINE#         73
+  C:0126H         LINE#         75
+  C:0130H         LINE#         76
+  C:0145H         LINE#         77
+  -------         ENDPROC       _DELAY_MS
+  -------         PROC          MAIN
+  C:00BCH         LINE#         79
+  C:00BCH         LINE#         80
+  C:00BCH         LINE#         81
+  C:00BFH         LINE#         82
+  C:00C2H         LINE#         83
+  C:00C5H         LINE#         85
+  C:00C5H         LINE#         86
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  06/29/2026  16:38:41  PAGE 5
+
+
+  C:00C5H         LINE#         87
+  C:00CEH         LINE#         88
+  C:00D5H         LINE#         89
+  C:00D8H         LINE#         90
+  C:00DFH         LINE#         91
+  -------         ENDPROC       MAIN
+  -------         ENDMOD        TEXT1
+
+  -------         MODULE        ?C?CLDOPTR
+  C:008FH         PUBLIC        ?C?CLDOPTR
+  -------         ENDMOD        ?C?CLDOPTR
+
+Program Size: data=20.0 xdata=0 code=405
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

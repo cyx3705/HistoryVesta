@@ -1,0 +1,23 @@
+Added Component: Designator=XTAL(PCBComponent_1)
+Add component (AddParameter): Name = "Class"; Value = "Oscillator"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer"; Value = "Generic Components"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Published"; Value = "08/06/2000"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Publisher"; Value = "Altium Hobart Technology Centre"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "SubClass"; Value = "Crystal Oscillator"; VariantName = "[No Variations]"
+Add Pin To Net: Unknown Pin: Pin LM-1
+Add Pin To Net: Unknown Pin: Pin LM-2
+Add Pin To Net: Unknown Pin: Pin LM-3
+Add Pin To Net: Unknown Pin: Pin LM-4
+Add Pin To Net: Unknown Pin: Pin LM-5
+Add Pin To Net: Unknown Pin: Pin LM-6
+Add Pin To Net: Unknown Pin: Pin V1-1
+Add Pin To Net: Unknown Pin: Pin V1-2
+Add Pin To Net: Unknown Pin: Pin V2-1
+Add Pin To Net: Unknown Pin: Pin V2-2
+Added Pin To Net: NetName=X2 Pin=XTAL-1
+Added Pin To Net: NetName=X1 Pin=XTAL-2
+Added Member To Class: ClassName=SCH Member=Component D1 LED3
+Add Class Member: Failed to add class member : Component LM LM2576
+Add Class Member: Failed to add class member : Component V1 Vin
+Add Class Member: Failed to add class member : Component V2 Vout
+Added Member To Class: ClassName=SCH Member=Component XTAL 4.0MHZ

@@ -1,0 +1,244 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|c:\\onehistory\\onehistory-projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\commandparser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|solutionrelative:b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\commandparser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\consolecontrol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|solutionrelative:b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\consolecontrol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|c:\\onehistory\\onehistory-projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\pathplanner.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|solutionrelative:b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\pathplanner.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|c:\\onehistory\\onehistory-projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|solutionrelative:b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|c:\\onehistory\\onehistory-projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\robotdemorunner.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|solutionrelative:b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\robotdemorunner.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|c:\\onehistory\\onehistory-projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\serialautobaud.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|solutionrelative:b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\serialautobaud.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|c:\\onehistory\\onehistory-projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\serialdefaults.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|solutionrelative:b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\serialdefaults.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|c:\\onehistory\\onehistory-projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\serialdiagnostics.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|solutionrelative:b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\serialdiagnostics.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|c:\\onehistory\\onehistory-projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\serialportclitester.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|solutionrelative:b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\serialportclitester.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|c:\\onehistory\\onehistory-projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\serialportservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|solutionrelative:b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\serialportservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|c:\\onehistory\\onehistory-projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\serialprotocol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|solutionrelative:b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\serialprotocol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|c:\\onehistory\\onehistory-projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\serialrxpacket.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|solutionrelative:b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\serialrxpacket.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|c:\\onehistory\\onehistory-projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|solutionrelative:b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{D8C422A6-07C4-4A59-A4F7-C017A951F500}|b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1.csproj|solutionrelative:b-code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ConsoleControl.cs [\u8BBE\u8BA1]",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\ConsoleControl.cs",
+              "RelativeDocumentMoniker": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\ConsoleControl.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\ConsoleControl.cs [\u8BBE\u8BA1]",
+              "RelativeToolTip": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\ConsoleControl.cs [\u8BBE\u8BA1]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-30T07:53:10.609Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "CommandParser.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\CommandParser.cs",
+              "RelativeDocumentMoniker": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\CommandParser.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\CommandParser.cs",
+              "RelativeToolTip": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\CommandParser.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEgAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-30T07:53:09.356Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\Program.cs",
+              "RelativeDocumentMoniker": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\Program.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\Program.cs",
+              "RelativeToolTip": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-30T07:52:55.986Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "RobotDemoRunner.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\RobotDemoRunner.cs",
+              "RelativeDocumentMoniker": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\RobotDemoRunner.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\RobotDemoRunner.cs",
+              "RelativeToolTip": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\RobotDemoRunner.cs",
+              "ViewState": "AgIAACkAAAAAAAAAAAAcwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-30T07:52:32.812Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "SerialAutoBaud.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialAutoBaud.cs",
+              "RelativeDocumentMoniker": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialAutoBaud.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialAutoBaud.cs",
+              "RelativeToolTip": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialAutoBaud.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-30T07:52:27.635Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "SerialDefaults.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialDefaults.cs",
+              "RelativeDocumentMoniker": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialDefaults.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialDefaults.cs",
+              "RelativeToolTip": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialDefaults.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-30T07:52:23.859Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "SerialDiagnostics.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialDiagnostics.cs",
+              "RelativeDocumentMoniker": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialDiagnostics.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialDiagnostics.cs",
+              "RelativeToolTip": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialDiagnostics.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB0AAABMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-30T07:52:12.22Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "SerialPortCliTester.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialPortCliTester.cs",
+              "RelativeDocumentMoniker": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialPortCliTester.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialPortCliTester.cs",
+              "RelativeToolTip": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialPortCliTester.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-30T07:52:01.91Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "SerialPortService.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialPortService.cs",
+              "RelativeDocumentMoniker": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialPortService.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialPortService.cs",
+              "RelativeToolTip": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialPortService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-30T07:51:53.077Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "SerialProtocol.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialProtocol.cs",
+              "RelativeDocumentMoniker": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialProtocol.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialProtocol.cs",
+              "RelativeToolTip": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialProtocol.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-30T07:51:49.482Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "SerialRxPacket.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialRxPacket.cs",
+              "RelativeDocumentMoniker": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialRxPacket.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialRxPacket.cs",
+              "RelativeToolTip": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\SerialRxPacket.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-30T07:51:46.948Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "PathPlanner.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\PathPlanner.cs",
+              "RelativeDocumentMoniker": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\PathPlanner.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\PathPlanner.cs",
+              "RelativeToolTip": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\PathPlanner.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAywBMAAABTAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-30T07:51:40.251Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "Form1.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\Form1.cs",
+              "RelativeDocumentMoniker": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\Form1.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\Form1.cs",
+              "RelativeToolTip": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\Form1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-29T11:50:17.241Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "Form1.cs [\u8BBE\u8BA1]",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\Form1.cs",
+              "RelativeDocumentMoniker": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\Form1.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\Form1.cs [\u8BBE\u8BA1]",
+              "RelativeToolTip": "b-Code-\u4E09\u7EF4\u5750\u6807\u673A\u5668\u4EBA\u524D\u7AEF\u8BBE\u8BA1\\Form1.cs [\u8BBE\u8BA1]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-29T07:29:42.011Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

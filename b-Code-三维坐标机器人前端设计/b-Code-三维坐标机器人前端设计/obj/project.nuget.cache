@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "dgSpecHash": "+XER7hB8vV4=",
+  "success": true,
+  "projectFilePath": "C:\\OneHistory\\OneHistory-Projects\\2026-007-三维坐标机器\\b-Code-三维坐标机器人前端设计\\b-Code-三维坐标机器人前端设计\\b-Code-三维坐标机器人前端设计.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Administrator\\.nuget\\packages\\runtime.linux-arm.runtime.native.system.io.ports\\8.0.0\\runtime.linux-arm.runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\runtime.linux-arm64.runtime.native.system.io.ports\\8.0.0\\runtime.linux-arm64.runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\runtime.linux-x64.runtime.native.system.io.ports\\8.0.0\\runtime.linux-x64.runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\runtime.native.system.io.ports\\8.0.0\\runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\runtime.osx-arm64.runtime.native.system.io.ports\\8.0.0\\runtime.osx-arm64.runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\runtime.osx-x64.runtime.native.system.io.ports\\8.0.0\\runtime.osx-x64.runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\system.io.ports\\8.0.0\\system.io.ports.8.0.0.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1900",
+      "level": "Warning",
+      "message": "获取包漏洞数据时出错: 无法加载源 https://nuget.cdn.azure.cn/v3/index.json 的服务索引。",
+      "projectPath": "C:\\OneHistory\\OneHistory-Projects\\2026-007-三维坐标机器\\b-Code-三维坐标机器人前端设计\\b-Code-三维坐标机器人前端设计\\b-Code-三维坐标机器人前端设计.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\OneHistory\\OneHistory-Projects\\2026-007-三维坐标机器\\b-Code-三维坐标机器人前端设计\\b-Code-三维坐标机器人前端设计\\b-Code-三维坐标机器人前端设计.csproj",
+      "targetGraphs": []
+    }
+  ]
+}

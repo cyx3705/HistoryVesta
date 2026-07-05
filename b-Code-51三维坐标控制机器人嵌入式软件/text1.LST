@@ -1,0 +1,436 @@
+C51 COMPILER V9.60.7.0   TEXT1                                                             07/02/2026 17:40:59 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE TEXT1
+OBJECT MODULE PLACED IN text1.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE text1.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /*
+   2           * STC8A8K64D4 3-axis Cartesian robot controller
+   3           * Protocol:
+   4           *   PC -> MCU: Fx,Fy,Fz,DirX,DirY,DirZ###  (new)
+   5           *   PC -> MCU: Fx,Fy,Fz###                  (legacy, dir defaults to 1,1,1)
+   6           *   MCU -> PC: OK###
+   7           *   Test:      PING### -> PONG###
+   8           */
+   9          #include "STC8A8K64D4.H"
+  10          
+  11          sbit CLK_X = P2^0;
+  12          sbit DIR_X = P2^1;
+  13          sbit CLK_Y = P2^2;
+  14          sbit DIR_Y = P2^3;
+  15          sbit CLK_Z = P2^4;
+  16          sbit DIR_Z = P2^5;
+  17          sbit LED_STATUS = P5^5;
+  18          
+  19          #define FOSC            11059200UL
+  20          #define BAUD            9600UL
+  21          #define BUF_SIZE        64
+  22          #define TICK_HZ         10000UL
+  23          #define TIMER0_RELOAD   (65536UL - FOSC / 12UL / TICK_HZ)
+  24          #define SEGMENT_RUN_MS  1000
+  25          #define SEGMENT_TICKS   (SEGMENT_RUN_MS * (TICK_HZ / 1000))
+  26          #define CLK_X_MASK      0x01
+  27          
+  28          static unsigned char xdata recv_buf[BUF_SIZE];
+  29          static unsigned char recv_cnt = 0;
+  30          
+  31          static unsigned int active_Fx = 0;
+  32          static unsigned int active_Fy = 0;
+  33          static unsigned int active_Fz = 0;
+  34          static unsigned char pulse_enable = 0;
+  35          
+  36          static unsigned int x_toggle_cnt = 0;
+  37          static unsigned int y_toggle_cnt = 0;
+  38          static unsigned int z_toggle_cnt = 0;
+  39          static unsigned int x_half_period = 1;
+  40          static unsigned int y_half_period = 1;
+  41          static unsigned int z_half_period = 1;
+  42          
+  43          static volatile unsigned int segment_ticks_left = 0;
+  44          static volatile unsigned char segment_done = 0;
+  45          
+  46          static void IO_Init(void);
+  47          static void UART_Init(void);
+  48          static void Timer0_Init(void);
+  49          static void UART_SendByte(unsigned char dat);
+  50          static void UART_SendString(const char code *s);
+  51          static unsigned char StrEq(const char *line, const char code *text);
+  52          static unsigned char ParseCommandLine(
+  53              const char *line,
+  54              unsigned int *fx,
+  55              unsigned int *fy,
+C51 COMPILER V9.60.7.0   TEXT1                                                             07/02/2026 17:40:59 PAGE 2   
+
+  56              unsigned int *fz,
+  57              unsigned char *dirX,
+  58              unsigned char *dirY,
+  59              unsigned char *dirZ);
+  60          static void LoadPulses(unsigned int fx, unsigned int fy, unsigned int fz);
+  61          static void StopPulses(void);
+  62          static void StartSegmentRun(void);
+  63          static void WaitSegmentDone(void);
+  64          static void RunSegment(unsigned int fx, unsigned int fy, unsigned int fz, unsigned char dirX, unsigned cha
+             -r dirY, unsigned char dirZ);
+  65          static void ProcessFrame(unsigned char len);
+  66          static unsigned char FrameEndsWithHash(void);
+  67          
+  68          static unsigned char ParseUnsignedField(const char *line, unsigned char *idx, unsigned int *value)
+  69          {
+  70   1          unsigned int v = 0;
+  71   1          unsigned char digits = 0;
+  72   1      
+  73   1          while (line[*idx] >= '0' && line[*idx] <= '9')
+  74   1          {
+  75   2              v = (unsigned int)(v * 10 + (line[*idx] - '0'));
+  76   2              (*idx)++;
+  77   2              digits++;
+  78   2          }
+  79   1      
+  80   1          if (digits == 0)
+  81   1              return 0;
+  82   1      
+  83   1          *value = v;
+  84   1          return 1;
+  85   1      }
+  86          
+  87          static unsigned char ParseDirField(const char *line, unsigned char *idx, unsigned char *value)
+  88          {
+  89   1          if (line[*idx] == '0')
+  90   1          {
+  91   2              *value = 0;
+  92   2              (*idx)++;
+  93   2              return 1;
+  94   2          }
+  95   1      
+  96   1          if (line[*idx] == '1')
+  97   1          {
+  98   2              *value = 1;
+  99   2              (*idx)++;
+ 100   2              return 1;
+ 101   2          }
+ 102   1      
+ 103   1          return 0;
+ 104   1      }
+ 105          
+ 106          static void UART_SendByte(unsigned char dat)
+ 107          {
+ 108   1          SBUF = dat;
+ 109   1          while (!TI);
+ 110   1          TI = 0;
+ 111   1      }
+ 112          
+ 113          static void UART_SendString(const char code *s)
+ 114          {
+ 115   1          while (*s)
+ 116   1              UART_SendByte((unsigned char)*s++);
+C51 COMPILER V9.60.7.0   TEXT1                                                             07/02/2026 17:40:59 PAGE 3   
+
+ 117   1      }
+ 118          
+ 119          static void IO_Init(void)
+ 120          {
+ 121   1          P_SW2 |= 0x80;
+ 122   1      
+ 123   1          P2M0 |= 0x3F;
+ 124   1          P2M1 &= ~0x3F;
+ 125   1      
+ 126   1          P5M0 |= 0x20;
+ 127   1          P5M1 &= ~0x20;
+ 128   1      
+ 129   1          P3M0 |= 0x02;
+ 130   1          P3M1 &= ~0x03;
+ 131   1      
+ 132   1          CLK_X = 0;
+ 133   1          CLK_Y = 0;
+ 134   1          CLK_Z = 0;
+ 135   1          DIR_X = 1;
+ 136   1          DIR_Y = 1;
+ 137   1          DIR_Z = 1;
+ 138   1          LED_STATUS = 0;
+ 139   1      }
+ 140          
+ 141          static void UART_Init(void)
+ 142          {
+ 143   1          P_SW1 &= ~0xC0;
+ 144   1          SCON = 0x50;
+ 145   1          AUXR &= ~0x04;
+ 146   1          AUXR &= ~0x01;
+ 147   1          TMOD &= 0x0F;
+ 148   1          TMOD |= 0x20;
+ 149   1          TH1 = (unsigned char)(256UL - FOSC / 12UL / 32UL / BAUD);
+ 150   1          TL1 = TH1;
+ 151   1          TR1 = 1;
+ 152   1          ES = 0;
+ 153   1          TI = 1;
+ 154   1      }
+ 155          
+ 156          static void Timer0_Init(void)
+ 157          {
+ 158   1          TMOD &= 0xF0;
+ 159   1          TMOD |= 0x01;
+ 160   1          TH0 = (unsigned char)(TIMER0_RELOAD >> 8);
+ 161   1          TL0 = (unsigned char)TIMER0_RELOAD;
+ 162   1          ET0 = 1;
+ 163   1          TR0 = 0;
+ 164   1      }
+ 165          
+ 166          static unsigned char StrEq(const char *line, const char code *text)
+ 167          {
+ 168   1          while (*line != '\0' && *text != '\0')
+ 169   1          {
+ 170   2              if (*line != *text)
+ 171   2                  return 0;
+ 172   2              line++;
+ 173   2              text++;
+ 174   2          }
+ 175   1          return (*line == *text);
+ 176   1      }
+ 177          
+ 178          static unsigned char ParseCommandLine(
+C51 COMPILER V9.60.7.0   TEXT1                                                             07/02/2026 17:40:59 PAGE 4   
+
+ 179              const char *line,
+ 180              unsigned int *fx,
+ 181              unsigned int *fy,
+ 182              unsigned int *fz,
+ 183              unsigned char *dirX,
+ 184              unsigned char *dirY,
+ 185              unsigned char *dirZ)
+ 186          {
+ 187   1          unsigned char i = 0;
+ 188   1          unsigned int x, y, z;
+ 189   1          unsigned char dx = 1, dy = 1, dz = 1;
+ 190   1      
+ 191   1          while (line[i] == ' ' || line[i] == '\t')
+ 192   1              i++;
+ 193   1      
+ 194   1          if (!ParseUnsignedField(line, &i, &x)) return 0;
+ 195   1          if (line[i++] != ',') return 0;
+ 196   1          if (!ParseUnsignedField(line, &i, &y)) return 0;
+ 197   1          if (line[i++] != ',') return 0;
+ 198   1          if (!ParseUnsignedField(line, &i, &z)) return 0;
+ 199   1      
+ 200   1          while (line[i] == ' ' || line[i] == '\t')
+ 201   1              i++;
+ 202   1      
+ 203   1          if (line[i] == ',')
+ 204   1          {
+ 205   2              i++;
+ 206   2              while (line[i] == ' ' || line[i] == '\t') i++;
+ 207   2              if (!ParseDirField(line, &i, &dx)) return 0;
+ 208   2      
+ 209   2              while (line[i] == ' ' || line[i] == '\t') i++;
+ 210   2              if (line[i++] != ',') return 0;
+ 211   2      
+ 212   2              while (line[i] == ' ' || line[i] == '\t') i++;
+ 213   2              if (!ParseDirField(line, &i, &dy)) return 0;
+ 214   2      
+ 215   2              while (line[i] == ' ' || line[i] == '\t') i++;
+ 216   2              if (line[i++] != ',') return 0;
+ 217   2      
+ 218   2              while (line[i] == ' ' || line[i] == '\t') i++;
+ 219   2              if (!ParseDirField(line, &i, &dz)) return 0;
+ 220   2          }
+ 221   1      
+ 222   1          while (line[i] == ' ' || line[i] == '\t')
+ 223   1              i++;
+ 224   1          if (line[i] != '\0') return 0;
+ 225   1      
+ 226   1          if (x > 20000 || y > 20000 || z > 20000) return 0;
+ 227   1      
+ 228   1          *fx = x;
+ 229   1          *fy = y;
+ 230   1          *fz = z;
+ 231   1          *dirX = dx;
+ 232   1          *dirY = dy;
+ 233   1          *dirZ = dz;
+ 234   1          return 1;
+ 235   1      }
+ 236          
+ 237          static void LoadPulses(unsigned int fx, unsigned int fy, unsigned int fz)
+ 238          {
+ 239   1          active_Fx = fx;
+ 240   1          active_Fy = fy;
+C51 COMPILER V9.60.7.0   TEXT1                                                             07/02/2026 17:40:59 PAGE 5   
+
+ 241   1          active_Fz = fz;
+ 242   1      
+ 243   1          x_toggle_cnt = 0;
+ 244   1          y_toggle_cnt = 0;
+ 245   1          z_toggle_cnt = 0;
+ 246   1      
+ 247   1          x_half_period = (active_Fx > 0) ? (unsigned int)(TICK_HZ / (2UL * active_Fx)) : 1;
+ 248   1          y_half_period = (active_Fy > 0) ? (unsigned int)(TICK_HZ / (2UL * active_Fy)) : 1;
+ 249   1          z_half_period = (active_Fz > 0) ? (unsigned int)(TICK_HZ / (2UL * active_Fz)) : 1;
+ 250   1      
+ 251   1          if (x_half_period == 0) x_half_period = 1;
+ 252   1          if (y_half_period == 0) y_half_period = 1;
+ 253   1          if (z_half_period == 0) z_half_period = 1;
+ 254   1      }
+ 255          
+ 256          static void StopPulses(void)
+ 257          {
+ 258   1          pulse_enable = 0;
+ 259   1          TR0 = 0;
+ 260   1          CLK_X = 0;
+ 261   1          CLK_Y = 0;
+ 262   1          CLK_Z = 0;
+ 263   1      }
+ 264          
+ 265          static void StartSegmentRun(void)
+ 266          {
+ 267   1          segment_done = 0;
+ 268   1          segment_ticks_left = (unsigned int)SEGMENT_TICKS;
+ 269   1          pulse_enable = 1;
+ 270   1          TR0 = 1;
+ 271   1      }
+ 272          
+ 273          static void WaitSegmentDone(void)
+ 274          {
+ 275   1          while (!segment_done)
+ 276   1          {
+ 277   2          }
+ 278   1          StopPulses();
+ 279   1      }
+ 280          
+ 281          static void RunSegment(unsigned int fx, unsigned int fy, unsigned int fz, unsigned char dirX, unsigned cha
+             -r dirY, unsigned char dirZ)
+ 282          {
+ 283   1          LED_STATUS = 1;
+ 284   1      
+ 285   1          DIR_X = dirX ? 1 : 0;
+ 286   1          DIR_Y = dirY ? 1 : 0;
+ 287   1          DIR_Z = dirZ ? 1 : 0;
+ 288   1      
+ 289   1          LoadPulses(fx, fy, fz);
+ 290   1          StartSegmentRun();
+ 291   1          WaitSegmentDone();
+ 292   1          LED_STATUS = 0;
+ 293   1      }
+ 294          
+ 295          static unsigned char FrameEndsWithHash(void)
+ 296          {
+ 297   1          if (recv_cnt < 3)
+ 298   1              return 0;
+ 299   1          return (recv_buf[recv_cnt - 3] == '#' &&
+ 300   1                  recv_buf[recv_cnt - 2] == '#' &&
+ 301   1                  recv_buf[recv_cnt - 1] == '#');
+C51 COMPILER V9.60.7.0   TEXT1                                                             07/02/2026 17:40:59 PAGE 6   
+
+ 302   1      }
+ 303          
+ 304          static void ProcessFrame(unsigned char len)
+ 305          {
+ 306   1          unsigned int fx, fy, fz;
+ 307   1          unsigned char dirX, dirY, dirZ;
+ 308   1      
+ 309   1          recv_buf[len] = '\0';
+ 310   1      
+ 311   1          if (StrEq((const char *)recv_buf, "PING"))
+ 312   1          {
+ 313   2              UART_SendString("PONG###");
+ 314   2              return;
+ 315   2          }
+ 316   1      
+ 317   1          if (ParseCommandLine((const char *)recv_buf, &fx, &fy, &fz, &dirX, &dirY, &dirZ))
+ 318   1          {
+ 319   2              RunSegment(fx, fy, fz, dirX, dirY, dirZ);
+ 320   2              UART_SendString("OK###");
+ 321   2          }
+ 322   1      }
+ 323          
+ 324          void Timer0_ISR(void) interrupt 1
+ 325          {
+ 326   1          TH0 = (unsigned char)(TIMER0_RELOAD >> 8);
+ 327   1          TL0 = (unsigned char)TIMER0_RELOAD;
+ 328   1      
+ 329   1          if (!pulse_enable) return;
+ 330   1      
+ 331   1          if (active_Fx > 0)
+ 332   1          {
+ 333   2              x_toggle_cnt++;
+ 334   2              if (x_toggle_cnt >= x_half_period)
+ 335   2              {
+ 336   3                  x_toggle_cnt = 0;
+ 337   3                  P2 ^= CLK_X_MASK; /* match validated 200Hz toggle style on P2.0 */
+ 338   3              }
+ 339   2          }
+ 340   1      
+ 341   1          if (active_Fy > 0)
+ 342   1          {
+ 343   2              y_toggle_cnt++;
+ 344   2              if (y_toggle_cnt >= y_half_period)
+ 345   2              {
+ 346   3                  y_toggle_cnt = 0;
+ 347   3                  CLK_Y = !CLK_Y;
+ 348   3              }
+ 349   2          }
+ 350   1      
+ 351   1          if (active_Fz > 0)
+ 352   1          {
+ 353   2              z_toggle_cnt++;
+ 354   2              if (z_toggle_cnt >= z_half_period)
+ 355   2              {
+ 356   3                  z_toggle_cnt = 0;
+ 357   3                  CLK_Z = !CLK_Z;
+ 358   3              }
+ 359   2          }
+ 360   1      
+ 361   1          if (segment_ticks_left > 0)
+ 362   1          {
+ 363   2              segment_ticks_left--;
+C51 COMPILER V9.60.7.0   TEXT1                                                             07/02/2026 17:40:59 PAGE 7   
+
+ 364   2              if (segment_ticks_left == 0)
+ 365   2                  segment_done = 1;
+ 366   2          }
+ 367   1      }
+ 368          
+ 369          void main(void)
+ 370          {
+ 371   1          IO_Init();
+ 372   1          UART_Init();
+ 373   1          Timer0_Init();
+ 374   1          EA = 1;
+ 375   1      
+ 376   1          while (1)
+ 377   1          {
+ 378   2              if (RI)
+ 379   2              {
+ 380   3                  RI = 0;
+ 381   3      
+ 382   3                  if (recv_cnt < BUF_SIZE)
+ 383   3                  {
+ 384   4                      recv_buf[recv_cnt++] = SBUF;
+ 385   4      
+ 386   4                      if (FrameEndsWithHash())
+ 387   4                      {
+ 388   5                          recv_cnt -= 3;
+ 389   5                          ProcessFrame(recv_cnt);
+ 390   5                          recv_cnt = 0;
+ 391   5                      }
+ 392   4                  }
+ 393   3                  else
+ 394   3                  {
+ 395   4                      recv_cnt = 0;
+ 396   4                  }
+ 397   3              }
+ 398   2          }
+ 399   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1715    ----
+   CONSTANT SIZE    =     19    ----
+   XDATA SIZE       =     64    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     23      70
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

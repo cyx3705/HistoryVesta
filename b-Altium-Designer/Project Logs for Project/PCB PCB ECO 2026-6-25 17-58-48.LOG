@@ -1,0 +1,28 @@
+Added Component: Designator=L1(Inductor)
+Add component (AddParameter): Name = "Class"; Value = "Passive"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer"; Value = "Generic Components"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Published"; Value = "08/06/2000"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Publisher"; Value = "Altium Hobart Technology Centre"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "SubClass"; Value = "Inductor"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Value"; Value = "100uH"; VariantName = "[No Variations]"
+Add component: Footprint Not Found BCY-W2/D3.1
+Added Pin To Net: NetName=NetD1_2 Pin=L1-1
+Added Pin To Net: NetName=RST Pin=L1-2
+Add Pin To Net: Unknown Pin: Pin LM-1
+Add Pin To Net: Unknown Pin: Pin LM-2
+Add Pin To Net: Unknown Pin: Pin LM-3
+Add Pin To Net: Unknown Pin: Pin LM-4
+Add Pin To Net: Unknown Pin: Pin LM-5
+Add Pin To Net: Unknown Pin: Pin LM-6
+Add Pin To Net: Unknown Pin: Pin V1-1
+Add Pin To Net: Unknown Pin: Pin V1-2
+Add Pin To Net: Unknown Pin: Pin V2-1
+Add Pin To Net: Unknown Pin: Pin V2-2
+Add Pin To Net: Unknown Pin: Pin XTAL-1
+Add Pin To Net: Unknown Pin: Pin XTAL-2
+Added Member To Class: ClassName=SCH Member=Component D1 LED3
+Added Member To Class: ClassName=SCH Member=Component L1 Inductor
+Add Class Member: Failed to add class member : Component LM LM2576
+Add Class Member: Failed to add class member : Component V1 Vin
+Add Class Member: Failed to add class member : Component V2 Vout
+Add Class Member: Failed to add class member : Component XTAL 4.0MHZ

@@ -1,0 +1,15 @@
+Change Component Footprint: Designator=E1 Old Footprint=POLAR0.8 New Footprint=PCBComponent_1
+Add Pin To Net: Unknown Pin: Pin LM-1
+Add Pin To Net: Unknown Pin: Pin LM-2
+Add Pin To Net: Unknown Pin: Pin LM-3
+Add Pin To Net: Unknown Pin: Pin LM-4
+Add Pin To Net: Unknown Pin: Pin LM-5
+Add Pin To Net: Unknown Pin: Pin LM-6
+Add Pin To Net: Unknown Pin: Pin V1-1
+Add Pin To Net: Unknown Pin: Pin V1-2
+Add Pin To Net: Unknown Pin: Pin V2-1
+Add Pin To Net: Unknown Pin: Pin V2-2
+Added Member To Class: ClassName=SCH Member=Component D1 LED3
+Add Class Member: Failed to add class member : Component LM LM2576
+Add Class Member: Failed to add class member : Component V1 Vin
+Add Class Member: Failed to add class member : Component V2 Vout

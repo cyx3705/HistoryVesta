@@ -1,0 +1,91 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{F4A55FE0-F6E7-49C9-8F1A-9767079957B9}|b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668.csproj|c:\\onehistory\\onehistory-projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-code-\u865A\u62DF\u793A\u6CE2\u5668\\b-code-\u865A\u62DF\u793A\u6CE2\u5668\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F4A55FE0-F6E7-49C9-8F1A-9767079957B9}|b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668.csproj|solutionrelative:b-code-\u865A\u62DF\u793A\u6CE2\u5668\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F4A55FE0-F6E7-49C9-8F1A-9767079957B9}|b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668.csproj|c:\\onehistory\\onehistory-projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-code-\u865A\u62DF\u793A\u6CE2\u5668\\b-code-\u865A\u62DF\u793A\u6CE2\u5668\\form1.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F4A55FE0-F6E7-49C9-8F1A-9767079957B9}|b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668.csproj|solutionrelative:b-code-\u865A\u62DF\u793A\u6CE2\u5668\\form1.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F4A55FE0-F6E7-49C9-8F1A-9767079957B9}|b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668.csproj|c:\\onehistory\\onehistory-projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-code-\u865A\u62DF\u793A\u6CE2\u5668\\b-code-\u865A\u62DF\u793A\u6CE2\u5668\\form1.resx||{81828910-B8B3-4D2B-99A3-067027C180C1}",
+      "RelativeMoniker": "D:0:0:{F4A55FE0-F6E7-49C9-8F1A-9767079957B9}|b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668.csproj|solutionrelative:b-code-\u865A\u62DF\u793A\u6CE2\u5668\\form1.resx||{81828910-B8B3-4D2B-99A3-067027C180C1}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F4A55FE0-F6E7-49C9-8F1A-9767079957B9}|b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668.csproj|C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-code-\u865A\u62DF\u793A\u6CE2\u5668\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{F4A55FE0-F6E7-49C9-8F1A-9767079957B9}|b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668.csproj|solutionrelative:b-code-\u865A\u62DF\u793A\u6CE2\u5668\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 4,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Form1.resx",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Form1.resx",
+              "RelativeDocumentMoniker": "b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Form1.resx",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Form1.resx",
+              "RelativeToolTip": "b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Form1.resx",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001005|",
+              "WhenOpened": "2026-06-28T13:45:26.975Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Form1.Designer.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Form1.Designer.cs",
+              "RelativeDocumentMoniker": "b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Form1.Designer.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Form1.Designer.cs",
+              "RelativeToolTip": "b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Form1.Designer.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-28T13:45:22.649Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Program.cs",
+              "RelativeDocumentMoniker": "b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Program.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Program.cs",
+              "RelativeToolTip": "b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-28T13:45:18.2Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Form1.cs [\u8BBE\u8BA1]",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Form1.cs",
+              "RelativeDocumentMoniker": "b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Form1.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-007-\u4E09\u7EF4\u5750\u6807\u673A\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Form1.cs [\u8BBE\u8BA1]",
+              "RelativeToolTip": "b-Code-\u865A\u62DF\u793A\u6CE2\u5668\\Form1.cs [\u8BBE\u8BA1]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-28T11:30:13.292Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+#include "STC8A8K64D4.H"
+#include <intrins.h>
+
+void MAX7219_WriteByte(unsigned char data);
+void MAX7219_Write(unsigned char addr, unsigned char dat);
+
+void IO_init(void)
+{
+    P_SW2 |= 0x80;
+    P2M0 |= 0x07;
+    P2M1 &= ~0x07;
+}
+
+void MAX7219_WriteByte(unsigned char data)
+{
+    unsigned char i;
+    for(i = 0; i < 8; i++)
+    {
+        P2 &= ~0x04;
+        if(data & 0x80) P2 |= 0x01;
+        else P2 &= ~0x01;
+        data <<= 1;
+        P2 |= 0x04;
+    }
+}
+
+void MAX7219_Write(unsigned char addr, unsigned char dat)
+{
+    P2 &= ~0x02;
+    MAX7219_WriteByte(addr);
+    MAX7219_WriteByte(dat);
+    P2 |= 0x02;
+}
+
+void MAX7219_Init(void)
+{
+    MAX7219_Write(0x0C, 0x01);
+    MAX7219_Write(0x0B, 0x07);
+    MAX7219_Write(0x09, 0x00);
+    MAX7219_Write(0x0A, 0x0A);
+    MAX7219_Write(0x0F, 0x00);
+}
+
+void MAX7219_Clear(void)
+{
+    unsigned char i;
+    for(i = 1; i <= 8; i++)
+        MAX7219_Write(i, 0x00);
+}
+
+void delay_ms(unsigned int ms)
+{
+    unsigned int a, b;
+    for(a = 0; a < ms; a++)
+        for(b = 0; b < 800; b++);
+}
+
+void main(void)
+{
+    IO_init();
+    MAX7219_Init();
+    MAX7219_Clear();
+    
+    while(1)
+    {
+        unsigned char i;
+        for(i = 1; i <= 8; i++) MAX7219_Write(i, 0xFF);
+        delay_ms(500);
+        MAX7219_Clear();
+        delay_ms(500);
+    }
+}

@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Update="ConsoleControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="DataProcessingPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Form1.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="GraphicalPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="HelpPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="PathDataTablePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="SimulationDemoPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Wireframe3DViewer.cs">
+      <SubType>Component</SubType>
+    </Compile>
+  </ItemGroup>
+</Project>

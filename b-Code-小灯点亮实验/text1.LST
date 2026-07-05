@@ -1,0 +1,117 @@
+C51 COMPILER V9.60.7.0   TEXT1                                                             06/29/2026 16:38:41 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE TEXT1
+OBJECT MODULE PLACED IN text1.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE text1.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include "STC8A8K64D4.H"
+   2          #include <intrins.h>
+   3          
+   4          void MAX7219_WriteByte(unsigned char dat);
+   5          void MAX7219_Write(unsigned char addr, unsigned char dat);
+   6          void MAX7219_Display_Graph(unsigned char *graph);
+   7          
+   8          // ? 把图形数组定义为全局变量，去掉 const，放在函数外面
+   9          unsigned char heart[8] = {
+  10              0x18, 0x3C, 0x7E, 0xFF,
+  11              0xFF, 0x7E, 0x3C, 0x18
+  12          };
+  13          
+  14          // 可选：笑脸图案，切换注释即可
+  15          // unsigned char smile[8] = {
+  16          //     0x3C, 0x42, 0xA5, 0x81,
+  17          //     0xA5, 0x99, 0x42, 0x3C
+  18          // };
+  19          
+  20          void IO_init(void)
+  21          {
+  22   1          P_SW2 |= 0x80;   // 开启扩展寄存器访问
+  23   1          P2M0 |= 0x07;    // P2.0(DIN) P2.1(CS) P2.2(CLK) 推挽输出
+  24   1          P2M1 &= ~0x07;
+  25   1      }
+  26          
+  27          void MAX7219_WriteByte(unsigned char dat)
+  28          {
+  29   1          unsigned char i;
+  30   1          for(i = 0; i < 8; i++)
+  31   1          {
+  32   2              P2 &= ~0x04;         // CLK拉低
+  33   2              if(dat & 0x80) P2 |= 0x01;
+  34   2              else           P2 &= ~0x01;
+  35   2              dat <<= 1;
+  36   2              P2 |= 0x04;          // CLK拉高锁存
+  37   2          }
+  38   1      }
+  39          
+  40          void MAX7219_Write(unsigned char addr, unsigned char dat)
+  41          {
+  42   1          P2 &= ~0x02;             // CS拉低
+  43   1          MAX7219_WriteByte(addr);
+  44   1          MAX7219_WriteByte(dat);
+  45   1          P2 |= 0x02;              // CS拉高锁存
+  46   1      }
+  47          
+  48          void MAX7219_Init(void)
+  49          {
+  50   1          MAX7219_Write(0x0C, 0x01);  // 开启显示
+  51   1          MAX7219_Write(0x0B, 0x07);  // 扫描8行
+  52   1          MAX7219_Write(0x09, 0x00);  // 不译码，适合点阵
+  53   1          MAX7219_Write(0x0A, 0x08);  // 亮度0~15
+  54   1          MAX7219_Write(0x0F, 0x00);  // 关闭测试模式
+  55   1      }
+C51 COMPILER V9.60.7.0   TEXT1                                                             06/29/2026 16:38:41 PAGE 2   
+
+  56          
+  57          void MAX7219_Clear(void)
+  58          {
+  59   1          unsigned char i;
+  60   1          for(i = 1; i <= 8; i++) MAX7219_Write(i, 0x00);
+  61   1      }
+  62          
+  63          void MAX7219_Display_Graph(unsigned char *graph)
+  64          {
+  65   1          unsigned char i;
+  66   1          for(i = 0; i < 8; i++)
+  67   1          {
+  68   2              MAX7219_Write(i + 1, graph[i]);
+  69   2          }
+  70   1      }
+  71          
+  72          void delay_ms(unsigned int ms)
+  73          {
+  74   1          unsigned int a, b;
+  75   1          for(a = 0; a < ms; a++)
+  76   1              for(b = 0; b < 800; b++); // 适配11.0592MHz / 12MHz晶振
+  77   1      }
+  78          
+  79          void main(void)
+  80          {
+  81   1          IO_init();
+  82   1          MAX7219_Init();
+  83   1          MAX7219_Clear();
+  84   1      
+  85   1          while(1)
+  86   1          {
+  87   2              MAX7219_Display_Graph(heart);  // 显示心形
+  88   2              delay_ms(1000);
+  89   2              MAX7219_Clear();
+  90   2              delay_ms(500);
+  91   2          }
+  92   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    206    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      8       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

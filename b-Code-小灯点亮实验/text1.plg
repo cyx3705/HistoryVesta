@@ -1,0 +1,218 @@
+<html>
+<body>
+<pre>
+<h1>礦ision Build Log</h1>
+<h2>Project:</h2>
+C:\OneHistory\OneHistory-Projects\2026-007-三维坐标机器\b-Code-小灯点亮实验\text1.uvproj
+Project File Date:  06/28/2026
+
+<h2>Output:</h2>
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(34): error C141: syntax error near 'unsigned', expected '__asm'
+text1.c(34): error C202: 'i': undefined identifier
+text1.c(35): error C202: 'i': undefined identifier
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(39): error C141: syntax error near '}', expected 'hdata'
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+linking...
+Program Size: data=9.0 xdata=0 code=66
+creating hex file from "text1"...
+"text1" - 0 Error(s), 0 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+linking...
+Program Size: data=9.0 xdata=0 code=70
+creating hex file from "text1"...
+"text1" - 0 Error(s), 0 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+linking...
+Program Size: data=9.0 xdata=0 code=70
+creating hex file from "text1"...
+"text1" - 0 Error(s), 0 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+linking...
+Program Size: data=9.0 xdata=0 code=76
+creating hex file from "text1"...
+"text1" - 0 Error(s), 0 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(9): error C141: syntax error near ')', expected '<id>'
+text1.c(14): error C202: 'P2_2': undefined identifier
+text1.c(15): error C202: 'P2_0': undefined identifier
+text1.c(15): error C141: syntax error near '&', expected 'bit'
+text1.c(15): error C141: syntax error near ')', expected ';'
+text1.c(15): error C141: syntax error near ':', expected ';'
+text1.c(16): error C141: syntax error near 'data', expected '__asm'
+text1.c(17): error C202: 'P2_2': undefined identifier
+text1.c(24): error C202: 'P2_1': undefined identifier
+text1.c(27): error C202: 'P2_1': undefined identifier
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(4): error C141: syntax error near ')', expected '<id>'
+text1.c(17): error C141: syntax error near ')', expected '<id>'
+text1.c(22): error C202: 'P2_2': undefined identifier
+text1.c(23): error C202: 'P2_0': undefined identifier
+text1.c(23): error C141: syntax error near '&', expected 'bit'
+text1.c(23): error C141: syntax error near ')', expected ';'
+text1.c(23): error C141: syntax error near ':', expected ';'
+text1.c(24): error C141: syntax error near 'data', expected '__asm'
+text1.c(25): error C202: 'P2_2': undefined identifier
+text1.c(32): error C202: 'P2_1': undefined identifier
+text1.c(35): error C202: 'P2_1': undefined identifier
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(4): error C141: syntax error near ')', expected '<id>'
+text1.c(17): error C141: syntax error near ')', expected '<id>'
+text1.c(22): error C202: 'P2_2': undefined identifier
+text1.c(23): error C202: 'P2_0': undefined identifier
+text1.c(23): error C141: syntax error near '&', expected 'bit'
+text1.c(23): error C141: syntax error near ')', expected ';'
+text1.c(23): error C141: syntax error near ':', expected ';'
+text1.c(24): error C141: syntax error near 'data', expected '__asm'
+text1.c(25): error C202: 'P2_2': undefined identifier
+text1.c(32): error C202: 'P2_1': undefined identifier
+text1.c(35): error C202: 'P2_1': undefined identifier
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(4): error C141: syntax error near ')', expected '<id>'
+text1.c(17): error C141: syntax error near ')', expected '<id>'
+text1.c(23): error C141: syntax error near '&', expected 'bit'
+text1.c(23): error C190: '&': not an lvalue
+text1.c(23): error C141: syntax error near ')', expected ';'
+text1.c(23): error C141: syntax error near ':', expected ';'
+text1.c(24): error C141: syntax error near 'data', expected '__asm'
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(4): error C141: syntax error near ')', expected '<id>'
+text1.c(17): error C141: syntax error near ')', expected '<id>'
+text1.c(23): error C141: syntax error near 'data', expected 'sizeof'
+text1.c(27): error C141: syntax error near 'data', expected '__asm'
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(4): error C141: syntax error near ')', expected '<id>'
+text1.c(14): error C141: syntax error near ')', expected '<id>'
+text1.c(20): error C141: syntax error near 'data', expected 'sizeof'
+text1.c(24): error C141: syntax error near 'data', expected '__asm'
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(4): error C141: syntax error near ')', expected '<id>'
+text1.c(14): error C141: syntax error near ')', expected '<id>'
+text1.c(20): error C141: syntax error near 'data', expected 'sizeof'
+text1.c(24): error C141: syntax error near 'data', expected '__asm'
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(13): warning C206: 'MAX7219_WriteByte': missing function-prototype
+text1.c(13): error C267: 'MAX7219_WriteByte': requires ANSI-style prototype
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(5): error C141: syntax error near ')', expected '<id>'
+text1.c(15): error C141: syntax error near ')', expected '<id>'
+text1.c(21): error C141: syntax error near 'data', expected 'sizeof'
+text1.c(23): error C141: syntax error near 'data', expected '__asm'
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+linking...
+Program Size: data=9.0 xdata=0 code=68
+creating hex file from "text1"...
+"text1" - 0 Error(s), 0 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(4): error C141: syntax error near ')', expected '<id>'
+text1.c(14): error C141: syntax error near ')', expected '<id>'
+text1.c(20): error C141: syntax error near 'data', expected 'sizeof'
+text1.c(22): error C141: syntax error near 'data', expected '__asm'
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(4): error C141: syntax error near ')', expected '<id>'
+text1.c(14): error C141: syntax error near ')', expected '<id>'
+text1.c(20): error C141: syntax error near 'data', expected 'sizeof'
+text1.c(22): error C141: syntax error near 'data', expected '__asm'
+目标未创建
+Build target 'Target 1'
+compiling text1.c...
+text1.c(4): error C141: syntax error near ')', expected '<id>'
+text1.c(14): error C141: syntax error near ')', expected '<id>'
+text1.c(20): error C141: syntax error near 'data', expected 'sizeof'
+text1.c(22): error C141: syntax error near 'data', expected '__asm'
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(4): error C141: syntax error near ')', expected '<id>'
+text1.c(14): error C141: syntax error near ')', expected '<id>'
+text1.c(20): error C141: syntax error near 'data', expected 'sizeof'
+text1.c(22): error C141: syntax error near 'data', expected '__asm'
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(4): error C141: syntax error near ')', expected '<id>'
+text1.c(14): error C141: syntax error near ')', expected '<id>'
+text1.c(20): error C141: syntax error near 'data', expected 'sizeof'
+text1.c(22): error C141: syntax error near 'data', expected '__asm'
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+linking...
+Program Size: data=10.0 xdata=0 code=197
+creating hex file from "text1"...
+"text1" - 0 Error(s), 0 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+text1.c(75): error C141: syntax error near 'const', expected '__asm'
+text1.c(75): error C202: 'heart': undefined identifier
+text1.c(75): error C141: syntax error near '{', expected 'sizeof'
+text1.c(78): error C141: syntax error near '}', expected ';'
+text1.c(88): error C202: 'heart': undefined identifier
+目标未创建
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+linking...
+Program Size: data=20.0 xdata=0 code=405
+creating hex file from "text1"...
+"text1" - 0 Error(s), 0 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling text1.c...
+linking...
+Program Size: data=20.0 xdata=0 code=405
+creating hex file from "text1"...
+"text1" - 0 Error(s), 0 Warning(s).
