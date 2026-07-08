@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>单轴梯形加减速 v-t 图</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#171e2e; --ink:#e8eef7; --muted:#8ea0bd;
+    --line:#3a4761; --accel:#2f6df6; --cruise:#12b886; --decel:#f59f00;
+    --red:#ff3b3b; --grid:#242e42;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;padding:22px}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+  .wrap{max-width:960px;margin:0 auto}
+  .controls{display:flex;gap:18px;flex-wrap:wrap;align-items:center;
+            background:var(--panel);padding:14px 16px;border-radius:12px;margin-bottom:16px}
+  .controls label{font-size:13px;color:var(--muted);margin-right:6px}
+  select,input[type=range]{vertical-align:middle}
+  select{background:#0d1322;color:var(--ink);border:1px solid var(--line);
+         border-radius:8px;padding:6px 10px;font-size:14px}
+  input[type=range]{width:200px}
+  .val{font-variant-numeric:tabular-nums;color:var(--ink);font-size:13px;min-width:52px;display:inline-block}
+  .card{background:var(--panel);border-radius:12px;padding:10px 6px 4px}
+  svg{width:100%;height:auto;display:block}
+  .legend{display:flex;gap:20px;flex-wrap:wrap;margin:14px 2px 0;font-size:13px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+  .seg{width:16px;height:4px;border-radius:2px;display:inline-block}
+  .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+         gap:10px;margin-top:16px}
+  .fact{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .fact b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+  .fact small{color:var(--muted);font-size:12px}
+  .note{color:var(--muted);font-size:12px;margin-top:14px;line-height:1.6}
+  code{background:#0d1322;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>单轴梯形加减速 v-t 图</h1>
+  <div class="sub">直线（梯形）加减速：起步不从 0 开始，从起动频率起跳 → 线性加速 → 匀速 → 线性减速到起动频率后停止。红点标注按钮动作。</div>
+
+  <div class="controls">
+    <div><label>选择轴</label>
+      <select id="axis">
+        <option value="X">X 轴（同步带，工作 1680 Hz）</option>
+        <option value="Y" selected>Y 轴（滚珠丝杠，工作 3200 Hz）</option>
+        <option value="Z">Z 轴（滚珠丝杠，工作 3200 Hz）</option>
+      </select>
+    </div>
+    <div><label>按住时长（匀速段）</label>
+      <input id="hold" type="range" min="0" max="800" value="300" step="10">
+      <span class="val" id="holdv">300 ms</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <svg id="plot" viewBox="0 0 900 460" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <div class="legend">
+    <span><i class="seg" style="background:var(--accel)"></i>加速段（按住加速）</span>
+    <span><i class="seg" style="background:var(--cruise)"></i>匀速段（保持按住）</span>
+    <span><i class="seg" style="background:var(--decel)"></i>减速段（抬起后）</span>
+    <span><i class="dot" style="background:var(--red)"></i>红点：按钮动作时刻</span>
+  </div>
+
+  <div class="facts" id="facts"></div>
+
+  <div class="note" id="note"></div>
+</div>
+
+<script>
+/* 参数直接对应固件 text1.c 中的常数 */
+const F_BASE = 12800;      // 基准节拍 Hz
+const ACCEL_STEP = 2;      // 每 tick 增量变化
+const START_FREQ = 500;    // 起动频率 Hz (START_INCR/2)
+// 频率斜率 = d(freq)/dt = ACCEL_STEP*F_BASE/2  (增量=2*freq)
+const SLOPE = ACCEL_STEP * F_BASE / 2;   // Hz per second = 12800 Hz/s
+const VMAX = { X:1680, Y:3200, Z:3200 };
+
+const NS = "http://www.w3.org/2000/svg";
+const plot = document.getElementById('plot');
+const axisSel = document.getElementById('axis');
+const hold = document.getElementById('hold');
+const holdv = document.getElementById('holdv');
+
+// 绘图区域
+const M = {l:64, r:26, t:24, b:52};
+const W = 900, H = 460;
+const px0 = M.l, px1 = W - M.r;
+const py0 = H - M.b, py1 = M.t;
+
+function el(tag, attrs, txt){
+  const e = document.createElementNS(NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(txt!=null) e.textContent = txt;
+  return e;
+}
+
+function draw(){
+  const axis = axisSel.value;
+  const vmax = VMAX[axis];
+  const tHold = +hold.value / 1000;          // s
+  holdv.textContent = hold.value + ' ms';
+
+  const tAcc = (vmax - START_FREQ) / SLOPE;   // 加速时间 s
+  const tDec = tAcc;                          // 对称减速时间 s
+  const tEnd = tAcc + tHold + tDec;
+
+  // v-t 关键点（时间 s，速度 Hz）
+  const P = [
+    {t:0,               v:START_FREQ},        // 梯形左下角：按下按钮，开始加速
+    {t:tAcc,            v:vmax},              // 到达匀速
+    {t:tAcc+tHold,      v:vmax},              // 梯形右上角：抬起按钮，开始减速
+    {t:tEnd,            v:START_FREQ},        // 减到起动频率
+    {t:tEnd,            v:0}                  // 停止
+  ];
+
+  // 坐标映射
+  const tMax = Math.max(tEnd*1.06, 0.001);
+  const vAxisMax = Math.ceil(vmax/500)*500 + 250;
+  const X = t => px0 + (t/tMax)*(px1-px0);
+  const Y = v => py0 + (v/vAxisMax)*(py1-py0);
+
+  plot.innerHTML = '';
+
+  // 网格 + Y 轴刻度
+  for(let v=0; v<=vAxisMax-100; v+=500){
+    plot.appendChild(el('line',{x1:px0,y1:Y(v),x2:px1,y2:Y(v),stroke:'var(--grid)','stroke-width':1}));
+    plot.appendChild(el('text',{x:px0-10,y:Y(v)+4,fill:'var(--muted)','font-size':11,'text-anchor':'end'}, v));
+  }
+  // X 轴刻度（ms）
+  const nTicks = 6;
+  for(let i=0;i<=nTicks;i++){
+    const t = tMax*i/nTicks;
+    plot.appendChild(el('line',{x1:X(t),y1:py0,x2:X(t),y2:py0+5,stroke:'var(--muted)','stroke-width':1}));
+    plot.appendChild(el('text',{x:X(t),y:py0+20,fill:'var(--muted)','font-size':11,'text-anchor':'middle'}, Math.round(t*1000)));
+  }
+
+  // 坐标轴
+  plot.appendChild(el('line',{x1:px0,y1:py0,x2:px1,y2:py0,stroke:'var(--line)','stroke-width':1.5}));
+  plot.appendChild(el('line',{x1:px0,y1:py0,x2:px0,y2:py1,stroke:'var(--line)','stroke-width':1.5}));
+  plot.appendChild(el('text',{x:(px0+px1)/2,y:H-12,fill:'var(--ink)','font-size':13,'text-anchor':'middle'}, '时间 t (ms)'));
+  plot.appendChild(el('text',{x:16,y:(py0+py1)/2,fill:'var(--ink)','font-size':13,'text-anchor':'middle',
+      transform:`rotate(-90 16 ${(py0+py1)/2})`}, '脉冲频率 v (Hz)  ∝ 速度'));
+
+  // 分段阴影
+  function band(t1,t2,color){
+    plot.appendChild(el('rect',{x:X(t1),y:py1,width:X(t2)-X(t1),height:py0-py1,fill:color,opacity:0.07}));
+  }
+  band(0,tAcc,'var(--accel)');
+  band(tAcc,tAcc+tHold,'var(--cruise)');
+  band(tAcc+tHold,tEnd,'var(--decel)');
+
+  // 分段折线（用不同颜色画三段）
+  function seg(a,b,color){
+    plot.appendChild(el('line',{x1:X(a.t),y1:Y(a.v),x2:X(b.t),y2:Y(b.v),
+        stroke:color,'stroke-width':3.5,'stroke-linecap':'round'}));
+  }
+  seg(P[0],P[1],'var(--accel)');   // 加速
+  seg(P[1],P[2],'var(--cruise)');  // 匀速
+  seg(P[2],P[3],'var(--decel)');   // 减速
+  seg(P[3],P[4],'var(--decel)');   // 落回停止
+
+  // 起动频率虚线
+  plot.appendChild(el('line',{x1:px0,y1:Y(START_FREQ),x2:px1,y2:Y(START_FREQ),
+      stroke:'var(--muted)','stroke-width':1,'stroke-dasharray':'4 5',opacity:0.5}));
+  plot.appendChild(el('text',{x:px1-4,y:Y(START_FREQ)-6,fill:'var(--muted)','font-size':11,'text-anchor':'end'},
+      '起动频率 '+START_FREQ+' Hz'));
+  // 工作频率虚线
+  plot.appendChild(el('line',{x1:px0,y1:Y(vmax),x2:px1,y2:Y(vmax),
+      stroke:'var(--cruise)','stroke-width':1,'stroke-dasharray':'4 5',opacity:0.4}));
+  plot.appendChild(el('text',{x:px1-4,y:Y(vmax)-6,fill:'var(--cruise)','font-size':11,'text-anchor':'end'},
+      '工作频率 '+vmax+' Hz'));
+
+  // 红点 + 标注
+  function redDot(p, label, sub, dx, dy){
+    plot.appendChild(el('circle',{cx:X(p.t),cy:Y(p.v),r:7,fill:'var(--red)',
+        stroke:'#fff','stroke-width':2}));
+    const tx = X(p.t)+dx, ty = Y(p.v)+dy;
+    const g = el('g',{});
+    g.appendChild(el('text',{x:tx,y:ty,fill:'var(--red)','font-size':13,'font-weight':700,
+        'text-anchor':dx<0?'end':'start'}, label));
+    g.appendChild(el('text',{x:tx,y:ty+16,fill:'var(--muted)','font-size':11,
+        'text-anchor':dx<0?'end':'start'}, sub));
+    plot.appendChild(g);
+  }
+  // 梯形左下角：按下按钮开始加速
+  redDot(P[0], '① 按下按钮', '开始加速（梯形左下角）', 12, -6);
+  // 梯形右上角：抬起按钮开始减速
+  redDot(P[2], '② 抬起按钮', '开始减速（梯形右上角）', -12, -12);
+
+  // 事实卡片
+  const facts = document.getElementById('facts');
+  facts.innerHTML = '';
+  const items = [
+    ['加速时间', (tAcc*1000).toFixed(0)+' ms', '从 '+START_FREQ+' → '+vmax+' Hz'],
+    ['匀速时间', (tHold*1000).toFixed(0)+' ms', '=按住时长'],
+    ['减速时间', (tDec*1000).toFixed(0)+' ms', '对称，'+vmax+' → '+START_FREQ+' Hz'],
+    ['总时间',   (tEnd*1000).toFixed(0)+' ms', '一次完整梯形'],
+    ['频率斜率', SLOPE.toLocaleString()+' Hz/s', 'ACCEL_STEP×F_BASE/2'],
+  ];
+  for(const [k,v,s] of items){
+    const d = el('div',{class:'fact'});
+    d.innerHTML = `<small>${k}</small><b>${v}</b><small>${s}</small>`;
+    facts.appendChild(d);
+  }
+
+  document.getElementById('note').innerHTML =
+    '固件对应关系（<code>text1.c</code>）：起动频率 <code>START_FREQ_HZ=500</code>，每基准 tick 速度按 '+
+    '<code>ACCEL_STEP=2</code> 线性变化，基准节拍 <code>F_BASE_HZ=12800</code>，故频率斜率 = 2×12800/2 = '+
+    '12800 Hz/s。<br>因果律：控制器无法预知何时抬手，只能在<b>抬起按钮那一刻</b>（速度正处于匀速段顶部＝梯形右上角）'+
+    '才开始减速；按下按钮那一刻（梯形左下角）从起动频率起跳开始加速。匀速段长度 = 你按住的时间。';
+}
+
+axisSel.addEventListener('change', draw);
+hold.addEventListener('input', draw);
+draw();
+</script>
+</body>
+</html>

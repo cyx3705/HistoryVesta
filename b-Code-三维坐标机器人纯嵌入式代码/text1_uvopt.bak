@@ -205,10 +205,10 @@
       <FileType>1</FileType>
       <tvExp>1</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>93</ColumnNumber>
+      <ColumnNumber>52</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>290</TopLine>
-      <CurrentLine>322</CurrentLine>
+      <TopLine>103</TopLine>
+      <CurrentLine>103</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\text1.c</PathWithFileName>
       <FilenameWithoutPath>text1.c</FilenameWithoutPath>
@@ -1670,9 +1670,9 @@
         </Doc>
         <Doc>
           <Name>.\text1.c</Name>
-          <ColumnNumber>93</ColumnNumber>
-          <TopLine>290</TopLine>
-          <CurrentLine>322</CurrentLine>
+          <ColumnNumber>52</ColumnNumber>
+          <TopLine>103</TopLine>
+          <CurrentLine>103</CurrentLine>
         </Doc>
         <Doc>
           <Name>C:\Keil_v5\C51\INC\STC\STC8A8K64D4.H</Name>
