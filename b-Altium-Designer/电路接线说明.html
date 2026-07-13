@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>咖啡冷萃机 - ESP32-S3 电路接线说明</title>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --card: #16213e;
+    --accent: #0f3460;
+    --highlight: #e94560;
+    --text: #eee;
+    --text2: #aab;
+    --green: #4ecca3;
+    --yellow: #f0c040;
+    --blue: #4da6ff;
+    --orange: #ff8c42;
+    --red: #e94560;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 20px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 {
+    text-align: center;
+    font-size: 2em;
+    margin: 20px 0 10px;
+    color: var(--green);
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--text2);
+    margin-bottom: 30px;
+    font-size: 0.95em;
+  }
+  h2 {
+    color: var(--blue);
+    font-size: 1.4em;
+    margin: 30px 0 15px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h3 {
+    color: var(--yellow);
+    font-size: 1.1em;
+    margin: 20px 0 10px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 15px 0;
+    border-left: 4px solid var(--accent);
+  }
+  .card.power { border-left-color: var(--red); }
+  .card.relay { border-left-color: var(--orange); }
+  .card.switch { border-left-color: var(--green); }
+  .card.code { border-left-color: var(--blue); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 0.95em;
+  }
+  th {
+    background: var(--accent);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+  }
+  td {
+    padding: 8px 14px;
+    border-bottom: 1px solid #2a2a4e;
+  }
+  tr:hover td { background: rgba(78, 204, 163, 0.05); }
+
+  .pin {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--yellow);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Consolas', monospace;
+    font-size: 0.9em;
+    font-weight: 600;
+  }
+  .volt {
+    color: var(--red);
+    font-weight: 700;
+  }
+  .gnd {
+    color: var(--text2);
+    font-weight: 700;
+  }
+
+  .schematic {
+    background: #0d1525;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 15px 0;
+    overflow-x: auto;
+  }
+  .schematic pre {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #c8d6e5;
+    white-space: pre;
+  }
+
+  .bom {
+    background: #1e2a42;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 10px 0;
+  }
+  .bom li {
+    margin: 6px 0;
+    list-style: none;
+    padding-left: 20px;
+    position: relative;
+  }
+  .bom li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--green);
+  }
+
+  .warn {
+    background: rgba(240, 192, 64, 0.1);
+    border: 1px solid var(--yellow);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 0.9em;
+  }
+  .warn::before {
+    content: '⚠ ';
+    color: var(--yellow);
+    font-weight: bold;
+  }
+
+  .tip {
+    background: rgba(78, 204, 163, 0.1);
+    border: 1px solid var(--green);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 0.9em;
+  }
+  .tip::before {
+    content: '💡 ';
+  }
+
+  code {
+    background: #2a2a4e;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', monospace;
+    font-size: 0.9em;
+    color: var(--green);
+  }
+
+  .code-block {
+    background: #0d1525;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 10px 0;
+    overflow-x: auto;
+  }
+  .code-block pre {
+    font-family: 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #c8d6e5;
+  }
+  .code-block .kw { color: #c678dd; }
+  .code-block .fn { color: #61afef; }
+  .code-block .str { color: #98c379; }
+  .code-block .num { color: #d19a66; }
+  .code-block .cmt { color: #5c6370; font-style: italic; }
+
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+  @media (max-width: 768px) {
+    .grid2 { grid-template-columns: 1fr; }
+  }
+
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 15px 0;
+    font-size: 1.05em;
+  }
+  .flow .block {
+    background: var(--accent);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .flow .arrow {
+    color: var(--yellow);
+    font-size: 1.2em;
+  }
+
+  .pinout-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    margin: 15px 0;
+  }
+  .pinout-item {
+    background: #1e2a42;
+    padding: 12px 16px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .pinout-item .label { color: var(--text2); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>☕ 咖啡冷萃机 - 电路接线说明</h1>
+<p class="subtitle">ESP32-S3-N16-R8 + 7.4V 锂电池 + 继电器双电机驱动</p>
+
+<!-- ==================== 引脚分配总览 ==================== -->
+<h2>一、引脚分配总览</h2>
+
+<div class="pinout-summary">
+  <div class="pinout-item">
+    <span class="label">电机A 继电器</span>
+    <span class="pin">GPIO4</span>
+  </div>
+  <div class="pinout-item">
+    <span class="label">电机B 继电器</span>
+    <span class="pin">GPIO5</span>
+  </div>
+  <div class="pinout-item">
+    <span class="label">开关1 (启动)</span>
+    <span class="pin">GPIO6</span>
+  </div>
+  <div class="pinout-item">
+    <span class="label">开关2 (模式)</span>
+    <span class="pin">GPIO7</span>
+  </div>
+  <div class="pinout-item">
+    <span class="label">电池电压检测</span>
+    <span class="pin">GPIO1 (ADC)</span>
+  </div>
+  <div class="pinout-item">
+    <span class="label">状态LED</span>
+    <span class="pin">GPIO38 (RGB)</span>
+  </div>
+</div>
+
+<div class="tip">
+  选用 GPIO4/5/6/7 是因为它们位于左排 Pin4~7，没有特殊的 strapping 功能，上电时不影响启动模式，可自由用作通用IO。
+</div>
+
+<!-- ==================== 电源系统 ==================== -->
+<h2>二、电源系统</h2>
+
+<div class="flow">
+  <span class="block" style="color: var(--red);">🔋 7.4V 锂电池</span>
+  <span class="arrow">→</span>
+  <span class="block">电源开关</span>
+  <span class="arrow">→</span>
+  <span class="block" style="color: var(--yellow);">DC-DC 降压 (5V)</span>
+  <span class="arrow">→</span>
+  <span class="block" style="color: var(--green);">ESP32 5V Pin</span>
+</div>
+
+<div class="card power">
+  <h3>电源电路详细</h3>
+  <div class="schematic"><pre>
+  7.4V 锂电池 (2S)
+       │
+       ├──────┐
+       │    [总电源开关]
+       │      │
+       ▼      ▼
+  ┌─────────────────┐
+  │  DC-DC 降压模块  │
+  │   MP1584 / 2596  │
+  │  输入: 7~28V     │
+  │  输出: 5V / 3A   │
+  └────────┬────────┘
+           │ 5V
+           ├─────────────────────→ ESP32 Pin21 (5V)
+           │
+           ├─────────────────────→ 继电器模块 VCC (5V)
+           │
+           └─── [100μF 电解电容] ─── GND
+
+  注意: ESP32 DevKit 板载 AMS1117-3.3 将 5V 降为 3.3V
+  无需额外 3.3V 稳压器
+
+  7.4V 电池 ──────────────────────→ 继电器公共端 (COM)
+  (电机供电直接用 7.4V，不经降压)
+  </pre></div>
+
+  <h3>所需元器件</h3>
+  <ul class="bom">
+    <li><strong>DC-DC 降压模块</strong> — MP1584EN 或 LM2596 模块，调至 5V 输出（推荐 MP1584 体积小）</li>
+    <li><strong>总电源开关</strong> — 拨动开关或按键开关，额定电流 ≥ 3A</li>
+    <li><strong>滤波电容</strong> — 100μF/16V 电解 + 100nF 瓷片，并联在 5V 输出端</li>
+    <li><strong>7.4V 锂电池</strong> — 2S 锂电池组，建议带保护板（过放/过充/过流）</li>
+  </ul>
+</div>
+
+<div class="warn">
+  7.4V 电池满电约 8.4V，放电截止约 6V。MP1584 输入范围 4.5~28V 完全覆盖。LM2596 输入范围 4.5~40V 也可以。
+</div>
+
+<!-- ==================== 电池电压检测 ==================== -->
+<h2>三、电池电压检测 (可选但推荐)</h2>
+
+<div class="card power">
+  <h3>分压电路</h3>
+  <div class="schematic"><pre>
+  7.4V 电池+ ─── [R1 = 100kΩ] ──┬── [R2 = 47kΩ] ─── GND
+                                 │
+                                 └──→ GPIO1 (ADC1_CH0)
+
+  分压比: 47 / (100 + 47) = 0.3197
+  满电 8.4V → ADC 读到 2.686V (在 3.3V 量程内 ✔)
+  低电 6.0V → ADC 读到 1.918V
+  </pre></div>
+
+  <div class="tip">
+    通过 ADC 读取电压，可以在电池电量低时 LED 闪烁报警或自动停机保护电机。
+  </div>
+</div>
+
+<!-- ==================== 继电器电机驱动 ==================== -->
+<h2>四、继电器电机驱动</h2>
+
+<div class="card relay">
+  <h3>方案：使用现成 5V 继电器模块（推荐）</h3>
+  <p style="color: var(--text2); margin-bottom: 15px;">
+    市面常见的 <strong>1路/2路 5V 继电器模块</strong> 已集成光耦隔离 + 驱动三极管 + 续流二极管，
+    GPIO 直接接信号端即可驱动，无需额外电路。
+  </p>
+
+  <div class="schematic"><pre>
+  ┌─────────────────────────────────────────────────────────┐
+  │                  2路 继电器模块                          │
+  │                                                         │
+  │   VCC ←── 5V (来自 DC-DC)                               │
+  │   GND ←── GND (公共地)                                  │
+  │   IN1 ←── GPIO4 (ESP32 Pin4)     → 控制继电器1 (电机A)  │
+  │   IN2 ←── GPIO5 (ESP32 Pin5)     → 控制继电器2 (电机B)  │
+  │                                                         │
+  │   ┌──────────┐    ┌──────────┐                          │
+  │   │ 继电器1  │    │ 继电器2  │                          │
+  │   │ COM ─────│──  │ COM ─────│──  ← 7.4V 电池+         │
+  │   │ NO ──────│──  │ NO ──────│──  → 电机A+ / 电机B+     │
+  │   │ NC       │    │ NC       │    (空)                   │
+  │   └──────────┘    └──────────┘                          │
+  │                                                         │
+  └─────────────────────────────────────────────────────────┘
+
+  电机A- ──→ GND (电池负极)
+  电机B- ──→ GND (电池负极)
+
+  工作逻辑（大多数模块低电平触发）:
+    GPIO = LOW  → 继电器吸合 → 电机转
+    GPIO = HIGH → 继电器释放 → 电机停
+  </pre></div>
+
+  <div class="grid2">
+    <div>
+      <h3>继电器模块选型</h3>
+      <ul class="bom">
+        <li><strong>2路 5V 继电器模块</strong>（带光耦隔离）</li>
+        <li>触点容量 ≥ 10A/250VAC（绰绰有余）</li>
+        <li>信号输入 3.3V 兼容（大多数模块都兼容）</li>
+        <li>推荐品牌：宏发 HF32F、松乐 SRD-05VDC</li>
+      </ul>
+    </div>
+    <div>
+      <h3>如果使用裸继电器</h3>
+      <ul class="bom">
+        <li>需自行添加 NPN 三极管 (S8050)</li>
+        <li>基极串联 1kΩ 电阻到 GPIO</li>
+        <li>继电器线圈并联 1N4148 续流二极管</li>
+        <li>详见下方分立元件电路图</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="card relay">
+  <h3>备选：分立元件驱动（裸继电器）</h3>
+  <div class="schematic"><pre>
+                          5V
+                          │
+                     ┌────┴────┐
+                     │ 继电器   │
+              ┌──┤ 线圈 5V  │
+              │      │         │
+              │      └────┬────┘
+         1N4148        │
+         (续流)         │
+              │      ┌──┴──┐
+              └──────┤  C  │
+                     │     │ S8050 (NPN)
+  GPIO4 ──[1kΩ]──── ┤  B  │
+                     │     │
+                     └──┬──┘
+                        │ E
+                       GND
+
+  GPIO = HIGH → 三极管导通 → 继电器吸合 → 电机转
+  GPIO = LOW  → 三极管截止 → 继电器释放 → 电机停
+
+  (注意：分立电路是高电平触发，与模块的低电平触发相反)
+  </pre></div>
+</div>
+
+<!-- ==================== 开关输入 ==================== -->
+<h2>五、开关输入</h2>
+
+<div class="card switch">
+  <h3>按键/拨动开关接线</h3>
+  <div class="schematic"><pre>
+  3.3V ──[10kΩ 上拉]──┬──→ GPIO6 (开关1 - 启动/停止)
+                       │
+                  [按键开关]
+                       │
+                      GND
+
+  3.3V ──[10kΩ 上拉]──┬──→ GPIO7 (开关2 - 模式选择)
+                       │
+                  [拨动开关]
+                       │
+                      GND
+
+  未按下: GPIO 读到 HIGH (3.3V)
+  按下:   GPIO 读到 LOW  (GND)
+  </pre></div>
+
+  <div class="tip">
+    ESP32 内部有上拉电阻可以用 <code>INPUT_PULLUP</code> 模式，这样可以省略外部 10kΩ 上拉。
+    但建议保留外部上拉，抗干扰能力更强。
+  </div>
+
+  <h3>硬件消抖（可选）</h3>
+  <div class="schematic"><pre>
+  3.3V ──[10kΩ]──┬──→ GPIO6
+                  │
+             [100nF] ← 消抖电容
+                  │
+             [按键开关]
+                  │
+                 GND
+
+  RC 时间常数 = 10kΩ × 100nF = 1ms
+  配合软件 20~50ms 消抖，效果更佳
+  </pre></div>
+</div>
+
+<!-- ==================== 完整接线表 ==================== -->
+<h2>六、完整接线对照表</h2>
+
+<div class="card">
+<table>
+  <thead>
+    <tr>
+      <th>功能</th>
+      <th>ESP32 引脚</th>
+      <th>Pin 编号</th>
+      <th>接到</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>5V 电源输入</td>
+      <td class="pin">5V</td>
+      <td>Pin 21</td>
+      <td>DC-DC 5V 输出</td>
+      <td>为 ESP32 供电</td>
+    </tr>
+    <tr>
+      <td>GND</td>
+      <td class="gnd">GND</td>
+      <td>Pin 22/24/44</td>
+      <td>公共地</td>
+      <td>所有 GND 连在一起</td>
+    </tr>
+    <tr>
+      <td>电机A 继电器</td>
+      <td class="pin">GPIO4</td>
+      <td>Pin 4 (左)</td>
+      <td>继电器模块 IN1</td>
+      <td>LOW=电机转 (模块)</td>
+    </tr>
+    <tr>
+      <td>电机B 继电器</td>
+      <td class="pin">GPIO5</td>
+      <td>Pin 5 (左)</td>
+      <td>继电器模块 IN2</td>
+      <td>LOW=电机转 (模块)</td>
+    </tr>
+    <tr>
+      <td>启动开关</td>
+      <td class="pin">GPIO6</td>
+      <td>Pin 6 (左)</td>
+      <td>按键开关→GND</td>
+      <td>外部 10kΩ 上拉到 3.3V</td>
+    </tr>
+    <tr>
+      <td>模式开关</td>
+      <td class="pin">GPIO7</td>
+      <td>Pin 7 (左)</td>
+      <td>拨动开关→GND</td>
+      <td>外部 10kΩ 上拉到 3.3V</td>
+    </tr>
+    <tr>
+      <td>电压检测</td>
+      <td class="pin">GPIO1</td>
+      <td>Pin 41 (右)</td>
+      <td>分压电路中点</td>
+      <td>100kΩ+47kΩ 分压</td>
+    </tr>
+    <tr>
+      <td>状态 LED</td>
+      <td class="pin">GPIO38</td>
+      <td>Pin 35 (右)</td>
+      <td>板载 RGB LED</td>
+      <td>WS2812 / 状态指示</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ==================== 系统框图 ==================== -->
+<h2>七、系统总框图</h2>
+
+<div class="card">
+<div class="schematic"><pre>
+                    ┌─────────────────────────────────────────┐
+                    │           咖啡冷萃机 电路系统            │
+                    └─────────────────────────────────────────┘
+
+   ┌──────────┐     ┌──────────┐     ┌───────────────────────┐
+   │ 7.4V     │     │  DC-DC   │     │     ESP32-S3          │
+   │ 锂电池   ├────→│ MP1584   ├────→│ 5V Pin               │
+   │ (2S)     │     │ → 5V/3A  │     │                       │
+   └────┬─────┘     └────┬─────┘     │  GPIO4 ──→ 继电器IN1 │
+        │                │           │  GPIO5 ──→ 继电器IN2 │
+        │                │ 5V        │                       │
+        │           ┌────┴─────┐     │  GPIO6 ←── 开关1     │
+        │           │ 继电器    │     │  GPIO7 ←── 开关2     │
+        │           │ 模块     │     │                       │
+        │           │ VCC      │     │  GPIO1 ←── 电压检测  │
+        │           └─┬───┬───┘     │  GPIO38 ── RGB LED   │
+        │             │   │         └───────────────────────┘
+        │ 7.4V    COM1│   │COM2
+        ├─────────────┤   │
+        │          NO1│   │NO2
+        │             │   │
+        │         ┌───┘   └───┐
+        │         ▼           ▼
+        │     ┌───────┐   ┌───────┐
+        │     │ 电机A  │   │ 电机B  │
+        │     │ (搅拌) │   │ (泵)   │
+        │     └───┬───┘   └───┬───┘
+        │         │           │
+        └─────────┴───────────┘
+              电池 GND (公共地)
+</pre></div>
+</div>
+
+<!-- ==================== 示例代码 ==================== -->
+<h2>八、Arduino 示例代码</h2>
+
+<div class="card code">
+<div class="code-block"><pre>
+<span class="cmt">// 咖啡冷萃机 ESP32-S3 控制代码</span>
+<span class="cmt">// 继电器模块: 低电平触发 (LOW=ON, HIGH=OFF)</span>
+
+<span class="kw">#define</span> RELAY_MOTOR_A   <span class="num">4</span>   <span class="cmt">// GPIO4 - 电机A (搅拌电机)</span>
+<span class="kw">#define</span> RELAY_MOTOR_B   <span class="num">5</span>   <span class="cmt">// GPIO5 - 电机B (水泵)</span>
+<span class="kw">#define</span> BTN_START       <span class="num">6</span>   <span class="cmt">// GPIO6 - 启动按键</span>
+<span class="kw">#define</span> BTN_MODE        <span class="num">7</span>   <span class="cmt">// GPIO7 - 模式选择</span>
+<span class="kw">#define</span> BATT_ADC        <span class="num">1</span>   <span class="cmt">// GPIO1 - 电池电压 ADC</span>
+
+<span class="kw">#define</span> RELAY_ON   LOW
+<span class="kw">#define</span> RELAY_OFF  HIGH
+
+<span class="kw">bool</span> running = <span class="kw">false</span>;
+<span class="kw">unsigned long</span> lastDebounce = <span class="num">0</span>;
+
+<span class="kw">void</span> <span class="fn">setup</span>() {
+  Serial.<span class="fn">begin</span>(<span class="num">115200</span>);
+
+  <span class="fn">pinMode</span>(RELAY_MOTOR_A, OUTPUT);
+  <span class="fn">pinMode</span>(RELAY_MOTOR_B, OUTPUT);
+  <span class="fn">digitalWrite</span>(RELAY_MOTOR_A, RELAY_OFF);
+  <span class="fn">digitalWrite</span>(RELAY_MOTOR_B, RELAY_OFF);
+
+  <span class="fn">pinMode</span>(BTN_START, INPUT_PULLUP);
+  <span class="fn">pinMode</span>(BTN_MODE, INPUT_PULLUP);
+
+  <span class="fn">analogReadResolution</span>(<span class="num">12</span>);
+  <span class="fn">pinMode</span>(BATT_ADC, INPUT);
+}
+
+<span class="kw">float</span> <span class="fn">readBatteryVoltage</span>() {
+  <span class="kw">int</span> raw = <span class="fn">analogRead</span>(BATT_ADC);
+  <span class="kw">float</span> vAdc = raw * <span class="num">3.3</span> / <span class="num">4095.0</span>;
+  <span class="kw">return</span> vAdc * (<span class="num">100.0</span> + <span class="num">47.0</span>) / <span class="num">47.0</span>;  <span class="cmt">// 反算真实电压</span>
+}
+
+<span class="kw">void</span> <span class="fn">motorsOn</span>() {
+  <span class="fn">digitalWrite</span>(RELAY_MOTOR_A, RELAY_ON);
+  <span class="fn">digitalWrite</span>(RELAY_MOTOR_B, RELAY_ON);
+  running = <span class="kw">true</span>;
+}
+
+<span class="kw">void</span> <span class="fn">motorsOff</span>() {
+  <span class="fn">digitalWrite</span>(RELAY_MOTOR_A, RELAY_OFF);
+  <span class="fn">digitalWrite</span>(RELAY_MOTOR_B, RELAY_OFF);
+  running = <span class="kw">false</span>;
+}
+
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="cmt">// 按键消抖 + 切换</span>
+  <span class="kw">if</span> (<span class="fn">digitalRead</span>(BTN_START) == LOW &&
+      <span class="fn">millis</span>() - lastDebounce > <span class="num">200</span>) {
+    lastDebounce = <span class="fn">millis</span>();
+    <span class="kw">if</span> (running) <span class="fn">motorsOff</span>();
+    <span class="kw">else</span> <span class="fn">motorsOn</span>();
+  }
+
+  <span class="cmt">// 低电量保护</span>
+  <span class="kw">float</span> vBatt = <span class="fn">readBatteryVoltage</span>();
+  <span class="kw">if</span> (vBatt < <span class="num">6.2</span>) {
+    <span class="fn">motorsOff</span>();
+    Serial.<span class="fn">println</span>(<span class="str">"低电量! 自动停机"</span>);
+  }
+
+  <span class="fn">delay</span>(<span class="num">10</span>);
+}
+</pre></div>
+</div>
+
+<!-- ==================== 物料清单 ==================== -->
+<h2>九、完整物料清单 (BOM)</h2>
+
+<div class="card">
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>元件</th>
+      <th>规格</th>
+      <th>数量</th>
+      <th>备注</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>ESP32-S3-DevKitC-1</td><td>N16R8</td><td>1</td><td>主控板</td></tr>
+    <tr><td>2</td><td>DC-DC 降压模块</td><td>MP1584 / 5V 3A</td><td>1</td><td>可调版调至 5V</td></tr>
+    <tr><td>3</td><td>2路继电器模块</td><td>5V 带光耦隔离</td><td>1</td><td>低电平触发</td></tr>
+    <tr><td>4</td><td>7.4V 锂电池组</td><td>2S / ≥2000mAh</td><td>1</td><td>带保护板</td></tr>
+    <tr><td>5</td><td>拨动开关</td><td>≥3A 额定</td><td>1</td><td>总电源开关</td></tr>
+    <tr><td>6</td><td>按键开关</td><td>6×6mm 轻触</td><td>1</td><td>启动按键</td></tr>
+    <tr><td>7</td><td>拨动开关 (小型)</td><td>SS12D00</td><td>1</td><td>模式选择</td></tr>
+    <tr><td>8</td><td>电阻 100kΩ</td><td>1/4W</td><td>1</td><td>电压检测分压</td></tr>
+    <tr><td>9</td><td>电阻 47kΩ</td><td>1/4W</td><td>1</td><td>电压检测分压</td></tr>
+    <tr><td>10</td><td>电阻 10kΩ</td><td>1/4W</td><td>2</td><td>按键上拉（可选）</td></tr>
+    <tr><td>11</td><td>电解电容 100μF</td><td>16V</td><td>1</td><td>5V 滤波</td></tr>
+    <tr><td>12</td><td>瓷片电容 100nF</td><td>50V</td><td>2</td><td>高频滤波 / 消抖</td></tr>
+    <tr><td>13</td><td>直流电机</td><td>额定 6~12V</td><td>2</td><td>搅拌 + 泵</td></tr>
+    <tr><td>14</td><td>导线 / 端子</td><td>—</td><td>若干</td><td>推荐 XH2.54 端子</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="warn">
+  所有模块共地！ESP32 GND、DC-DC GND、继电器 GND、电池负极 必须连在一起，否则继电器无法正常触发。
+</div>
+
+<div class="warn">
+  继电器模块大多是<strong>低电平触发</strong>（IN 接低电平继电器吸合）。
+  购买时确认触发电平，如果是高电平触发，代码中 RELAY_ON/OFF 需互换。
+</div>
+
+<div class="tip">
+  如果电机启动瞬间电流很大（堵转），建议在电机两端并联 100nF 瓷片电容抑制电磁干扰，
+  防止 ESP32 复位或 ADC 读数跳变。
+</div>
+
+<p style="text-align: center; color: var(--text2); margin-top: 40px; padding: 20px;">
+  — 咖啡冷萃机 v1.0 · ESP32-S3 · 2026-07 —
+</p>
+
+</div>
+</body>
+</html>

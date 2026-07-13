@@ -1,0 +1,39 @@
+# ESP32-S3-N16-R8 引脚定义表 (Pinout)
+
+**模块**：ESP32-S3-N16-R8 (16MB Flash + 8MB PSRAM)  
+**兼容**：ESP32-S3-DevKitC-1 系列  
+**更新日期**：2026-07
+
+## 完整引脚表格
+
+| 左 Pin | 左侧引脚 | 右 Pin | 右侧引脚 |
+|--------|----------|--------|----------|
+| 1      | 3V3      | 44     | GND |
+| 2      | 3V3      | 43     | GPIO43, U0TXD, CLK_OUT1 |
+| 3      | RST      | 42     | GPIO44, U0RXD, CLK_OUT2 |
+| 4      | GPIO4, ADC1_CH3, TOUCH4, RTC | 41 | GPIO1, RTC, TOUCH1, ADC1_CH0 |
+| 5      | GPIO5, ADC1_CH4, TOUCH5, RTC | 40 | GPIO2, RTC, TOUCH2, ADC1_CH1 |
+| 6      | GPIO6, ADC1_CH5, TOUCH6, RTC | 39 | GPIO42, MTMS |
+| 7      | GPIO7, ADC1_CH6, TOUCH7, RTC | 38 | GPIO41, MTDO, CLK_OUT1 |
+| 8      | GPIO15, ADC2_CH4, U0RTS, RTC, XTAL_32K_P | 37 | GPIO40, MTDI, CLK_OUT2 |
+| 9      | GPIO16, ADC2_CH5, U0CTS, RTC, XTAL_32K_N | 36 | GPIO39, MTCK, CLK_OUT3, SUBSPICS1 |
+| 10     | GPIO17, ADC2_CH6, U1TXD, RTC | 35 | GPIO38, FSPIWP, SUBSPIWP, RGB_LED |
+| 11     | GPIO18, ADC2_CH7, U1RXD, RTC | 34 | GPIO37, SPIDQS, FSPIQ, SUBSPIQ |
+| 12     | GPIO8, ADC1_CH7, TOUCH8, RTC | 33 | GPIO36, SPI07, FSPICLK, SUBSPICLK |
+| 13     | GPIO3, ADC1_CH2, TOUCH3, RTC, JTAG | 32 | GPIO35, SPI06, FSPID, SUBSPID |
+| 14     | GPIO46, LOG | 31 | GPIO0, BOOT |
+| 15     | GPIO9, ADC1_CH8, TOUCH9, RTC, FSPIHD | 30 | GPIO45, VSPI |
+| 16     | GPIO10, ADC1_CH9, TOUCH10, RTC, FSPICS0 | 29 | GPIO48, SPICLK_N |
+| 17     | GPIO11, ADC2_CH0, TOUCH11, RTC, FSPID | 28 | GPIO47, SPICLK_P |
+| 18     | GPIO12, ADC2_CH1, TOUCH12, RTC, FSPICLK | 27 | GPIO21, RTC |
+| 19     | GPIO13, ADC2_CH2, TOUCH13, RTC, FSPIQ | 26 | GPIO20, USB_D+, U1CTS, ADC2_CH9, CLK_OUT1 |
+| 20     | GPIO14, ADC2_CH3, TOUCH14, RTC, FSPIWP | 25 | GPIO19, USB_D-, U1RTS, ADC2_CH8, CLK_OUT2 |
+| 21     | 5V       | 24     | GND |
+| 22     | GND      | 23     | GND |
+
+## 注意事项
+- **BOOT**：GPIO0（上电拉低进入下载模式）
+- **USB OTG**：GPIO19 (D-) + GPIO20 (D+)
+- **RGB LED**：通常接 GPIO38
+- **Strapping Pins**：GPIO0, GPIO3, GPIO45, GPIO46
+- **电源**：3.3V 逻辑电平

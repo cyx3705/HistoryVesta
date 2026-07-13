@@ -1,0 +1,11 @@
+Added Component: Designator=U1(ESP32-S3)
+Added Pin To Net: NetName=NetP1_3 Pin=U1-1
+Added Pin To Net: NetName=NetP1_2 Pin=U1-4
+Added Pin To Net: NetName=ADC1 Pin=U1-5
+Added Pin To Net: NetName=GPIO15 Pin=U1-8
+Added Pin To Net: NetName=GPIO16 Pin=U1-9
+Added Pin To Net: NetName=5V Pin=U1-21
+Added Pin To Net: NetName=GND Pin=U1-22
+Added Pin To Net: NetName=PWM2 Pin=U1-40
+Added Pin To Net: NetName=PWM1 Pin=U1-41
+Added Member To Class: ClassName=SCH Member=Component U1 ESP32-S3

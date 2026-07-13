@@ -1,0 +1,8 @@
+固件名称,GPIO,U1物理Pin,方向,原理图网络或对象,有效电平或范围,上电安全状态
+CB_PIN_MOTOR1_PWM,1,41右侧,输出,PWM1至P2-7,PWM参数待确认,LOW或0%占空比
+CB_PIN_MOTOR2_PWM,2,40右侧,输出,PWM2至P2-2,PWM参数待确认,LOW或0%占空比
+CB_PIN_MODE_SWITCH,4,4左侧,输入,P1-2且R1为10k上拉,LOW或HIGH,外部上拉默认HIGH
+CB_PIN_BATTERY_ADC,5,5左侧,模拟输入,ADC1分压中点,ADC1_CH4且满电约2.686V,输入
+CB_PIN_RELAY_MOTOR1,15,8左侧,输出,Q1至K1至PW1,HIGH吸合且LOW释放,LOW
+CB_PIN_RELAY_MOTOR2,16,9左侧,输出,Q2至K2至PW2,HIGH吸合且LOW释放,LOW
+CB_PIN_STATUS_RGB,38,35右侧,输出,开发板板载RGB LED,依实装板版本确认,关闭
