@@ -1,0 +1,117 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\OneHistory\\MyAPI-Lite\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{8447C217-7196-4E47-AAE7-6602CE6A80C6}|MyApiLite\\MyApiLite.csproj|c:\\onehistory\\myapi-lite\\myapilite\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8447C217-7196-4E47-AAE7-6602CE6A80C6}|MyApiLite\\MyApiLite.csproj|solutionrelative:myapilite\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8447C217-7196-4E47-AAE7-6602CE6A80C6}|MyApiLite\\MyApiLite.csproj|c:\\onehistory\\myapi-lite\\myapilite\\myapilite.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{8447C217-7196-4E47-AAE7-6602CE6A80C6}|MyApiLite\\MyApiLite.csproj|solutionrelative:myapilite\\myapilite.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{860BFCC2-275D-42E7-B874-F2C1A451B333}|DemoModule\\DemoModule.csproj|c:\\onehistory\\myapi-lite\\demomodule\\calculator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{860BFCC2-275D-42E7-B874-F2C1A451B333}|DemoModule\\DemoModule.csproj|solutionrelative:demomodule\\calculator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{860BFCC2-275D-42E7-B874-F2C1A451B333}|DemoModule\\DemoModule.csproj|c:\\onehistory\\myapi-lite\\demomodule\\moduleinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{860BFCC2-275D-42E7-B874-F2C1A451B333}|DemoModule\\DemoModule.csproj|solutionrelative:demomodule\\moduleinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8447C217-7196-4E47-AAE7-6602CE6A80C6}|MyApiLite\\MyApiLite.csproj|c:\\onehistory\\myapi-lite\\myapilite\\invoker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8447C217-7196-4E47-AAE7-6602CE6A80C6}|MyApiLite\\MyApiLite.csproj|solutionrelative:myapilite\\invoker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8447C217-7196-4E47-AAE7-6602CE6A80C6}|MyApiLite\\MyApiLite.csproj|c:\\onehistory\\myapi-lite\\myapilite\\modulehost.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8447C217-7196-4E47-AAE7-6602CE6A80C6}|MyApiLite\\MyApiLite.csproj|solutionrelative:myapilite\\modulehost.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "MyApiLite.csproj",
+              "DocumentMoniker": "C:\\OneHistory\\MyAPI-Lite\\MyApiLite\\MyApiLite.csproj",
+              "RelativeDocumentMoniker": "MyApiLite\\MyApiLite.csproj",
+              "ToolTip": "C:\\OneHistory\\MyAPI-Lite\\MyApiLite\\MyApiLite.csproj",
+              "RelativeToolTip": "MyApiLite\\MyApiLite.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-07-06T19:29:39.819Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ModuleInfo.cs",
+              "DocumentMoniker": "C:\\OneHistory\\MyAPI-Lite\\DemoModule\\ModuleInfo.cs",
+              "RelativeDocumentMoniker": "DemoModule\\ModuleInfo.cs",
+              "ToolTip": "C:\\OneHistory\\MyAPI-Lite\\DemoModule\\ModuleInfo.cs",
+              "RelativeToolTip": "DemoModule\\ModuleInfo.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-06T19:29:37.305Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Calculator.cs",
+              "DocumentMoniker": "C:\\OneHistory\\MyAPI-Lite\\DemoModule\\Calculator.cs",
+              "RelativeDocumentMoniker": "DemoModule\\Calculator.cs",
+              "ToolTip": "C:\\OneHistory\\MyAPI-Lite\\DemoModule\\Calculator.cs",
+              "RelativeToolTip": "DemoModule\\Calculator.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAA9AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-06T19:29:13.309Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\OneHistory\\MyAPI-Lite\\MyApiLite\\Program.cs",
+              "RelativeDocumentMoniker": "MyApiLite\\Program.cs",
+              "ToolTip": "C:\\OneHistory\\MyAPI-Lite\\MyApiLite\\Program.cs",
+              "RelativeToolTip": "MyApiLite\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAABFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-06T19:15:53.758Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "ModuleHost.cs",
+              "DocumentMoniker": "C:\\OneHistory\\MyAPI-Lite\\MyApiLite\\ModuleHost.cs",
+              "RelativeDocumentMoniker": "MyApiLite\\ModuleHost.cs",
+              "ToolTip": "C:\\OneHistory\\MyAPI-Lite\\MyApiLite\\ModuleHost.cs",
+              "RelativeToolTip": "MyApiLite\\ModuleHost.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAOAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-06T19:15:48.508Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Invoker.cs",
+              "DocumentMoniker": "C:\\OneHistory\\MyAPI-Lite\\MyApiLite\\Invoker.cs",
+              "RelativeDocumentMoniker": "MyApiLite\\Invoker.cs",
+              "ToolTip": "C:\\OneHistory\\MyAPI-Lite\\MyApiLite\\Invoker.cs",
+              "RelativeToolTip": "MyApiLite\\Invoker.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-06T19:15:44.521Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

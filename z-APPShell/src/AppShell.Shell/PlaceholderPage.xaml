@@ -1,0 +1,28 @@
+<UserControl x:Class="AppShell.Shell.PlaceholderPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Background="#FFFAFAFA">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="560">
+            <TextBlock x:Name="AppNameText"
+                       FontSize="36" FontWeight="Light"
+                       HorizontalAlignment="Center" />
+            <TextBlock x:Name="VersionText"
+                       FontSize="14" Foreground="#FF888888"
+                       HorizontalAlignment="Center" Margin="0,8,0,28" />
+            <TextBlock FontSize="13" Foreground="#FF555555" LineHeight="24" TextWrapping="Wrap">
+                <Run Text="· 这里是主窗口(中央设计器区),派生应用在此注入主内容组件" /><LineBreak />
+                <Run Text="· 输入 help 查看指令(控制台窗口将随 M2 交付)" /><LineBreak />
+                <Run Text="· 拖拽工具窗口标题栏可自由停靠 / 浮动,布局在退出时自动保存" /><LineBreak />
+                <Run Text="· 通过「视图」菜单可显示 / 隐藏 / 浮动 / 复位任意工具窗口" />
+            </TextBlock>
+        </StackPanel>
+
+        <!-- 启动提示区:控制台窗口就位(M2)前,Warn 及以上级别的框架消息在此可见 -->
+        <Border VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
+                Margin="12" Padding="8"
+                Background="#FFFFF4E0" CornerRadius="4"
+                x:Name="NoticePanel" Visibility="Collapsed">
+            <ItemsControl x:Name="NoticeList" FontSize="12" Foreground="#FF8A5A00" />
+        </Border>
+    </Grid>
+</UserControl>

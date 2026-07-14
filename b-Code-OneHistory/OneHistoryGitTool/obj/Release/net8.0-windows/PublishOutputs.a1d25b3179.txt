@@ -1,0 +1,5 @@
+C:\OneHistory\OneHistory-Push\OneHistoryGitTool.exe
+C:\OneHistory\OneHistory-Push\OneHistoryGitTool.dll
+C:\OneHistory\OneHistory-Push\OneHistoryGitTool.deps.json
+C:\OneHistory\OneHistory-Push\OneHistoryGitTool.runtimeconfig.json
+C:\OneHistory\OneHistory-Push\OneHistoryGitTool.pdb

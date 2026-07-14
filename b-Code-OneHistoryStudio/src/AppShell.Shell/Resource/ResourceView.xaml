@@ -1,0 +1,53 @@
+<UserControl x:Class="AppShell.Shell.Resource.ResourceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="White">
+    <UserControl.Resources>
+        <Style x:Key="ToolButton" TargetType="Button">
+            <Setter Property="Margin" Value="4,3,0,3" />
+            <Setter Property="Padding" Value="6,0" />
+        </Style>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <!-- 工具条(R-02) -->
+        <Border DockPanel.Dock="Top" BorderBrush="#DDD" BorderThickness="0,0,0,1" Background="#F7F7F7">
+            <StackPanel Orientation="Horizontal" Height="28">
+                <Button Content="打开文件夹…" Style="{StaticResource ToolButton}" Click="OnOpenFolderClick" />
+                <Button Content="新建文件夹" Style="{StaticResource ToolButton}" Click="OnMkdirClick" />
+                <Button Content="重命名" Style="{StaticResource ToolButton}" Click="OnRenameClick" />
+                <Button Content="删除" Style="{StaticResource ToolButton}" Foreground="#C42525" Click="OnDeleteClick" />
+                <Button Content="刷新" Style="{StaticResource ToolButton}" Click="OnRefreshClick" />
+            </StackPanel>
+        </Border>
+
+        <!-- 根目录路径(R-08) -->
+        <Border DockPanel.Dock="Top" BorderBrush="#EEE" BorderThickness="0,0,0,1">
+            <TextBlock x:Name="RootText" Margin="8,4" Foreground="#888" FontSize="11"
+                       TextTrimming="CharacterEllipsis" />
+        </Border>
+
+        <!-- 目录树(R-01,单棵树:目录与文件同树) -->
+        <TreeView x:Name="Tree" BorderThickness="0" FontSize="12"
+                  VirtualizingPanel.IsVirtualizing="True"
+                  TreeViewItem.Expanded="OnNodeExpanded"
+                  MouseDoubleClick="OnTreeDoubleClick">
+            <TreeView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="打开" Click="OnOpenClick" />
+                    <MenuItem Header="在资源管理器中显示" Click="OnRevealClick" />
+                    <Separator />
+                    <MenuItem Header="新建文件夹" Click="OnMkdirClick" />
+                    <MenuItem Header="重命名" Click="OnRenameClick" />
+                    <MenuItem Header="删除(进回收站)" Click="OnDeleteClick" />
+                    <Separator />
+                    <MenuItem Header="复制完整路径" Click="OnCopyPathClick" />
+                    <MenuItem Header="刷新" Click="OnRefreshClick" />
+                    <Separator />
+                    <MenuItem Header="打开其他文件夹…" Click="OnOpenFolderClick" />
+                    <MenuItem Header="恢复默认工作区" Click="OnResetRootClick" />
+                </ContextMenu>
+            </TreeView.ContextMenu>
+        </TreeView>
+    </DockPanel>
+</UserControl>

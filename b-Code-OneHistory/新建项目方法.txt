@@ -1,0 +1,97 @@
+推送代码到本地git仓库
+cd C:\OneHistory\OneHistory-Projects\"项目名称"
+git add .
+git commit -m "说明"
+
+创建新的项目
+cd C:\OneHistory\OneHistory-Projects\0000-000-Template 
+cd C:\OneHistory\OneHistory-Projects\                               或者到其他分支里面
+git branch 项目名称
+git worktree add ../项目名称 项目名称
+
+推送全部分支到github
+git push --all origin
+
+
+
+
+
+
+
+
+
+修复连接问题
+现象总结：
+文件检测脚本判定`.git`存在+内容合法，但 `git -C` 执行仍报 `fatal: not a git repository: (NULL)`，属于 **Git Worktree 软链接/内部索引断裂**，是 Windows + 中文路径下典型的隐性故障。
+
+---
+## 整体处理方案（批量修复，按顺序执行）
+### 前置：进入裸仓库根目录
+```powershell
+cd C:\OneHistory\OneHistory-Projects\OneHistory-Projects.git
+```
+
+### 第一步：批量解除所有异常 worktree 绑定
+常规`git worktree remove`会因链接损坏失败，直接**强制清理注册表+物理目录**
+```powershell
+# 导出所有路径
+$allPaths = git worktree list --porcelain | Where-Object { $_ -match '^worktree ' } | ForEach-Object { $_.Replace('worktree ','') }
+
+# 遍历移除目录
+foreach ($p in $allPaths) {
+    if ($p -match 'OneHistory-Projects\.git$') { continue }
+    Write-Host "正在删除: $p"
+    Remove-Item -Recurse -Force "$p" -ErrorAction SilentlyContinue
+}
+
+# 清理 Git 残留 worktree 记录
+git worktree prune
+```
+
+### 第二步：批量列出所有本地分支（备用）
+```powershell
+git branch | ForEach-Object { $_.Trim('* ') } > branch_list.txt
+Get-Content branch_list.txt
+```
+
+### 第三步：批量重建 Worktree（核心修复）
+> 规则：目录名 = 分支名，直接一一对应重建，修复断裂的 `.git` 链接
+
+```powershell
+$branches = Get-Content branch_list.txt
+foreach ($br in $branches) {
+    $targetDir = "C:\OneHistory\OneHistory-Projects\$br"
+    Write-Host "重建 worktree: $targetDir --> 分支 $br"
+    git worktree add "$targetDir" "$br"
+}
+```
+
+---
+## 第四步：全量复测验证
+### 1. 重新导出路径列表
+```powershell
+Remove-Item worktree_paths.txt -ErrorAction SilentlyContinue
+git worktree list --porcelain | Where-Object { $_ -match '^worktree ' } | ForEach-Object { $_.Replace('worktree ','') } > worktree_paths.txt
+```
+
+### 2. 批量执行 `git status` 校验
+```powershell
+$paths = Get-Content .\worktree_paths.txt
+foreach ($p in $paths) {
+    if ($p -match 'OneHistory-Projects\.git$') { continue }
+    Write-Host "`n===== 校验: $p =====" -ForegroundColor Cyan
+    git -C "$p" status
+}
+```
+全部不再报 `not a git repository` 即为修复完成。
+
+---
+## 补充说明 & 避坑
+1. **根因**
+   Windows 下 Git worktree 的 `.git` 是**文本链接**，中文路径、终端编码切换、路径解析异常，会导致 Git 内核读取链接时返回 `NULL`，文件肉眼检测正常但功能失效，只能重建修复。
+
+2. 本次操作不会丢失代码
+   分支、提交记录都存在于**裸仓库**中，删除外层工作目录只是删链接/文件视图，代码版本数据完好，重建后自动恢复。
+
+3. 长效保障
+   已开启系统 UTF-8 编码 + `core.quotepath false`，重建后中文路径稳定性大幅提升；后续尽量**不要移动目录、不要用特殊全角字符**。

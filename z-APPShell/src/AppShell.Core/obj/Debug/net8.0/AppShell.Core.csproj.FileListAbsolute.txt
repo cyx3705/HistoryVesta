@@ -1,0 +1,11 @@
+C:\Users\Administrator\Desktop\APPShell\src\AppShell.Core\obj\Debug\net8.0\AppShell.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Administrator\Desktop\APPShell\src\AppShell.Core\obj\Debug\net8.0\AppShell.Core.AssemblyInfoInputs.cache
+C:\Users\Administrator\Desktop\APPShell\src\AppShell.Core\obj\Debug\net8.0\AppShell.Core.AssemblyInfo.cs
+C:\Users\Administrator\Desktop\APPShell\src\AppShell.Core\obj\Debug\net8.0\AppShell.Core.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\Desktop\APPShell\src\AppShell.Core\bin\Debug\net8.0\AppShell.Core.deps.json
+C:\Users\Administrator\Desktop\APPShell\src\AppShell.Core\bin\Debug\net8.0\AppShell.Core.dll
+C:\Users\Administrator\Desktop\APPShell\src\AppShell.Core\bin\Debug\net8.0\AppShell.Core.pdb
+C:\Users\Administrator\Desktop\APPShell\src\AppShell.Core\obj\Debug\net8.0\AppShell.Core.dll
+C:\Users\Administrator\Desktop\APPShell\src\AppShell.Core\obj\Debug\net8.0\refint\AppShell.Core.dll
+C:\Users\Administrator\Desktop\APPShell\src\AppShell.Core\obj\Debug\net8.0\AppShell.Core.pdb
+C:\Users\Administrator\Desktop\APPShell\src\AppShell.Core\obj\Debug\net8.0\ref\AppShell.Core.dll

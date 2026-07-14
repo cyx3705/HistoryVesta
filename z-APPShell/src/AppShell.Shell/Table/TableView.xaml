@@ -1,0 +1,90 @@
+<UserControl x:Class="AppShell.Shell.Table.TableView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="White">
+    <UserControl.Resources>
+        <Style x:Key="ToolText" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="8,0,4,0" />
+            <Setter Property="Foreground" Value="#666" />
+        </Style>
+        <Style x:Key="ToolButton" TargetType="Button">
+            <Setter Property="Margin" Value="6,3,0,3" />
+            <Setter Property="Padding" Value="8,0" />
+        </Style>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <!-- 行 1:连接 / 表选择(T-01)+ 视图切换 + 导出 -->
+        <Border DockPanel.Dock="Top" BorderBrush="#DDD" BorderThickness="0,0,0,1" Background="#F7F7F7">
+            <StackPanel Orientation="Horizontal" Height="28">
+                <TextBlock Text="连接" Style="{StaticResource ToolText}" />
+                <ComboBox x:Name="ConnCombo" Width="90" VerticalAlignment="Center"
+                          SelectionChanged="OnConnChanged" />
+                <TextBlock Text="表" Style="{StaticResource ToolText}" />
+                <ComboBox x:Name="TableCombo" Width="130" VerticalAlignment="Center"
+                          SelectionChanged="OnTableChanged" />
+                <Button Content="刷新" Style="{StaticResource ToolButton}" Click="OnRefreshClick" />
+                <ToggleButton x:Name="SchemaToggle" Content="结构" Margin="12,3,0,3" Padding="8,0"
+                              Checked="OnSchemaToggled" Unchecked="OnSchemaToggled" />
+                <Button Content="导出 CSV" Style="{StaticResource ToolButton}" Click="OnExportClick" />
+            </StackPanel>
+        </Border>
+
+        <!-- 行 2:可视化条件筛选(T-04),多条 AND -->
+        <Border DockPanel.Dock="Top" BorderBrush="#DDD" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" MinHeight="30">
+                <StackPanel x:Name="FilterHost" Orientation="Horizontal" />
+                <Button Content="+ 条件" Style="{StaticResource ToolButton}" Click="OnAddFilterClick" />
+                <Button Content="应用筛选" Style="{StaticResource ToolButton}" Click="OnApplyFilterClick" />
+                <Button Content="按筛选删除" Style="{StaticResource ToolButton}" Click="OnDeleteByFilterClick"
+                        Foreground="#C42525" />
+            </StackPanel>
+        </Border>
+
+        <!-- 行 4(底):分页(T-03)+ 行操作 -->
+        <Border DockPanel.Dock="Bottom" BorderBrush="#DDD" BorderThickness="0,1,0,0" Background="#F7F7F7">
+            <DockPanel Height="28">
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <Button x:Name="PageFirst" Content="⏮" Style="{StaticResource ToolButton}" Click="OnPageClick" Tag="first" />
+                    <Button x:Name="PagePrev" Content="◀" Style="{StaticResource ToolButton}" Click="OnPageClick" Tag="prev" />
+                    <TextBlock x:Name="PageText" Text="第 1 / 1 页" Style="{StaticResource ToolText}" />
+                    <Button x:Name="PageNext" Content="▶" Style="{StaticResource ToolButton}" Click="OnPageClick" Tag="next" />
+                    <Button x:Name="PageLast" Content="⏭" Style="{StaticResource ToolButton}" Click="OnPageClick" Tag="last" />
+                    <TextBlock x:Name="TotalText" Style="{StaticResource ToolText}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock x:Name="HintText" Style="{StaticResource ToolText}" Foreground="#999" />
+                    <Button Content="删除选中行" Style="{StaticResource ToolButton}" Foreground="#C42525"
+                            Margin="6,3,6,3" Click="OnDeleteRowsClick" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- 行 3(中):数据网格(T-02/T-05)与结构视图(T-07) -->
+        <Grid>
+            <DataGrid x:Name="Grid"
+                      AutoGenerateColumns="True"
+                      CanUserAddRows="True"
+                      CanUserDeleteRows="False"
+                      SelectionUnit="CellOrRowHeader"
+                      ClipboardCopyMode="IncludeHeader"
+                      HeadersVisibility="All"
+                      RowHeaderWidth="18"
+                      EnableRowVirtualization="True"
+                      EnableColumnVirtualization="True"
+                      FontSize="12"
+                      BorderThickness="0"
+                      AutoGeneratingColumn="OnAutoGeneratingColumn"
+                      CellEditEnding="OnCellEditEnding"
+                      RowEditEnding="OnRowEditEnding" />
+            <DataGrid x:Name="SchemaGrid"
+                      AutoGenerateColumns="True"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      FontSize="12"
+                      BorderThickness="0"
+                      Visibility="Collapsed" />
+        </Grid>
+    </DockPanel>
+</UserControl>
