@@ -116,12 +116,14 @@ public partial class ConsoleView : UserControl
         // 单次最多处理 8000 条,极端涌入时分帧消化,保 UI 响应(N-03)
         for (var i = 0; i < 8000 && _incoming.TryDequeue(out var entry); i++)
         {
-            var row = ConsoleRow.From(entry);
-            _all.Add(row);
-            if (PassesFilter(row))
+            foreach (var row in ConsoleRow.From(entry))
             {
-                _visible.Add(row);
-                appended = true;
+                _all.Add(row);
+                if (PassesFilter(row))
+                {
+                    _visible.Add(row);
+                    appended = true;
+                }
             }
         }
 

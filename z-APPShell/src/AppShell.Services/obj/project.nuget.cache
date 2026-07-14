@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "4tQZFFTb1X4=",
+  "dgSpecHash": "hBT+I/qYOVc=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Administrator\\Desktop\\APPShell\\src\\AppShell.Services\\AppShell.Services.csproj",
+  "projectFilePath": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\z-APPShell\\src\\AppShell.Services\\AppShell.Services.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.data.sqlite\\8.0.10\\microsoft.data.sqlite.8.0.10.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.data.sqlite.core\\8.0.10\\microsoft.data.sqlite.core.8.0.10.nupkg.sha512",

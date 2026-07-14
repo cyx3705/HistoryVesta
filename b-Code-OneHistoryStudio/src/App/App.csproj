@@ -6,8 +6,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <RootNamespace>AppShell.App</RootNamespace>
-    <AssemblyName>AppShell</AssemblyName>
+    <RootNamespace>OneHistoryStudio</RootNamespace>
+    <AssemblyName>OneHistoryStudio</AssemblyName>
     <!-- N-01:每显示器 DPI 感知(Per-Monitor V2) -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>

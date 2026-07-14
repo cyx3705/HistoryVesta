@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "JZx9XnXoiOg=",
+  "dgSpecHash": "qg+N3Iwl2EQ=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Administrator\\Desktop\\APPShell\\src\\App\\App.csproj",
+  "projectFilePath": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\App.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Administrator\\.nuget\\packages\\dirkster.avalondock\\4.72.1\\dirkster.avalondock.4.72.1.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\dirkster.avalondock.themes.vs2013\\4.72.1\\dirkster.avalondock.themes.vs2013.4.72.1.nupkg.sha512",

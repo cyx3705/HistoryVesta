@@ -14,6 +14,13 @@ public sealed class CommandRegistry
             throw new InvalidOperationException($"指令名冲突: {descriptor.Name} 已注册,禁止覆盖(§5.3)");
     }
 
+    /// <summary>
+    /// 注销指令(模块热重载场景:模块 DLL 下线时其指令域随之移除)。
+    /// 调用方须只注销自己注册过的名称;存在则移除并返回 true。
+    /// [基线 0.4.2 新增,由派生应用 OneHistoryStudio V2-M3 反哺]
+    /// </summary>
+    public bool Unregister(string name) => _commands.Remove(name);
+
     public bool TryGet(string name, out CommandDescriptor descriptor)
         => _commands.TryGetValue(name, out descriptor!);
 

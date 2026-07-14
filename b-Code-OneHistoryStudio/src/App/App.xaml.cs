@@ -7,24 +7,25 @@ using AppShell.Core.Docking;
 using AppShell.Core.Logging;
 using AppShell.Services;
 using AppShell.Shell;
+using OneHistoryStudio.Git;
 
-namespace AppShell.App;
+namespace OneHistoryStudio;
 
 /// <summary>
-/// 派生应用装配点(§9):本项目是派生应用唯一要改的项目。
-/// M2:控制台窗口由 Shell 提供真实实现;本层注册自定义指令示范
-/// (debug.logflood,兼作验收 8 的承压测试入口)。
-/// 表窗口(M3)、控制面板与资源窗口(M4)的占位内容将逐步替换。
+/// OneHistoryStudio 装配点(派生自 z-APPShell 基线 0.4.1-M4,§9 流程)。
+/// V2-M0:仅完成身份派生(应用名/数据目录/版本),模板演示内容暂保留,
+/// 将在 V2-M1(proj.* 指令域)与 V2-M2(主窗口内容)中逐步替换。
 /// </summary>
 public partial class App : Application
 {
     private ShellLog? _log;
+    private Modules.ModuleHost? _modules;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        var paths = new AppPaths("AppShell");
+        var paths = new AppPaths("OneHistoryStudio");
         var log = new ShellLog(paths);
         var settings = new SettingsService(paths);
         _log = log;
@@ -34,7 +35,7 @@ public partial class App : Application
         {
             log.Log(ShellLogLevel.Fatal, "app", $"未处理异常: {args.Exception}");
             MessageBox.Show($"发生未处理异常,已记录日志:\n{args.Exception.Message}",
-                "AppShell", MessageBoxButton.OK, MessageBoxImage.Error);
+                "OneHistoryStudio", MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
@@ -45,20 +46,64 @@ public partial class App : Application
         dataService.RegisterConnection("main", "main.db");
         SeedDemoData(dataService, log);
 
-        // 工作区(§9 流程第 6 条):根目录可经 res.root 指令更改并持久化
-        var workspace = new WorkspaceService(
-            settings.Get("workspace.root") ?? paths.WorkspaceDir);
+        // 操作留痕与分支描述(V2-M4,DT-01/02):push_history / branch_notes 建表
+        var history = new HistoryRecorder(dataService, log);
 
-        // 控制面板演示(§9 流程第 4 条):首启把 motor.json 写入 panels/ 目录
-        SeedDemoPanel(paths, log);
+        // 控制面板(§9 流程第 4 条 / UI-10~12):首启写入面板 JSON,清理 M0 遗留的 motor 演示面板
+        SeedProjectPanels(paths, log);
+
+        // proj.* 指令域(V2-M1):Git 项目库管理。
+        // 执行中途的确认(LFS 询问)复用总线确认通道,保持危险操作单闸口(N-04);
+        // window 在下方创建,指令实际执行时必已就绪。
+        ShellWindow? window = null;
+        var projects = new ProjectService(settings, prompt =>
+        {
+            var confirmation = window?.Commands.Confirmation;
+            if (confirmation == null)
+                return false; // 无确认通道一律拒绝(与总线安全缺省一致)
+            return Current.Dispatcher.Invoke(() => confirmation.Confirm(prompt));
+        }, paths.Root);
+        projects.EnsureDefaultSettings();
+        projects.NotesProvider = history.AllNotes;
+
+        // 工作区(§9 流程第 6 条 / DT-04):默认根 = 项目库根目录,可经 res.root 更改并持久化
+        var workspace = new WorkspaceService(
+            settings.Get("workspace.root") ?? projects.WorktreeRoot);
+
+        // 模块托管(V2-M3,MD-01~07):Modules 目录热重载,DLL 即指令域
+        var moduleHost = new Modules.ModuleHost(
+            settings.Get(Modules.ModuleCommands.KeyModuleDir)
+                ?? System.IO.Path.Combine(paths.Root, "Modules"),
+            log);
+        _modules = moduleHost;
 
         var config = new ShellConfig
         {
-            AppName = "AppShell",
-            AppVersion = "0.4.0-M4",
+            AppName = "OneHistory 项目管理工具",
+            AppVersion = "2.0.0",
             DataService = dataService,
             Workspace = workspace,
+            // 中央区不注入内容,保留模板占位页(总览/继承树改为独立工具窗口)
         };
+
+        // 项目总览与继承树:与其他工具窗口同级的可停靠窗口(顶部标签组,占 55%)
+        config.ToolWindows.Add(new ToolWindowDescriptor
+        {
+            Id = "overview",
+            Title = "项目总览",
+            DefaultSide = DockSide.Top,
+            DefaultRatio = 0.55,
+            ContentFactory = () => new Views.OverviewView(() => window?.Commands),
+        });
+        config.ToolWindows.Add(new ToolWindowDescriptor
+        {
+            Id = "tree",
+            Title = "继承树",
+            DefaultSide = DockSide.Tab,
+            DefaultTabTarget = "overview",
+            DefaultRatio = 0.55,
+            ContentFactory = () => new Views.BranchTreeView(() => window?.Commands),
+        });
 
         // 默认布局按附录 A:资源(左 18%)| 主窗口 | 控制面板(右 22%),底部表窗口+控制台标签组(28%)
         config.ToolWindows.Add(new ToolWindowDescriptor
@@ -92,16 +137,31 @@ public partial class App : Application
         // 派生应用自定义指令示范(§5.3):与内置指令同表、help 自动收录
         config.ConfigureCommands = registry =>
         {
+            ProjectCommands.RegisterAll(registry, projects, history);
+            Modules.ModuleCommands.RegisterAll(registry, moduleHost, settings);
             registry.Register(BuildLogFloodCommand(log));
             registry.Register(BuildSeedBenchCommand(dataService));
-            RegisterMotorDemo(registry, log);
+            registry.Register(BuildSleepCommand());
         };
 
-        var window = new ShellWindow(config, new FileLayoutStore(paths), log, settings, paths.Root);
+        window = new ShellWindow(config, new FileLayoutStore(paths), log, settings, paths.Root);
         MainWindow = window;
+
+        // 模块宿主接入注册表并首次装载(此刻在 UI 线程,Dispatcher.Invoke 内联执行)
+        moduleHost.Attach(window.Commands.Registry);
+        moduleHost.Start();
+
         window.Show();
 
-        log.Info("app", $"AppShell 启动完成,数据目录: {paths.Root}");
+        // --yes:确认通道自动通过(自动化回归/脚本用,IConfirmationService 注释预留的场景)。
+        // 仅限 --exec 自测流程使用,日常交互禁止带此参数。
+        if (e.Args.Contains("--yes"))
+        {
+            window.Commands.Confirmation = new AutoConfirmation();
+            log.Warn("app", "--yes 已启用:全部二次确认将自动通过(仅限自动化场景)");
+        }
+
+        log.Info("app", $"OneHistoryStudio 启动完成,数据目录: {paths.Root}");
 
         // --exec "指令":启动后顺序执行(自动化/自测入口)
         var startupCommands = new List<string>();
@@ -121,8 +181,15 @@ public partial class App : Application
             await window.Commands.ExecuteAsync(command, "脚本:startup");
     }
 
+    /// <summary>--yes 自动确认(仅自动化回归场景;见 IConfirmationService 注释)。</summary>
+    private sealed class AutoConfirmation : AppShell.Core.Commands.IConfirmationService
+    {
+        public bool Confirm(string prompt) => true;
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
+        _modules?.Dispose(); // 停掉文件监听与防抖定时器
         _log?.Dispose(); // 冲刷文件写入队列
         base.OnExit(e);
     }
@@ -200,87 +267,119 @@ public partial class App : Application
         },
     };
 
-    // ---------------------------------------------------------------- 演示面板与指令(M4)
+    /// <summary>debug.sleep:异步等待(自动化脚本用,如 --exec 序列中等待模块热重载生效)。</summary>
+    private static CommandDescriptor BuildSleepCommand() => new()
+    {
+        Name = "debug.sleep",
+        Summary = "等待指定秒数(自动化脚本用;异步等待,不阻塞 UI)",
+        Example = "debug.sleep seconds=5",
+        Parameters =
+        [
+            new ParameterSpec
+            {
+                Name = "seconds",
+                Description = "等待秒数(1~120)",
+                Type = ParamType.Int,
+                Default = "3",
+                Position = 0,
+            },
+        ],
+        Handler = async ctx =>
+        {
+            var s = Math.Clamp(ctx.GetInt("seconds", 3), 1, 120);
+            await Task.Delay(TimeSpan.FromSeconds(s));
+            return CommandResult.Ok($"等待 {s}s 完成");
+        },
+    };
 
-    /// <summary>首启写入 motor 演示面板(§4.5 配置示例;验收 6 的载体)。</summary>
-    private static void SeedDemoPanel(AppPaths paths, ShellLog log)
+    // ---------------------------------------------------------------- 控制面板(UI-10 / UI-11)
+
+    /// <summary>
+    /// 首启写入项目操作与提交推送两块面板 JSON(缺失才写,用户手改的保留);
+    /// 并一次性清理 M0 遗留的 motor 演示面板。
+    /// 指令模板中的占位值显式带引号,兼容含空格/中文的输入。
+    /// </summary>
+    private static void SeedProjectPanels(AppPaths paths, ShellLog log)
     {
         try
         {
             var panelsDir = System.IO.Path.Combine(paths.Root, "panels");
             System.IO.Directory.CreateDirectory(panelsDir);
-            var file = System.IO.Path.Combine(panelsDir, "motor.json");
-            if (System.IO.File.Exists(file))
-                return;
 
-            System.IO.File.WriteAllText(file,
+            var stale = System.IO.Path.Combine(panelsDir, "motor.json");
+            if (System.IO.File.Exists(stale))
+            {
+                System.IO.File.Delete(stale);
+                log.Info("app", "已清理演示面板 panels/motor.json");
+            }
+
+            SeedPanelIfMissing(panelsDir, log, "projops.json",
                 """
                 {
-                  "id": "motor",
-                  "title": "电机控制",
+                  "id": "projops",
+                  "title": "项目操作",
                   "visible": true,
                   "side": "right",
-                  "ratio": 0.22,
+                  "ratio": 0.24,
                   "controls": [
-                    { "type": "combo",  "id": "axis",  "label": "轴",   "items": ["X", "Y", "Z"], "default": "X" },
-                    { "type": "number", "id": "speed", "label": "速度", "min": 0, "max": 3000, "default": "100" },
-                    { "type": "slider", "id": "accel", "label": "加速度", "min": 10, "max": 500, "step": 10, "default": "100" },
-                    { "type": "check",  "id": "fine",  "label": "精细模式" },
-                    { "type": "label",  "id": "status","label": "状态", "default": "就绪" },
-                    { "type": "button", "label": "点动", "command": "motor.jog axis={axis} speed={speed} accel={accel} fine={fine}" },
-                    { "type": "button", "label": "停止", "command": "motor.stop axis={axis}", "style": "danger" }
+                    { "type": "text",   "id": "name", "label": "项目名称" },
+                    { "type": "text",   "id": "base", "label": "基础分支", "default": "0000-000-Template" },
+                    { "type": "button", "label": "创建分支 + 工作树", "command": "proj.create name=\"{name}\" base=\"{base}\"" },
+                    { "type": "button", "label": "打开工作树文件夹", "command": "proj.open name=\"{name}\"" },
+                    { "type": "label",  "id": "hint", "label": "提示", "default": "删除项目请在控制台执行 proj.delete" }
                   ]
                 }
                 """);
-            log.Info("app", "已写入演示面板 panels/motor.json");
+
+            SeedPanelIfMissing(panelsDir, log, "projmod.json",
+                """
+                {
+                  "id": "projmod",
+                  "title": "模块管理",
+                  "visible": true,
+                  "side": "right",
+                  "ratio": 0.24,
+                  "controls": [
+                    { "type": "label",  "id": "hint", "label": "说明", "default": "模块 DLL 放入目录即自动装载" },
+                    { "type": "button", "label": "模块清单", "command": "module.list" },
+                    { "type": "button", "label": "重载全部模块", "command": "module.reload" },
+                    { "type": "button", "label": "打开模块目录", "command": "module.open" }
+                  ]
+                }
+                """);
+
+            SeedPanelIfMissing(panelsDir, log, "projpush.json",
+                """
+                {
+                  "id": "projpush",
+                  "title": "提交推送",
+                  "visible": true,
+                  "side": "right",
+                  "ratio": 0.24,
+                  "controls": [
+                    { "type": "text",   "id": "branch", "label": "分支名称" },
+                    { "type": "text",   "id": "msg",    "label": "提交描述", "default": "一键推送更新", "required": true },
+                    { "type": "button", "label": "提交到本地仓库", "command": "proj.commit name=\"{branch}\" msg=\"{msg}\"" },
+                    { "type": "button", "label": "推送到 GitHub", "command": "proj.push name=\"{branch}\"" },
+                    { "type": "button", "label": "一键提交全部工作树", "command": "proj.commitall msg=\"{msg}\"", "style": "danger" },
+                    { "type": "button", "label": "一键推送全部分支", "command": "proj.pushall", "style": "danger" }
+                  ]
+                }
+                """);
         }
         catch (Exception ex)
         {
-            log.Error("app", $"演示面板初始化失败: {ex.Message}");
+            log.Error("app", $"面板初始化失败: {ex.Message}");
         }
     }
 
-    /// <summary>motor.* 演示指令:模拟耗时动作 + panel.set 反向驱动状态灯(P-07 示范)。</summary>
-    private static void RegisterMotorDemo(CommandRegistry registry, ShellLog log)
+    private static void SeedPanelIfMissing(string panelsDir, ShellLog log, string fileName, string json)
     {
-        registry.Register(new CommandDescriptor
-        {
-            Name = "motor.jog",
-            Summary = "演示:模拟电机点动(异步长任务 + 进度上报)",
-            Example = "motor.jog axis=X speed=200 accel=100 fine=false",
-            Parameters =
-            [
-                new ParameterSpec { Name = "axis", Description = "轴", Required = true, Position = 0, AllowedValues = ["X", "Y", "Z"] },
-                new ParameterSpec { Name = "speed", Description = "速度", Type = ParamType.Double, Default = "100" },
-                new ParameterSpec { Name = "accel", Description = "加速度", Type = ParamType.Double, Default = "100" },
-                new ParameterSpec { Name = "fine", Description = "精细模式", Type = ParamType.Bool, Default = "false" },
-            ],
-            Handler = async ctx =>
-            {
-                var axis = ctx.RequireString("axis");
-                var speed = ctx.GetDouble("speed", 100);
-                for (var pct = 25; pct <= 100; pct += 25)
-                {
-                    await Task.Delay(150);
-                    ctx.Progress?.Report($"{pct}%");
-                }
-
-                return CommandResult.Ok($"{axis} 轴点动完成(speed={speed}, fine={ctx.GetBool("fine")})");
-            },
-        });
-
-        registry.Register(new CommandDescriptor
-        {
-            Name = "motor.stop",
-            Summary = "演示:停止电机",
-            Example = "motor.stop axis=X",
-            Parameters =
-            [
-                new ParameterSpec { Name = "axis", Description = "轴", Required = true, Position = 0, AllowedValues = ["X", "Y", "Z"] },
-            ],
-            Handler = CommandDescriptor.Sync(ctx =>
-                CommandResult.Ok($"{ctx.RequireString("axis")} 轴已停止")),
-        });
+        var file = System.IO.Path.Combine(panelsDir, fileName);
+        if (System.IO.File.Exists(file))
+            return;
+        System.IO.File.WriteAllText(file, json);
+        log.Info("app", $"已写入面板 panels/{fileName}");
     }
 
     // ---------------------------------------------------------------- 演示数据

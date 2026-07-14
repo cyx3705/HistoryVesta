@@ -55,7 +55,7 @@
                  ScrollViewer.CanContentScroll="True"
                  VirtualizingPanel.IsVirtualizing="True"
                  VirtualizingPanel.VirtualizationMode="Recycling"
-                 VirtualizingPanel.ScrollUnit="Item">
+                 VirtualizingPanel.ScrollUnit="Pixel">
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="{x:Type local:ConsoleRow}">
                     <TextBlock Text="{Binding Text}" Foreground="{Binding Foreground}" />

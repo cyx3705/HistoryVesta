@@ -16,46 +16,50 @@ public sealed class ConsoleRow
     /// <summary>来源键(过滤用):UI / 手动 / 脚本 / layout / result / 或日志类别。</summary>
     public required string SourceKey { get; init; }
 
-    public static ConsoleRow From(ShellLogEntry e)
+    /// <summary>
+    /// 一条日志记录 → 一到多个显示行:多行消息(如 proj.tree 的树形结果)逐行拆分。
+    /// 单个超高项会让按项滚动永远看不到项的下半截,且拖累虚拟化,故在入口处拆平。
+    /// </summary>
+    public static IReadOnlyList<ConsoleRow> From(ShellLogEntry e)
     {
+        string text;
+        Brush foreground;
+        string sourceKey;
+
         // 指令回显(cmd:来源):附录 C 样式 "[10:21:03] [手动] > help db.query"
         if (e.Category.StartsWith(CommandBus.EchoCategoryPrefix, StringComparison.Ordinal))
         {
             var source = e.Category[CommandBus.EchoCategoryPrefix.Length..];
-            return source switch
+            (text, foreground, sourceKey) = source switch
             {
-                "result" => new ConsoleRow
-                {
-                    Text = Indent(e.Message),
-                    Foreground = e.Level >= ShellLogLevel.Error ? ErrorBrush : ResultBrush,
-                    Level = e.Level,
-                    SourceKey = "result",
-                },
-                "progress" => new ConsoleRow
-                {
-                    Text = $"  ... {e.Message}",
-                    Foreground = ProgressBrush,
-                    Level = e.Level,
-                    SourceKey = "result",
-                },
-                _ => new ConsoleRow
-                {
-                    Text = $"[{e.Time:HH:mm:ss}] [{source}] > {e.Message}",
-                    Foreground = EchoBrush,
-                    Level = e.Level,
-                    SourceKey = SourceKeyOf(source),
-                },
+                "result" => (Indent(e.Message),
+                    e.Level >= ShellLogLevel.Error ? ErrorBrush : ResultBrush, "result"),
+                "progress" => ($"  ... {e.Message}", ProgressBrush, "result"),
+                _ => ($"[{e.Time:HH:mm:ss}] [{source}] > {e.Message}", EchoBrush, SourceKeyOf(source)),
             };
         }
-
-        // 普通日志(C-03 按级别着色)
-        return new ConsoleRow
+        else
         {
-            Text = $"{e.Time:HH:mm:ss.fff} [{e.Level}] [{e.Category}] {e.Message}",
-            Foreground = LevelBrush(e.Level),
-            Level = e.Level,
-            SourceKey = e.Category,
-        };
+            // 普通日志(C-03 按级别着色)
+            text = $"{e.Time:HH:mm:ss.fff} [{e.Level}] [{e.Category}] {e.Message}";
+            foreground = LevelBrush(e.Level);
+            sourceKey = e.Category;
+        }
+
+        if (!text.Contains('\n'))
+        {
+            return [new ConsoleRow { Text = text, Foreground = foreground, Level = e.Level, SourceKey = sourceKey }];
+        }
+
+        return text.Split('\n')
+            .Select(line => new ConsoleRow
+            {
+                Text = line.TrimEnd('\r'),
+                Foreground = foreground,
+                Level = e.Level,
+                SourceKey = sourceKey,
+            })
+            .ToList();
     }
 
     /// <summary>脚本来源统一归入 “脚本” 键(具体文件名保留在显示文本中)。</summary>

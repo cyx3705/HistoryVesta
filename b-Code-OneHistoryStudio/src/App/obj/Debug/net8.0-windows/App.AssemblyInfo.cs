@@ -10,12 +10,12 @@
 using System;
 using System.Reflection;
 
-[assembly: System.Reflection.AssemblyCompanyAttribute("AppShell")]
+[assembly: System.Reflection.AssemblyCompanyAttribute("OneHistoryStudio")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
-[assembly: System.Reflection.AssemblyProductAttribute("AppShell")]
-[assembly: System.Reflection.AssemblyTitleAttribute("AppShell")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+701bb15c19dc8371566078544960dfe0abf3bbbf")]
+[assembly: System.Reflection.AssemblyProductAttribute("OneHistoryStudio")]
+[assembly: System.Reflection.AssemblyTitleAttribute("OneHistoryStudio")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
 [assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows7.0")]
 [assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows7.0")]

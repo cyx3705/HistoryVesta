@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>DemoModule</name>
+    </assembly>
+    <members>
+        <member name="M:DemoModule.Calculator.Add(System.Int32,System.Int32)">
+            <summary>两个整数相加,返回和</summary>
+            <param name="a">第一个加数</param>
+            <param name="b">第二个加数</param>
+        </member>
+        <member name="M:DemoModule.Calculator.SayHello(System.String)">
+            <summary>向指定的人问好(演示异步方法与默认参数)</summary>
+            <param name="name">要问候的名字,缺省为 World</param>
+        </member>
+        <member name="M:DemoModule.Calculator.Now">
+            <summary>返回当前时间和机器名(演示静态方法与对象返回值的 JSON 回显)</summary>
+        </member>
+        <member name="M:DemoModule.Calculator.Reverse(System.String)">
+            <summary>把字符串反转</summary>
+            <param name="text">要反转的字符串</param>
+        </member>
+        <member name="T:BaseVariable.ModuleInfoBase">
+            <summary>
+            模块契约副本(与 b-Code-MyAPI-Lite\BaseVariable 同源,MD-02):
+            宿主按基类全名 "BaseVariable.ModuleInfoBase" 做鸭子类型识别,
+            契约类编译进模块自身或独立 BaseVariable.dll 均可被装载。
+            </summary>
+        </member>
+        <member name="P:BaseVariable.ModuleInfoBase.ModuleName">
+            <summary>模块名称(默认取程序集名);同时是指令域名。</summary>
+        </member>
+        <member name="P:BaseVariable.ModuleInfoBase.Description">
+            <summary>模块描述</summary>
+        </member>
+        <member name="P:BaseVariable.ModuleInfoBase.Author">
+            <summary>作者</summary>
+        </member>
+        <member name="P:BaseVariable.ModuleInfoBase.Version">
+            <summary>版本号</summary>
+        </member>
+        <member name="P:BaseVariable.ModuleInfoBase.Open">
+            <summary>true = 全暴露:程序集内所有公共类的公共方法都托管;false = 精准暴露 MainClassType。</summary>
+        </member>
+        <member name="P:BaseVariable.ModuleInfoBase.MainClassType">
+            <summary>精准暴露模式下要托管的核心业务类;为 null 则不注册任何指令。</summary>
+        </member>
+        <member name="P:BaseVariable.ModuleInfoBase.Enabled">
+            <summary>是否启用该模块(false 时整个模块不注册)。</summary>
+        </member>
+    </members>
+</doc>
