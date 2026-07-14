@@ -1,0 +1,2561 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Slamware-discovery - My Docs</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Slamware-discovery";
+        var mkdocs_page_input_path = "discovery.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> My Docs
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../action/">Slamware-action</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Slamware-discovery</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#abstractdiscoverbleconfigurelistener">AbstractDiscover.BleConfigureListener接口</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_1">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#onconfiguresuccess">onConfigureSuccess()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#onconfigurefailurejavalangstring-error">onConfigureFailure(java.lang.String error)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#string-error">string error枚举常量</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#ble_config_error_ble_disconnected">BLE_CONFIG_ERROR_BLE_DISCONNECTED</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ble_config_error_writting_fail">BLE_CONFIG_ERROR_WRITTING_FAIL</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ble_config_error_ssid_required">BLE_CONFIG_ERROR_SSID_REQUIRED</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ble_config_error_unable_connect_wifi">BLE_CONFIG_ERROR_UNABLE_CONNECT_WIFI</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ble_config_error_invalid_pwd">BLE_CONFIG_ERROR_INVALID_PWD</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#abstractdiscover">AbstractDiscover类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_10">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#abstractdiscover_1">AbstractDiscover()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getmode">getMode()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setlistenerabstractdiscoverdiscoverylistener-listener">setListener(AbstractDiscover.DiscoveryListener listener)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getstatusdiscoverymode-mode">getStatus(DiscoveryMode mode)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#startdiscoverymode-mode">start(DiscoveryMode mode)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#stopdiscoverymode-mode">stop(DiscoveryMode mode)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#abstractdiscoverdiscoverylistener">AbstractDiscover.DiscoveryListener类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_34">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#discoverylistener">DiscoveryListener()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#onstartdiscoveryabstractdiscover-discover">onStartDiscovery(AbstractDiscover discover)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#onstopdiscoveryabstractdiscover-discover">onStopDiscovery(AbstractDiscover discover)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ondiscoveryerrorabstractdiscover-discover-javalangstring-error">onDiscoveryError(AbstractDiscover discover, java.lang.String error)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ondevicefoundabstractdiscover-discover-device-device">onDeviceFound(AbstractDiscover discover, Device device)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#bledevice">BleDevice类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_55">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#bledevicebluetoothdevice-device">BleDevice(BluetoothDevice device)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getdevice">getDevice()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#canbefoundwithdiscoverymode-mode">canBeFoundWith(DiscoveryMode mode)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#device">Device类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_68">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#device_1">Device()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getmanufactureid">getManufactureId()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmanufactureidint-manufactureid">setManufactureId(int manufactureId)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getmodelid">getModelId()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmodelidint-modelid">setModelId(int modelId)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getmanufacturename">getManufactureName()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmanufacturenamejavalangstring-manufacturename">setManufactureName(java.lang.String manufactureName)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getmodelname">getModelName()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmodelnamejavalangstring-modelname">setModelName(java.lang.String modelName)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#gethardwareversion">getHardwareVersion()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#sethardwareversionstring-hardwareversion">setHardwareVersion(String hardwareVersion)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getsoftwareversion">getSoftwareVersion()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setsoftwareversionstring-softwareversion">setSoftwareVersion(String softwareVersion)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getserialnumber">getSerialNumber()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setserialnumberjavalangstring-serialnumber">setSerialNumber(java.lang.String serialNumber)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#canbefoundwithdiscoverymode-mode_1">canBeFoundWith(DiscoveryMode mode)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getdeviceid">getDeviceId()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setdeviceidjavautiluuid-deviceid">setDeviceId(java.util.UUID deviceId)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getdevicename">getDeviceName()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setdevicenamejavalangstring-devicename">setDeviceName(java.lang.String deviceName)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#devicemanager">DeviceManager类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_148">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#connectstring-host-int-port">connect(string host, int port)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#connectnonnull-string-host-int-port-boolean-singlethread">connect(@NonNull String host, int port, boolean singleThread)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#connectdevice">connect(device)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#connectnonnull-device-device-boolean-singlethread">connect(@NonNull Device device, boolean singleThread)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pairdevice-devicejavalangstring-wifissid-javalangstring-wifipassword-abstractdiscoverbleconfigurelistener-listener">pair(Device device,java.lang.String wifiSSID, java.lang.String wifiPassword, AbstractDiscover.BleConfigureListener listener)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setlistenerabstractdiscoverdiscoverylistener-listener_1">setListener(AbstractDiscover.DiscoveryListener listener)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getstatusdiscoverymode-mode_1">getStatus(DiscoveryMode mode)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#startdiscoverymode-mode_1">start(DiscoveryMode mode)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#stopdiscoverymode-mode_1">stop(DiscoveryMode mode)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getmode_1">getMode()</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#mdnsdevice">MdnsDevice类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_189">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#mdnsdevicejavalangstring-addr-int-port">MdnsDevice(java.lang.String addr, int port)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getaddr">getAddr()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getport">getPort()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#canbefoundwithdiscoverymode-mode_2">canBeFoundWith(DiscoveryMode mode)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#abstractdiscoverdiscoverstatus">AbstractDiscover.DiscoverStatus枚举</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#stopped">STOPPED</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#working">WORKING</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#error">ERROR</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#discoverymode">DiscoveryMode枚举</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#ble">BLE</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mdns">MDNS</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../exceptions/">Slamware-exception</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../FirmwareUpdate/">Slamware-firmware-update</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../geometry/">Slamware-geometry</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../slamware/">Slamware</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../message/">Slamware-message</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../robot/">Slamware-robot</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../sdp/">Slamware-sdp</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../utils/">Slamware-utils</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log/">Slamware-log</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log-customer/">Slamware-log-customer</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">My Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Slamware-discovery</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="comslamtecslamwarediscovery">com.slamtec.slamware.discovery包</h2>
+<p><a id="clasBleConfigureListener"></a></p>
+<h3 id="abstractdiscoverbleconfigurelistener"><code>AbstractDiscover.BleConfigureListener</code>接口</h3>
+<p>蓝牙发现回调接口。</p>
+<h4 id="_1">方法</h4>
+<h5 id="onconfiguresuccess"><code>onConfigureSuccess()</code></h5>
+<p>配置成功。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_2">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_3">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_4">注意事项</h6>
+<p>使用该接口时候,一定要打开蓝牙设备。</p>
+<h6 id="_5">示例代码</h6>
+<pre><code>
+ DeviceManager deviceManager = new DeviceManager(getActivity());
+  /**
+     * Pair Slamware device with SSID and password
+     * @param device The device to pair
+     * @param wifiSSID The WiFi SSID
+     * @param wifiPassword The WiFi password
+     * @param listener The configuration listener
+     */
+ deviceManager.pair(device, ssid, pwd, new AbstractDiscover.BleConfigureListener() {
+            @Override
+            public void onConfigureSuccess() {
+               // 配置成功...
+            }
+
+            @Override
+            public void onConfigureFailure(String error) {
+               //配置失败...
+            }
+        });
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="onconfigurefailurejavalangstring-error"><code>onConfigureFailure(java.lang.String error)</code></h5>
+<p>配置失败。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_6">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_7">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>error</td>
+<td>String</td>
+<td>蓝牙配置失败的错误</td>
+<td>这个参数是系统提供的,不是人为添加的</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_8">注意事项</h6>
+<p>使用该接口时候,一定要打开蓝牙设备。</p>
+<h6 id="_9">示例代码</h6>
+<pre><code>
+ DeviceManager deviceManager = new DeviceManager(getActivity());
+  /**
+     * Pair Slamware device with SSID and password
+     * @param device The device to pair
+     * @param wifiSSID The WiFi SSID
+     * @param wifiPassword The WiFi password
+     * @param listener The configuration listener
+     */
+ deviceManager.pair(device, ssid, pwd, new AbstractDiscover.BleConfigureListener() {
+            @Override
+            public void onConfigureSuccess() {
+               // 配置成功...
+            }
+
+            @Override
+            public void onConfigureFailure(String error) {
+               //配置失败...
+            }
+        });
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="string-error">string error枚举常量</h4>
+<h5 id="ble_config_error_ble_disconnected"><code>BLE_CONFIG_ERROR_BLE_DISCONNECTED</code></h5>
+<p>断开连接。</p>
+<h5 id="ble_config_error_writting_fail"><code>BLE_CONFIG_ERROR_WRITTING_FAIL</code></h5>
+<p>配置失败。</p>
+<h5 id="ble_config_error_ssid_required"><code>BLE_CONFIG_ERROR_SSID_REQUIRED</code></h5>
+<p>SSID无效。</p>
+<h5 id="ble_config_error_unable_connect_wifi"><code>BLE_CONFIG_ERROR_UNABLE_CONNECT_WIFI</code></h5>
+<p>无法连接至WiFi。</p>
+<h5 id="ble_config_error_invalid_pwd"><code>BLE_CONFIG_ERROR_INVALID_PWD</code></h5>
+<p>密码错误。</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="abstractdiscover"><code>AbstractDiscover</code>类</h3>
+<p>设备发现类。</p>
+<h4 id="_10">方法</h4>
+<h5 id="abstractdiscover_1"><code>AbstractDiscover()</code></h5>
+<p>创建对象AbstractDiscover。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_11">返回值</h6>
+<p>无。</p>
+<h6 id="_12">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_13">注意事项</h6>
+<p>使用到哪个发现设备，请一定要打开那个设备,比如wifi 蓝牙。</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getmode"><code>getMode()</code></h5>
+<p>获取模式。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_14">返回值</h6>
+<p>返回值DiscoveryMode 表示发现模式分为两种 BLE,MDNS。</p>
+<h6 id="_15">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_16">注意事项</h6>
+<p>暂无。</p>
+<h6 id="_17">示例代码</h6>
+<pre><code>
+// DeviceManager 集成自AbstractDiscover
+DeviceManager deviceManager = new DeviceManager(getActivity());
+DiscoveryMode mode =  deviceManager.getMode();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setlistenerabstractdiscoverdiscoverylistener-listener"><code>setListener(AbstractDiscover.DiscoveryListener listener)</code></h5>
+<p>设置listener。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_18">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_19">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>listener</td>
+<td>DiscoveryListener</td>
+<td>在机器人中给设备添加发现接口回调</td>
+<td>确保打开那个设备，比如wifi  蓝牙</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_20">注意事项</h6>
+<p>使用到哪个发现设备，请一定要打开那个设备,比如wifi 蓝牙。</p>
+<h6 id="_21">示例代码</h6>
+<pre><code>
+ private AbstractDiscover.DiscoveryListener discoveryListener = new AbstractDiscover.DiscoveryListener() {
+        @Override
+        public void onStartDiscovery(AbstractDiscover discover) {
+            LogUtil.d(TAG, discover.getMode().toString() + " start discover");
+        }
+
+        @Override
+        public void onStopDiscovery(AbstractDiscover discover) {
+            LogUtil.d(TAG, discover.getMode().toString() + " stop discover");
+        }
+
+        @Override
+        public void onDiscoveryError(AbstractDiscover discover, String error) {
+            LogUtil.d(TAG, discover.getMode().toString() + " discover error: " + error);
+
+            if (discover.getMode() == DiscoveryMode.BLE) {
+                getActivity().runOnUiThread(() -> Toast.makeText(getActivity(),
+                        "Please open bluetooth", Toast.LENGTH_SHORT).show());
+            }
+        }
+
+        @Override
+        public void onDeviceFound(AbstractDiscover discover, Device device) {
+            for (Device d: devices) {
+                if (d.canBeFoundWith(DiscoveryMode.BLE) == device.canBeFoundWith(DiscoveryMode.BLE)
+                        && d.getDeviceName().equals(device.getDeviceName())) {
+                    return;
+                }
+            }
+
+            devices.add(device);
+            Collections.sort(devices, ((lhs, rhs) ->  {
+                    if (lhs.canBeFoundWith(DiscoveryMode.BLE)) {
+                        return -1;
+                    } else if (rhs.canBeFoundWith(DiscoveryMode.BLE)) {
+                        return 1;
+                    }
+                    return 0;
+                }
+            ));
+
+        }
+    };
+DeviceManager deviceManager = new DeviceManager(getActivity());
+deviceManager.setListener(discoveryListener);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getstatusdiscoverymode-mode"><code>getStatus(DiscoveryMode mode)</code></h5>
+<p>获取状态。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_22">返回值</h6>
+<p>返回值枚举DiscoverStatus。</p>
+<h6 id="_23">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mode</td>
+<td>DiscoveryMode</td>
+<td>当前设备模式</td>
+<td>目前有两种 BLE，MDNS</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_24">注意事项</h6>
+<p>暂无</p>
+<h6 id="_25">示例代码</h6>
+<pre><code>
+DeviceManager deviceManager = new DeviceManager(getActivity());
+DiscoverStatus  status = deviceManager.getStatus();
+
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="startdiscoverymode-mode"><code>start(DiscoveryMode mode)</code></h5>
+<p>开始寻找设备。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_26">返回值</h6>
+<p>无。</p>
+<h6 id="_27">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mode</td>
+<td>DiscoveryMode</td>
+<td>发现模式</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_28">注意事项</h6>
+<p>使用到哪个发现设备，请一定要打开那个设备,比如wifi 蓝牙。</p>
+<h6 id="_29">示例代码</h6>
+<pre><code>
+DeviceManager deviceManager = new DeviceManager(getActivity());
+deviceManager.start(DiscoveryMode.BLE);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="stopdiscoverymode-mode"><code>stop(DiscoveryMode mode)</code></h5>
+<p>停止发现。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_30">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_31">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mode</td>
+<td>DiscoveryMode</td>
+<td>发现模式</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_32">注意事项</h6>
+<p>使用到哪个发现设备，请一定要打开那个设备,比如wifi 蓝牙。</p>
+<h6 id="_33">示例代码</h6>
+<pre><code>
+DeviceManager deviceManager = new DeviceManager(getActivity());
+deviceManager.stop(DiscoveryMode.BLE);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="abstractdiscoverdiscoverylistener">AbstractDiscover.DiscoveryListener类</h3>
+<p>AbstractDiscover的监听者。</p>
+<h4 id="_34">方法</h4>
+<h5 id="discoverylistener"><code>DiscoveryListener()</code></h5>
+<p>创建对象DiscoveryListener。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_35">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_36">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_37">注意事项</h6>
+<p>使用到哪个发现设备，请一定要打开那个设备,比如wifi 蓝牙。</p>
+<h6 id="_38">示例代码</h6>
+<pre><code>
+ private AbstractDiscover.DiscoveryListener discoveryListener = new AbstractDiscover.DiscoveryListener() {
+        @Override
+        public void onStartDiscovery(AbstractDiscover discover) {
+            LogUtil.d(TAG, discover.getMode().toString() + " start discover");
+        }
+
+        @Override
+        public void onStopDiscovery(AbstractDiscover discover) {
+            LogUtil.d(TAG, discover.getMode().toString() + " stop discover");
+        }
+
+        @Override
+        public void onDiscoveryError(AbstractDiscover discover, String error) {
+            LogUtil.d(TAG, discover.getMode().toString() + " discover error: " + error);
+
+            if (discover.getMode() == DiscoveryMode.BLE) {
+                getActivity().runOnUiThread(() -> Toast.makeText(getActivity(),
+                        "Please open bluetooth", Toast.LENGTH_SHORT).show());
+            }
+        }
+
+        @Override
+        public void onDeviceFound(AbstractDiscover discover, Device device) {
+            for (Device d: devices) {
+                if (d.canBeFoundWith(DiscoveryMode.BLE) == device.canBeFoundWith(DiscoveryMode.BLE)
+                        && d.getDeviceName().equals(device.getDeviceName())) {
+                    return;
+                }
+            }
+
+            devices.add(device);
+            Collections.sort(devices, ((lhs, rhs) ->  {
+                    if (lhs.canBeFoundWith(DiscoveryMode.BLE)) {
+                        return -1;
+                    } else if (rhs.canBeFoundWith(DiscoveryMode.BLE)) {
+                        return 1;
+                    }
+                    return 0;
+                }
+            ));
+
+        }
+    };
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="onstartdiscoveryabstractdiscover-discover"><code>onStartDiscovery(AbstractDiscover discover)</code></h5>
+<p>Discovery扫描开始的回调函数。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_39">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_40">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>discover</td>
+<td>AbstractDiscover</td>
+<td>设备发现类</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_41">注意事项</h6>
+<p>使用到哪个发现设备，请一定要打开那个设备,比如wifi 蓝牙。</p>
+<h6 id="_42">示例代码</h6>
+<pre><code>
+如上DiscoveryListener类代码
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="onstopdiscoveryabstractdiscover-discover"><code>onStopDiscovery(AbstractDiscover discover)</code></h5>
+<p>Discovey扫描停止的回调函数。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_43">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_44">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>discover</td>
+<td>AbstractDiscover</td>
+<td>设备发现类</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_45">注意事项</h6>
+<p>使用到哪个发现设备，请一定要打开那个设备,比如wifi 蓝牙。</p>
+<h6 id="_46">示例代码</h6>
+<pre><code>
+如上DiscoveryListener类代码
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="ondiscoveryerrorabstractdiscover-discover-javalangstring-error"><code>onDiscoveryError(AbstractDiscover discover, java.lang.String error)</code></h5>
+<p>Discovery错误的回调函数。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_47">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_48">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>discover</td>
+<td>AbstractDiscover</td>
+<td>设备发现类</td>
+<td>系统自己生成的</td>
+</tr>
+<tr>
+<td>error</td>
+<td>String</td>
+<td>错误</td>
+<td>系统自己生成的</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_49">注意事项</h6>
+<p>使用到哪个发现设备，请一定要打开那个设备,比如wifi 蓝牙。</p>
+<h6 id="_50">示例代码</h6>
+<pre><code>
+如上DiscoveryListener类代码
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="ondevicefoundabstractdiscover-discover-device-device"><code>onDeviceFound(AbstractDiscover discover, Device device)</code></h5>
+<p>发现设备的回调函数。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_51">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_52">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>discover</td>
+<td>AbstractDiscover</td>
+<td>设备发现类</td>
+<td>系统自己生成的</td>
+</tr>
+<tr>
+<td>device</td>
+<td>Device</td>
+<td>当前发现的设备</td>
+<td>系统自己生成的</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_53">注意事项</h6>
+<p>无。</p>
+<h6 id="_54">示例代码</h6>
+<pre><code>
+如上DiscoveryListener类代码
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="bledevice"><code>BleDevice</code>类</h3>
+<p>Slamware的蓝牙设备实体类。</p>
+<h4 id="_55">方法</h4>
+<h5 id="bledevicebluetoothdevice-device"><code>BleDevice(BluetoothDevice device)</code></h5>
+<p>创建对象BleDevice。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_56">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_57">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>device</td>
+<td>BluetoothDevice</td>
+<td>当前设备蓝牙设备对象</td>
+<td>系统自己提供的</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_58">注意事项</h6>
+<p>确保蓝牙设备打开</p>
+<h6 id="_59">示例代码</h6>
+<pre><code>
+BluetoothDevice device;//可以通过系统获取蓝牙设备对象
+BleDevice device = new BleDevice(device)；
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getdevice"><code>getDevice()</code></h5>
+<p>获取设备device。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_60">返回值</h6>
+<p>返回值BluetoothDevice 蓝牙设备。</p>
+<h6 id="_61">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_62">注意事项</h6>
+<p>确保蓝牙设备打开</p>
+<h6 id="_63">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+返回值BluetoothDevice bluetoothDevice = device.getDevice();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="canbefoundwithdiscoverymode-mode"><code>canBeFoundWith(DiscoveryMode mode)</code></h5>
+<p>在discovery模式开启的状态下能否发现设备。由Device  类中的canBeFoundWith指定</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_64">返回值</h6>
+<p>返回值 boolean true代表能发现，false 代表不能发现。</p>
+<h6 id="_65">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mode</td>
+<td>DiscoveryMode</td>
+<td>发现模式</td>
+<td>目前的有两种分别为 BLE 和 MDNS</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_66">注意事项</h6>
+<p>确保蓝牙设备打开</p>
+<h6 id="_67">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+boolean isFound = device.canBeFoundWith(DiscoveryMode.BLE);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<p><a id="classDevice"></a></p>
+<h3 id="device"><code>Device</code>类</h3>
+<p>Slamware的设备抽象类。</p>
+<h4 id="_68">方法</h4>
+<h5 id="device_1"><code>Device()</code></h5>
+<p>创建对象Device。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_69">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_70">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_71">注意事项</h6>
+<p>暂无。</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getmanufactureid"><code>getManufactureId()</code></h5>
+<p>获取Manufacture id。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_72">返回值</h6>
+<p>返回值int 获取Manufactureid。</p>
+<h6 id="_73">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_74">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。</p>
+<h6 id="_75">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+int id = device.getManufactureId();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setmanufactureidint-manufactureid"><code>setManufactureId(int manufactureId)</code></h5>
+<p>设置manufacture id。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_76">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_77">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>manufactureId</td>
+<td>int</td>
+<td>mannfactured的id</td>
+<td>暂无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_78">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。</p>
+<h6 id="_79">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+int id = 123;
+device.getManufactureId(id);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getmodelid"><code>getModelId()</code></h5>
+<p>获取mode id。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_80">返回值</h6>
+<p>返回值int。</p>
+<h6 id="_81">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_82">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。</p>
+<h6 id="_83">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+int modelId = device.getModelId();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setmodelidint-modelid"><code>setModelId(int modelId)</code></h5>
+<p>设置mode id。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_84">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_85">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>modelId</td>
+<td>int</td>
+<td>模式id</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_86">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。</p>
+<h6 id="_87">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+int modelId = 1234;
+device.setModelId(modelId);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getmanufacturename"><code>getManufactureName()</code></h5>
+<p>获取manufacture name。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_88">返回值</h6>
+<p>返回值String 表示制造商name。</p>
+<h6 id="_89">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_90">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。</p>
+<h6 id="_91">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device);
+String name = device.getManufactureName();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setmanufacturenamejavalangstring-manufacturename"><code>setManufactureName(java.lang.String manufactureName)</code></h5>
+<p>设置manufacture name。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_92">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_93">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>manufactureName</td>
+<td>String</td>
+<td>制造商名字</td>
+<td>暂无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_94">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。</p>
+<h6 id="_95">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+String manufactureName = "ssss";
+device.setManufactureName(manufactureName);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getmodelname"><code>getModelName()</code></h5>
+<p>获取mode name。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_96">返回值</h6>
+<p>返回值String 模式名字。</p>
+<h6 id="_97">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_98">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。</p>
+<h6 id="_99">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+String name = device.getModelName();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setmodelnamejavalangstring-modelname"><code>setModelName(java.lang.String modelName)</code></h5>
+<p>设置mode name。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_100">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_101">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>modelName</td>
+<td>String</td>
+<td>模式名字</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_102">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。。</p>
+<h6 id="_103">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+String modelName = "ssss";
+device.modelName(modelName);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="gethardwareversion"><code>getHardwareVersion()</code></h5>
+<p>获取 hard ware version。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_104">返回值</h6>
+<p>返回值String 表示当前的硬件版本。</p>
+<h6 id="_105">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_106">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。。</p>
+<h6 id="_107">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+String version = device.getHardwareVersion();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="sethardwareversionstring-hardwareversion"><code>setHardwareVersion(String hardwareVersion)</code></h5>
+<p>设置hardware version。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_108">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_109">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>hardwareVersion</td>
+<td>int</td>
+<td>当前硬件版本</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_110">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。。</p>
+<h6 id="_111">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+String version = "212";
+device.setHardwareVersion(version);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getsoftwareversion"><code>getSoftwareVersion()</code></h5>
+<p>获取 software version。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_112">返回值</h6>
+<p>返回值String 当前软件版本。</p>
+<h6 id="_113">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_114">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。。</p>
+<h6 id="_115">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+String version = device.getSoftwareVersion();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setsoftwareversionstring-softwareversion"><code>setSoftwareVersion(String softwareVersion)</code></h5>
+<p>设置software version。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_116">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_117">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>softwareVersion</td>
+<td>String</td>
+<td>当前软件的版本</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_118">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。</p>
+<h6 id="_119">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+String version = "sss";
+device.setSoftwareVersion(version);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getserialnumber"><code>getSerialNumber()</code></h5>
+<p>获取serial number。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_120">返回值</h6>
+<p>返回值String 表示是序列号码。</p>
+<h6 id="_121">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_122">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。</p>
+<h6 id="_123">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+String number = device.getSerialNumber();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setserialnumberjavalangstring-serialnumber"><code>setSerialNumber(java.lang.String serialNumber)</code></h5>
+<p>设置serial number。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_124">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_125">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>serialNumber</td>
+<td>String</td>
+<td>序列号码</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_126">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。</p>
+<h6 id="_127">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+String serialNumber = "sss";
+device.setSerialNumber(serialNumber);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="canbefoundwithdiscoverymode-mode_1"><code>canBeFoundWith(DiscoveryMode mode)</code></h5>
+<p>在discovery模式开启的状态下能否发现设备。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_128">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_129">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mode</td>
+<td>DiscoveryMode</td>
+<td>发现模式</td>
+<td>目前的有两种分别为 BLE 和 MDNS</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_130">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice</p>
+<h6 id="_131">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+boolean isFound = device.canBeFoundWith(DiscoveryMode.BLE);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getdeviceid"><code>getDeviceId()</code></h5>
+<p>获取device id。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_132">返回值</h6>
+<p>返回值UUID 是一个独一无二的数。</p>
+<h6 id="_133">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_134">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice</p>
+<h6 id="_135">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+UUID uuid = device.getDeviceId();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setdeviceidjavautiluuid-deviceid"><code>setDeviceId(java.util.UUID deviceId)</code></h5>
+<p>设置device id。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_136">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_137">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>deviceId</td>
+<td>UUID</td>
+<td>设置设备的UUID</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_138">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。</p>
+<h6 id="_139">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+UUID uuid = UUID.nameUUIDFromBytes("SS".getBytes());
+device。setDeviceId(uuid);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getdevicename"><code>getDeviceName()</code></h5>
+<p>获取device name。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_140">返回值</h6>
+<p>返回值String 设备的名字</p>
+<h6 id="_141">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_142">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。</p>
+<h6 id="_143">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+String name = device.getDeviceName();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setdevicenamejavalangstring-devicename"><code>setDeviceName(java.lang.String deviceName)</code></h5>
+<p>设置device name。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_144">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_145">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>deviceName</td>
+<td>String</td>
+<td>设备名字</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_146">注意事项</h6>
+<p>调用当前方法都是使用该类的继承类比如BleDevice MdnsDevice。</p>
+<h6 id="_147">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+String name = "sss";
+device.setDeviceName(name);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="devicemanager"><code>DeviceManager</code>类</h3>
+<p>Slamware的设备管理器类。</p>
+<h4 id="_148">方法</h4>
+<h5 id="connectstring-host-int-port"><code>connect(string host, int port)</code></h5>
+<p>直接连接到SLAMWARE Core（该方法常用于Android设备通过高速总线直接连接到SLAMWARE Core）。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_149">返回值</h6>
+<p>连接到的平台。</p>
+<h6 id="_150">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>host</td>
+<td>string</td>
+<td>为指定的ip地址</td>
+<td>通常为192.168.11.1</td>
+</tr>
+<tr>
+<td>port</td>
+<td>int</td>
+<td>指定设置的端口号</td>
+<td>端口号通常为1445</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_151">注意事项</h6>
+<p>如果platform !=null即表示已经连接到机器人底盘,否则连接失败。</p>
+<h6 id="_152">示例代码</h6>
+<pre><code>
+ AbstractSlamwarePlatform platform   = DeviceManager.connect("192.168.11.1",1445); // 连接到机器人底盘
+</code></pre>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="connectnonnull-string-host-int-port-boolean-singlethread"><code>connect(@NonNull String host, int port, boolean singleThread)</code></h5>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<p>连接到指定的Slamware设备。</p>
+<h6 id="_153">返回值</h6>
+<p>连接到的平台。</p>
+<h6 id="_154">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>host</td>
+<td>String</td>
+<td>指定的IP地址</td>
+<td>不为空。通常为192.168.11.1</td>
+</tr>
+<tr>
+<td>port</td>
+<td>int</td>
+<td>指定的端口号</td>
+<td>通常为1445</td>
+</tr>
+<tr>
+<td>singleThread</td>
+<td>boolean</td>
+<td>指定连接是否为单线程模式</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_155">注意事项</h6>
+<p>如果platform !=null即表示已经连接到机器人底盘,否则连接失败。</p>
+<h6 id="_156">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445, true);
+</code></pre>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="connectdevice"><code>connect(device)</code></h5>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<p>连接到指定的基于SLAMWARE的设备。</p>
+<h6 id="_157">返回值</h6>
+<p>返回值为连接到的设备。</p>
+<h6 id="_158">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>device</td>
+<td><a href="#classDevice">Device</a></td>
+<td>准备连接的设备</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_159">注意事项</h6>
+<p>该方法不适用于**情况。</p>
+<h6 id="_160">示例代码</h6>
+<pre><code>
+AbstrantSlamwarePlatform platform = DeviceManager.connect(device);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="connectnonnull-device-device-boolean-singlethread"><code>connect(@NonNull Device device, boolean singleThread)</code></h5>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<p>连接到指定的基于SLAMWARE的设备。</p>
+<h6 id="_161">返回值</h6>
+<p>返回值为连接到的设备。</p>
+<h6 id="_162">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>device</td>
+<td><a href="#classDevice">Device</a></td>
+<td>准备连接的设备</td>
+<td></td>
+</tr>
+<tr>
+<td>singleThread</td>
+<td>boolean</td>
+<td>连接是否为单线程模式</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_163">注意事项</h6>
+<p>如果platform !=null即表示已经连接到机器人底盘,否则连接失败。</p>
+<h6 id="_164">示例代码</h6>
+<pre><code>
+AbstractSlawmarePlatform platform = DeviceManager.connect(device, true);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="pairdevice-devicejavalangstring-wifissid-javalangstring-wifipassword-abstractdiscoverbleconfigurelistener-listener"><code>pair(Device device,java.lang.String wifiSSID, java.lang.String wifiPassword, AbstractDiscover.BleConfigureListener listener)</code></h5>
+<p>通过SSID和密码匹配SLAMWARE 设备。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_165">返回值</h6>
+<p>无。</p>
+<h6 id="_166">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>device</td>
+<td><a href="#classDevice">Device</a></td>
+<td>准备配对的设备</td>
+<td>-</td>
+</tr>
+<tr>
+<td>wifiSSID</td>
+<td>string</td>
+<td>WiFi的SSID</td>
+<td>-</td>
+</tr>
+<tr>
+<td>wifiPassword</td>
+<td>string</td>
+<td>WiFi的密码</td>
+<td>-</td>
+</tr>
+<tr>
+<td>listener</td>
+<td><a href="#classBleConfigureListener">BleConfigureListener</a></td>
+<td>配置监听器</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_167">注意事项</h6>
+<p>无。</p>
+<h6 id="_168">示例代码</h6>
+<pre><code>
+DeviceManager deviceManager = new DeviceManager(getActivity());
+// device; // a concrete Device object
+String wifiSSID = "xxx";
+String wifiPassword = "xxx";
+// listener; // a concrete AbstractDiscover.BleConfigureListener object
+deviceManager.pair(device, wifiSSID, wifiPassword, listener);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setlistenerabstractdiscoverdiscoverylistener-listener_1"><code>setListener(AbstractDiscover.DiscoveryListener listener)</code></h5>
+<p>由AbstractDiscover  类中的setListener指定</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_169">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_170">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>listener</td>
+<td>DiscoveryListener</td>
+<td>监听者对象</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_171">注意事项</h6>
+<p>暂无。</p>
+<h6 id="_172">示例代码</h6>
+<pre><code>
+ private AbstractDiscover.DiscoveryListener discoveryListener = new AbstractDiscover.DiscoveryListener() {
+        @Override
+        public void onStartDiscovery(AbstractDiscover discover) {
+            LogUtil.d(TAG, discover.getMode().toString() + " start discover");
+        }
+
+        @Override
+        public void onStopDiscovery(AbstractDiscover discover) {
+            LogUtil.d(TAG, discover.getMode().toString() + " stop discover");
+        }
+
+        @Override
+        public void onDiscoveryError(AbstractDiscover discover, String error) {
+            LogUtil.d(TAG, discover.getMode().toString() + " discover error: " + error);
+
+            if (discover.getMode() == DiscoveryMode.BLE) {
+                getActivity().runOnUiThread(() -> Toast.makeText(getActivity(),
+                        "Please open bluetooth", Toast.LENGTH_SHORT).show());
+            }
+        }
+
+        @Override
+        public void onDeviceFound(AbstractDiscover discover, Device device) {
+            for (Device d: devices) {
+                if (d.canBeFoundWith(DiscoveryMode.BLE) == device.canBeFoundWith(DiscoveryMode.BLE)
+                        && d.getDeviceName().equals(device.getDeviceName())) {
+                    return;
+                }
+            }
+
+            devices.add(device);
+            Collections.sort(devices, ((lhs, rhs) ->  {
+                    if (lhs.canBeFoundWith(DiscoveryMode.BLE)) {
+                        return -1;
+                    } else if (rhs.canBeFoundWith(DiscoveryMode.BLE)) {
+                        return 1;
+                    }
+                    return 0;
+                }
+            ));
+
+        }
+    };
+DeviceManager deviceManager = new DeviceManager(getActivity());
+deviceManager.setListener(discoveryListener);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getstatusdiscoverymode-mode_1"><code>getStatus(DiscoveryMode mode)</code></h5>
+<p>由AbstractDiscover类中的getStatus指定。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_173">返回值</h6>
+<p>返回值枚举DiscoverStatus。</p>
+<h6 id="_174">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mode</td>
+<td>DiscoveryMode</td>
+<td>当前设备模式</td>
+<td>目前有两种 BLE，MDNS</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_175">注意事项</h6>
+<p>暂无</p>
+<h6 id="_176">示例代码</h6>
+<pre><code>
+DeviceManager deviceManager = new DeviceManager(getActivity());
+DiscoverStatus  status = deviceManager.getStatus();
+
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="startdiscoverymode-mode_1"><code>start(DiscoveryMode mode)</code></h5>
+<p>开始寻找设备。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_177">返回值</h6>
+<p>无。</p>
+<h6 id="_178">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mode</td>
+<td>DiscoveryMode</td>
+<td>发现模式</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_179">注意事项</h6>
+<p>使用到哪个发现设备，请一定要打开那个设备,比如wifi 蓝牙。</p>
+<h6 id="_180">示例代码</h6>
+<pre><code>
+DeviceManager deviceManager = new DeviceManager(getActivity());
+deviceManager.start(DiscoveryMode.BLE);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="stopdiscoverymode-mode_1"><code>stop(DiscoveryMode mode)</code></h5>
+<p>停止发现。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_181">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_182">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mode</td>
+<td>DiscoveryMode</td>
+<td>发现模式</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_183">注意事项</h6>
+<p>使用到哪个发现设备，请一定要打开那个设备,比如wifi 蓝牙。</p>
+<h6 id="_184">示例代码</h6>
+<pre><code>
+DeviceManager deviceManager = new DeviceManager(getActivity());
+deviceManager.stop(DiscoveryMode.BLE);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getmode_1"><code>getMode()</code></h5>
+<p>获取模式。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_185">返回值</h6>
+<p>返回值DiscoveryMode 表示发现模式分为两种 BLE,MDNS。</p>
+<h6 id="_186">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_187">注意事项</h6>
+<p>暂无。</p>
+<h6 id="_188">示例代码</h6>
+<pre><code>
+// DeviceManager 集成自AbstractDiscover
+DeviceManager deviceManager = new DeviceManager(getActivity());
+DiscoveryMode mode =  deviceManager.getMode();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="mdnsdevice"><code>MdnsDevice</code>类</h3>
+<h4 id="_189">方法</h4>
+<h5 id="mdnsdevicejavalangstring-addr-int-port">MdnsDevice(java.lang.String addr, int port)</h5>
+<p>创建对象 MdnsDevice。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_190">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_191">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>addr</td>
+<td>String</td>
+<td>设备的ip地址</td>
+<td>无</td>
+</tr>
+<tr>
+<td>port</td>
+<td>int</td>
+<td>设备端口号</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_192">注意事项</h6>
+<p>注意安卓设备要连上底盘</p>
+<h6 id="_193">示例代码</h6>
+<pre><code>
+MdnsDevice device = new MdnsDevice("192.168.11.1",1445);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getaddr"><code>getAddr()</code></h5>
+<p>获取地址。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_194">返回值</h6>
+<p>返回值String 当前设备的ip地址。</p>
+<h6 id="_195">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_196">注意事项</h6>
+<p>注意安卓设备要连上底盘</p>
+<h6 id="_197">示例代码</h6>
+<pre><code>
+String ip = device.getAddr();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getport"><code>getPort()</code></h5>
+<p>获取端口。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_198">返回值</h6>
+<p>返回值int 端口号。</p>
+<h6 id="_199">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_200">注意事项</h6>
+<p>注意安卓设备要连上底盘</p>
+<h6 id="_201">示例代码</h6>
+<pre><code>
+int port = device.getPort();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="canbefoundwithdiscoverymode-mode_2"><code>canBeFoundWith(DiscoveryMode mode)</code></h5>
+<p>在discovery模式开启的状态下能否发现设备。由Device  类中的canBeFoundWith指定</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_202">返回值</h6>
+<p>返回值 boolean true代表能发现，false 代表不能发现。</p>
+<h6 id="_203">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mode</td>
+<td>DiscoveryMode</td>
+<td>发现模式</td>
+<td>目前的有两种分别为 BLE 和 MDNS</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_204">注意事项</h6>
+<p>确保蓝牙设备打开</p>
+<h6 id="_205">示例代码</h6>
+<pre><code>
+BleDevice device = new BleDevice(device)；
+boolean isFound = device.canBeFoundWith(DiscoveryMode.BLE);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="abstractdiscoverdiscoverstatus"><code>AbstractDiscover.DiscoverStatus</code>枚举</h3>
+<h5 id="stopped"><code>STOPPED</code></h5>
+<p>停止。</p>
+<h5 id="working"><code>WORKING</code></h5>
+<p>工作。</p>
+<h5 id="error"><code>ERROR</code></h5>
+<p>错误。</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="discoverymode"><code>DiscoveryMode</code>枚举</h3>
+<h5 id="ble"><code>BLE</code></h5>
+<p>BLE 模式。</p>
+<h5 id="mdns"><code>MDNS</code></h5>
+<p>mdns模式。</p>
+<!--分节符--------------------------------------------------------------------->
+<!--This is the end of this page---------------------- ----------------------->
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../action/" class="btn btn-neutral float-left" title="Slamware-action"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../exceptions/" class="btn btn-neutral float-right" title="Slamware-exception">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../action/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../exceptions/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

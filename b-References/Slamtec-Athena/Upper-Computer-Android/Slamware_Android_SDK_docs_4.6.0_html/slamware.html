@@ -1,0 +1,5408 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Slamware - My Docs</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Slamware";
+        var mkdocs_page_input_path = "slamware.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> My Docs
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../action/">Slamware-action</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../discovery/">Slamware-discovery</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../exceptions/">Slamware-exception</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../FirmwareUpdate/">Slamware-firmware-update</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../geometry/">Slamware-geometry</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Slamware</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#abstractslamwareplatform">AbstractSlamwarePlatform类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_1">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#abstractslamwareplatform_1">AbstractSlamwarePlatform()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#addwallline-wall">addWall(Line wall)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#addwallsjavautillistline-walls">addWalls(java.util.List&lt;Line&gt; walls)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#clearmap">clearMap()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#clearwallbyidint-id">clearWallById(int id)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#clearwalls">clearWalls()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#configurenetworkint-mode-javautilhashmapjavalangstringjavalangstring-options">configureNetwork(int mode, java.util.HashMap&lt;java.lang.String,java.lang.String&gt; options)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#disconnect">disconnect()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getavailablemaps">getAvailableMaps()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getbatteryischarging">getBatteryIsCharging()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#int-getbatterypercentage">int getBatteryPercentage()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getcurrentaction">getCurrentAction()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-getdcisconnected">boolean getDCIsConnected()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getdeviceid">String getDeviceId()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#firmwareupdateinfo-getfirmwareupdateinfo">FirmwareUpdateInfo getFirmwareUpdateInfo()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#firmwareupdateprogress-getfirmwareupdateprogress">FirmwareUpdateProgress getFirmwareUpdateProgress()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-gethardwareversion">String getHardwareVersion()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#rectf-getknownareamaptype-type">RectF getKnownArea(MapType type)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getknownareamaptype-type-mapkind-kind">getKnownArea(MapType type, MapKind kind)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#laserscan-getlaserscan">LaserScan getLaserScan()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#int-getlocalizationquality">int getLocalizationQuality()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#location-getlocation">Location getLocation()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#int-getmanufacturerid">int getManufacturerId()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getmanufacturername">String getManuFacturerName()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#map-getmapmaptype-type-androidgraphicsrectf-area">Map getMap(MapType type, android.graphics.RectF area)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#map-getmapmaptype-type-mapkind-kind-androidgraphicsrectf-area">Map getMap(MapType type, MapKind kind, android.graphics.RectF area)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-getmaplocalization">boolean getMapLocalization()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#int-getmaplocalizationquality">int getMapLocalizationQuality()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-getmapupdate">boolean getMapUpdate()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-getmaploopclosure">boolean getMapLoopClosure()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#void-setmaploopclosureboolean-v">void setMapLoopClosure(boolean v)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#int-getmodelid">int getModelId()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getmodelname">String getModelName()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getnetworkstatus">String getNetworkStatus()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pose-getpose">Pose getPose()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#healthinfo-getrobothealth">HealthInfo getRobotHealth()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#void-clearrobothealthint-errorcode">void clearRobotHealth(int errorCode)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getsdkversion">String getSDKVersion()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getslamwareversion">String getSlamwareVersion()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getsoftwareversion">String getSoftwareVersion()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getsystemparameterjavalangstring-param">String getSystemParameter(java.lang.String param)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-updatebinaryconfigjavalangstring-jsnstrofbincfg">boolean updateBinaryConfig(java.lang.String jsnstrOfBinCfg)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#sendandrecvuserdefinedcbusmsgresult-sendandrecvuserdefinedcbusmessagebyte-payload">SendAndRecvUserDefinedCBusMsgResult sendAndRecvUserDefinedCBUSMessage(byte[] payload)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#vectorline-getwalls">Vector&lt;Line&gt; getWalls()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-gohome">IMoveAction goHome()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-gohomegohomeflag-flag">IMoveAction goHome(GoHomeFlag flag)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-gohomegohomeoption-option">IMoveAction goHome(GoHomeOption option)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#movebymovedirectionactionmdmovedirection-direction">moveBy([MoveDirection](action.md#movedirection) direction)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-movebyfloat-theta-moveoption-option">IMoveAction moveBy(float theta, MoveOption option)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imvoeaction-movetojavautillistlocation-locations">IMvoeAction moveTo(java.util.List&lt;Location&gt; locations)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imvoeaction-movetojavautillistlocation-locations-boolean-appending">IMvoeAction moveTo(java.util.List&lt;Location&gt; locations, boolean appending)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imvoeaction-movetojavautillistlocation-locations-boolean-appending-boolean-ismilestone">IMvoeAction moveTo(java.util.List&lt;Location&gt; locations, boolean appending, boolean isMilestone)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imvoeaction-movetolocationrobotmdlocation-location">IMvoeAction moveTo([Location](robot.md#location) location)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imvoeaction-movetolocation-location-boolean-appending">IMvoeAction moveTo(Location location, boolean appending)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imvoeaction-movetolocation-location-boolean-appending-boolean-ismilestone">IMvoeAction moveTo(Location location, boolean appending, boolean isMilestone)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#restartmodule">restartModule()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#restartmodulerestartmoderobotmdrestartmode-mode">restartModule([RestartMode](robot.md#restartmode) mode)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-rotaterotationrobotmdrotation-rotation">IMoveAction rotate([Rotation](robot.md#rotation) rotation)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-rotatetorotationrobotmdrotation-orientation">IMoveAction rotateTo([Rotation](robot.md#rotation) orientation)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#path-searchpathlocationrobotmdlocation-location">Path searchPath([Location](robot.md#location) location)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#path-searchpathlocationrobotmdlocation-location-int-timeoutinms">Path searchPath([Location](robot.md#location) location, int timeoutInMS)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmapmap-map">setMap(Map map)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmapmap-map-maptype-type">setMap(Map map, MapType type)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmapmap-map-maptype-type-mapkind-kind">setMap(Map map, MapType type, MapKind kind)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmaplocalizationboolean-v">setMapLocalization(boolean v)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmapupdateboolean-v">setMapUpdate(boolean v)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setposepose-pose">setPose(Pose pose)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setsystemparameterjavalangstring-param-javalangstring-value">setSystemParameter(java.lang.String param, java.lang.String value)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-startfirmwareupdate">boolean startFirmwareUpdate()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#isweepmoveaction-startsweep">ISweepMoveAction startSweep()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#isweepmoveaction-sweepspotlocation-location">ISweepMoveAction sweepSpot(Location location)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-addlineartifactusage-usage-line-line">boolean addLine(ArtifactUsage usage, Line line)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-addlinesartifactusage-usage-listline-lines">boolean addLines(ArtifactUsage usage, List&lt;Line&gt; lines)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-removelinebyidartifactusage-usage-int-id">boolean removeLineById(ArtifactUsage usage, int id)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-clearlinesartifactusage-usage">boolean clearLines(ArtifactUsage usage)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-movelinenonnull-artifactusage-usage-nonnull-line-line">boolean moveLine(@NonNull ArtifactUsage usage, @NonNull Line line)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-movelinesnonnull-artifactusage-usage-nonnull-listline-lines">boolean moveLines(@NonNull ArtifactUsage usage, @NonNull List&lt;Line&gt; lines)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#powerstatus-getpowerstatus">PowerStatus getPowerStatus()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#void-wakeup">void wakeUp()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-recoverlocalizationrectf-arearecoverlocalizationoptions-options">IMoveAction recoverLocalization(RectF area,RecoverLocalizationOptions options)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-recoverlocalizationbydock">IMoveAction recoverLocalizationByDock()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pointpdf-getauxlocation">PointPDF getAuxLocation()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#compositemap-getcompositemap">CompositeMap getCompositeMap()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#void-setcompositemapcompositemap-map-pose-pose">void setCompositeMap(CompositeMap map, Pose pose)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pose-gethomepose">Pose getHomePose()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-sethomeposepose-homepose">boolean setHomePose(Pose homePose)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#listimpactsensorinfo-getsensors">List&lt;ImpactSensorInfo&gt; getSensors()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#hashmapinteger-impactsensorvalue-getsensorvalues">HashMap&lt;Integer, ImpactSensorValue&gt; getSensorValues()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#impactsensorvalue-getsensorvalueinteger-var1">ImpactSensorValue getSensorValue(Integer var1)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#listimpactsensorvalue-getsensorvalueslistinteger-ids">List&lt;ImpactSensorValue&gt; getSensorValues(List&lt;Integer&gt; ids)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-movetolocation-location-moveoption-option-float-yaw">IMoveAction moveTo(Location location, MoveOption option, float yaw)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-movetojavautillist-locations-moveoption-option-float-yaw">IMoveAction moveTo(java.util.List locations, MoveOption option, float yaw)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-movetolocation-location-moveoption-option">IMoveAction moveTo(Location location, MoveOption option)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-movetojavautillist-locations-moveoption-option">IMoveAction moveTo(java.util.List locations, MoveOption option)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#publishdepthcamframeint-sensoriddepthcameraframe-depthcameraframe">publishDepthCamFrame(int sensorId,DepthCameraFrame depthCameraFrame)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#listoperationauditlog-getoperationauditlogs">List&lt;OperationAuditLog&gt; getOperationAuditLogs()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#double-getodometry">double getOdometry()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-shutdownslamcoreslamcoreshutdownparam-param">boolean shutdownSlamcore(SlamcoreShutdownParam param)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#icustomerlogreceiver-createcustomerlogreceiver">ICustomerLogReceiver createCustomerLogReceiver()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#listdisabledsensormaskdata-getdisabledsensormaskdata">List&lt;DisabledSensorMaskData&gt; getDisabledSensorMaskData()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-setsensormasklistsensormaskctrldata-sensordata">boolean setSensorMask(List&lt;SensorMaskCtrlData&gt; sensorData)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#void-hibernate">void hibernate()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#isystemeventprovider-createsystemeventprovider30">ISystemEventProvider createSystemEventProvider(30)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-setpoishashmapstringcompositepose-posemap">boolean setPOIs(HashMap&lt;String,CompositePose&gt; poseMap)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#hashmapstring-compositepose-getpois">HashMap&lt;String, CompositePose&gt; getPOIs()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-addpoicompositepose-var1">boolean addPOI(CompositePose var1)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-editpoicompositepose-pose">boolean editPOI(CompositePose pose)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#compositepose-addpoioncurrentposestring-var1-mapmetadata-var2">CompositePose addPOIOnCurrentPose(String var1, MapMetaData var2)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#stdpairstring-compositepose-querypoistring-var1">StdPair&lt;String, CompositePose&gt; queryPOI(String var1)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#stdpairstring-compositepose-queryclosestpoinonnull-pose-pose">StdPair&lt;String, CompositePose&gt; queryClosestPOI(@NonNull Pose pose)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-erasepoistring-var1">boolean erasePOI(String var1)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-clearpois">boolean clearPOIs()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-setcubeconfigstring-path">boolean setCubeConfig(String path)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#listrectanglearea-getrectangleareasartifactusage-usage">List&lt;RectangleArea&gt; getRectangleAreas(ArtifactUsage usage)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-addrectanglearearectanglearea-area">boolean addRectangleArea(RectangleArea area)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-addrectangleareasartifactusage-usage-listrectanglearea-areas">boolean addRectangleAreas(ArtifactUsage usage, List&lt;RectangleArea&gt; areas)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-editrectanglearearectanglearea-area">boolean editRectangleArea(RectangleArea area)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-removerectangleareabyidsartifactusage-usage-int-ids">boolean removeRectangleAreaByIds(ArtifactUsage usage, int[] ids)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-clearrectangleareasartifactusage-usage">boolean clearRectangleAreas(ArtifactUsage usage)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-resetlocalizationstatus">boolean resetLocalizationStatus()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#listcompositepose-gethomedocks">List&lt;CompositePose&gt; getHomeDocks()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-sethomedocksnonnull-listcompositepose-poses">boolean setHomeDocks(@NonNull List&lt;CompositePose&gt; poses)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#compositepose-registerhomedocknonnull-mapmetadata-metadata">CompositePose registerHomeDock(@NonNull MapMetaData metadata)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#compositepose-addhomedocknonnull-compositepose-pose">CompositePose addHomeDock(@NonNull CompositePose pose)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-edithomedockcompositepose-pose">boolean editHomeDock(CompositePose pose)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-erasehomedocknonnull-string-id">boolean eraseHomeDock(@NonNull String id)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-clearhomedocks">boolean clearHomeDocks()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#liststring-getsupportedmotionstrategies">List&lt;String&gt; getSupportedMotionStrategies()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-setmotionstrategynonnull-string-strategy">boolean setMotionStrategy(@NonNull String strategy)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getcurrentmotionstrategy">String getCurrentMotionStrategy()</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../message/">Slamware-message</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../robot/">Slamware-robot</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../sdp/">Slamware-sdp</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../utils/">Slamware-utils</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log/">Slamware-log</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log-customer/">Slamware-log-customer</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">My Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Slamware</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="comslamtecslamware">com.slamtec.slamware包</h2>
+<h3 id="abstractslamwareplatform"><code>AbstractSlamwarePlatform</code>类</h3>
+<h4 id="_1">方法</h4>
+<h5 id="abstractslamwareplatform_1"><code>AbstractSlamwarePlatform()</code></h5>
+<p>AbstractSlamwarePlatform是一个抽象类，不能直接构造该类的对象。请使用DeviceManager连接设备并获取AbstractSlamwarePlatform的对象。</p>
+<h5 id="addwallline-wall"><code>addWall(Line wall)</code></h5>
+<p>添加虚拟墙至SLAMWARE。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_2">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_3">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>wall</td>
+<td><a href="../geometry/#line">Line</a></td>
+<td>需要添加的虚拟墙</td>
+<td>line中的点是float类型</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_4">注意事项</h6>
+<p>需要添加的虚拟墙虚拟墙的line的坐标不要超雷达可视区域之外。</p>
+<h6 id="_5">示例代码</h6>
+<pre><code>
+ PointF startP = new PointF(15.618f,15.315f);
+ PointF endP = new PointF(20.718f,20.515f);
+ Line line = new Line(startP,endP);
+ mPlatform.addWall(line);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="addwallsjavautillistline-walls"><code>addWalls(java.util.List&lt;Line&gt; walls)</code></h5>
+<p>添加多条虚拟墙至SLAMWARE。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_6">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_7">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>walls</td>
+<td>java.util.List&lt;<a href="../geometry/#line">Line</a>&gt;</td>
+<td>需要添加的多条虚拟墙</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_8">注意事项</h6>
+<p>需要添加的虚拟墙虚拟墙的line的坐标不要超雷达可视区域之外。</p>
+<h6 id="_9">示例代码</h6>
+<pre><code>
+PointF startP1 = new PointF(15.618f,15.315f);
+PointF endP1 = new PointF(20.718f,20.515f);
+Line line1 = new Line(startP1,endP1);
+PointF startP2 = new PointF(10.618f,12.315f);
+PointF endP2 = new PointF(11.718f,20.515f);
+Line line2 = new Line(startP2,endP2);
+ArrayList lines = new ArrayList();
+lines.add(line1);
+lines.add(line2);
+mPlatform.addWall(lines);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="clearmap"><code>clearMap()</code></h5>
+<p>清除当前地图。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_10">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_11">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_12">注意事项</h6>
+<p>正在重定位时无法清除地图。</p>
+<h6 id="_13">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.clearMap();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="clearwallbyidint-id"><code>clearWallById(int id)</code></h5>
+<p>移除指定的虚拟墙或者虚拟轨道。(id 不是设定的id，是通过AbstractSlamwarePlatform.getLines(ArtifactUsage var1)返回的line id。)</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_14">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_15">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>int</td>
+<td>需要移除的虚墙或者虚拟轨道的id</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_16">注意事项</h6>
+<p>id 不是设定的id，是通过AbstractSlamwarePlatform.getLines(ArtifactUsage var1)返回的line id。</p>
+<h6 id="_17">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+List<Line> list = platform.getLines(ArtifactUsage.ArtifactUsageVirutalWall);
+for(int i=0;i &lt list.size();i++){
+   platform.clearWallById(list.get(i).getSegmentId());
+}
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="clearwalls"><code>clearWalls()</code></h5>
+<p>从Slamware清除所有虚拟墙。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_18">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_19">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_20">注意事项</h6>
+<p>无。</p>
+<h6 id="_21">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.clearWalls();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="configurenetworkint-mode-javautilhashmapjavalangstringjavalangstring-options"><code>configureNetwork(int mode, java.util.HashMap&lt;java.lang.String,java.lang.String&gt; options)</code></h5>
+<p>配置Slamware Core的网络工作模式。数据返回类型布尔值boolean。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_22">返回值</h6>
+<p>返回值为错误信息列表。</p>
+<h6 id="_23">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mode</td>
+<td>int</td>
+<td>网络模式</td>
+<td>-</td>
+</tr>
+<tr>
+<td>options</td>
+<td>java.util.HashMap<java.lang.String,java.lang.String></td>
+<td>选项</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_24">注意事项</h6>
+<p>当前支持的工作模式主要有：</p>
+<ul>
+<li>AP模式：Slamware Core本身作为一个WiFi热点，当用户设备通过Wifi或者有线网络连接该WiFi热点时，会通过DHCP获得一个IP地址，而后通过192.168.11.1来访问设备，这个模式也是Slamware Core出厂的预置模式。</li>
+<li>Station模式：Slamware Core本身最为一个WiFi设备，连接到其他的WiFi热点上。同时Slamware Core会自动成为无线网桥，为High Speed Bus上的设备分配IP地址并提供外网访问服务。</li>
+<li>Disable模式：Slamware Core关闭自身的无线访问功能，只能通过有限网络访问，其IP地址、网关和DNS服务器均由API调用的参数决定。</li>
+</ul>
+<h6 id="_25">示例代码</h6>
+<ul>
+<li>将Slamware Core配置成AP模式</li>
+</ul>
+<pre><code>Platform.configureNetwork(NetworkMode.NetworkModeAp, new HashMap<String, String>());
+</code></pre>
+
+<ul>
+<li>让Slamware Core连上名字为Slamtec的AP</li>
+</ul>
+<pre><code>HashMap<String, String> options = newHashMap<String, String>();
+options.put(“ssid”, “Slamtec”); 
+options.put(“password”, “Password”); 
+platform.configureNetwork(NetworkMode.NetworkModeStation,options);
+</code></pre>
+
+<ul>
+<li>将Slamware Core的IP地址配置为192.168.12.13，默认网关为192.168.12.1，DNS服务器为：114.114.114.114：</li>
+</ul>
+<pre><code>HashMap<String, String> options = newHashMap<String, String>();
+options.put(“ip”, “192.168.12.13”);
+options.put(“mask”: “255.255.255.0”);
+options.put(“gateway”: “192.168.12.1”);
+options.put(“dns”: “114.114.114.114”);
+platform.configureNetwork(NetworkMode.NetworkModeDisabled, options);
+</code></pre>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="disconnect"><code>disconnect()</code></h5>
+<p>断开与平台之间的连接。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_26">返回值</h6>
+<p>无。</p>
+<h6 id="_27">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_28">注意事项</h6>
+<p>断开连接后，若有其他线程使用该AbstractSlamwarePlatform对象可能会抛异常。</p>
+<h6 id="_29">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.disconnect();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="getavailablemaps"><code>getAvailableMaps()</code></h5>
+<p>获取SLAMWARE中可用的地图类型。返回值为地图类型列表。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_30">返回值</h6>
+<p>返回值为List &lt; MapType&gt;。</p>
+<h6 id="_31">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_32">注意事项</h6>
+<p>无。</p>
+<h6 id="_33">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+List<MapType> mapTypes = mPlatform.getAvailableMaps();
+MapType mapType = mapTypes.get(0);
+RectF knownArea = mPlatform.getKnownArea(mapType);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="getbatteryischarging"><code>getBatteryIsCharging()</code></h5>
+<p>获取电池是否在充电。返回值为布尔值，表明电池是否在充电。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_34">返回值</h6>
+<p>返回值为布尔值,true 代表正在充电,false 代表不在充电。</p>
+<h6 id="_35">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_36">注意事项</h6>
+<p>暂时无。</p>
+<h6 id="_37">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+boolean flag = mPlatform.getBatteryIsCharging();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="int-getbatterypercentage"><code>int getBatteryPercentage()</code></h5>
+<p>获取电池剩余电量百分比（从0~100）。返回值为电池电量百分比。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_38">返回值</h6>
+<p>返回值为电池电量百分比。</p>
+<h6 id="_39">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_40">注意事项</h6>
+<p>无。</p>
+<h6 id="_41">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+int percentage = getBatteryPercentage();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="getcurrentaction"><code>getCurrentAction()</code></h5>
+<p>获取机器人当前的动作。返回值为机器人当前正在进行的移动动作。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_42">返回值</h6>
+<p>返回值为表示机器人当前正在进行的动作的对象。</p>
+<h6 id="_43">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_44">注意事项</h6>
+<p>获取的是此时此刻的acion,可能下一秒action的状态就会变化。</p>
+<h6 id="_45">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction action = mPlatform.getCurrentAction();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="boolean-getdcisconnected"><code>boolean getDCIsConnected()</code></h5>
+<p>获取机器人是否连接到电源插座。返回值为布尔值，表明机器人是否连接到充电器。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_46">返回值</h6>
+<p>返回值为布尔值，true 代表已经连上, false 代表没有连上</p>
+<h6 id="_47">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_48">注意事项</h6>
+<p>无。</p>
+<h6 id="_49">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+boolean flag = mPlatform.getDCIsConnected();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="string-getdeviceid"><code>String getDeviceId()</code></h5>
+<p>获取设备的UUID。返回值数据类型为string。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_50">返回值</h6>
+<p>返回值为该设备的UUID字符串的值。</p>
+<h6 id="_51">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_52">注意事项</h6>
+<p>暂时无。</p>
+<h6 id="_53">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String uuid = mPlatform.getDeviceId();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="firmwareupdateinfo-getfirmwareupdateinfo"><code>FirmwareUpdateInfo getFirmwareUpdateInfo()</code></h5>
+<p>请参考FirmwareUpdateInfo类。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_54">返回值</h6>
+<p>返回值为FirmwareUpdateInfo  固件升级对象。</p>
+<h6 id="_55">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_56">注意事项</h6>
+<p>估计升级中请不要断开设备的连接</p>
+<h6 id="_57">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+FirmwareUpdateInfo info =  mPlatform.getFirmwareUpdateInfo();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="firmwareupdateprogress-getfirmwareupdateprogress"><code>FirmwareUpdateProgress getFirmwareUpdateProgress()</code></h5>
+<p>请参考FirmwareUpdateProgress类。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_58">返回值</h6>
+<p>返回值为FirmwareUpdateProgress 固件升级过程对象。</p>
+<h6 id="_59">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_60">注意事项</h6>
+<p>固件升级过程中不能断开机器人设备和安卓设备，否则会固件升级失败</p>
+<h6 id="_61">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+FirmwareUpdateProgress progress =  mPlatform.getFirmwareUpdateProgress();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="string-gethardwareversion"><code>String getHardwareVersion()</code></h5>
+<p>获取设备硬件版本。返回值数据类型为string。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_62">返回值</h6>
+<p>返回值为设备硬件版本的字符串。</p>
+<h6 id="_63">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_64">注意事项</h6>
+<p>注意机器人和安卓设备要连接上，否则无法获取。</p>
+<h6 id="_65">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String  versio  =  mPlatform.getHardwareVersion();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="rectf-getknownareamaptype-type"><code>RectF getKnownArea(MapType type)</code></h5>
+<p>获取已探索到的地图区域。返回值为已探索的地图区域。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_66">返回值</h6>
+<p>返回值为探索到的区域的大小,用矩阵表示。</p>
+<h6 id="_67">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>type</td>
+<td><a href="../robot/#maptype">MapType</a></td>
+<td>获取地图的类型</td>
+<td>该类型有BITMAP_8BIT 和PointMap</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_68">注意事项</h6>
+<p>注意机器人和安卓设备要连接上，否则无法获取。</p>
+<h6 id="_69">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+List<MapType> mapTypes = mPlatform.getAvailableMaps();
+MapType mapType = mapTypes.get(0);
+RectF knownArea = mPlatform.getKnownArea(mapType);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="getknownareamaptype-type-mapkind-kind"><code>getKnownArea(MapType type, MapKind kind)</code></h5>
+<p>获取已探索到的地图区域。返回值为已探索的地图区域。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_70">返回值</h6>
+<p>返回值为表示已探索的地图区域的RectF对象。</p>
+<h6 id="_71">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>type</td>
+<td><a href="../robot/#maptype">MapType</a></td>
+<td>地图数据类型</td>
+<td>该类型有BITMAP_8BIT 和PointMap</td>
+</tr>
+<tr>
+<td>kind</td>
+<td><a href="../robot/#mapkind">MapKind</a></td>
+<td>地图种类</td>
+<td>地图类型有EXPLORE_MAP,SWEEP_MAP,UWB_MAP</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_72">注意事项</h6>
+<p>SWEEP_MAP 只适用于扫地机的版本。</p>
+<h6 id="_73">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+RectF rectF = platform.getKnownArea(MapType.BITMAP_8BIT, MapKind.EXPLORE_MAP);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="laserscan-getlaserscan"><code>LaserScan getLaserScan()</code></h5>
+<p>获取最新的LASER扫描。返回值最新的LASER扫描。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_74">返回值</h6>
+<p>当前最新的<a href="../robot/#laserscan">LaserScan</a>对象。</p>
+<h6 id="_75">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_76">注意事项</h6>
+<p>无。</p>
+<h6 id="_77">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+LaserScan laserScan = mPlatform.getLaserScan();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="int-getlocalizationquality"><code>int getLocalizationQuality()</code></h5>
+<p>获取定位可信度。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_78">返回值</h6>
+<p>表示定位可信度的值。</p>
+<h6 id="_79">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_80">注意事项</h6>
+<p>暂无注意事项</p>
+<h6 id="_81">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+int quality = mPlatform.getLocalizationQuality();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="location-getlocation"><code>Location getLocation()</code></h5>
+<p>获取机器人在上述地图坐标系统中的坐标。返回值为机器人位置信息。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_82">返回值</h6>
+<p>返回值为<a href="../robot/#location">Location</a> 。</p>
+<h6 id="_83">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_84">注意事项</h6>
+<p>获取当前机器人的位置时候,确保机器人不要手动去推以及不要抱起机器人。</p>
+<h6 id="_85">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location = mPlatform.getLocation();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="int-getmanufacturerid"><code>int getManufacturerId()</code></h5>
+<p>获取设备制造商id。返回值数据类型为int。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_86">返回值</h6>
+<p>返回值为int 表示设备制造商的id。</p>
+<h6 id="_87">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_88">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_89">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+int id = mPlatform.getManufacturerId();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="string-getmanufacturername"><code>String getManuFacturerName()</code></h5>
+<p>获取设备制造商名称。返回值数据类型为string。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_90">返回值</h6>
+<p>返回值是字符串 该设备制造商名称</p>
+<h6 id="_91">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_92">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_93">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String name = mPlatform.getManuFacturerName();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="map-getmapmaptype-type-androidgraphicsrectf-area"><code>Map getMap(MapType type, android.graphics.RectF area)</code></h5>
+<p>从SLAMWARE获取探索地图数据(EXPLORE_MAP)。返回值为局部地图对象。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_94">返回值</h6>
+<p>地图对象。</p>
+<h6 id="_95">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>type</td>
+<td><a href="../robot/#maptype">MapType</a></td>
+<td>地图数据类型</td>
+<td>地图类型有BITMAP_8BIT,PointMap</td>
+</tr>
+<tr>
+<td>area</td>
+<td>android.graphics.RectF</td>
+<td>地图区域</td>
+<td>获取到的某个区域</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_96">注意事项</h6>
+<p>根据不同的MapType MapKind会获取到不同的地图图层,area 一定要在地图的范围内,否则没有意义。</p>
+<h6 id="_97">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+RectF area = new RectF(1.5f,1.5f,2.5f,2.5f);
+MapType mapType = MapType.BITMAP_8BIT;
+Map map = mPlatform.getMap(mapType, area);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="map-getmapmaptype-type-mapkind-kind-androidgraphicsrectf-area"><code>Map getMap(MapType type, MapKind kind, android.graphics.RectF area)</code></h5>
+<p>从SLAMWARE获取地图数据。返回值为局部地图对象。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_98">返回值</h6>
+<p>地图对象。</p>
+<h6 id="_99">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>type</td>
+<td><a href="../robot/#maptype">MapType</a></td>
+<td>地图数据类型</td>
+<td>地图类型有BITMAP_8BIT,PointMap;</td>
+</tr>
+<tr>
+<td>kind</td>
+<td><a href="../robot/#mapkind">MapKind</a></td>
+<td>地图种类</td>
+<td>地图种类EXPLORE_MAP,SWEEP_MAP,UWB_MAP;</td>
+</tr>
+<tr>
+<td>area</td>
+<td>android.graphics.RectF</td>
+<td>地图区域</td>
+<td>获取到的某个区域</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_100">注意事项</h6>
+<p>根据不同的MapType MapKind会获取到不同的地图图层,area 一定要在地图的范围内,否则没有意义。</p>
+<h6 id="_101">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+RectF area = new RectF(1.5f,1.5f,2.5f,2.5f);
+MapType mapType = MapType.BITMAP_8BIT;
+Map map = mPlatform.getMap(mapType, MapKind.EXPLORE_MAP, area);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="boolean-getmaplocalization"><code>boolean getMapLocalization()</code></h5>
+<p>获取SLAMWARE是否在进行定位。返回值为布尔值表明SLAMWARE是否在进行定位。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_102">返回值</h6>
+<p>返回值为boolean true代表正在定位，false代表没有定位。</p>
+<h6 id="_103">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_104">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_105">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+boolean isLocalizate = mPlatform.getMapLocalization();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="int-getmaplocalizationquality"><code>int getMapLocalizationQuality()</code></h5>
+<p>获取SLAMWARE当前的定位质量。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_106">返回值</h6>
+<p>返回值为int, 范围为0-100。数值越大表示定位质量越高。</p>
+<h6 id="_107">示例代码</h6>
+<pre><code>
+AbstractSlawmarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+int quality = platform.getMapLocalizationQuality();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-getmapupdate"><code>boolean getMapUpdate()</code></h5>
+<p>获取SLAMWARE是否更新地图。返回值为布尔值表明SLAMWARE是否更新地图。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_108">返回值</h6>
+<p>返回值boolean true代表正在更新地图,false代表没有。</p>
+<h6 id="_109">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_110">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_111">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+boolean isUpdate = mPlatform.getMapUpdate();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-getmaploopclosure"><code>boolean getMapLoopClosure()</code></h5>
+<p>获取SLAMWARE是否开启了地图闭环功能。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_112">返回值</h6>
+<p>返回值为boolean，表示是否开启地图闭环功能。</p>
+<h6 id="_113">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+boolean isMapLoopClosureEnabled = platform.getMapLoopClosure();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="void-setmaploopclosureboolean-v"><code>void setMapLoopClosure(boolean v)</code></h5>
+<p>设置SLAMWARE是否开启地图闭环功能。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_114">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v</td>
+<td>boolean</td>
+<td>开启或者关闭地图闭环功能</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_115">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+platform.setMapLoopClosure(true);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="int-getmodelid"><code>int getModelId()</code></h5>
+<p>获取设备型号id。返回数据类型为int。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_116">返回值</h6>
+<p>返回值为int 该设备型号id。</p>
+<h6 id="_117">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_118">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_119">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+int id = mPlatform.getModelId();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="string-getmodelname"><code>String getModelName()</code></h5>
+<p>获取设备型号名称。返回数据类型为string。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_120">返回值</h6>
+<p>返回值String 为设备型号名称。</p>
+<h6 id="_121">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_122">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_123">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String modelName  = mPlatform.getModelName();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="string-getnetworkstatus"><code>String getNetworkStatus()</code></h5>
+<p>获取网络状况。返回数据类型为string。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_124">返回值</h6>
+<p>返回值为String 为网络状况。</p>
+<h6 id="_125">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_126">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_127">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String networkStatus  = mPlatform.getNetworkStatus();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="pose-getpose"><code>Pose getPose()</code></h5>
+<p>获取机器人在上述坐标系统中的姿态（包含位置信息和角度信息）。返回值为机器人的姿态。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_128">返回值</h6>
+<p>返回值为 <a href="../robot/#pose">Pose</a> 代表当前机器人的姿态。</p>
+<h6 id="_129">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_130">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接，以及不要抱起机器人。</p>
+<h6 id="_131">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Pose pose  = mPlatform.getPose();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="healthinfo-getrobothealth"><code>HealthInfo getRobotHealth()</code></h5>
+<p>获取机器人健康状态。返回数据为健康状况。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_132">返回值</h6>
+<p>返回值为 <a href="../robot/#healthinfo">HealthInfo</a> 代表机器人健康信息对象。</p>
+<h6 id="_133">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_134">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_135">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+HealthInfo healthInfo = mPlatform.getRobotHealth();
+            ArrayList<HealthInfo.BaseError> list = healthInfo.getErrors();
+            for(HealthInfo.BaseError baseError:list){
+                Log.d("healthTag","ErrorMessage=="+baseError.getErrorMessage());
+                Log.d("healthTag","getComponentErrorType=="+baseError.getComponentErrorType());
+                Log.d("healthTag","getErrorCode=="+baseError.getErrorCode());
+                Log.d("healthTag","getErrorLevel=="+baseError.getErrorLevel());
+                Log.d("healthTag","getErrorComponent=="+baseError.getErrorComponent());
+
+            }
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="void-clearrobothealthint-errorcode"><code>void clearRobotHealth(int errorCode)</code></h5>
+<p>清除SLAMWARE的错误信息。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_136">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>errorCode</td>
+<td>int</td>
+<td><a href="../robot/#healthinfobaseerror">HealthInfo.BaseError</a>中的错误代码</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_137">注意事项</h6>
+<p>一些错误信息清除后，设备将不会再报告该次错误警告，但还有一些错误信息清除后设备会继续报告。</p>
+<h6 id="_138">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+HealthInfo health = platform.getRobotHealth();
+if (health != null && health.errors.size() > 0) {
+  for (HealthInfo.BaseError error: health.errors) {
+    platform.clearRobotHealth(error.errorCode);
+  }
+}
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="string-getsdkversion"><code>String getSDKVersion()</code></h5>
+<p>获取SLAMWARE SDK版本。返回值为标明SLAMWARESDK版本的字符串。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_139">返回值</h6>
+<p>返回值String 为sdk的版本。</p>
+<h6 id="_140">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_141">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_142">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String sdkVersion = mPlatform.getSDKVersion();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="string-getslamwareversion"><code>String getSlamwareVersion()</code></h5>
+<p>获取SLAMWARE版本。返回值为标明SLAMWARE版本的字符串。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_143">返回值</h6>
+<p>返回值String 为slamware的版本。</p>
+<h6 id="_144">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_145">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_146">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String slamwareVersion = mPlatform.getSlamwareVersion();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="string-getsoftwareversion"><code>String getSoftwareVersion()</code></h5>
+<p>获取设备的软件版本。返回值数据类型为字符串。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_147">返回值</h6>
+<p>返回值String 为设备软件的版本。</p>
+<h6 id="_148">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_149">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_150">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String softwareVersion = mPlatform.getSoftwareVersion();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="string-getsystemparameterjavalangstring-param"><code>String getSystemParameter(java.lang.String param)</code></h5>
+<p>获取系统参数。返回值为当前参数的值。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_151">返回值</h6>
+<p>返回值String 为参数的值。</p>
+<h6 id="_152">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>param</td>
+<td>java.lang.String</td>
+<td>获取的参数</td>
+<td>不能传null</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_153">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_154">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String param1= "...";
+String paramValue = mPlatform.getSystemParameter(param1);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-updatebinaryconfigjavalangstring-jsnstrofbincfg"><code>boolean updateBinaryConfig(java.lang.String jsnstrOfBinCfg)</code></h5>
+<p>更新设备内存中的BinaryConfig。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.6.4</p>
+</blockquote>
+<h6 id="_155">返回值</h6>
+<p>返回值类型为boolean，表示是否更新成功了。</p>
+<h6 id="_156">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>jsnstrOfBinCfg</td>
+<td>java.lang.String</td>
+<td>要更新的Config序列化后的JSON字符串</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_157">注意事项</h6>
+<p>目前只支持更新 base.sensors 的内容，试图更新其他内容会返回失败。</p>
+<h6 id="_158">示例代码</h6>
+<pre><code>
+//String strOfJsnCfg = "{ \"xxx\": { \"xxxxx_xxxx\": 0.68 } }";
+String strOfJsnCfg = "{ \"base\": { \"sensors\": [ { \"driver\" : \"messaging\", \"id\" : 12, \"installation_pose\" : { \"pitch\" : 0.0, \"roll\" : 0.0, \"x\" : 0.0, \"y\" : 0.0, \"yaw\" : 0.0, \"z\" : 0.0 }, \"max_distance\" : 2.0, \"min_distance\" : 1.0, \"type\" : \"depth_camera\" } ] } }";
+boolean bRes = corePltfm.updateBinaryConfig(strOfJsnCfg);
+Log.i("updateBinaryConfig(), ", (bRes ? "OK" : "Failed"));
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="sendandrecvuserdefinedcbusmsgresult-sendandrecvuserdefinedcbusmessagebyte-payload"><code>SendAndRecvUserDefinedCBusMsgResult sendAndRecvUserDefinedCBUSMessage(byte[] payload)</code></h5>
+<p>发送消息并接收返回消息。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.6.5</p>
+</blockquote>
+<h6 id="_159">返回值</h6>
+<p>返回值类型为 <a href="../robot/#sendandrecvuserdefinedcbusmsgresult">SendAndRecvUserDefinedCBusMsgResult</a> 。</p>
+<h6 id="_160">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>payload</td>
+<td>byte[]</td>
+<td>要发送的消息的Payload</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_161">注意事项</h6>
+<p>要求payload的长度大于0。</p>
+<h6 id="_162">示例代码</h6>
+<pre><code>
+    // prepare message payload to send
+    byte[] payloadToSend = new byte[1];
+    // ...
+    // send and receive
+    com.slamtec.slamware.robot.SendAndRecvUserDefinedCBusMsgResult res = corePltfm.sendAndRecvUserDefinedCBUSMessage(payloadToSend);
+    byte[] recvDat = res.getRecvData();
+    Log.i("sendAndRecvUserDefinedCBUSMessage"
+            , "retCode: " + res.getRetCode()
+            + ", received data size: " + (null != recvDat ? recvDat.length : 0)
+        );
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="vectorline-getwalls"><code>Vector&lt;Line&gt; getWalls()</code></h5>
+<p>获取当前存在的虚拟墙。返回值为当前存在的虚拟墙列表。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_163">返回值</h6>
+<p>返回值Vector 存放的是当前所有的虚拟墙。</p>
+<h6 id="_164">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_165">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_166">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Vector<Line> lines = mPlatfor.getWalls();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="imoveaction-gohome"><code>IMoveAction goHome()</code></h5>
+<p>使机器人返回充电桩。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_167">返回值</h6>
+<p>返回值 <a href="../action/#imoveaction-iaction">IMoveAction</a> 代表当前机器人的行为。</p>
+<h6 id="_168">注意事项</h6>
+<p>该方法仅适用于支持自动回充功能的机器人版本。
+另见setMap()接口。</p>
+<h6 id="_169">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction action = mPlarform.goHome(GoHomeFlag.Dock);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="imoveaction-gohomegohomeflag-flag"><code>IMoveAction goHome(GoHomeFlag flag)</code></h5>
+<p>使机器人返回充电桩。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_170">返回值</h6>
+<p>返回值 <a href="../action/#imoveaction-iaction">IMoveAction</a> 代表当前机器人的行为。</p>
+<h6 id="_171">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>flag</td>
+<td><a href="../robot/#gohomeflag">GoHomeFlag</a></td>
+<td>回桩还是回到桩前的上桩点</td>
+<td>当flag为GoHomeFlag.Dock 让机器人回桩,当flag为GoHomeFlag.noDock 是让机器人回到上桩点</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_172">注意事项</h6>
+<p>该方法仅适用于支持自动回充功能的机器人版本。
+另见setMap()接口。</p>
+<h6 id="_173">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction action = mPlarform.goHome(GoHomeFlag.Dock);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="imoveaction-gohomegohomeoption-option"><code>IMoveAction goHome(GoHomeOption option)</code></h5>
+<p>使机器人返回充电桩。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_174">返回值</h6>
+<p>返回值 <a href="../action/#imoveaction-iaction">IMoveAction</a> 代表当前机器人的行为。</p>
+<h6 id="_175">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>option</td>
+<td><a href="../robot/#gohomeoption">GoHomeOption</a></td>
+<td>返回充电桩参数</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_176">注意事项</h6>
+<p>该方法仅适用于支持自动回充功能的机器人版本。
+另见setMap()接口。</p>
+<h6 id="_177">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction action = mPlarform.goHome(new GoHomeOption());
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="movebymovedirectionactionmdmovedirection-direction"><code>moveBy([MoveDirection](action.md#movedirection) direction)</code></h5>
+<p>人工控制机器人的移动。返回值为执行该项操作的移动动作。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_178">返回值</h6>
+<p>返回值IMoveAction 表示当前机器人的行为。</p>
+<h6 id="_179">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>direction</td>
+<td><a href="../action/#movedirection">MoveDirection</a></td>
+<td>期望机器人移动的方向</td>
+<td>MoveDirection中的值包括前后左右FORWARD,BACKWARD,TURN_RIGHT,TURN_LEFT;</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_180">注意事项</h6>
+<p>在此状态下，机器人不会进行避障。需要反复调用该函数来保持机器人的移动状态并调用MoveAction.cancel()函数来及时使机器人停止移动，否则机器人会在持续调用moveBy函数一段时期后停止移动。
+另见setMap()接口。</p>
+<h6 id="_181">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction moveAction = mPlatform.moveBy(MoveDirection.FORWARD);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="imoveaction-movebyfloat-theta-moveoption-option"><code>IMoveAction moveBy(float theta, MoveOption option)</code></h5>
+<p>人工控制机器人的移动。返回值为执行该项操作的移动动作。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_182">返回值</h6>
+<p>返回值IMoveAction 表示当前机器人的行为。</p>
+<h6 id="_183">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>theta</td>
+<td>float</td>
+<td>转动弧度</td>
+<td></td>
+</tr>
+<tr>
+<td>option</td>
+<td><a href="../robot/#moveoption">MoveOption</a></td>
+<td>运动参数</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_184">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+IMoveAction action = platform.moveBy(0.5f, new MoveOption());
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="imvoeaction-movetojavautillistlocation-locations"><code>IMvoeAction moveTo(java.util.List&lt;Location&gt; locations)</code></h5>
+<p>使机器人移动到一系列指定位置。返回值为执行该项操作的移动动作。</p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_185">返回值</h6>
+<p>返回值IMvoeAction为执行该项操作的移动动作 。</p>
+<h6 id="_186">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>locations</td>
+<td>List&lt;<a href="../robot/#location">Location</a>&gt;</td>
+<td>机器人前往指定位置经过的一系列节点。</td>
+<td>目前location中的Z坐标没有用</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_187">注意事项</h6>
+<p>见setMap()接口。</p>
+<h6 id="_188">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location1 = new Location(1.5f,4.6f,1.8f);
+Location location2 = new Location(2.5f,2.6f,1.9f);
+List list = new ArrayList();
+list.add(location1);
+list.add(location2);
+IMvoeAction action = mPlatform.moveTo(list);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="imvoeaction-movetojavautillistlocation-locations-boolean-appending"><code>IMvoeAction moveTo(java.util.List&lt;Location&gt; locations, boolean appending)</code></h5>
+<p>使机器人移动到一系列的指定位置。返回值为执行该项操作的移动动作。</p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_189">返回值</h6>
+<p>返回值IMvoeAction为执行该项操作的移动动作 。</p>
+<h6 id="_190">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>locations</td>
+<td>java.util.List&lt;<a href="../robot/#location">Location</a>&gt;</td>
+<td>机器人前往指定位置经过的一系列节点。</td>
+<td>目前location中的Z坐标没有用</td>
+</tr>
+<tr>
+<td>appending</td>
+<td>boolean</td>
+<td>用于决定SLAMWARE是清除当前任务建立新的点还是将新的点添加到已有的节点列表中。</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_191">注意事项</h6>
+<p>见setMap()接口。</p>
+<h6 id="_192">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location1 = new Location(1.5f,4.6f,1.8f);
+Location location2 = new Location(2.5f,2.6f,1.9f);
+List list = new ArrayList();
+list.add(location1);
+list.add(location2);
+IMvoeAction action = mPlatform.moveTo(list，false);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="imvoeaction-movetojavautillistlocation-locations-boolean-appending-boolean-ismilestone"><code>IMvoeAction moveTo(java.util.List&lt;Location&gt; locations, boolean appending, boolean isMilestone)</code></h5>
+<p>使机器人移动到一系列的指定位置。返回值为执行该项操作的移动动作。</p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_193">返回值</h6>
+<p>返回值IMvoeAction为执行该项操作的移动动作。</p>
+<h6 id="_194">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>locations</td>
+<td>java.util.List&lt;<a href="../robot/#location">Location</a>&gt;</td>
+<td>机器人前往指定位置经过的一系列节点。</td>
+<td>目前location中的Z坐标没有用</td>
+</tr>
+<tr>
+<td>appending</td>
+<td>boolean</td>
+<td>用于决定SLAMWARE是清除当前任务建立新的点还是将新的点添加到已有的节点列表中。</td>
+<td>-</td>
+</tr>
+<tr>
+<td>isMilestone</td>
+<td>boolean</td>
+<td>用于决定SLAMWARE是规划路径到一系列节点还是直接前往。当这个参数为true时，机器人会将上述点视作关键点，通过路径搜索的方式前往目的地；当参数为false时，会被视作普通点，不会启用路径搜索功能。</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_195">注意事项</h6>
+<p>见setMap()接口。</p>
+<h6 id="_196">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location1 = new Location(1.5f,4.6f,1.8f);
+Location location2 = new Location(2.5f,2.6f,1.9f);
+List list = new ArrayList();
+list.add(location1);
+list.add(location2);
+IMvoeAction action = mPlatform.moveTo(list，false,true);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="imvoeaction-movetolocationrobotmdlocation-location"><code>IMvoeAction moveTo([Location](robot.md#location) location)</code></h5>
+<p>使机器人移动到指定地点。返回值为执行该项操作的移动动作。</p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_197">返回值</h6>
+<p>返回值IMvoeAction为执行该项操作的移动动作。</p>
+<h6 id="_198">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>机器人将要到达的点。</td>
+<td>目前location中的Z坐标没有用</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_199">注意事项</h6>
+<p>见setMap()接口。</p>
+<h6 id="_200">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location1 = new Location(1.5f,4.6f,1.8f);
+IMvoeAction action = mPlatform.moveTo(location1);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="imvoeaction-movetolocation-location-boolean-appending"><code>IMvoeAction moveTo(Location location, boolean appending)</code></h5>
+<p>使机器人移动到指定地点。返回值为执行该项操作的移动动作。</p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_201">返回值</h6>
+<p>返回值IMvoeAction为执行该项操作的移动动作。</p>
+<h6 id="_202">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>机器人将要到达的点。</td>
+<td>目前location中的Z坐标没有用</td>
+</tr>
+<tr>
+<td>appending</td>
+<td>boolean</td>
+<td>用于决定SLAMWARE是清除当前任务建立新的点还是将新的点添加到已有的节点列表中。</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_203">注意事项</h6>
+<p>见setMap()接口。</p>
+<h6 id="_204">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location1 = new Location(1.5f,4.6f,1.8f);
+IMvoeAction action = mPlatform.moveTo(location1,false);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="imvoeaction-movetolocation-location-boolean-appending-boolean-ismilestone"><code>IMvoeAction moveTo(Location location, boolean appending, boolean isMilestone)</code></h5>
+<p>使机器人移动到指定地点。返回值为执行该项操作的移动动作</p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_205">返回值</h6>
+<p>返回值IMvoeAction为执行该项操作的移动动作。</p>
+<h6 id="_206">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>机器人将要到达的点。</td>
+<td>-</td>
+</tr>
+<tr>
+<td>appending</td>
+<td>boolean</td>
+<td>用于决定SLAMWARE是清除当前任务建立新的点还是将新的点添加到已有的节点列表中。</td>
+<td>目前location中的Z坐标没有用</td>
+</tr>
+<tr>
+<td>isMilestone</td>
+<td>boolean</td>
+<td>用于决定SLAMWARE是规划路径到一系列节点还是直接前往。当这个参数为true时，机器人会将上述点视作关键点，通过路径搜索的方式前往目的地；当参数为false时，会被视作普通点，不会启用路径搜索功能。</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_207">注意事项</h6>
+<p>见setMap()接口。</p>
+<h6 id="_208">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location1 = new Location(1.5f,4.6f,1.8f);
+IMvoeAction action = mPlatform.moveTo(location1,false,true);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="restartmodule"><code>restartModule()</code></h5>
+<p>重启SLAMWARE模块。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_209">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_210">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_211">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_212">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.restartModule();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="restartmodulerestartmoderobotmdrestartmode-mode"><code>restartModule([RestartMode](robot.md#restartmode) mode)</code></h5>
+<p>重启SLAMWARE模块。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_213">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_214">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mode</td>
+<td><a href="../robot/#restartmode">RestartMode</a>枚举</td>
+<td>机器人底盘重启模式</td>
+<td>重启模式分为SOFT,HARD</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_215">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_216">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.restartModule(RestartMode.SOFT);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="imoveaction-rotaterotationrobotmdrotation-rotation"><code>IMoveAction rotate([Rotation](robot.md#rotation) rotation)</code></h5>
+<p>使机器人旋转一个角度（不同的角度）。返回值为执行该项操作的移动动作。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_217">返回值</h6>
+<p>返回值IMoveAction 为执行该项操作的移动动作。</p>
+<h6 id="_218">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>rotation</td>
+<td><a href="../robot/#rotation">Rotation</a></td>
+<td>机器人被要求旋转的弧度</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_219">注意事项</h6>
+<p>旋转过程中不要再执行别的action操作。</p>
+<h6 id="_220">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Rotation rotation = new Rotation(1.5f);
+IMoveAction action = mPlatform.rotate(rotation);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="imoveaction-rotatetorotationrobotmdrotation-orientation"><code>IMoveAction rotateTo([Rotation](robot.md#rotation) orientation)</code></h5>
+<p>使机器人旋转到特定的朝向。返回值为执行该项操作的移动动作。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_221">返回值</h6>
+<p>返回值IMoveAction 为执行该项操作的移动动作。。</p>
+<h6 id="_222">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>orientation</td>
+<td><a href="../robot/#rotation">Rotation</a></td>
+<td>机器人被要求的姿态</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_223">注意事项</h6>
+<p>旋转过程中不要再执行别的action操作。</p>
+<h6 id="_224">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Rotation rotation = new Rotation(1.5f);
+IMoveAction action = mPlatform.rotateTo(rotation);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="path-searchpathlocationrobotmdlocation-location"><code>Path searchPath([Location](robot.md#location) location)</code></h5>
+<p>在地图中寻找使机器人从当前位置移动到指定目标位置的路径。返回值为一条从机器人的当前位置到指定目标位置的路径。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_225">返回值</h6>
+<p>返回值path为一条从机器人的当前位置到指定目标位置的路径 。</p>
+<h6 id="_226">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>机器人的目标位置</td>
+<td>location中纵坐标没有用</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_227">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_228">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location = new Location(1.5f,1.6f,1.2f);
+Path path = mPlatform.searchPath(location);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="path-searchpathlocationrobotmdlocation-location-int-timeoutinms"><code>Path searchPath([Location](robot.md#location) location, int timeoutInMS)</code></h5>
+<p>在地图中寻找使机器人从当前位置移动到指定目标位置的路径。返回值为一条从机器人的当前位置到指定目标位置的路径。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_229">返回值</h6>
+<p>返回值path为一条从机器人的当前位置到指定目标位置的路径 。</p>
+<h6 id="_230">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>机器人的目标位置</td>
+<td>location中纵坐标没有用</td>
+</tr>
+<tr>
+<td>timeoutInMS</td>
+<td>int</td>
+<td>搜索超时时间</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_231">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_232">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location = new Location(1.5f,1.6f,1.2f);
+Path path = mPlatform.searchPath(location, 1000 * 30);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setmapmap-map"><code>setMap(Map map)</code></h5>
+<p>上传地图数据到SLAMWARE。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_233">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_234">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>map</td>
+<td><a href="../robot/#map">Map</a></td>
+<td>要上传的地图对象</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_235">注意事项</h6>
+<p>应与setPose配套使用并确保地图未处于更新或定位状态。在设置地图时候，不可以调用操作机器人的方法比如moveto。
+<br>机器人正在设置地图的过程中，如果试图让它产生Action会抛OperationFail异常。</p>
+<h6 id="_236">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+RectF area = new RectF(1.0f,1.5f,2.5f,3.5f);
+Map map = mPlatform.getMap(MapType.BITMAP_8BIT, MapKind.EXPLORE_MAP, area);
+mPlatform.setMap(map);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="setmapmap-map-maptype-type"><code>setMap(Map map, MapType type)</code></h5>
+<p>上传地图数据到SLAMWARE。（注意：应与setPose配套使用并确保地图未处于更新或定位状态。）</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_237">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_238">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>map</td>
+<td><a href="../robot/#map">Map</a></td>
+<td>要上传的地图对象</td>
+<td>-</td>
+</tr>
+<tr>
+<td>type</td>
+<td>-</td>
+<td>地图数据类型</td>
+<td>-</td>
+</tr>
+<tr>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_239">注意事项</h6>
+<p>应与setPose配套使用并确保地图未处于更新或定位状态。在设置地图时候，不可以调用操作机器人的方法比如moveto。
+<br>机器人正在设置地图的过程中，如果试图让它产生Action会抛OperationFail异常。</p>
+<h6 id="_240">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+RectF area = new RectF(1.0f,1.5f,2.5f,3.5f);
+Map map = mPlatform.getMap(MapType.BITMAP_8BIT, MapKind.EXPLORE_MAP, area);
+mPlatform.setMap(map,MapType.BITMAP_8BIT);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="setmapmap-map-maptype-type-mapkind-kind"><code>setMap(Map map, MapType type, MapKind kind)</code></h5>
+<p>上传地图数据到SLAMWARE。（注意：应与setPose配套使用并确保地图未处于更新或定位状态。）</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_241">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_242">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>map</td>
+<td><a href="../robot/#map">Map</a></td>
+<td>要上传的地图对象</td>
+<td>-</td>
+</tr>
+<tr>
+<td>type</td>
+<td><a href="../robot/#maptype">MapType</a></td>
+<td>地图数据类型</td>
+<td>-</td>
+</tr>
+<tr>
+<td>kind</td>
+<td><a href="../robot/#mapkind">MapKind</a></td>
+<td>地图种类</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_243">注意事项</h6>
+<p>应与setPose配套使用并确保地图未处于更新或定位状态。在设置地图时候，不可以调用操作机器人的方法比如moveto。
+<br>机器人正在设置地图的过程中，如果试图让它产生Action会抛OperationFail异常。</p>
+<h6 id="_244">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+RectF area = new RectF(1.0f,1.5f,2.5f,3.5f);
+Map map = mPlatform.getMap(MapType.BITMAP_8BIT, MapKind.EXPLORE_MAP, area);
+mPlatform.setMap(map,MapType.BITMAP_8BIT,MapKind.EXPLORE_MAP);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="setmaplocalizationboolean-v"><code>setMapLocalization(boolean v)</code></h5>
+<p>获取是否启用定位功能。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_245">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_246">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v</td>
+<td>boolean</td>
+<td>布尔值，表明SLAMWARE是否该进行定位。</td>
+<td>true代表是,false 代表不是</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_247">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_248">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mplatform.setMapLocalization(true);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="setmapupdateboolean-v"><code>setMapUpdate(boolean v)</code></h5>
+<p>设置是否更新地图。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_249">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_250">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v</td>
+<td>boolean</td>
+<td>布尔值，表明SLAMWARE是否应该更新地图。</td>
+<td>true 代表更新,false 代表不更新</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_251">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_252">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mplatform.setMapUpdate(true);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="setposepose-pose"><code>setPose(Pose pose)</code></h5>
+<p>设置机器人的姿态。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_253">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_254">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pose</td>
+<td><a href="../robot/#pose">Pose</a></td>
+<td>机器人的新姿态</td>
+<td>pose中的location 纵坐标没有作用</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_255">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接，刚刚设置pose时候，不要做move操作。</p>
+<h6 id="_256">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Pose pose  = new Pose();
+mplatform.setPose(pose);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="setsystemparameterjavalangstring-param-javalangstring-value"><code>setSystemParameter(java.lang.String param, java.lang.String value)</code></h5>
+<p>设置系统参数。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_257">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_258">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>param</td>
+<td>String</td>
+<td>将要进行设置的参数名称</td>
+<td>参数名称详见<a href="../robot/#systemparameters">SystemParameters</a></td>
+</tr>
+<tr>
+<td>value</td>
+<td>String</td>
+<td>将要设置的值</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_259">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接，</p>
+<h6 id="_260">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.setSystemParameter("max_moving_speed","high");
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="boolean-startfirmwareupdate"><code>boolean startFirmwareUpdate()</code></h5>
+<p>获取是否开始固件更新。返回值为boolean表示是否开始更新固件。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_261">返回值</h6>
+<p>返回值为boolean表示是否开始更新固件,true 表示开始，false 表示没有</p>
+<h6 id="_262">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_263">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接</p>
+<h6 id="_264">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+boolean flag = mPlatform.startFirmwareUpdate();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="isweepmoveaction-startsweep"><code>ISweepMoveAction startSweep()</code></h5>
+<p>使机器人开始清扫（注意：该方法仅适用于扫地机版本的SLAMWARE Core）。返回值为执行该项操作的清扫移动动作。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_265">返回值</h6>
+<p>返回值<a href="../action/#isweepmoveaction">ISweepMoveAction</a>为执行该项操作的清扫移动动作。</p>
+<h6 id="_266">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_267">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_268">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ISweepMoveAction action = mPlatform.startSweep();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="isweepmoveaction-sweepspotlocation-location"><code>ISweepMoveAction sweepSpot(Location location)</code></h5>
+<p>使机器人开始定点清扫（注意：该方法仅适用于扫地机版本的SLAMWARE Core）。返回值为执行该项操作的清扫移动动作。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_269">返回值</h6>
+<p>返回值ISweepMoveAction为执行该项操作的清扫移动动作。</p>
+<h6 id="_270">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>移动到某一个坐标点</td>
+<td>location中的纵坐标没有用</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_271">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_272">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Locatin location = new Location(1.5f,1.2f,0.2f);
+ISweepMoveAction action = mPlatform.startSweep(location);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="boolean-addlineartifactusage-usage-line-line"><code>boolean addLine(ArtifactUsage usage, Line line)</code></h5>
+<p>添加虚拟墙或虚拟轨道。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_273">返回值</h6>
+<p>返回值boolean 为true 表示添加成功, false 表示添加失败。</p>
+<h6 id="_274">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>参数是虚拟轨道还是虚拟墙</td>
+<td>-</td>
+</tr>
+<tr>
+<td>line</td>
+<td>Line</td>
+<td>参数是一个线</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_275">注意事项</h6>
+<p>注意。参数为ArtifactUsageVirutalWall 添加的是虚拟墙，参数为ArtifactUsageVirtualTrack 添加的是虚拟轨道。</p>
+<h6 id="_276">示例代码</h6>
+<pre><code>
+ AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ PointF startF = new PointF(0.4f,0.4f);
+ PointF endF = new PointF(0.5f,0.5f);
+ Line line1 = new Line(4,startF,endF);
+ platform.addLine(ArtifactUsage.ArtifactUsageVirtualTrack,line);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="boolean-addlinesartifactusage-usage-listline-lines"><code>boolean addLines(ArtifactUsage usage, List&lt;Line&gt; lines)</code></h5>
+<p>添加多条虚拟墙或虚拟轨道。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_277">返回值</h6>
+<p>返回值boolean 为true 表示添加成功, false 表示添加失败。</p>
+<h6 id="_278">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>参数是虚拟轨道还是虚拟墙</td>
+<td>-</td>
+</tr>
+<tr>
+<td>lines</td>
+<td>List</td>
+<td>参数是集合存放多个<a href="../geometry/#line">Line</a></td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_279">注意事项</h6>
+<p>参数为ArtifactUsageVirutalWall 添加的是虚拟墙，参数为ArtifactUsageVirtualTrack 添加的是虚拟轨道。</p>
+<h6 id="_280">示例代码</h6>
+<pre><code>
+ AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ PointF startF = new PointF(0.4f,0.4f);
+ PointF endF = new PointF(0.5f,0.5f);
+ Line line1 = new Line(4,startF,endF);
+ PointF startF1 = new PointF(0.1f,0.1f);
+ PointF endF1 = new PointF(0.2f,0.2f);
+ Line line2 = new Line(9,startF1,endF1);
+ ArrayList lines = new ArrayList();
+ lines.add(line1);
+ lines.add(line2);
+ mPlatform.addLines(ArtifactUsage.ArtifactUsageVirtualTrack,lines);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="boolean-removelinebyidartifactusage-usage-int-id"><code>boolean removeLineById(ArtifactUsage usage, int id)</code></h5>
+<p>移除指定的虚拟墙或虚拟轨道。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_281">返回值</h6>
+<p>返回值boolean true 代表移除成功，false代表移除失败。</p>
+<h6 id="_282">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>参数是虚拟轨道还是虚拟墙</td>
+<td>-</td>
+</tr>
+<tr>
+<td>id</td>
+<td>int</td>
+<td>移除某一条<a href="geometry.md.md#line">Line</a>的id</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_283">注意事项</h6>
+<p>id必须是Arraylist<Line> lines = platform.getLines(ArtifactUsage usage),lines中line的id</p>
+<h6 id="_284">示例代码</h6>
+<pre><code>
+ArrayList<Line> list = (ArrayList<Line>) platform.getLines(ArtifactUsage.ArtifactUsageVirtualTrack);
+Boolean isSuccessful  = platform.removeLineById(ArtifactUsage.ArtifactUsageVirtualTrack,list.ge(0).getSegmentId());
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="boolean-clearlinesartifactusage-usage"><code>boolean clearLines(ArtifactUsage usage)</code></h5>
+<p>移除所有虚拟墙或虚拟轨道。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_285">返回值</h6>
+<p>返回值boolean true 代表移除成功，false代表移除失败。</p>
+<h6 id="_286">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>参数是虚拟轨道还是虚拟墙</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_287">注意事项</h6>
+<p>暂无</p>
+<h6 id="_288">示例代码</h6>
+<pre><code>
+ AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ boolean flag =  mPlatform.clearLines(ArtifactUsage.ArtifactUsageVirtualTrack);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-movelinenonnull-artifactusage-usage-nonnull-line-line"><code>boolean moveLine(@NonNull ArtifactUsage usage, @NonNull Line line)</code></h5>
+<p>修改一条虚拟线段的位置。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_289">返回值</h6>
+<p>返回值为boolean，代表是否修改成功。</p>
+<h6 id="_290">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>该虚拟线段的类型</td>
+<td></td>
+</tr>
+<tr>
+<td>line</td>
+<td><a href="../geometry/#line">Line</a></td>
+<td>该虚拟线段对象</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_291">注意事项</h6>
+<p>虚拟线段必须已存在。</p>
+<h6 id="_292">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+List<Line> lines = platform.getLines(ArtifactUsage.ArtifactUsageVirtualWall);
+if (lines.size() > 0) {
+  Line line = lines.get(0);
+  line.x = 1.2f;
+  line.y = 1.2f;
+  boolean result = platform.moveLine(ArtifactUsage.ArtifactUsageVirtualWall, line);
+}
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-movelinesnonnull-artifactusage-usage-nonnull-listline-lines"><code>boolean moveLines(@NonNull ArtifactUsage usage, @NonNull List&lt;Line&gt; lines)</code></h5>
+<p>修改一组虚拟线段的位置。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_293">返回值</h6>
+<p>返回值为boolean，代表是否修改成功。</p>
+<h6 id="_294">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>该组虚拟线段的类型</td>
+<td></td>
+</tr>
+<tr>
+<td>lines</td>
+<td>List&lt;<a href="geometry.md.md#line">Line</a>&gt;</td>
+<td>该组虚拟线段对象</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_295">注意事项</h6>
+<p>必须为同一类虚拟线段。且虚拟线段已存在。</p>
+<h6 id="_296">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+List<Line> lines = platform.getLines(ArtifactUsage.ArtifactUsageVirtualWall);
+if (lines.size() > 0) {
+  ArrayList<Line> modified = new ArrayList();
+  for (Line line: lines) {
+    line.x = 1.2f;
+    line.y = 1.2f;
+    modified.add(line);
+  }
+  boolean result = platform.moveLines(ArtifactUsage.ArtifactUsageVirtualWall, modified);
+}
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="powerstatus-getpowerstatus"><code>PowerStatus getPowerStatus()</code></h5>
+<p>取电源相关的信息。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_297">返回值</h6>
+<p>返回值<a href="../robot/#powerstatus">PowerStatus</a>为电源相关的信息。</p>
+<h6 id="_298">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_299">注意事项</h6>
+<p>暂无。</p>
+<h6 id="_300">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+PowerStatus powerStatus = mPlatform.getPowerStatus();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="void-wakeup"><code>void wakeUp()</code></h5>
+<p>从休眠状态唤醒设备。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_301">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_302">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_303">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_304">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.wakeUp();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="imoveaction-recoverlocalizationrectf-arearecoverlocalizationoptions-options"><code>IMoveAction recoverLocalization(RectF area,RecoverLocalizationOptions options)</code></h5>
+<p>当机器人被抱起时可调用此接口进行重定位。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_305">返回值</h6>
+<p>返回值<a href="../action/#imoveaction">IMoveAction</a>表示当前机器人正在进行的行为</p>
+<h6 id="_306">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>area</td>
+<td>RectF</td>
+<td>在一个区域内进行重定位</td>
+<td>-</td>
+</tr>
+<tr>
+<td>options</td>
+<td><a href="../robot/#recoverlocalizationoptions">RecoverLocalizationOptions</a></td>
+<td>重定位类型,RecoverLocalizationOptions,包括激光点</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_307">注意事项</h6>
+<p>如果area区域为空时，机器人将在当前20*20的区域进行从定位，否则机器人将在指定区域进行重新定位。</p>
+<h6 id="_308">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+RecoverLocalizationOptions recoverLocalizationOptions = new RecoverLocalizationOptions();
+recoverLocalizationOptions.setRecoverMovementType(RecoverLocalizationMovement.Unknown);
+IMoveAction moveAction =  mPlatform.recoverLocalization(new RectF(1.0f,1.0f,1.0f,1.0f),recoverLocalizationOptions);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="imoveaction-recoverlocalizationbydock"><code>IMoveAction recoverLocalizationByDock()</code></h5>
+<p>当设备在充电桩上，调用此接口可以进行重定位。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v.4.6.0</p>
+</blockquote>
+<h6 id="_309">返回值</h6>
+<p>返回值为<a href="../action/#imoveaction">IMoveAction</a>，表示当前机器人正在进行的行为。</p>
+<h6 id="_310">注意事项</h6>
+<p>仅当设备处于上桩状态时才可调用此接口。</p>
+<h6 id="_311">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+IMoveAction action = platform.recoverLocalizationByDock();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="pointpdf-getauxlocation"><code>PointPDF getAuxLocation()</code></h5>
+<p>根据当前辅助定位设备的信息获取当前机器人的大致位置信息</p>
+<p>当机器人被抱起时，可以先调用getAuxLocation()获取机器人当前大致位置信息，然后调用recoverLocalization传入包含有大致位置信息的区域，使机器人尝试重定位。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_312">返回值</h6>
+<p>根据辅助定位得到的机器人大致位置信息的PointPDF对象。</p>
+<h6 id="_313">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_314">注意事项</h6>
+<p>暂无。</p>
+<h6 id="_315">示例代码</h6>
+<pre><code>
+ auto locationPdf = platform. getAuxLocation();
+ Location location = locationPdf.location;
+ float distant = locationPdf.circular_error_probability;
+ area((location.x() - distant), (location.y() - distant), 2*distant, 2*distant);RectangleF
+ auto act = platform. recoverLocalization(area);
+ act.waitUntilDone();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="compositemap-getcompositemap"><code>CompositeMap getCompositeMap()</code></h5>
+<p>获取当前地图的所有信息。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_316">返回值</h6>
+<p>如果成功返回一个<a href="../robot/#compositemap">CompositeMap</a>对象，否则返回null或者抛异常。</p>
+<h6 id="_317">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_318">注意事项</h6>
+<p>暂无。</p>
+<h6 id="_319">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+CompositeMap  map = mPlatform.getCompositeMap()；
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="void-setcompositemapcompositemap-map-pose-pose"><code>void setCompositeMap(CompositeMap map, Pose pose)</code></h5>
+<p>设置当前的地图信息。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_320">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_321">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>map</td>
+<td><a href="../robot/#compositemap">CompositeMap</a></td>
+<td>雷达扫到的地图</td>
+<td>-</td>
+</tr>
+<tr>
+<td>pose</td>
+<td><a href="../robot/#pose">Pose</a></td>
+<td>机器人的坐标</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_322">注意事项</h6>
+<p>设置加载地图是一个阻塞的方法,获取的同时不要进行别的操作</p>
+<h6 id="_323">示例代码</h6>
+<pre><code>
+ AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ CompositeMapHelper compositeMapHelper = new CompositeMapHelper();
+ Pose pose = new Pose();
+ String path = "/sdcard/twoline1.stcm";
+ CompositeMap mCompositeMap = compositeMapHelper.loadFile(path);
+ mPlatform.setCompositeMap(mCompositeMap,pose);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="pose-gethomepose"><code>Pose getHomePose()</code></h5>
+<p>获取充电座位置。如果找不到充电座则返回(0,0)。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_324">返回值</h6>
+<p>返回值<a href="../robot/#pose">Pose</a>为充电座位置。</p>
+<h6 id="_325">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_326">注意事项</h6>
+<p>暂无</p>
+<h6 id="_327">示例代码</h6>
+<pre><code>
+ AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ Pose pose = mPlatform.getHomePose();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-sethomeposepose-homepose"><code>boolean setHomePose(Pose homePose)</code></h5>
+<p>设置SLAMWARE的充电桩位姿。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_328">返回值</h6>
+<p>返回值为boolean，代表是否设置成功。</p>
+<h6 id="_329">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>homePose</td>
+<td><a href="../robot/#pose">Pose</a></td>
+<td>充电桩位姿</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_330">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+Pose homePose = new Pose(1f, 1f, 0f, 0f, 0f, 0f);
+boolean result = platform.setHomePose(homePose);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="listimpactsensorinfo-getsensors"><code>List&lt;ImpactSensorInfo&gt; getSensors()</code></h5>
+<p>获取到机器人所有的传感器信息，返回值是list集合。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_331">返回值</h6>
+<p>返回值是list集合，存放的是所有的传感器信息<a href="../robot/#impactsensorinfo">ImpactSensorInfo</a>。</p>
+<h6 id="_332">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_333">注意事项</h6>
+<p>暂无。</p>
+<h6 id="_334">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+List<ImpactSensorInfo> list= mPlatform.getSensors();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="hashmapinteger-impactsensorvalue-getsensorvalues"><code>HashMap&lt;Integer, ImpactSensorValue&gt; getSensorValues()</code></h5>
+<p>获取到机器人所有的（可获取的）传感器的值。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_335">返回值</h6>
+<p>返回值是HashMap，存放的是所有的传感器的值。其中key为传感器ID，value为传感器数据<a href="../robot/#impactsensorvalue">ImpactSensorValue</a>。</p>
+<h6 id="_336">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_337">注意事项</h6>
+<p>对于Bumper和Cliff，总是会包含在返回的HashMap里；
+对于Sonar，如果当前没有触发（或者暂时无法取得值），不会包含在返回的HashMap里。 </p>
+<h6 id="_338">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+HashMap hashMap = mPlatform.getSensorValues();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="impactsensorvalue-getsensorvalueinteger-var1"><code>ImpactSensorValue getSensorValue(Integer var1)</code></h5>
+<p>根据传感器ID获取到机器人对应传感器的值。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_339">返回值</h6>
+<p>返回<a href="../robot/#impactsensorvalue">ImpactSensorValue</a>对象，即机器人对应传感器的值。</p>
+<h6 id="_340">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>var1</td>
+<td>Integer</td>
+<td>传感器id</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_341">注意事项</h6>
+<p>必须检查返回值是否是 null ！
+如果指定id不存在，会返回null；
+如果id对应的是Bumper或Cliff，总会返回非空的对象；
+如果id对应的是Sonar，当超声没有触发（或者暂时无法取得值）时返回null， 当超声触发时返回非空对象。</p>
+<h6 id="_342">示例代码</h6>
+<pre><code>
+ Integer integer = new Integer(0);
+ AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ ImpactSensorValue impactSensorValue = mPlatform.getSensorValue(integer);
+ if (null != impactSensorValue)
+ {
+   // output impactSensorValue.getValue();
+ }
+ else
+ {
+   // output "impactSensorValue is null.";
+ }
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="listimpactsensorvalue-getsensorvalueslistinteger-ids"><code>List&lt;ImpactSensorValue&gt; getSensorValues(List&lt;Integer&gt; ids)</code></h5>
+<p>获取一组传感器的数据</p>
+<h6 id="_343">返回值</h6>
+<p>返回值为一组传感器数据<a href="../robot/#impactsensorvalue">ImpactSensorValue</a>。</p>
+<h6 id="_344">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ids</td>
+<td>List<Integer></td>
+<td>一组传感器ID</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_345">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+List<ImpactSensorInfo> sensors = platform.getSensors();
+if (sensors.size() > 0) {
+  ArrayList<Integer> ids = new ArrayList();
+  for (ImpactSensorInfo sensor: sensors) {
+    ids.add(sensor.sensorId);
+  }
+  List<ImpactSensorValue> values = platform.getSensorValues(ids);
+}
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="imoveaction-movetolocation-location-moveoption-option-float-yaw"><code>IMoveAction moveTo(Location location, MoveOption option, float yaw)</code></h5>
+<p>使机器人移动到指定的位置。 </p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_346">返回值</h6>
+<p>返回值<a href="action#imoveaction">IMoveAction</a>当前机器人正在进行的行为。</p>
+<h6 id="_347">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>指定的位置</td>
+<td></td>
+</tr>
+<tr>
+<td>option</td>
+<td><a href="../robot/#moveoption">MoveOption</a></td>
+<td>运动参数</td>
+<td></td>
+</tr>
+<tr>
+<td>yaw</td>
+<td>float</td>
+<td>机器人停下来的时候旋转到一定的弧度。</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_348">注意事项</h6>
+<p>暂无。</p>
+<!--分节符--------------------------------------------------------------------->
+<h5 id="imoveaction-movetojavautillist-locations-moveoption-option-float-yaw"><code>IMoveAction moveTo(java.util.List locations, MoveOption option, float yaw)</code></h5>
+<p>参考上面的注释，只是移动到很多点。</p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_349">返回值</h6>
+<p>返回值IMoveAction 当前机器人正在进行的行为。</p>
+<h6 id="_350">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>locations</td>
+<td>List</td>
+<td>集合存放一系类的点</td>
+<td>-</td>
+</tr>
+<tr>
+<td>option</td>
+<td>MoveOption</td>
+<td>移动时候的参数如上</td>
+<td>-</td>
+</tr>
+<tr>
+<td>yaw</td>
+<td>float</td>
+<td>以一定的角度移动到某个点</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_351">注意事项</h6>
+<p>暂无。</p>
+<h6 id="_352">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location =new Location(1.0f,1.0f,1.0f);
+MoveOption moveOption = new MoveOption();
+moveOption.setKeyPoints(true);
+moveOption.setWithYaw(true);
+//.............
+float yaw = 0.5f；
+IMoveAction moveAction =  mPlatform.moveTo(location,moveOption,yaw);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="imoveaction-movetolocation-location-moveoption-option"><code>IMoveAction moveTo(Location location, MoveOption option)</code></h5>
+<p>使机器人移动到指定地点。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_353">返回值</h6>
+<p>返回值为<a href="../action/#imoveaction">IMoveAction</a>，表示当前机器人的行为。</p>
+<h6 id="_354">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>目标点</td>
+<td></td>
+</tr>
+<tr>
+<td>option</td>
+<td><a href="../robot/#moveoption">MoveOption</a></td>
+<td>运动参数</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_355">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+MoveOption option = new MoveOption();
+Location location = new Location(1f, 1f, 1f);
+IMoveAction action = platform.moveTo(location, option);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="imoveaction-movetojavautillist-locations-moveoption-option"><code>IMoveAction moveTo(java.util.List locations, MoveOption option)</code></h5>
+<p>使机器人移动到y一组指定地点。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_356">返回值</h6>
+<p>返回值为<a href="../action/#imoveaction">IMoveAction</a>，表示当前机器人的行为。</p>
+<h6 id="_357">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>locations</td>
+<td>List</td>
+<td>一个<a href="../robot/#location">Location</a>的集合</td>
+<td></td>
+</tr>
+<tr>
+<td>option</td>
+<td><a href="../robot/#moveoption">MoveOption</a></td>
+<td>运动参数</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_358">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+MoveOption option = new MoveOption();
+List<Location> locations = new ArrayList();
+locations.add(new Location(1f, 1f, 1f));
+IMoveAction action = platform.moveTo(locations, option);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="publishdepthcamframeint-sensoriddepthcameraframe-depthcameraframe"><code>publishDepthCamFrame(int sensorId,DepthCameraFrame depthCameraFrame)</code></h5>
+<p>将深度摄像头的数据传递给底盘，其中sensorId 是通过底盘配置的sensorId, depthCameraFrame是深度摄像头数据对象。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_359">返回值</h6>
+<p>无返回值</p>
+<h6 id="_360">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sensorId</td>
+<td>int</td>
+<td>深度摄像头id</td>
+<td>-</td>
+</tr>
+<tr>
+<td>depthCameraFrame</td>
+<td><a href="../message/#depthcameraframe">DepthCameraFrame</a></td>
+<td>深度摄像头数据对象</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_361">注意事项</h6>
+<p>暂无。</p>
+<h6 id="_362">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();。
+depthCameraFrame.set(...);
+//.....................
+platform.publishDepthCamFrame(1,depthCameraFrame);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="listoperationauditlog-getoperationauditlogs"><code>List&lt;OperationAuditLog&gt; getOperationAuditLogs()</code></h5>
+<p>获取SLAMWARE的运行LOG。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_363">返回值</h6>
+<p>返回SLAMWARE的运行LOG。</p>
+<h6 id="_364">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+List<OperationAuditLog> logs = platform.getOperationAuditLog();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="double-getodometry"><code>double getOdometry()</code></h5>
+<p>获取SLAMWARE里程计数据。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_365">返回值</h6>
+<p>当前里程计读数。</p>
+<h6 id="_366">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+double odometry = platform.getOdometry();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-shutdownslamcoreslamcoreshutdownparam-param"><code>boolean shutdownSlamcore(SlamcoreShutdownParam param)</code></h5>
+<p>关闭Slamcore。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_367">返回值</h6>
+<p>是否执行成功。</p>
+<h6 id="_368">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>param</td>
+<td><a href="../robot/#slamcoreshutdownparam">SlamcoreShutdownParam</a></td>
+<td>关机参数</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_369">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+SlamwareShutdownParam param = new SlamcoreShutdownParam();
+param.setShutdownTimeIntervalMinute(5);
+boolean result = platform.shutdownSlamcore(param);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="icustomerlogreceiver-createcustomerlogreceiver"><code>ICustomerLogReceiver createCustomerLogReceiver()</code></h5>
+<p>创建 ICustomerLogReceiver 对象，以便接收 CustomerLog。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_370">返回值</h6>
+<p>从本 AbstractSlamwarePlatform 对象创建出来的一个 <a href="../log-customer/#icustomerlogreceiver">ICustomerLogReceiver</a> 对象。</p>
+<h6 id="_371">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_372">注意事项</h6>
+<p>暂无。</p>
+<h6 id="_373">示例代码</h6>
+<pre><code>
+ICustomerLogReceiver customerLogReceiver = absPltfm.createCustomerLogReceiver();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="listdisabledsensormaskdata-getdisabledsensormaskdata"><code>List&lt;DisabledSensorMaskData&gt; getDisabledSensorMaskData()</code></h5>
+<p>获取禁用的传感器列表。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_374">返回值</h6>
+<p>禁用的传感器列表<a href="../robot/#disabledsensormaskdata">DisabledSensorMaskData</a>。</p>
+<h6 id="_375">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+List<DisabledSensorMaskData> disabledMask = platform.getDisabledSensorMaskData();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-setsensormasklistsensormaskctrldata-sensordata"><code>boolean setSensorMask(List&lt;SensorMaskCtrlData&gt; sensorData)</code></h5>
+<p>将一组传感器启用或禁用禁用。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_376">返回值</h6>
+<p>操作是否成功。</p>
+<h6 id="_377">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sensorData</td>
+<td></td>
+<td>List&lt;<a href="../robot/#sensormaskctrldata">SensorMaskCtrlData</a>&gt;</td>
+<td>需要禁用的传感器</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_378">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+List<ImpactSensorInfo> sensors = platform.getSensors()
+if (sensors.size() > 0) {
+  ArrayList<SensorMaskCtrlData> ctrlData = new ArrayList();
+  for (ImpactSensorInfo sensor: sensors) {
+    ctrlData.add(new SensorMaskCtrlData(sensor.getSensorId(), false, false));
+  }
+  platform.setSensorMask(ctrlData);
+}
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="void-hibernate"><code>void hibernate()</code></h5>
+<p>让设备休眠.</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_379">返回值</h6>
+<p>无返回值。</p>
+<h6 id="_380">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_381">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_382">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.hibernate();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="isystemeventprovider-createsystemeventprovider30"><code>ISystemEventProvider createSystemEventProvider(30)</code></h5>
+<p>向用户推送事件信息.</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_383">返回值</h6>
+<p><a href="../system/#isystemeventprovider">ISystemEventProvider</a>。</p>
+<h6 id="_384">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>i</td>
+<td>int</td>
+<td>时间间隔</td>
+<td>一段时间内持续获取推送事件信息</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_385">注意事项</h6>
+<p>注意不要断开安卓设备和机器人连接。</p>
+<h6 id="_386">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ISystemEventProvider systemEventProvider = mPlatform.createSystemEventProvider(30);
+ArrayList<SystemEvent> events = new ArrayList<>();
+if (systemEventProvider.readEvents(events)) 
+{
+    for (SystemEvent systemEvent : events) 
+    {
+            // to do user something
+    }
+}
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="boolean-setpoishashmapstringcompositepose-posemap"><code>boolean setPOIs(HashMap&lt;String,CompositePose&gt; poseMap)</code></h5>
+<p>设置地图上的兴趣点.</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.8.3</p>
+</blockquote>
+<h6 id="_387">返回值</h6>
+<p>boolean。true:设置成功 . false：设置失败</p>
+<h6 id="_388">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>poseMap</td>
+<td>HashMap<String,<a href="robot.md#compositepose">CompositePose</a>></td>
+<td>poseEntryMap</td>
+<td>需要传入键值对，key是string，value是pose</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_389">注意事项</h6>
+<p>暂无。</p>
+<h6 id="_390">示例代码</h6>
+<pre><code>
+val poses = hashMapOf<String, CompositePose>()
+val compositePose = CompositePose()
+val metaData = MapMetaData()
+val datas = hashMapOf<String,String>()
+datas["key"] = "value"
+
+metaData.data = datas
+metaData.setValue("key", "value")
+compositePose.name = "demo"
+compositePose.flags = 'a'
+compositePose.metaData = metaData
+compositePose.tags = arrayListOf("tags1", "tags2")
+compositePose.pose = Pose(1f, 1f, 1f, 1f, 1f, 1f)
+
+val isSetOk = platform.setPOIs(poses)
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="hashmapstring-compositepose-getpois"><code>HashMap&lt;String, CompositePose&gt; getPOIs()</code></h5>
+<p>获取地图上所有的兴趣点。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.8.3</p>
+</blockquote>
+<h6 id="_391">返回值</h6>
+<p>HashMap<String, <a href="robot.md#compositepose">CompositePose</a>></p>
+<h6 id="_392">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>空参。</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_393">注意事项</h6>
+<p>暂无。</p>
+<h6 id="_394">示例代码</h6>
+<pre><code>
+val platform: AbstractSlamwarePlatform = DeviceManager.connect("192.168.11.1", 1445)
+val opis = platform.poIs
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="boolean-addpoicompositepose-var1"><code>boolean addPOI(CompositePose var1)</code></h5>
+<p>添加单个兴趣点。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.8.3</p>
+</blockquote>
+<h6 id="_395">返回值</h6>
+<p>boolean。true：添加成功；false：添加失败。</p>
+<h6 id="_396">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>var1</td>
+<td><a href="../robot/#compositepose">CompositePose</a></td>
+<td>点</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_397">注意事项</h6>
+<p>暂无。</p>
+<h6 id="_398">示例代码</h6>
+<pre><code>
+val platform: AbstractSlamwarePlatform = DeviceManager.connect("192.168.11.1", 1445)
+val isAddPoiOk = platform.addPOI(compositePose)
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-editpoicompositepose-pose"><code>boolean editPOI(CompositePose pose)</code></h5>
+<p>修改一个POI参数。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Add in v4.6.0</p>
+</blockquote>
+<h6 id="_399">返回值</h6>
+<p>修改是否成功。</p>
+<h6 id="_400">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pose</td>
+<td><a href="../robot/#compositepose">CompositePose</a></td>
+<td>需要修改的POI对象</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_401">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+List<String, CompositePose> pois = platform.getPOIs();
+if (pois.size() > 0) {
+  CompositePose pose = pois.get(0).getValue();
+  pose.setName("New POI Name");
+  platform.editPOI(pose);
+}
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="compositepose-addpoioncurrentposestring-var1-mapmetadata-var2"><code>CompositePose addPOIOnCurrentPose(String var1, MapMetaData var2)</code></h5>
+<p>添加当前兴趣点。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.8.3</p>
+</blockquote>
+<h6 id="_402">返回值</h6>
+<p>CompositePose。返回当前点</p>
+<h6 id="_403">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>var1</td>
+<td>String</td>
+<td>key</td>
+<td>无</td>
+</tr>
+<tr>
+<td>var2</td>
+<td><a href="../robot/#mapmetadata">MapMetaData</a></td>
+<td>value</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_404">注意事项</h6>
+<p>不要重复添加key为同一个的metaData，否则会抛出UnsupportedCommandException。</p>
+<h6 id="_405">示例代码</h6>
+<pre><code>
+val metaData = MapMetaData()
+val datas = hashMapOf<String,String>()
+datas["key"] = "value"
+metaData.data = datas
+metaData.setValue("key", "value")
+val isAddOk = platform.addPOIOnCurrentPose("demo",metaData)
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="stdpairstring-compositepose-querypoistring-var1"><code>StdPair&lt;String, CompositePose&gt; queryPOI(String var1)</code></h5>
+<p>查询特定的兴趣点.</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.8.3</p>
+</blockquote>
+<h6 id="_406">返回值</h6>
+<p>StdPair<String, <a href="robot.md#compositepose">CompositePose</a>></p>
+<h6 id="_407">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>var1</td>
+<td>String</td>
+<td>兴趣点的key</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_408">注意事项</h6>
+<p>暂无</p>
+<h6 id="_409">示例代码</h6>
+<pre><code>
+val platform: AbstractSlamwarePlatform = DeviceManager.connect("192.168.11.1", 1445)
+val stdPair = platform.queryPOI("demo")
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="stdpairstring-compositepose-queryclosestpoinonnull-pose-pose"><code>StdPair&lt;String, CompositePose&gt; queryClosestPOI(@NonNull Pose pose)</code></h5>
+<p>获取最近的POI点。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_410">返回值</h6>
+<p>离给定位置最近的一个POI点。</p>
+<h6 id="_411">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pose</td>
+<td><a href="../robot/#pose">Pose</a></td>
+<td>一个位置</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_412">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+StdPair<String, CompositePose> pose = platform.queryClosesPOI(platform.getPose());
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-erasepoistring-var1"><code>boolean erasePOI(String var1)</code></h5>
+<p>擦除某个兴趣点。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.8.3</p>
+</blockquote>
+<h6 id="_413">返回值</h6>
+<p>boolean。true：擦除成功；false：擦除失败。</p>
+<h6 id="_414">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>var1</td>
+<td>String</td>
+<td>POI对应的key</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_415">注意事项</h6>
+<p>暂无。</p>
+<h6 id="_416">示例代码</h6>
+<pre><code>
+val platform: AbstractSlamwarePlatform = DeviceManager.connect("192.168.11.1", 1445)
+val isEraseOk = platform.erasePOI("demo")
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+<h5 id="boolean-clearpois"><code>boolean clearPOIs()</code></h5>
+<p>清除全部的兴趣点。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.8.3</p>
+</blockquote>
+<h6 id="_417">返回值</h6>
+<p>boolean。true：清除成功；false：清除失败。</p>
+<h6 id="_418">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>空参。</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_419">注意事项</h6>
+<p>暂无。</p>
+<h6 id="_420">示例代码</h6>
+<pre><code>
+val platform: AbstractSlamwarePlatform = DeviceManager.connect("192.168.11.1", 1445)
+val isEraseOk = platform.clearPOIs()
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-setcubeconfigstring-path"><code>boolean setCubeConfig(String path)</code></h5>
+<p>上传CubeConfig到SLAMWARE。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_421">返回值</h6>
+<p>是否上传成功。</p>
+<h6 id="_422">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>path</td>
+<td>String</td>
+<td>CubeConfig文件路径</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_423">注意事项</h6>
+<p>请确保App拥有对该文件目录的访问权限。</p>
+<h6 id="_424">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+platform.setCubeConfig("your_cube_config_path");
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="listrectanglearea-getrectangleareasartifactusage-usage"><code>List&lt;RectangleArea&gt; getRectangleAreas(ArtifactUsage usage)</code></h5>
+<p>获取指定类型的矩形区域。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.5.0</p>
+</blockquote>
+<h6 id="_425">返回值</h6>
+<p>一组该类型的矩形区域<a href="../robot/#rectanglearea">RectangleArea</a>。</p>
+<h6 id="_426">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>矩形区域类型</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_427">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<RectangleArea> areas = platform.getRectangleAreas(ArtifactUsage.ArtifactUsageForbiddenArea);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-addrectanglearearectanglearea-area"><code>boolean addRectangleArea(RectangleArea area)</code></h5>
+<p>添加一个矩形区域。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.5.0</p>
+</blockquote>
+<h6 id="_428">返回值</h6>
+<p>是否添加成功。</p>
+<h6 id="_429">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>area</td>
+<td><a href="../robot/#rectanglearea">RectangleArea</a></td>
+<td>矩形区域对象</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_430">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+RectangleArea area = new RectangleArea();
+area.setStart(new PointF(0f, 0f));
+area.setEnd(new PointF(-1f, -1f));
+area.setHalfWidth(0.5f);
+area.setUsage(ArtifactUsage.ArtifactUsageForbiddenArea);
+boolean result = platform.addRectangleArea(area);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-addrectangleareasartifactusage-usage-listrectanglearea-areas"><code>boolean addRectangleAreas(ArtifactUsage usage, List&lt;RectangleArea&gt; areas)</code></h5>
+<p>添加一组相同类型的矩形区域。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.5.0</p>
+</blockquote>
+<h6 id="_431">返回值</h6>
+<p>是否添加成功。</p>
+<h6 id="_432">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>该组区域的类型</td>
+<td></td>
+</tr>
+<tr>
+<td>areas</td>
+<td>List&lt;<a href="../robot/#rectanglearea">RectangleArea</a>&gt;</td>
+<td>该组矩形区域对象</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_433">注意事项</h6>
+<p>这组矩形区域必须是相同的类型。</p>
+<h6 id="_434">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+ArtifactUsage usage = ArtifactUsage.ArtifactUsageForbiddenArea;
+ArrayList<RectangleArea> areas = new ArrayList();
+int count = 4;
+int i = 0;
+while (i < count) {
+  RectangleArea area = new RectangleArea();
+  area.setUsage(usage);
+  area.setStart(new PointF(0.5f * i, 0.5f * i));
+  area.setEnd(new PointF(1f * i, 1f * 1));
+  area.setHalfWidth((1f * i - 0.5f * i) / 2);
+  areas.add(area);
+  i++;
+}
+platform.addRectangleAreas(usage, areas);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-editrectanglearearectanglearea-area"><code>boolean editRectangleArea(RectangleArea area)</code></h5>
+<p>修改一个矩形区域的数据。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.5.0</p>
+</blockquote>
+<h6 id="_435">返回值</h6>
+<p>是否修改成功。</p>
+<h6 id="_436">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>area</td>
+<td><a href="../robot/#rectanglearea">RectangleArea</a></td>
+<td>需要修改的矩形区域对象</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_437">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<RectangleArea> areas = platform.getRectangleAreas(ArtifactUsage.ArtifactUsageForbiddenArea);
+if (areas.size() > 0) {
+  RectangleArea area = areas.get(0);
+  area.setUsage(ArtifactUsage.ArtifactUsageDangerousArea);
+  platform.editRectangleArea(area);
+}
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-removerectangleareabyidsartifactusage-usage-int-ids"><code>boolean removeRectangleAreaByIds(ArtifactUsage usage, int[] ids)</code></h5>
+<p>删除一组矩形区域。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.5.0</p>
+</blockquote>
+<h6 id="_438">返回值</h6>
+<p>是否删除成功。</p>
+<h6 id="_439">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>区域类型</td>
+<td></td>
+</tr>
+<tr>
+<td>ids</td>
+<td>int[]</td>
+<td>一组区域ID</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_440">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<RectangleArea> areas = platform.getRectangleAreas(ArtifactUsage.ArtifactUsageForbiddenArea);
+int[] ids = new int[areas.size()];
+int index = 0;
+while (index < areas.size()) {
+  ids[index++] = areas.get(index).getId();
+}
+boolean result = platform.removeRectangleAreaByIds(ArtifactUsage.ArtifactUsageForbiddenArea, ids);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-clearrectangleareasartifactusage-usage"><code>boolean clearRectangleAreas(ArtifactUsage usage)</code></h5>
+<p>清除指定类型矩形区域。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.5.0</p>
+</blockquote>
+<h6 id="_441">返回值</h6>
+<p>是否清除成功。</p>
+<h6 id="_442">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#rectanglearea">ArtifactUsage</a></td>
+<td>矩形区域类型</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_443">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+boolean result = platform.clearRectangleAreas(ArtifactUsage.ArtifactUsageForbiddenArea);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-resetlocalizationstatus"><code>boolean resetLocalizationStatus()</code></h5>
+<p>重置定位状态。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.5.0</p>
+</blockquote>
+<h6 id="_444">返回值</h6>
+<p>是否重置成功。</p>
+<h6 id="_445">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+platform.resetLocalizationStatus();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="listcompositepose-gethomedocks"><code>List&lt;CompositePose&gt; getHomeDocks()</code></h5>
+<p>获取SLAMWARE当前所有的充电桩位置。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_446">返回值</h6>
+<p>一组充电桩位置数据。</p>
+<h6 id="_447">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<CompositePose> docks = platform.getHomeDocks();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-sethomedocksnonnull-listcompositepose-poses"><code>boolean setHomeDocks(@NonNull List&lt;CompositePose&gt; poses)</code></h5>
+<p>添加一组充电桩。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_448">返回值</h6>
+<p>是否添加成功。</p>
+<h6 id="_449">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>poses</td>
+<td>List&lt;<a href="../robot/#compositepose">CompositePose</a>&gt;</td>
+<td>新添加的充电桩</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_450">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+ArrayList<CompositePose> poses = new ArrayList();
+CompositePose pose = new CompositePose();
+pose.setPose(new Pose(1f, 1f, 0f, 0f, 0f, 0f));
+MapMetaData data = new MapMetaData();
+data.set("display_name", "New DOCK");
+pose.setMetaData(data);
+poses.add(pose);
+platform.setHomeDocks(poses);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="compositepose-registerhomedocknonnull-mapmetadata-metadata"><code>CompositePose registerHomeDock(@NonNull MapMetaData metadata)</code></h5>
+<p>在SLAMWARE当前位置添加一个充电桩。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_451">返回值</h6>
+<p>充电桩位置。</p>
+<h6 id="_452">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>metadata</td>
+<td><a href="../robot/#mapmetadata">MapMetaData</a></td>
+<td>充电桩的MetaDat信息。请添加"display_name"数据</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_453">注意事项</h6>
+<p>确保SLAMWARE上桩后再调用此接口。是否可能会失败。</p>
+<h6 id="_454">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+MapMetaData metadata = new MapMetaData();
+metadata.setValue("display_name", "New DOCK");
+platform.registerHomeDock(metadata);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="compositepose-addhomedocknonnull-compositepose-pose"><code>CompositePose addHomeDock(@NonNull CompositePose pose)</code></h5>
+<p>添加一个充电桩。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_455">返回值</h6>
+<p>添加的充电桩信息。</p>
+<h6 id="_456">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pose</td>
+<td><a href="../robot/#compositepose">CompositePose</a></td>
+<td>充电桩位姿</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_457">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+CompositePose pose = new CompositePose();
+pose.setPose(new Pose(1f, 1f, 0f, 0f, 0f, 0f));
+MapMetaData data = new MapMetaData();
+data.set("display_name", "New DOCK);
+pose.setMetaData(data);
+CompositePose dock = platform.addHomeDock(pose);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-edithomedockcompositepose-pose"><code>boolean editHomeDock(CompositePose pose)</code></h5>
+<p>修改一个充电桩数据。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_458">返回值</h6>
+<p>是否修改成功。</p>
+<h6 id="_459">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pose</td>
+<td><a href="../robot/#compositepose">CompositePose</a></td>
+<td>需要修改的充电桩对象</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_460">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<CompositePose> docks = platform.getHomeDocks();
+if (docks.size() > 0) {
+  CompositePose pose = docks.get(0);
+  pose.setPose(new Pose(2f, 2f, 0f, 0f, 0f, 0f));
+  platform.editHomeDock(pose);
+}
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-erasehomedocknonnull-string-id"><code>boolean eraseHomeDock(@NonNull String id)</code></h5>
+<p>删除一个充电桩。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_461">返回值</h6>
+<p>是否删除成功。</p>
+<h6 id="_462">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>String</td>
+<td>需要删除充电桩的ID</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_463">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<CompositePose> docks = platform.getHomeDocks();
+if (docks.size() > 0) {
+  CompositePose dock = docks.get(0);
+  platform.eraseHomeDock(dock.getName());
+}
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-clearhomedocks"><code>boolean clearHomeDocks()</code></h5>
+<p>删除所有充电桩。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_464">返回值</h6>
+<p>是否删除成功。</p>
+<h6 id="_465">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+boolean result = platform.clearHomeDocks();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="liststring-getsupportedmotionstrategies"><code>List&lt;String&gt; getSupportedMotionStrategies()</code></h5>
+<p>获取SLAMWARE支持的运动策略。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_466">返回值</h6>
+<p>一组运动策略名称。</p>
+<h6 id="_467">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<String> strategies = platform.getSupportedMotionStrategies();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="boolean-setmotionstrategynonnull-string-strategy"><code>boolean setMotionStrategy(@NonNull String strategy)</code></h5>
+<p>设置SLAMWARE的运动策略。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_468">返回值</h6>
+<p>是否设置成功。</p>
+<h6 id="_469">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>strategy</td>
+<td>String</td>
+<td>策略名称</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_470">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<String> strategies = platform.getSupportedMotionStrategies();
+if (strategies.size() > 0) {
+  String strategy = strategies.get(0);
+  platform.setMotionStrategy(strategy);
+}
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="string-getcurrentmotionstrategy"><code>String getCurrentMotionStrategy()</code></h5>
+<p>获取SLAMWARE当前的运动策略。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_471">返回值</h6>
+<p>当前的运动策略名称。</p>
+<h6 id="_472">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+String strategy = platform.getCurrentMotionStrategy();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../geometry/" class="btn btn-neutral float-left" title="Slamware-geometry"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../message/" class="btn btn-neutral float-right" title="Slamware-message">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../geometry/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../message/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

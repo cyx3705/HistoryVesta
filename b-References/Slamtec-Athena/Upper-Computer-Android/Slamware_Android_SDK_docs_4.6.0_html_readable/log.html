@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Slamware-log - My Docs</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Slamware-log";
+        var mkdocs_page_input_path = "log.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> My Docs
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../action/">Slamware-action</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../discovery/">Slamware-discovery</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../exceptions/">Slamware-exception</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../FirmwareUpdate/">Slamware-firmware-update</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../geometry/">Slamware-geometry</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../slamware/">Slamware</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../message/">Slamware-message</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../robot/">Slamware-robot</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../sdp/">Slamware-sdp</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../utils/">Slamware-utils</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Slamware-log</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#loglevel">LogLevelö��</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#debug">Debug</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#info">Info</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#warn">Warn</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#error">Error</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#fatal">Fatal</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#logdata">LogData��</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_1">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#logdata_1">LogData()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_6">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getlogsource">getLogSource()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_11">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setlogsourcestring-logsource">setLogSource(String logSource)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_16">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getloglevel">getLogLevel()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_21">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setloglevelloglevel-loglevel">setLogLevel(LogLevel logLevel)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_26">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getisjsonlog">getIsJsonLog()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_31">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getstringoflog">getStringOfLog()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_36">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setstringoflogboolean-isjsonlog-string-stringoflog">setStringOfLog(boolean isJsonLog, String stringOfLog)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log-customer/">Slamware-log-customer</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">My Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Slamware-log</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="comslamtecslamwarelog">com.slamtec.slamware.log��</h2>
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h3 id="loglevel"><code>LogLevel</code>ö��</h3>
+<p>��ʾLog�����ö���ࡣ</p>
+<h5 id="debug"><code>Debug</code></h5>
+<p>Debug ����</p>
+<h5 id="info"><code>Info</code></h5>
+<p>Info ����</p>
+<h5 id="warn"><code>Warn</code></h5>
+<p>Warn ����</p>
+<h5 id="error"><code>Error</code></h5>
+<p>Error ����</p>
+<h5 id="fatal"><code>Fatal</code></h5>
+<p>Fatal ����</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h3 id="logdata"><code>LogData</code>��</h3>
+<p>��ʾһ��Log�����ݡ�</p>
+<h4 id="_1">����</h4>
+<h5 id="logdata_1"><code>LogData()</code></h5>
+<p>Ĭ�Ϲ��캯����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_2">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_3">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_4">ע������</h6>
+<p>��</p>
+<h6 id="_5">ʾ������</h6>
+<pre><code>
+LogData logDat = new LogData();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_6">����</h4>
+<h5 id="getlogsource"><code>getLogSource()</code></h5>
+<p>��ȡLogԴ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_7">����ֵ</h6>
+<p>��������Ϊ String</p>
+<h6 id="_8">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_9">ע������</h6>
+<p>��</p>
+<h6 id="_10">ʾ������</h6>
+<pre><code>
+String logSource = logDat.getLogSource();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_11">����</h4>
+<h5 id="setlogsourcestring-logsource"><code>setLogSource(String logSource)</code></h5>
+<p>����LogԴ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_12">����ֵ</h6>
+<p>��������Ϊ void</p>
+<h6 id="_13">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>logSource</td>
+<td>String</td>
+<td>LogԴ</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_14">ע������</h6>
+<p>��</p>
+<h6 id="_15">ʾ������</h6>
+<pre><code>
+String logSource = new String();
+logDat.setLogSource(logSource);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_16">����</h4>
+<h5 id="getloglevel"><code>getLogLevel()</code></h5>
+<p>��ȡLog����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_17">����ֵ</h6>
+<p>��������Ϊ LogLevel</p>
+<h6 id="_18">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_19">ע������</h6>
+<p>��</p>
+<h6 id="_20">ʾ������</h6>
+<pre><code>
+LogLevel logLvl = logDat.getLogLevel();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_21">����</h4>
+<h5 id="setloglevelloglevel-loglevel"><code>setLogLevel(LogLevel logLevel)</code></h5>
+<p>����Log����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_22">����ֵ</h6>
+<p>��������Ϊ void</p>
+<h6 id="_23">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>logLevel</td>
+<td>LogLevel</td>
+<td>Log����</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_24">ע������</h6>
+<p>��</p>
+<h6 id="_25">ʾ������</h6>
+<pre><code>
+logDat.setLogLevel(LogLevel.Info);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_26">����</h4>
+<h5 id="getisjsonlog"><code>getIsJsonLog()</code></h5>
+<p>�����Ƿ���JsonLog��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_27">����ֵ</h6>
+<p>��������Ϊ boolean��true��ʾ��JsonLog��false��ʾ����JsonLog��</p>
+<h6 id="_28">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_29">ע������</h6>
+<p>��</p>
+<h6 id="_30">ʾ������</h6>
+<pre><code>
+boolean isJsonLog = logDat.getIsJsonLog();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_31">����</h4>
+<h5 id="getstringoflog"><code>getStringOfLog()</code></h5>
+<p>��ȡLog�ַ�����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_32">����ֵ</h6>
+<p>��������Ϊ String</p>
+<h6 id="_33">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_34">ע������</h6>
+<p>�����JsonLog������Խ����ַ���������һ��JSON����</p>
+<h6 id="_35">ʾ������</h6>
+<pre><code>
+String strOfLog = logDat.getStringOfLog();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_36">����</h4>
+<h5 id="setstringoflogboolean-isjsonlog-string-stringoflog"><code>setStringOfLog(boolean isJsonLog, String stringOfLog)</code></h5>
+<p>����Log�ַ�����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_37">����ֵ</h6>
+<p>��������Ϊ void</p>
+<h6 id="_38">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>isJsonLog</td>
+<td>boolean</td>
+<td>�Ƿ���JsonLog</td>
+<td>-</td>
+</tr>
+<tr>
+<td>stringOfLog</td>
+<td>String</td>
+<td>Log�ַ���</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_39">ע������</h6>
+<p>��� isJsonLog Ϊtrue����Ӧ����֤ stringOfLog Ϊ�Ϸ��� JSON�ַ�����������ȷ����Ϊһ�� JSON����</p>
+<h6 id="_40">ʾ������</h6>
+<pre><code>
+logDat.setStringOfLog(false, "xxx");
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../utils/" class="btn btn-neutral float-left" title="Slamware-utils"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../log-customer/" class="btn btn-neutral float-right" title="Slamware-log-customer">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../utils/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../log-customer/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

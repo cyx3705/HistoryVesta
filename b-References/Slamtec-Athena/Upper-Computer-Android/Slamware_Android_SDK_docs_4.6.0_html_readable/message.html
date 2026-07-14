@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Slamware-message - My Docs</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Slamware-message";
+        var mkdocs_page_input_path = "message.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> My Docs
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../action/">Slamware-action</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../discovery/">Slamware-discovery</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../exceptions/">Slamware-exception</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../FirmwareUpdate/">Slamware-firmware-update</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../geometry/">Slamware-geometry</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../slamware/">Slamware</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Slamware-message</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#depthcameraframe">DepthCameraFrame��</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_1">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setminvaliddistancefloat-minvaliddistance">setMinValidDistance(float minValidDistance)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#float-getminvaliddistance">float getMinValidDistance()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmaxvaliddistancefloat-maxvaliddistance">setMaxValidDistance(float maxValidDistance)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#float-getmaxvaliddistance">float getMaxValidDistance()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setminfovpitchfloat-minfovpitch">setMinFovPitch(float MinFovPitch)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#float-getminfovpitch">float getMinFovPitch()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmaxfovpitchfloat-maxfovpitch">setMaxFovPitch(float MaxFovPitch)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#float-getmaxfovpitch">float getMaxFovPitch()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setminfovyawfloat-minfovyaw">setMinFovYaw(float MinFovYaw)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#float-getminfovyaw">float getMinFovYaw()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmaxfovyawfloat-maxfovyaw">setMaxFovYaw(float MaxFovYaw)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#float-getmaxfovyaw">float getMaxFovYaw()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setcolsint-cols">setCols(int cols)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#int-getcols">int getCols()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setrowsint-rows">setRows(int rows)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#int-getrows">int getRows()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setdataarraylistfloat-data">setData(ArrayList&lt;float&gt; data)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#arraylistfloat-getdata">ArrayList&lt;float&gt; getData()</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seqnumrange">SeqNumRange��</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_74">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#seqnumrange_1">SeqNumRange()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_79">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#seqnumrangelong-first-long-last">SeqNumRange(long first, long last)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_84">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getfirst">getFirst()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_89">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setfirstlong-first">setFirst(long first)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_94">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getlast">getLast()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_99">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setlastlong-last">setLast(long last)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seqnumhelp">SeqNumHelp��</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_104">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#invalid_seq_num">INVALID_SEQ_NUM</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_105">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#isvalidseqnumlong-seqnum">isValidSeqNum(long seqNum)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../robot/">Slamware-robot</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../sdp/">Slamware-sdp</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../utils/">Slamware-utils</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log/">Slamware-log</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log-customer/">Slamware-log-customer</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">My Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Slamware-message</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="comslamtecslamwaremessage">com.slamtec.slamware.message��</h2>
+<h3 id="depthcameraframe"><code>DepthCameraFrame</code>��</h3>
+<h4 id="_1">����</h4>
+<h5 id="setminvaliddistancefloat-minvaliddistance"><code>setMinValidDistance(float minValidDistance)</code></h5>
+<p>�����������ͷ��С̽��ľ��룬��λ���ס�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_2">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_3">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>minValidDistance</td>
+<td>float</td>
+<td>�������ͷ��С̽�����(��)</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_4">ע������</h6>
+<p>��</p>
+<h6 id="_5">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+depthCameraFrame.setMinValidDistance(1.5f);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="float-getminvaliddistance"><code>float getMinValidDistance()</code></h5>
+<p>��ȡ�������ͷ��С̽��ľ��룬��λ���ס�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_6">����ֵ</h6>
+<p>��������Ϊfloat</p>
+<h6 id="_7">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_8">ע������</h6>
+<p>��</p>
+<h6 id="_9">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+depthCameraFrame.setMinValidDistance(1.5f);
+float minValidDistance = depthCameraFrame.getMinValidDistance();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="setmaxvaliddistancefloat-maxvaliddistance"><code>setMaxValidDistance(float maxValidDistance)</code></h5>
+<p>�����������ͷ���̽��ľ��룬��λ���ס�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_10">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_11">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>maxValidDistance</td>
+<td>float</td>
+<td>�������ͷ���̽�����(��)</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_12">ע������</h6>
+<p>��</p>
+<h6 id="_13">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+depthCameraFrame.setMaxValidDistance(1.5f);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="float-getmaxvaliddistance"><code>float getMaxValidDistance()</code></h5>
+<p>��ȡ�������ͷ���̽��ľ��룬��λ���ס�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_14">����ֵ</h6>
+<p>��������Ϊfloat</p>
+<h6 id="_15">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_16">ע������</h6>
+<p>��</p>
+<h6 id="_17">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+depthCameraFrame.setMaxValidDistance(1.5f);
+float maxValidDistance = depthCameraFrame.getMaxValidDistance();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="setminfovpitchfloat-minfovpitch"><code>setMinFovPitch(float MinFovPitch)</code></h5>
+<p>�����������ͷ��ֱ���������̽�����ȣ���λ�ǻ��ȡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_18">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_19">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MinFovPitch</td>
+<td>float</td>
+<td>�������ͷ��ֱ���������̽������(rad)</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_20">ע������</h6>
+<p>��</p>
+<h6 id="_21">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+depthCameraFrame.setMinFovPitch(1.5f);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="float-getminfovpitch"><code>float getMinFovPitch()</code></h5>
+<p>��ȡ�������ͷ��ֱ���������̽�����ȣ���λ�ǻ��ȡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_22">����ֵ</h6>
+<p>��������Ϊfloat</p>
+<h6 id="_23">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_24">ע������</h6>
+<p>��</p>
+<h6 id="_25">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+float minFovPitch = depthCameraFrame.getMinFovPitch();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="setmaxfovpitchfloat-maxfovpitch"><code>setMaxFovPitch(float MaxFovPitch)</code></h5>
+<p>�����������ͷ��ֱ��������С̽������ǣ���λ�ǻ��ȡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_26">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_27">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MaxFovPitch</td>
+<td>float</td>
+<td>�������ͷ��ֱ��������С̽������(rad)</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_28">ע������</h6>
+<p>��</p>
+<h6 id="_29">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+depthCameraFrame.setMaxFovPitch(1.6f);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="float-getmaxfovpitch"><code>float getMaxFovPitch()</code></h5>
+<p>��ȡ�������ͷ��ֱ��������С̽������ǣ���λ�ǻ��ȡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_30">����ֵ</h6>
+<p>��������Ϊfloat</p>
+<h6 id="_31">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_32">ע������</h6>
+<p>��</p>
+<h6 id="_33">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+float maxFovPitch = depthCameraFrame.getMaxFovPitch();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="setminfovyawfloat-minfovyaw"><code>setMinFovYaw(float MinFovYaw)</code></h5>
+<p>�����������ͷˮƽ���������̽��ĽǶȣ���λ�ǻ��ȡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_34">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_35">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MinFovYaw</td>
+<td>float</td>
+<td>�������ͷˮƽ���������̽��Ƕ�(rad)</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_36">ע������</h6>
+<p>��</p>
+<h6 id="_37">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+depthCameraFrame.setMinFovYaw(1.6f);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="float-getminfovyaw"><code>float getMinFovYaw()</code></h5>
+<p>��ȡ�������ͷˮƽ���������̽��ĽǶȣ���λ�ǻ��ȡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_38">����ֵ</h6>
+<p>��������Ϊfloat</p>
+<h6 id="_39">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_40">ע������</h6>
+<p>��</p>
+<h6 id="_41">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+float minFovYaw = depthCameraFrame.getMinFovYaw();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="setmaxfovyawfloat-maxfovyaw"><code>setMaxFovYaw(float MaxFovYaw)</code></h5>
+<p>�����������ͷˮƽ��������С̽��ĽǶȣ���λ�ǻ��ȡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_42">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_43">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MaxFovYaw</td>
+<td>float</td>
+<td>�������ͷˮƽ��������С̽��Ƕ�(rad)</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_44">ע������</h6>
+<p>��</p>
+<h6 id="_45">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+depthCameraFrame.setMaxFovYaw(2.5f);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="float-getmaxfovyaw"><code>float getMaxFovYaw()</code></h5>
+<p>��ȡ�������ͷˮƽ��������С̽��ĽǶȣ���λ�ǻ��ȡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_46">����ֵ</h6>
+<p>��������Ϊfloat</p>
+<h6 id="_47">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_48">ע������</h6>
+<p>��</p>
+<h6 id="_49">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+float maxFovYaw = depthCameraFrame.getMaxFovYaw(2.5f);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="setcolsint-cols"><code>setCols(int cols)</code></h5>
+<p>�����������ͷ���ݶ����С�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_50">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_51">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cols</td>
+<td>int</td>
+<td>�������ͷ������ݿ��</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_52">ע������</h6>
+<p>��</p>
+<h6 id="_53">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+depthCameraFrame.setCols(5);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="int-getcols"><code>int getCols()</code></h5>
+<p>��ȡ�������ͷ���ݶ����С�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_54">����ֵ</h6>
+<p>��������Ϊint</p>
+<h6 id="_55">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_56">ע������</h6>
+<p>��</p>
+<h6 id="_57">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+int cols = depthCameraFrame.getCols();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="setrowsint-rows"><code>setRows(int rows)</code></h5>
+<p>�����������ͷ���ݶ����С�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_58">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_59">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>rows</td>
+<td>int</td>
+<td>�������ͷ������ݸ߶�</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_60">ע������</h6>
+<p>��</p>
+<h6 id="_61">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+depthCameraFrame.setRows(6);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="int-getrows"><code>int getRows()</code></h5>
+<p>�����������ͷ���ݶ����С�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_62">����ֵ</h6>
+<p>��������Ϊint</p>
+<h6 id="_63">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_64">ע������</h6>
+<p>��</p>
+<h6 id="_65">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+int rows = depthCameraFrame.getRows(6);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="setdataarraylistfloat-data"><code>setData(ArrayList&lt;float&gt; data)</code></h5>
+<p>�����������ͷ�ɼ��������ݣ����ݴ�СΪ��<em>�У�cols</em>rows�������ݵ������������������� ��float�ĵ�λ���ס�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_66">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_67">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>data</td>
+<td>ArrayList<Float></td>
+<td>�������ͷ������ݼ��ϣ���СΪ��*��</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_68">ע������</h6>
+<p>��</p>
+<h6 id="_69">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+ArrayList data = new ArrayList();//α���� 
+data.add(1.5f);
+//.......
+depthCameraFrame.setData(data);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="arraylistfloat-getdata"><code>ArrayList&lt;float&gt; getData()</code></h5>
+<p>��ȡ�������ͷ�ɼ��������ݣ����ݴ�СΪ��<em>�У�cols</em>rows�������ݵ������������������� ��float�ĵ�λ���ס�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_70">����ֵ</h6>
+<p>��������ΪArrayList<float></p>
+<h6 id="_71">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_72">ע������</h6>
+<p>��</p>
+<h6 id="_73">ʾ������</h6>
+<pre><code>
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();
+ArrayList data = depthCameraFrame.getData();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h3 id="seqnumrange"><code>SeqNumRange</code>��</h3>
+<p>��ʾ��Ϣ���кŵķ�Χ�� [first, last]����Ϣ���к��Ƿ���Ч������ SeqNumHelp.isValidSeqNum() ���жϡ�</p>
+<h4 id="_74">����</h4>
+<h5 id="seqnumrange_1"><code>SeqNumRange()</code></h5>
+<p>Ĭ�Ϲ��캯��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_75">����ֵ</h6>
+<p>��</p>
+<h6 id="_76">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_77">ע������</h6>
+<p>��</p>
+<h6 id="_78">ʾ������</h6>
+<pre><code>
+SeqNumRange seqNum = new SeqNumRange();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_79">����</h4>
+<h5 id="seqnumrangelong-first-long-last"><code>SeqNumRange(long first, long last)</code></h5>
+<p>���ι��캯��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_80">����ֵ</h6>
+<p>��</p>
+<h6 id="_81">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>first</td>
+<td>long</td>
+<td>��һ����Ϣ�����к�</td>
+<td>-</td>
+</tr>
+<tr>
+<td>last</td>
+<td>long</td>
+<td>���һ����Ϣ�����к�</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_82">ע������</h6>
+<p>��</p>
+<h6 id="_83">ʾ������</h6>
+<pre><code>
+SeqNumRange seqNum = new SeqNumRange(123, 456);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_84">����</h4>
+<h5 id="getfirst"><code>getFirst()</code></h5>
+<p>��ȡ��һ����Ϣ�����к�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_85">����ֵ</h6>
+<p>��������Ϊlong</p>
+<h6 id="_86">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_87">ע������</h6>
+<p>��</p>
+<h6 id="_88">ʾ������</h6>
+<pre><code>
+SeqNumRange seqNum = new SeqNumRange();
+long firstSeqNum = seqNum.getFirst();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_89">����</h4>
+<h5 id="setfirstlong-first"><code>setFirst(long first)</code></h5>
+<p>���õ�һ����Ϣ�����к�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_90">����ֵ</h6>
+<p>��</p>
+<h6 id="_91">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>first</td>
+<td>long</td>
+<td>��һ����Ϣ�����к�</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_92">ע������</h6>
+<p>��</p>
+<h6 id="_93">ʾ������</h6>
+<pre><code>
+SeqNumRange seqNum = new SeqNumRange();
+seqNum.setFirst(123);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_94">����</h4>
+<h5 id="getlast"><code>getLast()</code></h5>
+<p>��ȡ���һ����Ϣ�����к�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_95">����ֵ</h6>
+<p>��������Ϊlong</p>
+<h6 id="_96">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_97">ע������</h6>
+<p>��</p>
+<h6 id="_98">ʾ������</h6>
+<pre><code>
+SeqNumRange seqNum = new SeqNumRange();
+long lastSeqNum = seqNum.getLast();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_99">����</h4>
+<h5 id="setlastlong-last"><code>setLast(long last)</code></h5>
+<p>�������һ����Ϣ�����к�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_100">����ֵ</h6>
+<p>��</p>
+<h6 id="_101">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>last</td>
+<td>long</td>
+<td>���һ����Ϣ�����к�</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_102">ע������</h6>
+<p>��</p>
+<h6 id="_103">ʾ������</h6>
+<pre><code>
+SeqNumRange seqNum = new SeqNumRange();
+seqNum.setLast(123);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h3 id="seqnumhelp"><code>SeqNumHelp</code>��</h3>
+<p>��Ϣ���кŵĸ����ࡣ</p>
+<h4 id="_104">����</h4>
+<h5 id="invalid_seq_num"><code>INVALID_SEQ_NUM</code></h5>
+<p>����ֵ��һ����Ч����Ϣ���кš�</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_105">����</h4>
+<h5 id="isvalidseqnumlong-seqnum"><code>isValidSeqNum(long seqNum)</code></h5>
+<p>�ж�һ����Ϣ���к��Ƿ�����Ч�ġ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_106">����ֵ</h6>
+<p>����boolean��true��ʾ����Ч�ģ�false��ʾ����Ч�ġ�</p>
+<h6 id="_107">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>seqNum</td>
+<td>long</td>
+<td>��Ϣ���к�</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_108">ע������</h6>
+<p>��</p>
+<h6 id="_109">ʾ������</h6>
+<pre><code>
+boolean isValid = SeqNumHelp.isValidSeqNum(0);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../slamware/" class="btn btn-neutral float-left" title="Slamware"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../robot/" class="btn btn-neutral float-right" title="Slamware-robot">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../slamware/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../robot/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

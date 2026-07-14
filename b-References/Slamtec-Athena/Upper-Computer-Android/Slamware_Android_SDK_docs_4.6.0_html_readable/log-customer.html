@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Slamware-log-customer - My Docs</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Slamware-log-customer";
+        var mkdocs_page_input_path = "log-customer.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> My Docs
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../action/">Slamware-action</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../discovery/">Slamware-discovery</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../exceptions/">Slamware-exception</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../FirmwareUpdate/">Slamware-firmware-update</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../geometry/">Slamware-geometry</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../slamware/">Slamware</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../message/">Slamware-message</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../robot/">Slamware-robot</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../sdp/">Slamware-sdp</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../utils/">Slamware-utils</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log/">Slamware-log</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Slamware-log-customer</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#resultcode">ResultCodeö��</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#unknown">Unknown</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#ok">Ok</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#failed">Failed</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#servicenotfound">ServiceNotFound</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#servicestopping">ServiceStopping</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#commandnotfound">CommandNotFound</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#serverstatus">ServerStatus��</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_1">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#serverstatus_1">ServerStatus()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_6">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getserviceuuid">getServiceUuid()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_11">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setserviceuuidstring-serviceuuid">setServiceUuid(String serviceUuid)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_16">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getlatestseqnum">getLatestSeqNum()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_21">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setlatestseqnumlong-latestseqnum">setLatestSeqNum(long latestSeqNum)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_26">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getseqnumrange">getSeqNumRange()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_31">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setseqnumrangeseqnumrange-seqnumrange">setSeqNumRange(SeqNumRange seqNumRange)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#readresult">ReadResult��</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_36">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#readresult_1">ReadResult()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_41">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getserverstatus">getServerStatus()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_46">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setserverstatusserverstatus-serverstatus">setServerStatus(ServerStatus serverStatus)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_51">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getseqnumrange_1">getSeqNumRange()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_56">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setseqnumrangeseqnumrange-seqnumrange_1">setSeqNumRange(SeqNumRange seqNumRange)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_61">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getlogs">getLogs()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_66">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setlogsjavautilarraylistlogdata-logs">setLogs(java.util.ArrayList&lt;LogData&gt; logs)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#customerlogreceiverlastrecvstatus">CustomerLogReceiverLastRecvStatus��</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_71">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#customerlogreceiverlastrecvstatus_1">CustomerLogReceiverLastRecvStatus()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_76">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getserviceuuid_1">getServiceUuid()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_81">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setserviceuuidstring-serviceuuid_1">setServiceUuid(String serviceUuid)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_86">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getlastreceivedseqnum">getLastReceivedSeqNum()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_91">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setlastreceivedseqnumlong-lastreceivedseqnum">setLastReceivedSeqNum(long lastReceivedSeqNum)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#customerlogreceiverinitarg">CustomerLogReceiverInitArg��</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_96">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#customerlogreceiverinitarg_1">CustomerLogReceiverInitArg()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_101">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getlastrecvstatus">getLastRecvStatus()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_106">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setlastrecvstatuscustomerlogreceiverlastrecvstatus-lastrecvstatus">setLastRecvStatus(CustomerLogReceiverLastRecvStatus lastRecvStatus)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#icustomerlogreceiver">ICustomerLogReceiver�ӿ�</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_111">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#isinitialized">isInitialized()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_116">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getlastrecvstatus_1">getLastRecvStatus()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_121">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#initcustomerlogreceiverinitarg-initarg">init(CustomerLogReceiverInitArg initArg)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_126">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#queryserverstatus">queryServerStatus()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_131">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#recvlogsint-maxcnttoread">recvLogs(int maxCntToRead)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_136">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setnextreadstartseqnumlong-startseqnum">setNextReadStartSeqNum(long startSeqNum)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_141">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#resetnextreadstartseqnum">resetNextReadStartSeqNum()</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">My Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Slamware-log-customer</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="comslamtecslamwarelogcustomer">com.slamtec.slamware.log.customer��</h2>
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h3 id="resultcode"><code>ResultCode</code>ö��</h3>
+<p>��ʾCustomerLog��ؽӿڵ��÷���ֵ��ö���ࡣ</p>
+<h5 id="unknown"><code>Unknown</code></h5>
+<p>δ֪���</p>
+<h5 id="ok"><code>Ok</code></h5>
+<p>�ɹ�</p>
+<h5 id="failed"><code>Failed</code></h5>
+<p>ʧ�ܣ���ָ��ʧ�ܵľ���ԭ��</p>
+<h5 id="servicenotfound"><code>ServiceNotFound</code></h5>
+<p>����û���ҵ�</p>
+<h5 id="servicestopping"><code>ServiceStopping</code></h5>
+<p>��������ֹͣ</p>
+<h5 id="commandnotfound"><code>CommandNotFound</code></h5>
+<p>����δ�ҵ�������ɵĹ̼���֧�ֺ�������������ʱ���᷵�ش�ֵ����</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h3 id="serverstatus"><code>ServerStatus</code>��</h3>
+<p>��ʾ�豸�˵� CustomerLog �����״̬���ݡ�</p>
+<h4 id="_1">����</h4>
+<h5 id="serverstatus_1"><code>ServerStatus()</code></h5>
+<p>Ĭ�Ϲ��캯����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_2">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_3">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_4">ע������</h6>
+<p>��</p>
+<h6 id="_5">ʾ������</h6>
+<pre><code>
+ServerStatus serverStatus = new ServerStatus();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_6">����</h4>
+<h5 id="getserviceuuid"><code>getServiceUuid()</code></h5>
+<p>��ȡ�����UUID�ַ�����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_7">����ֵ</h6>
+<p>��������Ϊ String</p>
+<h6 id="_8">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_9">ע������</h6>
+<p>��</p>
+<h6 id="_10">ʾ������</h6>
+<pre><code>
+String serviceUuid = serverStatus.getServiceUuid();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_11">����</h4>
+<h5 id="setserviceuuidstring-serviceuuid"><code>setServiceUuid(String serviceUuid)</code></h5>
+<p>���÷����UUID�ַ�����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_12">����ֵ</h6>
+<p>��������Ϊ void</p>
+<h6 id="_13">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>serviceUuid</td>
+<td>String</td>
+<td>�����UUID�ַ���</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_14">ע������</h6>
+<p>��</p>
+<h6 id="_15">ʾ������</h6>
+<pre><code>
+serverStatus.setServiceUuid(serviceUuid);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_16">����</h4>
+<h5 id="getlatestseqnum"><code>getLatestSeqNum()</code></h5>
+<p>��ȡ���һ��������CustomerLog�����кš�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_17">����ֵ</h6>
+<p>��������Ϊ long</p>
+<h6 id="_18">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_19">ע������</h6>
+<p>��</p>
+<h6 id="_20">ʾ������</h6>
+<pre><code>
+long latestSeqNum = serverStatus.getLatestSeqNum();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_21">����</h4>
+<h5 id="setlatestseqnumlong-latestseqnum"><code>setLatestSeqNum(long latestSeqNum)</code></h5>
+<p>�������һ��������CustomerLog�����кš�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_22">����ֵ</h6>
+<p>��������Ϊ void</p>
+<h6 id="_23">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>latestSeqNum</td>
+<td>long</td>
+<td>���һ��������CustomerLog�����к�</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_24">ע������</h6>
+<p>��</p>
+<h6 id="_25">ʾ������</h6>
+<pre><code>
+serverStatus.setLatestSeqNum(123456);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_26">����</h4>
+<h5 id="getseqnumrange"><code>getSeqNumRange()</code></h5>
+<p>��ȡLog�����кŵķ�Χ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_27">����ֵ</h6>
+<p>��������Ϊ SeqNumRange</p>
+<h6 id="_28">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_29">ע������</h6>
+<p>�ޡ�</p>
+<h6 id="_30">ʾ������</h6>
+<pre><code>
+SeqNumRange seqNumRange = serverStatus.getSeqNumRange();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_31">����</h4>
+<h5 id="setseqnumrangeseqnumrange-seqnumrange"><code>setSeqNumRange(SeqNumRange seqNumRange)</code></h5>
+<p>����Log�����кŵķ�Χ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_32">����ֵ</h6>
+<p>��������Ϊ void</p>
+<h6 id="_33">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>seqNumRange</td>
+<td>SeqNumRange</td>
+<td>Log�����кŵķ�Χ</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_34">ע������</h6>
+<p>�ޡ�</p>
+<h6 id="_35">ʾ������</h6>
+<pre><code>
+serverStatus.setSeqNumRange(seqNumRange);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h3 id="readresult"><code>ReadResult</code>��</h3>
+<p>��ȡCustomerLog�Ľ�����ݡ�</p>
+<h4 id="_36">����</h4>
+<h5 id="readresult_1"><code>ReadResult()</code></h5>
+<p>Ĭ�Ϲ��캯����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_37">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_38">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_39">ע������</h6>
+<p>��</p>
+<h6 id="_40">ʾ������</h6>
+<pre><code>
+ReadResult res = new ReadResult();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_41">����</h4>
+<h5 id="getserverstatus"><code>getServerStatus()</code></h5>
+<p>��ȡ����״̬���ݡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_42">����ֵ</h6>
+<p>��������Ϊ ServerStatus</p>
+<h6 id="_43">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_44">ע������</h6>
+<p>��</p>
+<h6 id="_45">ʾ������</h6>
+<pre><code>
+ServerStatus serverStatus = res.getServerStatus();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_46">����</h4>
+<h5 id="setserverstatusserverstatus-serverstatus"><code>setServerStatus(ServerStatus serverStatus)</code></h5>
+<p>���÷���״̬���ݡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_47">����ֵ</h6>
+<p>��������Ϊ void</p>
+<h6 id="_48">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>serverStatus</td>
+<td>ServerStatus</td>
+<td>����״̬����</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_49">ע������</h6>
+<p>��</p>
+<h6 id="_50">ʾ������</h6>
+<pre><code>
+res.setServerStatus(serverStatus);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_51">����</h4>
+<h5 id="getseqnumrange_1"><code>getSeqNumRange()</code></h5>
+<p>��ȡLog�����кŵķ�Χ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_52">����ֵ</h6>
+<p>��������Ϊ SeqNumRange</p>
+<h6 id="_53">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_54">ע������</h6>
+<p>�ޡ�</p>
+<h6 id="_55">ʾ������</h6>
+<pre><code>
+SeqNumRange seqNumRange = res.getSeqNumRange();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_56">����</h4>
+<h5 id="setseqnumrangeseqnumrange-seqnumrange_1"><code>setSeqNumRange(SeqNumRange seqNumRange)</code></h5>
+<p>����Log�����кŵķ�Χ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_57">����ֵ</h6>
+<p>��������Ϊ void</p>
+<h6 id="_58">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>seqNumRange</td>
+<td>SeqNumRange</td>
+<td>Log�����кŵķ�Χ</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_59">ע������</h6>
+<p>�ޡ�</p>
+<h6 id="_60">ʾ������</h6>
+<pre><code>
+res.setSeqNumRange(seqNumRange);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_61">����</h4>
+<h5 id="getlogs"><code>getLogs()</code></h5>
+<p>��ȡLog���ݡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_62">����ֵ</h6>
+<p>��������Ϊ java.util.ArrayList&lt;LogData&gt;</p>
+<h6 id="_63">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_64">ע������</h6>
+<p>��</p>
+<h6 id="_65">ʾ������</h6>
+<pre><code>
+java.util.ArrayList&lt;LogData&gt; logs = res.getLogs();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_66">����</h4>
+<h5 id="setlogsjavautilarraylistlogdata-logs"><code>setLogs(java.util.ArrayList&lt;LogData&gt; logs)</code></h5>
+<p>����Log���ݡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_67">����ֵ</h6>
+<p>��������Ϊ void</p>
+<h6 id="_68">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>logs</td>
+<td>java.util.ArrayList&lt;LogData&gt;</td>
+<td>Log����</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_69">ע������</h6>
+<p>��</p>
+<h6 id="_70">ʾ������</h6>
+<pre><code>
+res.setLogs(logs);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h3 id="customerlogreceiverlastrecvstatus"><code>CustomerLogReceiverLastRecvStatus</code>��</h3>
+<p>��ʾCustomerLogReceiver������״̬�����ݣ��������ڳ��ԶϿ����Ӻ���ϴε�״̬��ʼ����Log���ݡ�</p>
+<h4 id="_71">����</h4>
+<h5 id="customerlogreceiverlastrecvstatus_1"><code>CustomerLogReceiverLastRecvStatus()</code></h5>
+<p>Ĭ�Ϲ��캯����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_72">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_73">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_74">ע������</h6>
+<p>��</p>
+<h6 id="_75">ʾ������</h6>
+<pre><code>
+CustomerLogReceiverLastRecvStatus lastRecvStatus = new CustomerLogReceiverLastRecvStatus();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_76">����</h4>
+<h5 id="getserviceuuid_1"><code>getServiceUuid()</code></h5>
+<p>��ȡ�����UUID�ַ�����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_77">����ֵ</h6>
+<p>��������Ϊ String</p>
+<h6 id="_78">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_79">ע������</h6>
+<p>��</p>
+<h6 id="_80">ʾ������</h6>
+<pre><code>
+String serviceUuid = lastRecvStatus.getServiceUuid();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_81">����</h4>
+<h5 id="setserviceuuidstring-serviceuuid_1"><code>setServiceUuid(String serviceUuid)</code></h5>
+<p>���÷����UUID�ַ�����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_82">����ֵ</h6>
+<p>��������Ϊ void</p>
+<h6 id="_83">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>serviceUuid</td>
+<td>String</td>
+<td>�����UUID�ַ���</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_84">ע������</h6>
+<p>��</p>
+<h6 id="_85">ʾ������</h6>
+<pre><code>
+lastRecvStatus.setServiceUuid(serviceUuid);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_86">����</h4>
+<h5 id="getlastreceivedseqnum"><code>getLastReceivedSeqNum()</code></h5>
+<p>��ȡ���һ���յ���Log�����кš�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_87">����ֵ</h6>
+<p>��������Ϊ long</p>
+<h6 id="_88">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_89">ע������</h6>
+<p>��</p>
+<h6 id="_90">ʾ������</h6>
+<pre><code>
+long lastReceivedSeqNum = lastRecvStatus.getLastReceivedSeqNum();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_91">����</h4>
+<h5 id="setlastreceivedseqnumlong-lastreceivedseqnum"><code>setLastReceivedSeqNum(long lastReceivedSeqNum)</code></h5>
+<p>�������һ���յ���Log�����кš�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_92">����ֵ</h6>
+<p>��������Ϊ void</p>
+<h6 id="_93">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>latestSeqNum</td>
+<td>long</td>
+<td>���һ���յ���Log�����к�</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_94">ע������</h6>
+<p>��</p>
+<h6 id="_95">ʾ������</h6>
+<pre><code>
+lastRecvStatus.setLastReceivedSeqNum(lastReceivedSeqNum);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h3 id="customerlogreceiverinitarg"><code>CustomerLogReceiverInitArg</code>��</h3>
+<p>���ڳ�ʼ��CustomerLogReceiver�����ݡ�</p>
+<h4 id="_96">����</h4>
+<h5 id="customerlogreceiverinitarg_1"><code>CustomerLogReceiverInitArg()</code></h5>
+<p>Ĭ�Ϲ��캯����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_97">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_98">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_99">ע������</h6>
+<p>��</p>
+<h6 id="_100">ʾ������</h6>
+<pre><code>
+CustomerLogReceiverInitArg initArg = new CustomerLogReceiverInitArg();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_101">����</h4>
+<h5 id="getlastrecvstatus"><code>getLastRecvStatus()</code></h5>
+<p>��ȡ���һ�εĽ���״̬���ݡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_102">����ֵ</h6>
+<p>��������Ϊ CustomerLogReceiverLastRecvStatus</p>
+<h6 id="_103">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_104">ע������</h6>
+<p>��</p>
+<h6 id="_105">ʾ������</h6>
+<pre><code>
+CustomerLogReceiverLastRecvStatus lastRecvStatus = initArg.getLastRecvStatus();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_106">����</h4>
+<h5 id="setlastrecvstatuscustomerlogreceiverlastrecvstatus-lastrecvstatus"><code>setLastRecvStatus(CustomerLogReceiverLastRecvStatus lastRecvStatus)</code></h5>
+<p>�������һ�εĽ���״̬���ݡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_107">����ֵ</h6>
+<p>��������Ϊ void</p>
+<h6 id="_108">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lastRecvStatus</td>
+<td>CustomerLogReceiverLastRecvStatus</td>
+<td>���һ�εĽ���״̬����</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_109">ע������</h6>
+<p>��</p>
+<h6 id="_110">ʾ������</h6>
+<pre><code>
+initArg.setLastRecvStatus(lastRecvStatus);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h3 id="icustomerlogreceiver"><code>ICustomerLogReceiver</code>�ӿ�</h3>
+<p>���ڽ��� CustomerLog �Ľӿڣ���ͨ�� AbstractSlamwarePlatform ����������֧�ָýӿڵ�ʵ����</p>
+<h4 id="_111">����</h4>
+<h5 id="isinitialized"><code>isInitialized()</code></h5>
+<p>�Ƿ��Ѿ���ʼ����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_112">����ֵ</h6>
+<p>��������Ϊ boolean��true��ʾ�Ѿ���ʼ���ɹ��ˡ�</p>
+<h6 id="_113">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_114">ע������</h6>
+<p>��</p>
+<h6 id="_115">ʾ������</h6>
+<pre><code>
+boolean isInitialized = customerLogReceiver.isInitialized();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_116">����</h4>
+<h5 id="getlastrecvstatus_1"><code>getLastRecvStatus()</code></h5>
+<p>��ȡ���һ�εĽ���״̬��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_117">����ֵ</h6>
+<p>��������Ϊ CustomerLogReceiverLastRecvStatus</p>
+<h6 id="_118">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_119">ע������</h6>
+<p>��</p>
+<h6 id="_120">ʾ������</h6>
+<pre><code>
+CustomerLogReceiverLastRecvStatus lastRecvStatus = customerLogReceiver.getLastRecvStatus();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_121">����</h4>
+<h5 id="initcustomerlogreceiverinitarg-initarg"><code>init(CustomerLogReceiverInitArg initArg)</code></h5>
+<p>���Գ�ʼ����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_122">����ֵ</h6>
+<p>��������Ϊ ResultCode</p>
+<h6 id="_123">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>initArg</td>
+<td>CustomerLogReceiverInitArg</td>
+<td>��ʼ����������</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_124">ע������</h6>
+<p>һ������ֻ�ܱ���ʼ��һ�Ρ�
+Ĭ������� initArg ���Դ� null����ʾʹ��Ĭ�ϲ��������豸���ִ�ĵ�һ��Log��ʼ���ա�
+���Ҫ���Դ��ϴζϿ��ĵط���ʼ��������Log�����Բο� recvLogs() �ӿڵ�ʾ�����롣 </p>
+<h6 id="_125">ʾ������</h6>
+<pre><code>
+CustomerLogReceiverInitArg initArg = null; // null means use the default arguments on the robot.
+ResultCode resCode = customerLogReceiver.init(initArg);
+if (ResultCode.Ok == resCode)
+    ; // succeed to initialize
+else
+    ; // failed
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_126">����</h4>
+<h5 id="queryserverstatus"><code>queryServerStatus()</code></h5>
+<p>��ȡ�豸��CustomerLog�����״̬���ݡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_127">����ֵ</h6>
+<p>��������Ϊ StdPair&lt;ResultCode, ServerStatus&gt;</p>
+<h6 id="_128">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_129">ע������</h6>
+<p>�ޡ�</p>
+<h6 id="_130">ʾ������</h6>
+<pre><code>
+StdPair&lt;ResultCode, ServerStatus&gt; tPairStatus = customerLogReceiver.queryServerStatus();
+if (ResultCode.Ok == tPairStatus.getFirst())
+    ; // succeed to get the server status
+else
+    ; // failed
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_131">����</h4>
+<h5 id="recvlogsint-maxcnttoread"><code>recvLogs(int maxCntToRead)</code></h5>
+<p>����Log���ݡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_132">����ֵ</h6>
+<p>��������Ϊ StdPair&lt;ResultCode, ReadResult&gt;</p>
+<h6 id="_133">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>maxCntToRead</td>
+<td>int</td>
+<td>����ȡLog������</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_134">ע������</h6>
+<p>��� maxCntToRead С�ڵ���0��������ȡ�豸���趨��Ĭ��������Log��
+����ע������ɲο�ʾ�������е�ע�͡�</p>
+<h6 id="_135">ʾ������</h6>
+<pre><code>
+
+{
+
+    private void testCustomerLogReceiver_() {
+        try {
+            // connect to the robot.
+            String ip = "10.0.2.2";
+            int port = 1445;
+            Log.i("MyCorePlatform", "start to connect.");
+            com.slamtec.slamware.AbstractSlamwarePlatform corePltfm = com.slamtec.slamware.discovery.DeviceManager.connect(ip, port);
+            if (null == corePltfm)
+            {
+                Log.e("MyCorePlatform", "Failed to connect.");
+                return;
+            }
+            Log.i("MyCorePlatform", "Connected");
+
+            // Create Customer Log Receiver for receiving logs;
+            // If the connection is lost, the old log receiver will not work, a new one should be created.
+            com.slamtec.slamware.log.customer.ICustomerLogReceiver logReceiver = corePltfm.createCustomerLogReceiver();
+            if (null == logReceiver)
+            {
+                Log.e("MyLogReceiver", "Failed to create.");
+                return;
+            }
+            Log.i("MyLogReceiver", "Created");
+
+            com.slamtec.slamware.log.customer.CustomerLogReceiverInitArg initArg = null;
+            // if you want to resume the last receive status, load the saved status data like the following codes:
+            /*
+            {
+                initArg = new com.slamtec.slamware.log.customer.CustomerLogReceiverInitArg();
+                initArg.setLastRecvStatus(lastRecvStatus); // lastRecvStatus is the last receive status data you saved before
+            }
+            */
+            com.slamtec.slamware.log.customer.ResultCode resCode = logReceiver.init(initArg);
+            if (com.slamtec.slamware.log.customer.ResultCode.Ok != resCode)
+            {
+                Log.e("MyLogReceiver", "Failed to init, resCode: " + resCode.name());
+                return;
+            }
+
+            boolean isWorking = true;
+            while (isWorking)
+            {
+                // some other operations of your application
+
+                int maxCntToRead = 0; // set to zero to use the default value of the robot.
+                com.slamtec.slamware.utils.StdPair<com.slamtec.slamware.log.customer.ResultCode, com.slamtec.slamware.log.customer.ReadResult> pairRes
+                        = logReceiver.recvLogs(maxCntToRead);
+                if (com.slamtec.slamware.log.customer.ResultCode.Ok == pairRes.getFirst())
+                {
+                    showMyLogsResult_(pairRes.getSecond());
+                }
+                else
+                {
+                    Log.e("MyLogs", ("ResultCode: " + pairRes.getFirst().name()));
+                }
+
+                // some other operations of your application
+                Thread.sleep(100);
+            }
+
+            // you may save it for the next time to continue to receive logs if you want.
+            /*
+            {
+                com.slamtec.slamware.log.customer.CustomerLogReceiverLastRecvStatus lastRecvStatus = logReceiver.getLastRecvStatus();
+                // now you can save lastRecvStatus somewhere for the next time
+            }
+            */
+        }
+        catch (Exception e) {
+            Log.e("MyException", e.toString());
+        }
+    }
+
+    private void showMyLogsResult_(com.slamtec.slamware.log.customer.ReadResult tRes) {
+
+        java.util.ArrayList<com.slamtec.slamware.log.LogData> logsList = tRes.getLogs();
+        int iLogsCnt = (null != logsList ? logsList.size() : 0);
+        Log.i("MyLogs", ("LogsCnt: " + iLogsCnt));
+        if (iLogsCnt < 1)
+            return;
+
+        for (int i = 0; i < iLogsCnt; ++i)
+        {
+            Log.i("MyLogs", ("logs[" + i + "]"));
+            com.slamtec.slamware.log.LogData logDat = logsList.get(i);
+            if (null == logDat)
+            {
+                // it should not be null here, there may be some problems.
+                Log.e("MyLogs", "null log data.");
+                continue;
+            }
+
+            boolean bIsJsonLog = logDat.getIsJsonLog();
+            if (bIsJsonLog)
+            {
+                // if it is json Log, you can parse the string of log to a JSON object.
+                // ALL customer logs are json log.
+            }
+
+            String strMsg = ("LogSource: " + logDat.getLogSource() + "\n");
+            strMsg += ("LogLevel: " + logDat.getLogLevel().name() + "\n");
+            strMsg += ("IsJsonLog: " + bIsJsonLog + "\n");
+            strMsg += ("StringOfLog: " + logDat.getStringOfLog() + "\n");
+            Log.i("MyLogs", strMsg);
+        }
+    }
+
+}
+
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_136">����</h4>
+<h5 id="setnextreadstartseqnumlong-startseqnum"><code>setNextReadStartSeqNum(long startSeqNum)</code></h5>
+<p>������һ�ο�ʼ���յ����кš�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_137">����ֵ</h6>
+<p>��������Ϊ void</p>
+<h6 id="_138">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>startSeqNum</td>
+<td>long</td>
+<td>��һ�ο�ʼ���յ����к�</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_139">ע������</h6>
+<p>�ޡ�</p>
+<h6 id="_140">ʾ������</h6>
+<pre><code>
+customerLogReceiver.setNextReadStartSeqNum(123);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h4 id="_141">����</h4>
+<h5 id="resetnextreadstartseqnum"><code>resetNextReadStartSeqNum()</code></h5>
+<p>ȡ��������һ�ο�ʼ���յ����кš�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_142">����ֵ</h6>
+<p>��������Ϊ void</p>
+<h6 id="_143">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_144">ע������</h6>
+<p>�ޡ�</p>
+<h6 id="_145">ʾ������</h6>
+<pre><code>
+customerLogReceiver.resetNextReadStartSeqNum();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../log/" class="btn btn-neutral float-left" title="Slamware-log"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../log/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

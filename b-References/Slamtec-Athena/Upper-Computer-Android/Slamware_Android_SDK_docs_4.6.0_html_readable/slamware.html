@@ -1,0 +1,5408 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Slamware - My Docs</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Slamware";
+        var mkdocs_page_input_path = "slamware.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> My Docs
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../action/">Slamware-action</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../discovery/">Slamware-discovery</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../exceptions/">Slamware-exception</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../FirmwareUpdate/">Slamware-firmware-update</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../geometry/">Slamware-geometry</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Slamware</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#abstractslamwareplatform">AbstractSlamwarePlatform��</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_1">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#abstractslamwareplatform_1">AbstractSlamwarePlatform()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#addwallline-wall">addWall(Line wall)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#addwallsjavautillistline-walls">addWalls(java.util.List&lt;Line&gt; walls)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#clearmap">clearMap()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#clearwallbyidint-id">clearWallById(int id)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#clearwalls">clearWalls()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#configurenetworkint-mode-javautilhashmapjavalangstringjavalangstring-options">configureNetwork(int mode, java.util.HashMap&lt;java.lang.String,java.lang.String&gt; options)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#disconnect">disconnect()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getavailablemaps">getAvailableMaps()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getbatteryischarging">getBatteryIsCharging()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#int-getbatterypercentage">int getBatteryPercentage()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getcurrentaction">getCurrentAction()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-getdcisconnected">boolean getDCIsConnected()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getdeviceid">String getDeviceId()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#firmwareupdateinfo-getfirmwareupdateinfo">FirmwareUpdateInfo getFirmwareUpdateInfo()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#firmwareupdateprogress-getfirmwareupdateprogress">FirmwareUpdateProgress getFirmwareUpdateProgress()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-gethardwareversion">String getHardwareVersion()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#rectf-getknownareamaptype-type">RectF getKnownArea(MapType type)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getknownareamaptype-type-mapkind-kind">getKnownArea(MapType type, MapKind kind)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#laserscan-getlaserscan">LaserScan getLaserScan()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#int-getlocalizationquality">int getLocalizationQuality()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#location-getlocation">Location getLocation()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#int-getmanufacturerid">int getManufacturerId()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getmanufacturername">String getManuFacturerName()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#map-getmapmaptype-type-androidgraphicsrectf-area">Map getMap(MapType type, android.graphics.RectF area)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#map-getmapmaptype-type-mapkind-kind-androidgraphicsrectf-area">Map getMap(MapType type, MapKind kind, android.graphics.RectF area)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-getmaplocalization">boolean getMapLocalization()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#int-getmaplocalizationquality">int getMapLocalizationQuality()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-getmapupdate">boolean getMapUpdate()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-getmaploopclosure">boolean getMapLoopClosure()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#void-setmaploopclosureboolean-v">void setMapLoopClosure(boolean v)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#int-getmodelid">int getModelId()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getmodelname">String getModelName()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getnetworkstatus">String getNetworkStatus()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pose-getpose">Pose getPose()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#healthinfo-getrobothealth">HealthInfo getRobotHealth()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#void-clearrobothealthint-errorcode">void clearRobotHealth(int errorCode)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getsdkversion">String getSDKVersion()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getslamwareversion">String getSlamwareVersion()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getsoftwareversion">String getSoftwareVersion()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getsystemparameterjavalangstring-param">String getSystemParameter(java.lang.String param)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-updatebinaryconfigjavalangstring-jsnstrofbincfg">boolean updateBinaryConfig(java.lang.String jsnstrOfBinCfg)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#sendandrecvuserdefinedcbusmsgresult-sendandrecvuserdefinedcbusmessagebyte-payload">SendAndRecvUserDefinedCBusMsgResult sendAndRecvUserDefinedCBUSMessage(byte[] payload)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#vectorline-getwalls">Vector&lt;Line&gt; getWalls()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-gohome">IMoveAction goHome()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-gohomegohomeflag-flag">IMoveAction goHome(GoHomeFlag flag)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-gohomegohomeoption-option">IMoveAction goHome(GoHomeOption option)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#movebymovedirectionactionmdmovedirection-direction">moveBy([MoveDirection](action.md#movedirection) direction)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-movebyfloat-theta-moveoption-option">IMoveAction moveBy(float theta, MoveOption option)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imvoeaction-movetojavautillistlocation-locations">IMvoeAction moveTo(java.util.List&lt;Location&gt; locations)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imvoeaction-movetojavautillistlocation-locations-boolean-appending">IMvoeAction moveTo(java.util.List&lt;Location&gt; locations, boolean appending)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imvoeaction-movetojavautillistlocation-locations-boolean-appending-boolean-ismilestone">IMvoeAction moveTo(java.util.List&lt;Location&gt; locations, boolean appending, boolean isMilestone)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imvoeaction-movetolocationrobotmdlocation-location">IMvoeAction moveTo([Location](robot.md#location) location)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imvoeaction-movetolocation-location-boolean-appending">IMvoeAction moveTo(Location location, boolean appending)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imvoeaction-movetolocation-location-boolean-appending-boolean-ismilestone">IMvoeAction moveTo(Location location, boolean appending, boolean isMilestone)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#restartmodule">restartModule()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#restartmodulerestartmoderobotmdrestartmode-mode">restartModule([RestartMode](robot.md#restartmode) mode)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-rotaterotationrobotmdrotation-rotation">IMoveAction rotate([Rotation](robot.md#rotation) rotation)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-rotatetorotationrobotmdrotation-orientation">IMoveAction rotateTo([Rotation](robot.md#rotation) orientation)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#path-searchpathlocationrobotmdlocation-location">Path searchPath([Location](robot.md#location) location)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#path-searchpathlocationrobotmdlocation-location-int-timeoutinms">Path searchPath([Location](robot.md#location) location, int timeoutInMS)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmapmap-map">setMap(Map map)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmapmap-map-maptype-type">setMap(Map map, MapType type)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmapmap-map-maptype-type-mapkind-kind">setMap(Map map, MapType type, MapKind kind)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmaplocalizationboolean-v">setMapLocalization(boolean v)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setmapupdateboolean-v">setMapUpdate(boolean v)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setposepose-pose">setPose(Pose pose)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setsystemparameterjavalangstring-param-javalangstring-value">setSystemParameter(java.lang.String param, java.lang.String value)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-startfirmwareupdate">boolean startFirmwareUpdate()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#isweepmoveaction-startsweep">ISweepMoveAction startSweep()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#isweepmoveaction-sweepspotlocation-location">ISweepMoveAction sweepSpot(Location location)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-addlineartifactusage-usage-line-line">boolean addLine(ArtifactUsage usage, Line line)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-addlinesartifactusage-usage-listline-lines">boolean addLines(ArtifactUsage usage, List&lt;Line&gt; lines)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-removelinebyidartifactusage-usage-int-id">boolean removeLineById(ArtifactUsage usage, int id)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-clearlinesartifactusage-usage">boolean clearLines(ArtifactUsage usage)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-movelinenonnull-artifactusage-usage-nonnull-line-line">boolean moveLine(@NonNull ArtifactUsage usage, @NonNull Line line)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-movelinesnonnull-artifactusage-usage-nonnull-listline-lines">boolean moveLines(@NonNull ArtifactUsage usage, @NonNull List&lt;Line&gt; lines)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#powerstatus-getpowerstatus">PowerStatus getPowerStatus()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#void-wakeup">void wakeUp()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-recoverlocalizationrectf-arearecoverlocalizationoptions-options">IMoveAction recoverLocalization(RectF area,RecoverLocalizationOptions options)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-recoverlocalizationbydock">IMoveAction recoverLocalizationByDock()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pointpdf-getauxlocation">PointPDF getAuxLocation()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#compositemap-getcompositemap">CompositeMap getCompositeMap()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#void-setcompositemapcompositemap-map-pose-pose">void setCompositeMap(CompositeMap map, Pose pose)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pose-gethomepose">Pose getHomePose()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-sethomeposepose-homepose">boolean setHomePose(Pose homePose)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#listimpactsensorinfo-getsensors">List&lt;ImpactSensorInfo&gt; getSensors()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#hashmapinteger-impactsensorvalue-getsensorvalues">HashMap&lt;Integer, ImpactSensorValue&gt; getSensorValues()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#impactsensorvalue-getsensorvalueinteger-var1">ImpactSensorValue getSensorValue(Integer var1)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#listimpactsensorvalue-getsensorvalueslistinteger-ids">List&lt;ImpactSensorValue&gt; getSensorValues(List&lt;Integer&gt; ids)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-movetolocation-location-moveoption-option-float-yaw">IMoveAction moveTo(Location location, MoveOption option, float yaw)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-movetojavautillist-locations-moveoption-option-float-yaw">IMoveAction moveTo(java.util.List locations, MoveOption option, float yaw)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-movetolocation-location-moveoption-option">IMoveAction moveTo(Location location, MoveOption option)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#imoveaction-movetojavautillist-locations-moveoption-option">IMoveAction moveTo(java.util.List locations, MoveOption option)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#publishdepthcamframeint-sensoriddepthcameraframe-depthcameraframe">publishDepthCamFrame(int sensorId,DepthCameraFrame depthCameraFrame)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#listoperationauditlog-getoperationauditlogs">List&lt;OperationAuditLog&gt; getOperationAuditLogs()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#double-getodometry">double getOdometry()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-shutdownslamcoreslamcoreshutdownparam-param">boolean shutdownSlamcore(SlamcoreShutdownParam param)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#icustomerlogreceiver-createcustomerlogreceiver">ICustomerLogReceiver createCustomerLogReceiver()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#listdisabledsensormaskdata-getdisabledsensormaskdata">List&lt;DisabledSensorMaskData&gt; getDisabledSensorMaskData()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-setsensormasklistsensormaskctrldata-sensordata">boolean setSensorMask(List&lt;SensorMaskCtrlData&gt; sensorData)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#void-hibernate">void hibernate()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#isystemeventprovider-createsystemeventprovider30">ISystemEventProvider createSystemEventProvider(30)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-setpoishashmapstringcompositepose-posemap">boolean setPOIs(HashMap&lt;String,CompositePose&gt; poseMap)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#hashmapstring-compositepose-getpois">HashMap&lt;String, CompositePose&gt; getPOIs()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-addpoicompositepose-var1">boolean addPOI(CompositePose var1)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-editpoicompositepose-pose">boolean editPOI(CompositePose pose)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#compositepose-addpoioncurrentposestring-var1-mapmetadata-var2">CompositePose addPOIOnCurrentPose(String var1, MapMetaData var2)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#stdpairstring-compositepose-querypoistring-var1">StdPair&lt;String, CompositePose&gt; queryPOI(String var1)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#stdpairstring-compositepose-queryclosestpoinonnull-pose-pose">StdPair&lt;String, CompositePose&gt; queryClosestPOI(@NonNull Pose pose)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-erasepoistring-var1">boolean erasePOI(String var1)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-clearpois">boolean clearPOIs()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-setcubeconfigstring-path">boolean setCubeConfig(String path)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#listrectanglearea-getrectangleareasartifactusage-usage">List&lt;RectangleArea&gt; getRectangleAreas(ArtifactUsage usage)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-addrectanglearearectanglearea-area">boolean addRectangleArea(RectangleArea area)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-addrectangleareasartifactusage-usage-listrectanglearea-areas">boolean addRectangleAreas(ArtifactUsage usage, List&lt;RectangleArea&gt; areas)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-editrectanglearearectanglearea-area">boolean editRectangleArea(RectangleArea area)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-removerectangleareabyidsartifactusage-usage-int-ids">boolean removeRectangleAreaByIds(ArtifactUsage usage, int[] ids)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-clearrectangleareasartifactusage-usage">boolean clearRectangleAreas(ArtifactUsage usage)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-resetlocalizationstatus">boolean resetLocalizationStatus()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#listcompositepose-gethomedocks">List&lt;CompositePose&gt; getHomeDocks()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-sethomedocksnonnull-listcompositepose-poses">boolean setHomeDocks(@NonNull List&lt;CompositePose&gt; poses)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#compositepose-registerhomedocknonnull-mapmetadata-metadata">CompositePose registerHomeDock(@NonNull MapMetaData metadata)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#compositepose-addhomedocknonnull-compositepose-pose">CompositePose addHomeDock(@NonNull CompositePose pose)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-edithomedockcompositepose-pose">boolean editHomeDock(CompositePose pose)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-erasehomedocknonnull-string-id">boolean eraseHomeDock(@NonNull String id)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-clearhomedocks">boolean clearHomeDocks()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#liststring-getsupportedmotionstrategies">List&lt;String&gt; getSupportedMotionStrategies()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#boolean-setmotionstrategynonnull-string-strategy">boolean setMotionStrategy(@NonNull String strategy)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#string-getcurrentmotionstrategy">String getCurrentMotionStrategy()</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../message/">Slamware-message</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../robot/">Slamware-robot</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../sdp/">Slamware-sdp</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../utils/">Slamware-utils</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log/">Slamware-log</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log-customer/">Slamware-log-customer</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">My Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Slamware</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="comslamtecslamware">com.slamtec.slamware��</h2>
+<h3 id="abstractslamwareplatform"><code>AbstractSlamwarePlatform</code>��</h3>
+<h4 id="_1">����</h4>
+<h5 id="abstractslamwareplatform_1"><code>AbstractSlamwarePlatform()</code></h5>
+<p>AbstractSlamwarePlatform��һ�������࣬����ֱ�ӹ������Ķ�����ʹ��DeviceManager�����豸����ȡAbstractSlamwarePlatform�Ķ���</p>
+<h5 id="addwallline-wall"><code>addWall(Line wall)</code></h5>
+<p>�������ǽ��SLAMWARE��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_2">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_3">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>wall</td>
+<td><a href="../geometry/#line">Line</a></td>
+<td>��Ҫ��ӵ�����ǽ</td>
+<td>line�еĵ���float����</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_4">ע������</h6>
+<p>��Ҫ��ӵ�����ǽ����ǽ��line�����겻Ҫ���״��������֮�⡣</p>
+<h6 id="_5">ʾ������</h6>
+<pre><code>
+ PointF startP = new PointF(15.618f,15.315f);
+ PointF endP = new PointF(20.718f,20.515f);
+ Line line = new Line(startP,endP);
+ mPlatform.addWall(line);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="addwallsjavautillistline-walls"><code>addWalls(java.util.List&lt;Line&gt; walls)</code></h5>
+<p>��Ӷ�������ǽ��SLAMWARE��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_6">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_7">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>walls</td>
+<td>java.util.List&lt;<a href="../geometry/#line">Line</a>&gt;</td>
+<td>��Ҫ��ӵĶ�������ǽ</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_8">ע������</h6>
+<p>��Ҫ��ӵ�����ǽ����ǽ��line�����겻Ҫ���״��������֮�⡣</p>
+<h6 id="_9">ʾ������</h6>
+<pre><code>
+PointF startP1 = new PointF(15.618f,15.315f);
+PointF endP1 = new PointF(20.718f,20.515f);
+Line line1 = new Line(startP1,endP1);
+PointF startP2 = new PointF(10.618f,12.315f);
+PointF endP2 = new PointF(11.718f,20.515f);
+Line line2 = new Line(startP2,endP2);
+ArrayList lines = new ArrayList();
+lines.add(line1);
+lines.add(line2);
+mPlatform.addWall(lines);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="clearmap"><code>clearMap()</code></h5>
+<p>�����ǰ��ͼ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_10">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_11">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_12">ע������</h6>
+<p>�����ض�λʱ�޷������ͼ��</p>
+<h6 id="_13">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.clearMap();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="clearwallbyidint-id"><code>clearWallById(int id)</code></h5>
+<p>�Ƴ�ָ��������ǽ������������(id �����趨��id����ͨ��AbstractSlamwarePlatform.getLines(ArtifactUsage var1)���ص�line id��)</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_14">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_15">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>int</td>
+<td>��Ҫ�Ƴ�����ǽ������������id</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_16">ע������</h6>
+<p>id �����趨��id����ͨ��AbstractSlamwarePlatform.getLines(ArtifactUsage var1)���ص�line id��</p>
+<h6 id="_17">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+List<Line> list = platform.getLines(ArtifactUsage.ArtifactUsageVirutalWall);
+for(int i=0;i &lt list.size();i++){
+   platform.clearWallById(list.get(i).getSegmentId());
+}
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="clearwalls"><code>clearWalls()</code></h5>
+<p>��Slamware�����������ǽ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_18">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_19">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_20">ע������</h6>
+<p>�ޡ�</p>
+<h6 id="_21">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.clearWalls();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="configurenetworkint-mode-javautilhashmapjavalangstringjavalangstring-options"><code>configureNetwork(int mode, java.util.HashMap&lt;java.lang.String,java.lang.String&gt; options)</code></h5>
+<p>����Slamware Core�����繤��ģʽ�����ݷ������Ͳ���ֵboolean��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_22">����ֵ</h6>
+<p>����ֵΪ������Ϣ�б��</p>
+<h6 id="_23">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mode</td>
+<td>int</td>
+<td>����ģʽ</td>
+<td>-</td>
+</tr>
+<tr>
+<td>options</td>
+<td>java.util.HashMap<java.lang.String,java.lang.String></td>
+<td>ѡ��</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_24">ע������</h6>
+<p>��ǰ֧�ֵĹ���ģʽ��Ҫ�У�</p>
+<ul>
+<li>APģʽ��Slamware Core������Ϊһ��WiFi�ȵ㣬���û��豸ͨ��Wifi���������������Ӹ�WiFi�ȵ�ʱ����ͨ��DHCP���һ��IP��ַ������ͨ��192.168.11.1�������豸�����ģʽҲ��Slamware Core������Ԥ��ģʽ��</li>
+<li>Stationģʽ��Slamware Core������Ϊһ��WiFi�豸�����ӵ�������WiFi�ȵ��ϡ�ͬʱSlamware Core���Զ���Ϊ�������ţ�ΪHigh Speed Bus�ϵ��豸����IP��ַ���ṩ�������ʷ���</li>
+<li>Disableģʽ��Slamware Core�ر���������߷��ʹ��ܣ�ֻ��ͨ������������ʣ���IP��ַ�����غ�DNS����������API���õĲ���������</li>
+</ul>
+<h6 id="_25">ʾ������</h6>
+<ul>
+<li>��Slamware Core���ó�APģʽ</li>
+</ul>
+<pre><code>Platform.configureNetwork(NetworkMode.NetworkModeAp, new HashMap<String, String>());
+</code></pre>
+
+<ul>
+<li>��Slamware Core��������ΪSlamtec��AP</li>
+</ul>
+<pre><code>HashMap<String, String> options = newHashMap<String, String>();
+options.put(��ssid��, ��Slamtec��); 
+options.put(��password��, ��Password��); 
+platform.configureNetwork(NetworkMode.NetworkModeStation,options);
+</code></pre>
+
+<ul>
+<li>��Slamware Core��IP��ַ����Ϊ192.168.12.13��Ĭ������Ϊ192.168.12.1��DNS������Ϊ��114.114.114.114��</li>
+</ul>
+<pre><code>HashMap<String, String> options = newHashMap<String, String>();
+options.put(��ip��, ��192.168.12.13��);
+options.put(��mask��: ��255.255.255.0��);
+options.put(��gateway��: ��192.168.12.1��);
+options.put(��dns��: ��114.114.114.114��);
+platform.configureNetwork(NetworkMode.NetworkModeDisabled, options);
+</code></pre>
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="disconnect"><code>disconnect()</code></h5>
+<p>�Ͽ���ƽ̨֮������ӡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_26">����ֵ</h6>
+<p>�ޡ�</p>
+<h6 id="_27">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_28">ע������</h6>
+<p>�Ͽ����Ӻ����������߳�ʹ�ø�AbstractSlamwarePlatform������ܻ����쳣��</p>
+<h6 id="_29">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.disconnect();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="getavailablemaps"><code>getAvailableMaps()</code></h5>
+<p>��ȡSLAMWARE�п��õĵ�ͼ���͡�����ֵΪ��ͼ�����б��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_30">����ֵ</h6>
+<p>����ֵΪList &lt; MapType&gt;��</p>
+<h6 id="_31">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_32">ע������</h6>
+<p>�ޡ�</p>
+<h6 id="_33">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+List<MapType> mapTypes = mPlatform.getAvailableMaps();
+MapType mapType = mapTypes.get(0);
+RectF knownArea = mPlatform.getKnownArea(mapType);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="getbatteryischarging"><code>getBatteryIsCharging()</code></h5>
+<p>��ȡ����Ƿ��ڳ�硣����ֵΪ����ֵ����������Ƿ��ڳ�硣</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_34">����ֵ</h6>
+<p>����ֵΪ����ֵ,true �������ڳ��,false ������ڳ�硣</p>
+<h6 id="_35">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_36">ע������</h6>
+<p>��ʱ�ޡ�</p>
+<h6 id="_37">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+boolean flag = mPlatform.getBatteryIsCharging();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="int-getbatterypercentage"><code>int getBatteryPercentage()</code></h5>
+<p>��ȡ���ʣ������ٷֱȣ���0~100��������ֵΪ��ص����ٷֱȡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_38">����ֵ</h6>
+<p>����ֵΪ��ص����ٷֱȡ�</p>
+<h6 id="_39">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_40">ע������</h6>
+<p>�ޡ�</p>
+<h6 id="_41">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+int percentage = getBatteryPercentage();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="getcurrentaction"><code>getCurrentAction()</code></h5>
+<p>��ȡ�����˵�ǰ�Ķ���������ֵΪ�����˵�ǰ���ڽ��е��ƶ�������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_42">����ֵ</h6>
+<p>����ֵΪ��ʾ�����˵�ǰ���ڽ��еĶ����Ķ���</p>
+<h6 id="_43">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_44">ע������</h6>
+<p>��ȡ���Ǵ�ʱ�˿̵�acion,������һ��action��״̬�ͻ�仯��</p>
+<h6 id="_45">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction action = mPlatform.getCurrentAction();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="boolean-getdcisconnected"><code>boolean getDCIsConnected()</code></h5>
+<p>��ȡ�������Ƿ����ӵ���Դ����������ֵΪ����ֵ�������������Ƿ����ӵ��������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_46">����ֵ</h6>
+<p>����ֵΪ����ֵ��true �����Ѿ�����, false ����û������</p>
+<h6 id="_47">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_48">ע������</h6>
+<p>�ޡ�</p>
+<h6 id="_49">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+boolean flag = mPlatform.getDCIsConnected();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="string-getdeviceid"><code>String getDeviceId()</code></h5>
+<p>��ȡ�豸��UUID������ֵ��������Ϊstring��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_50">����ֵ</h6>
+<p>����ֵΪ���豸��UUID�ַ�����ֵ��</p>
+<h6 id="_51">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_52">ע������</h6>
+<p>��ʱ�ޡ�</p>
+<h6 id="_53">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String uuid = mPlatform.getDeviceId();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="firmwareupdateinfo-getfirmwareupdateinfo"><code>FirmwareUpdateInfo getFirmwareUpdateInfo()</code></h5>
+<p>��ο�FirmwareUpdateInfo�ࡣ</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_54">����ֵ</h6>
+<p>����ֵΪFirmwareUpdateInfo  �̼���������</p>
+<h6 id="_55">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_56">ע������</h6>
+<p>�����������벻Ҫ�Ͽ��豸������</p>
+<h6 id="_57">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+FirmwareUpdateInfo info =  mPlatform.getFirmwareUpdateInfo();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="firmwareupdateprogress-getfirmwareupdateprogress"><code>FirmwareUpdateProgress getFirmwareUpdateProgress()</code></h5>
+<p>��ο�FirmwareUpdateProgress�ࡣ</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_58">����ֵ</h6>
+<p>����ֵΪFirmwareUpdateProgress �̼��������̶���</p>
+<h6 id="_59">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_60">ע������</h6>
+<p>�̼����������в��ܶϿ��������豸�Ͱ�׿�豸�������̼�����ʧ��</p>
+<h6 id="_61">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+FirmwareUpdateProgress progress =  mPlatform.getFirmwareUpdateProgress();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="string-gethardwareversion"><code>String getHardwareVersion()</code></h5>
+<p>��ȡ�豸Ӳ���汾������ֵ��������Ϊstring��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_62">����ֵ</h6>
+<p>����ֵΪ�豸Ӳ���汾���ַ�����</p>
+<h6 id="_63">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_64">ע������</h6>
+<p>ע������˺Ͱ�׿�豸Ҫ�����ϣ������޷���ȡ��</p>
+<h6 id="_65">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String  versio  =  mPlatform.getHardwareVersion();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="rectf-getknownareamaptype-type"><code>RectF getKnownArea(MapType type)</code></h5>
+<p>��ȡ��̽�����ĵ�ͼ���򡣷���ֵΪ��̽���ĵ�ͼ����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_66">����ֵ</h6>
+<p>����ֵΪ̽����������Ĵ�С,�þ����ʾ��</p>
+<h6 id="_67">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>type</td>
+<td><a href="../robot/#maptype">MapType</a></td>
+<td>��ȡ��ͼ������</td>
+<td>��������BITMAP_8BIT ��PointMap</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_68">ע������</h6>
+<p>ע������˺Ͱ�׿�豸Ҫ�����ϣ������޷���ȡ��</p>
+<h6 id="_69">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+List<MapType> mapTypes = mPlatform.getAvailableMaps();
+MapType mapType = mapTypes.get(0);
+RectF knownArea = mPlatform.getKnownArea(mapType);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="getknownareamaptype-type-mapkind-kind"><code>getKnownArea(MapType type, MapKind kind)</code></h5>
+<p>��ȡ��̽�����ĵ�ͼ���򡣷���ֵΪ��̽���ĵ�ͼ����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_70">����ֵ</h6>
+<p>����ֵΪ��ʾ��̽���ĵ�ͼ�����RectF����</p>
+<h6 id="_71">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>type</td>
+<td><a href="../robot/#maptype">MapType</a></td>
+<td>��ͼ��������</td>
+<td>��������BITMAP_8BIT ��PointMap</td>
+</tr>
+<tr>
+<td>kind</td>
+<td><a href="../robot/#mapkind">MapKind</a></td>
+<td>��ͼ����</td>
+<td>��ͼ������EXPLORE_MAP,SWEEP_MAP,UWB_MAP</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_72">ע������</h6>
+<p>SWEEP_MAP ֻ������ɨ�ػ��İ汾��</p>
+<h6 id="_73">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+RectF rectF = platform.getKnownArea(MapType.BITMAP_8BIT, MapKind.EXPLORE_MAP);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="laserscan-getlaserscan"><code>LaserScan getLaserScan()</code></h5>
+<p>��ȡ���µ�LASERɨ�衣����ֵ���µ�LASERɨ�衣</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_74">����ֵ</h6>
+<p>��ǰ���µ�<a href="../robot/#laserscan">LaserScan</a>����</p>
+<h6 id="_75">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_76">ע������</h6>
+<p>�ޡ�</p>
+<h6 id="_77">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+LaserScan laserScan = mPlatform.getLaserScan();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="int-getlocalizationquality"><code>int getLocalizationQuality()</code></h5>
+<p>��ȡ��λ���Ŷȡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_78">����ֵ</h6>
+<p>��ʾ��λ���Ŷȵ�ֵ��</p>
+<h6 id="_79">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_80">ע������</h6>
+<p>����ע������</p>
+<h6 id="_81">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+int quality = mPlatform.getLocalizationQuality();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="location-getlocation"><code>Location getLocation()</code></h5>
+<p>��ȡ��������������ͼ����ϵͳ�е����ꡣ����ֵΪ������λ����Ϣ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_82">����ֵ</h6>
+<p>����ֵΪ<a href="../robot/#location">Location</a> ��</p>
+<h6 id="_83">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_84">ע������</h6>
+<p>��ȡ��ǰ�����˵�λ��ʱ��,ȷ�������˲�Ҫ�ֶ�ȥ���Լ���Ҫ��������ˡ�</p>
+<h6 id="_85">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location = mPlatform.getLocation();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="int-getmanufacturerid"><code>int getManufacturerId()</code></h5>
+<p>��ȡ�豸������id������ֵ��������Ϊint��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_86">����ֵ</h6>
+<p>����ֵΪint ��ʾ�豸�����̵�id��</p>
+<h6 id="_87">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_88">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_89">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+int id = mPlatform.getManufacturerId();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="string-getmanufacturername"><code>String getManuFacturerName()</code></h5>
+<p>��ȡ�豸���������ơ�����ֵ��������Ϊstring��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_90">����ֵ</h6>
+<p>����ֵ���ַ��� ���豸����������</p>
+<h6 id="_91">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_92">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_93">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String name = mPlatform.getManuFacturerName();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="map-getmapmaptype-type-androidgraphicsrectf-area"><code>Map getMap(MapType type, android.graphics.RectF area)</code></h5>
+<p>��SLAMWARE��ȡ̽����ͼ����(EXPLORE_MAP)������ֵΪ�ֲ���ͼ����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_94">����ֵ</h6>
+<p>��ͼ����</p>
+<h6 id="_95">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>type</td>
+<td><a href="../robot/#maptype">MapType</a></td>
+<td>��ͼ��������</td>
+<td>��ͼ������BITMAP_8BIT,PointMap</td>
+</tr>
+<tr>
+<td>area</td>
+<td>android.graphics.RectF</td>
+<td>��ͼ����</td>
+<td>��ȡ����ĳ������</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_96">ע������</h6>
+<p>���ݲ�ͬ��MapType MapKind���ȡ����ͬ�ĵ�ͼͼ��,area һ��Ҫ�ڵ�ͼ�ķ�Χ��,����û�����塣</p>
+<h6 id="_97">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+RectF area = new RectF(1.5f,1.5f,2.5f,2.5f);
+MapType mapType = MapType.BITMAP_8BIT;
+Map map = mPlatform.getMap(mapType, area);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="map-getmapmaptype-type-mapkind-kind-androidgraphicsrectf-area"><code>Map getMap(MapType type, MapKind kind, android.graphics.RectF area)</code></h5>
+<p>��SLAMWARE��ȡ��ͼ���ݡ�����ֵΪ�ֲ���ͼ����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_98">����ֵ</h6>
+<p>��ͼ����</p>
+<h6 id="_99">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>type</td>
+<td><a href="../robot/#maptype">MapType</a></td>
+<td>��ͼ��������</td>
+<td>��ͼ������BITMAP_8BIT,PointMap;</td>
+</tr>
+<tr>
+<td>kind</td>
+<td><a href="../robot/#mapkind">MapKind</a></td>
+<td>��ͼ����</td>
+<td>��ͼ����EXPLORE_MAP,SWEEP_MAP,UWB_MAP;</td>
+</tr>
+<tr>
+<td>area</td>
+<td>android.graphics.RectF</td>
+<td>��ͼ����</td>
+<td>��ȡ����ĳ������</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_100">ע������</h6>
+<p>���ݲ�ͬ��MapType MapKind���ȡ����ͬ�ĵ�ͼͼ��,area һ��Ҫ�ڵ�ͼ�ķ�Χ��,����û�����塣</p>
+<h6 id="_101">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+RectF area = new RectF(1.5f,1.5f,2.5f,2.5f);
+MapType mapType = MapType.BITMAP_8BIT;
+Map map = mPlatform.getMap(mapType, MapKind.EXPLORE_MAP, area);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="boolean-getmaplocalization"><code>boolean getMapLocalization()</code></h5>
+<p>��ȡSLAMWARE�Ƿ��ڽ��ж�λ������ֵΪ����ֵ����SLAMWARE�Ƿ��ڽ��ж�λ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_102">����ֵ</h6>
+<p>����ֵΪboolean true�������ڶ�λ��false����û�ж�λ��</p>
+<h6 id="_103">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_104">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_105">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+boolean isLocalizate = mPlatform.getMapLocalization();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="int-getmaplocalizationquality"><code>int getMapLocalizationQuality()</code></h5>
+<p>��ȡSLAMWARE��ǰ�Ķ�λ������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_106">����ֵ</h6>
+<p>����ֵΪint, ��ΧΪ0-100����ֵԽ���ʾ��λ����Խ�ߡ�</p>
+<h6 id="_107">ʾ������</h6>
+<pre><code>
+AbstractSlawmarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+int quality = platform.getMapLocalizationQuality();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-getmapupdate"><code>boolean getMapUpdate()</code></h5>
+<p>��ȡSLAMWARE�Ƿ���µ�ͼ������ֵΪ����ֵ����SLAMWARE�Ƿ���µ�ͼ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_108">����ֵ</h6>
+<p>����ֵboolean true�������ڸ��µ�ͼ,false����û�С�</p>
+<h6 id="_109">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_110">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_111">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+boolean isUpdate = mPlatform.getMapUpdate();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-getmaploopclosure"><code>boolean getMapLoopClosure()</code></h5>
+<p>��ȡSLAMWARE�Ƿ����˵�ͼ�ջ����ܡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_112">����ֵ</h6>
+<p>����ֵΪboolean����ʾ�Ƿ����ͼ�ջ����ܡ�</p>
+<h6 id="_113">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+boolean isMapLoopClosureEnabled = platform.getMapLoopClosure();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="void-setmaploopclosureboolean-v"><code>void setMapLoopClosure(boolean v)</code></h5>
+<p>����SLAMWARE�Ƿ����ͼ�ջ����ܡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_114">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v</td>
+<td>boolean</td>
+<td>������߹رյ�ͼ�ջ�����</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_115">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+platform.setMapLoopClosure(true);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="int-getmodelid"><code>int getModelId()</code></h5>
+<p>��ȡ�豸�ͺ�id��������������Ϊint��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_116">����ֵ</h6>
+<p>����ֵΪint ���豸�ͺ�id��</p>
+<h6 id="_117">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_118">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_119">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+int id = mPlatform.getModelId();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="string-getmodelname"><code>String getModelName()</code></h5>
+<p>��ȡ�豸�ͺ����ơ�������������Ϊstring��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_120">����ֵ</h6>
+<p>����ֵString Ϊ�豸�ͺ����ơ�</p>
+<h6 id="_121">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_122">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_123">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String modelName  = mPlatform.getModelName();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="string-getnetworkstatus"><code>String getNetworkStatus()</code></h5>
+<p>��ȡ����״����������������Ϊstring��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_124">����ֵ</h6>
+<p>����ֵΪString Ϊ����״����</p>
+<h6 id="_125">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_126">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_127">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String networkStatus  = mPlatform.getNetworkStatus();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="pose-getpose"><code>Pose getPose()</code></h5>
+<p>��ȡ����������������ϵͳ�е���̬������λ����Ϣ�ͽǶ���Ϣ��������ֵΪ�����˵���̬��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_128">����ֵ</h6>
+<p>����ֵΪ <a href="../robot/#pose">Pose</a> �����ǰ�����˵���̬��</p>
+<h6 id="_129">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_130">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӣ��Լ���Ҫ��������ˡ�</p>
+<h6 id="_131">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Pose pose  = mPlatform.getPose();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="healthinfo-getrobothealth"><code>HealthInfo getRobotHealth()</code></h5>
+<p>��ȡ�����˽���״̬����������Ϊ����״����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_132">����ֵ</h6>
+<p>����ֵΪ <a href="../robot/#healthinfo">HealthInfo</a> ��������˽�����Ϣ����</p>
+<h6 id="_133">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_134">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_135">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+HealthInfo healthInfo = mPlatform.getRobotHealth();
+            ArrayList<HealthInfo.BaseError> list = healthInfo.getErrors();
+            for(HealthInfo.BaseError baseError:list){
+                Log.d("healthTag","ErrorMessage=="+baseError.getErrorMessage());
+                Log.d("healthTag","getComponentErrorType=="+baseError.getComponentErrorType());
+                Log.d("healthTag","getErrorCode=="+baseError.getErrorCode());
+                Log.d("healthTag","getErrorLevel=="+baseError.getErrorLevel());
+                Log.d("healthTag","getErrorComponent=="+baseError.getErrorComponent());
+
+            }
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="void-clearrobothealthint-errorcode"><code>void clearRobotHealth(int errorCode)</code></h5>
+<p>���SLAMWARE�Ĵ�����Ϣ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_136">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>errorCode</td>
+<td>int</td>
+<td><a href="../robot/#healthinfobaseerror">HealthInfo.BaseError</a>�еĴ������</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_137">ע������</h6>
+<p>һЩ������Ϣ������豸�������ٱ���ôδ��󾯸棬������һЩ������Ϣ������豸��������档</p>
+<h6 id="_138">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+HealthInfo health = platform.getRobotHealth();
+if (health != null && health.errors.size() > 0) {
+  for (HealthInfo.BaseError error: health.errors) {
+    platform.clearRobotHealth(error.errorCode);
+  }
+}
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="string-getsdkversion"><code>String getSDKVersion()</code></h5>
+<p>��ȡSLAMWARE SDK�汾������ֵΪ����SLAMWARESDK�汾���ַ�����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_139">����ֵ</h6>
+<p>����ֵString Ϊsdk�İ汾��</p>
+<h6 id="_140">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_141">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_142">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String sdkVersion = mPlatform.getSDKVersion();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="string-getslamwareversion"><code>String getSlamwareVersion()</code></h5>
+<p>��ȡSLAMWARE�汾������ֵΪ����SLAMWARE�汾���ַ�����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_143">����ֵ</h6>
+<p>����ֵString Ϊslamware�İ汾��</p>
+<h6 id="_144">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_145">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_146">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String slamwareVersion = mPlatform.getSlamwareVersion();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="string-getsoftwareversion"><code>String getSoftwareVersion()</code></h5>
+<p>��ȡ�豸������汾������ֵ��������Ϊ�ַ�����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_147">����ֵ</h6>
+<p>����ֵString Ϊ�豸����İ汾��</p>
+<h6 id="_148">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_149">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_150">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String softwareVersion = mPlatform.getSoftwareVersion();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="string-getsystemparameterjavalangstring-param"><code>String getSystemParameter(java.lang.String param)</code></h5>
+<p>��ȡϵͳ����������ֵΪ��ǰ������ֵ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_151">����ֵ</h6>
+<p>����ֵString Ϊ������ֵ��</p>
+<h6 id="_152">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>param</td>
+<td>java.lang.String</td>
+<td>��ȡ�Ĳ���</td>
+<td>���ܴ�null</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_153">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_154">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+String param1= "...";
+String paramValue = mPlatform.getSystemParameter(param1);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-updatebinaryconfigjavalangstring-jsnstrofbincfg"><code>boolean updateBinaryConfig(java.lang.String jsnstrOfBinCfg)</code></h5>
+<p>�����豸�ڴ��е�BinaryConfig��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.6.4</p>
+</blockquote>
+<h6 id="_155">����ֵ</h6>
+<p>����ֵ����Ϊboolean����ʾ�Ƿ���³ɹ��ˡ�</p>
+<h6 id="_156">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>jsnstrOfBinCfg</td>
+<td>java.lang.String</td>
+<td>Ҫ���µ�Config���л����JSON�ַ���</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_157">ע������</h6>
+<p>Ŀǰֻ֧�ָ��� base.sensors �����ݣ���ͼ�����������ݻ᷵��ʧ�ܡ�</p>
+<h6 id="_158">ʾ������</h6>
+<pre><code>
+//String strOfJsnCfg = "{ \"xxx\": { \"xxxxx_xxxx\": 0.68 } }";
+String strOfJsnCfg = "{ \"base\": { \"sensors\": [ { \"driver\" : \"messaging\", \"id\" : 12, \"installation_pose\" : { \"pitch\" : 0.0, \"roll\" : 0.0, \"x\" : 0.0, \"y\" : 0.0, \"yaw\" : 0.0, \"z\" : 0.0 }, \"max_distance\" : 2.0, \"min_distance\" : 1.0, \"type\" : \"depth_camera\" } ] } }";
+boolean bRes = corePltfm.updateBinaryConfig(strOfJsnCfg);
+Log.i("updateBinaryConfig(), ", (bRes ? "OK" : "Failed"));
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="sendandrecvuserdefinedcbusmsgresult-sendandrecvuserdefinedcbusmessagebyte-payload"><code>SendAndRecvUserDefinedCBusMsgResult sendAndRecvUserDefinedCBUSMessage(byte[] payload)</code></h5>
+<p>������Ϣ�����շ�����Ϣ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.6.5</p>
+</blockquote>
+<h6 id="_159">����ֵ</h6>
+<p>����ֵ����Ϊ <a href="../robot/#sendandrecvuserdefinedcbusmsgresult">SendAndRecvUserDefinedCBusMsgResult</a> ��</p>
+<h6 id="_160">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>payload</td>
+<td>byte[]</td>
+<td>Ҫ���͵���Ϣ��Payload</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_161">ע������</h6>
+<p>Ҫ��payload�ĳ��ȴ���0��</p>
+<h6 id="_162">ʾ������</h6>
+<pre><code>
+    // prepare message payload to send
+    byte[] payloadToSend = new byte[1];
+    // ...
+    // send and receive
+    com.slamtec.slamware.robot.SendAndRecvUserDefinedCBusMsgResult res = corePltfm.sendAndRecvUserDefinedCBUSMessage(payloadToSend);
+    byte[] recvDat = res.getRecvData();
+    Log.i("sendAndRecvUserDefinedCBUSMessage"
+            , "retCode: " + res.getRetCode()
+            + ", received data size: " + (null != recvDat ? recvDat.length : 0)
+        );
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="vectorline-getwalls"><code>Vector&lt;Line&gt; getWalls()</code></h5>
+<p>��ȡ��ǰ���ڵ�����ǽ������ֵΪ��ǰ���ڵ�����ǽ�б��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_163">����ֵ</h6>
+<p>����ֵVector ��ŵ��ǵ�ǰ���е�����ǽ��</p>
+<h6 id="_164">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_165">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_166">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Vector<Line> lines = mPlatfor.getWalls();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="imoveaction-gohome"><code>IMoveAction goHome()</code></h5>
+<p>ʹ�����˷��س��׮��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_167">����ֵ</h6>
+<p>����ֵ <a href="../action/#imoveaction-iaction">IMoveAction</a> �����ǰ�����˵���Ϊ��</p>
+<h6 id="_168">ע������</h6>
+<p>�÷�����������֧���Զ��س书�ܵĻ����˰汾��
+���setMap()�ӿڡ�</p>
+<h6 id="_169">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction action = mPlarform.goHome(GoHomeFlag.Dock);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="imoveaction-gohomegohomeflag-flag"><code>IMoveAction goHome(GoHomeFlag flag)</code></h5>
+<p>ʹ�����˷��س��׮��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_170">����ֵ</h6>
+<p>����ֵ <a href="../action/#imoveaction-iaction">IMoveAction</a> �����ǰ�����˵���Ϊ��</p>
+<h6 id="_171">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>flag</td>
+<td><a href="../robot/#gohomeflag">GoHomeFlag</a></td>
+<td>��׮���ǻص�׮ǰ����׮��</td>
+<td>��flagΪGoHomeFlag.Dock �û����˻�׮,��flagΪGoHomeFlag.noDock ���û����˻ص���׮��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_172">ע������</h6>
+<p>�÷�����������֧���Զ��س书�ܵĻ����˰汾��
+���setMap()�ӿڡ�</p>
+<h6 id="_173">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction action = mPlarform.goHome(GoHomeFlag.Dock);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="imoveaction-gohomegohomeoption-option"><code>IMoveAction goHome(GoHomeOption option)</code></h5>
+<p>ʹ�����˷��س��׮��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_174">����ֵ</h6>
+<p>����ֵ <a href="../action/#imoveaction-iaction">IMoveAction</a> �����ǰ�����˵���Ϊ��</p>
+<h6 id="_175">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>option</td>
+<td><a href="../robot/#gohomeoption">GoHomeOption</a></td>
+<td>���س��׮����</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_176">ע������</h6>
+<p>�÷�����������֧���Զ��س书�ܵĻ����˰汾��
+���setMap()�ӿڡ�</p>
+<h6 id="_177">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction action = mPlarform.goHome(new GoHomeOption());
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="movebymovedirectionactionmdmovedirection-direction"><code>moveBy([MoveDirection](action.md#movedirection) direction)</code></h5>
+<p>�˹����ƻ����˵��ƶ�������ֵΪִ�и���������ƶ�������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_178">����ֵ</h6>
+<p>����ֵIMoveAction ��ʾ��ǰ�����˵���Ϊ��</p>
+<h6 id="_179">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>direction</td>
+<td><a href="../action/#movedirection">MoveDirection</a></td>
+<td>�����������ƶ��ķ���</td>
+<td>MoveDirection�е�ֵ����ǰ������FORWARD,BACKWARD,TURN_RIGHT,TURN_LEFT;</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_180">ע������</h6>
+<p>�ڴ�״̬�£������˲�����б��ϡ���Ҫ�������øú��������ֻ����˵��ƶ�״̬������MoveAction.cancel()��������ʱʹ������ֹͣ�ƶ�����������˻��ڳ�������moveBy����һ��ʱ�ں�ֹͣ�ƶ���
+���setMap()�ӿڡ�</p>
+<h6 id="_181">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction moveAction = mPlatform.moveBy(MoveDirection.FORWARD);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="imoveaction-movebyfloat-theta-moveoption-option"><code>IMoveAction moveBy(float theta, MoveOption option)</code></h5>
+<p>�˹����ƻ����˵��ƶ�������ֵΪִ�и���������ƶ�������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_182">����ֵ</h6>
+<p>����ֵIMoveAction ��ʾ��ǰ�����˵���Ϊ��</p>
+<h6 id="_183">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>theta</td>
+<td>float</td>
+<td>ת������</td>
+<td></td>
+</tr>
+<tr>
+<td>option</td>
+<td><a href="../robot/#moveoption">MoveOption</a></td>
+<td>�˶�����</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_184">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+IMoveAction action = platform.moveBy(0.5f, new MoveOption());
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="imvoeaction-movetojavautillistlocation-locations"><code>IMvoeAction moveTo(java.util.List&lt;Location&gt; locations)</code></h5>
+<p>ʹ�������ƶ���һϵ��ָ��λ�á�����ֵΪִ�и���������ƶ�������</p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_185">����ֵ</h6>
+<p>����ֵIMvoeActionΪִ�и���������ƶ����� ��</p>
+<h6 id="_186">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>locations</td>
+<td>List&lt;<a href="../robot/#location">Location</a>&gt;</td>
+<td>������ǰ��ָ��λ�þ�����һϵ�нڵ㡣</td>
+<td>Ŀǰlocation�е�Z����û����</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_187">ע������</h6>
+<p>��setMap()�ӿڡ�</p>
+<h6 id="_188">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location1 = new Location(1.5f,4.6f,1.8f);
+Location location2 = new Location(2.5f,2.6f,1.9f);
+List list = new ArrayList();
+list.add(location1);
+list.add(location2);
+IMvoeAction action = mPlatform.moveTo(list);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="imvoeaction-movetojavautillistlocation-locations-boolean-appending"><code>IMvoeAction moveTo(java.util.List&lt;Location&gt; locations, boolean appending)</code></h5>
+<p>ʹ�������ƶ���һϵ�е�ָ��λ�á�����ֵΪִ�и���������ƶ�������</p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_189">����ֵ</h6>
+<p>����ֵIMvoeActionΪִ�и���������ƶ����� ��</p>
+<h6 id="_190">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>locations</td>
+<td>java.util.List&lt;<a href="../robot/#location">Location</a>&gt;</td>
+<td>������ǰ��ָ��λ�þ�����һϵ�нڵ㡣</td>
+<td>Ŀǰlocation�е�Z����û����</td>
+</tr>
+<tr>
+<td>appending</td>
+<td>boolean</td>
+<td>���ھ���SLAMWARE�������ǰ�������µĵ㻹�ǽ��µĵ���ӵ����еĽڵ��б��С�</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_191">ע������</h6>
+<p>��setMap()�ӿڡ�</p>
+<h6 id="_192">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location1 = new Location(1.5f,4.6f,1.8f);
+Location location2 = new Location(2.5f,2.6f,1.9f);
+List list = new ArrayList();
+list.add(location1);
+list.add(location2);
+IMvoeAction action = mPlatform.moveTo(list��false);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="imvoeaction-movetojavautillistlocation-locations-boolean-appending-boolean-ismilestone"><code>IMvoeAction moveTo(java.util.List&lt;Location&gt; locations, boolean appending, boolean isMilestone)</code></h5>
+<p>ʹ�������ƶ���һϵ�е�ָ��λ�á�����ֵΪִ�и���������ƶ�������</p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_193">����ֵ</h6>
+<p>����ֵIMvoeActionΪִ�и���������ƶ�������</p>
+<h6 id="_194">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>locations</td>
+<td>java.util.List&lt;<a href="../robot/#location">Location</a>&gt;</td>
+<td>������ǰ��ָ��λ�þ�����һϵ�нڵ㡣</td>
+<td>Ŀǰlocation�е�Z����û����</td>
+</tr>
+<tr>
+<td>appending</td>
+<td>boolean</td>
+<td>���ھ���SLAMWARE�������ǰ�������µĵ㻹�ǽ��µĵ���ӵ����еĽڵ��б��С�</td>
+<td>-</td>
+</tr>
+<tr>
+<td>isMilestone</td>
+<td>boolean</td>
+<td>���ھ���SLAMWARE�ǹ滮·����һϵ�нڵ㻹��ֱ��ǰ�������������Ϊtrueʱ�������˻Ὣ�����������ؼ��㣬ͨ��·�������ķ�ʽǰ��Ŀ�ĵأ�������Ϊfalseʱ���ᱻ������ͨ�㣬��������·���������ܡ�</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_195">ע������</h6>
+<p>��setMap()�ӿڡ�</p>
+<h6 id="_196">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location1 = new Location(1.5f,4.6f,1.8f);
+Location location2 = new Location(2.5f,2.6f,1.9f);
+List list = new ArrayList();
+list.add(location1);
+list.add(location2);
+IMvoeAction action = mPlatform.moveTo(list��false,true);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="imvoeaction-movetolocationrobotmdlocation-location"><code>IMvoeAction moveTo([Location](robot.md#location) location)</code></h5>
+<p>ʹ�������ƶ���ָ���ص㡣����ֵΪִ�и���������ƶ�������</p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_197">����ֵ</h6>
+<p>����ֵIMvoeActionΪִ�и���������ƶ�������</p>
+<h6 id="_198">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>�����˽�Ҫ����ĵ㡣</td>
+<td>Ŀǰlocation�е�Z����û����</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_199">ע������</h6>
+<p>��setMap()�ӿڡ�</p>
+<h6 id="_200">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location1 = new Location(1.5f,4.6f,1.8f);
+IMvoeAction action = mPlatform.moveTo(location1);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="imvoeaction-movetolocation-location-boolean-appending"><code>IMvoeAction moveTo(Location location, boolean appending)</code></h5>
+<p>ʹ�������ƶ���ָ���ص㡣����ֵΪִ�и���������ƶ�������</p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_201">����ֵ</h6>
+<p>����ֵIMvoeActionΪִ�и���������ƶ�������</p>
+<h6 id="_202">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>�����˽�Ҫ����ĵ㡣</td>
+<td>Ŀǰlocation�е�Z����û����</td>
+</tr>
+<tr>
+<td>appending</td>
+<td>boolean</td>
+<td>���ھ���SLAMWARE�������ǰ�������µĵ㻹�ǽ��µĵ���ӵ����еĽڵ��б��С�</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_203">ע������</h6>
+<p>��setMap()�ӿڡ�</p>
+<h6 id="_204">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location1 = new Location(1.5f,4.6f,1.8f);
+IMvoeAction action = mPlatform.moveTo(location1,false);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="imvoeaction-movetolocation-location-boolean-appending-boolean-ismilestone"><code>IMvoeAction moveTo(Location location, boolean appending, boolean isMilestone)</code></h5>
+<p>ʹ�������ƶ���ָ���ص㡣����ֵΪִ�и���������ƶ�����</p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_205">����ֵ</h6>
+<p>����ֵIMvoeActionΪִ�и���������ƶ�������</p>
+<h6 id="_206">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>�����˽�Ҫ����ĵ㡣</td>
+<td>-</td>
+</tr>
+<tr>
+<td>appending</td>
+<td>boolean</td>
+<td>���ھ���SLAMWARE�������ǰ�������µĵ㻹�ǽ��µĵ���ӵ����еĽڵ��б��С�</td>
+<td>Ŀǰlocation�е�Z����û����</td>
+</tr>
+<tr>
+<td>isMilestone</td>
+<td>boolean</td>
+<td>���ھ���SLAMWARE�ǹ滮·����һϵ�нڵ㻹��ֱ��ǰ�������������Ϊtrueʱ�������˻Ὣ�����������ؼ��㣬ͨ��·�������ķ�ʽǰ��Ŀ�ĵأ�������Ϊfalseʱ���ᱻ������ͨ�㣬��������·���������ܡ�</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_207">ע������</h6>
+<p>��setMap()�ӿڡ�</p>
+<h6 id="_208">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location1 = new Location(1.5f,4.6f,1.8f);
+IMvoeAction action = mPlatform.moveTo(location1,false,true);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="restartmodule"><code>restartModule()</code></h5>
+<p>����SLAMWAREģ�顣</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_209">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_210">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_211">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_212">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.restartModule();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="restartmodulerestartmoderobotmdrestartmode-mode"><code>restartModule([RestartMode](robot.md#restartmode) mode)</code></h5>
+<p>����SLAMWAREģ�顣</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_213">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_214">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mode</td>
+<td><a href="../robot/#restartmode">RestartMode</a>ö��</td>
+<td>�����˵�������ģʽ</td>
+<td>����ģʽ��ΪSOFT,HARD</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_215">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_216">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.restartModule(RestartMode.SOFT);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="imoveaction-rotaterotationrobotmdrotation-rotation"><code>IMoveAction rotate([Rotation](robot.md#rotation) rotation)</code></h5>
+<p>ʹ��������תһ���Ƕȣ���ͬ�ĽǶȣ�������ֵΪִ�и���������ƶ�������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_217">����ֵ</h6>
+<p>����ֵIMoveAction Ϊִ�и���������ƶ�������</p>
+<h6 id="_218">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>rotation</td>
+<td><a href="../robot/#rotation">Rotation</a></td>
+<td>�����˱�Ҫ����ת�Ļ���</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_219">ע������</h6>
+<p>��ת�����в�Ҫ��ִ�б��action������</p>
+<h6 id="_220">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Rotation rotation = new Rotation(1.5f);
+IMoveAction action = mPlatform.rotate(rotation);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="imoveaction-rotatetorotationrobotmdrotation-orientation"><code>IMoveAction rotateTo([Rotation](robot.md#rotation) orientation)</code></h5>
+<p>ʹ��������ת���ض��ĳ��򡣷���ֵΪִ�и���������ƶ�������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_221">����ֵ</h6>
+<p>����ֵIMoveAction Ϊִ�и���������ƶ���������</p>
+<h6 id="_222">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>orientation</td>
+<td><a href="../robot/#rotation">Rotation</a></td>
+<td>�����˱�Ҫ�����̬</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_223">ע������</h6>
+<p>��ת�����в�Ҫ��ִ�б��action������</p>
+<h6 id="_224">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Rotation rotation = new Rotation(1.5f);
+IMoveAction action = mPlatform.rotateTo(rotation);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="path-searchpathlocationrobotmdlocation-location"><code>Path searchPath([Location](robot.md#location) location)</code></h5>
+<p>�ڵ�ͼ��Ѱ��ʹ�����˴ӵ�ǰλ���ƶ���ָ��Ŀ��λ�õ�·��������ֵΪһ���ӻ����˵ĵ�ǰλ�õ�ָ��Ŀ��λ�õ�·����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_225">����ֵ</h6>
+<p>����ֵpathΪһ���ӻ����˵ĵ�ǰλ�õ�ָ��Ŀ��λ�õ�·�� ��</p>
+<h6 id="_226">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>�����˵�Ŀ��λ��</td>
+<td>location��������û����</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_227">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_228">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location = new Location(1.5f,1.6f,1.2f);
+Path path = mPlatform.searchPath(location);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="path-searchpathlocationrobotmdlocation-location-int-timeoutinms"><code>Path searchPath([Location](robot.md#location) location, int timeoutInMS)</code></h5>
+<p>�ڵ�ͼ��Ѱ��ʹ�����˴ӵ�ǰλ���ƶ���ָ��Ŀ��λ�õ�·��������ֵΪһ���ӻ����˵ĵ�ǰλ�õ�ָ��Ŀ��λ�õ�·����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_229">����ֵ</h6>
+<p>����ֵpathΪһ���ӻ����˵ĵ�ǰλ�õ�ָ��Ŀ��λ�õ�·�� ��</p>
+<h6 id="_230">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>�����˵�Ŀ��λ��</td>
+<td>location��������û����</td>
+</tr>
+<tr>
+<td>timeoutInMS</td>
+<td>int</td>
+<td>������ʱʱ��</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_231">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_232">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location = new Location(1.5f,1.6f,1.2f);
+Path path = mPlatform.searchPath(location, 1000 * 30);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="setmapmap-map"><code>setMap(Map map)</code></h5>
+<p>�ϴ���ͼ���ݵ�SLAMWARE��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_233">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_234">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>map</td>
+<td><a href="../robot/#map">Map</a></td>
+<td>Ҫ�ϴ��ĵ�ͼ����</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_235">ע������</h6>
+<p>Ӧ��setPose����ʹ�ò�ȷ����ͼδ���ڸ��»�λ״̬�������õ�ͼʱ�򣬲����Ե��ò��������˵ķ�������moveto��
+<br>�������������õ�ͼ�Ĺ����У������ͼ��������Action����OperationFail�쳣��</p>
+<h6 id="_236">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+RectF area = new RectF(1.0f,1.5f,2.5f,3.5f);
+Map map = mPlatform.getMap(MapType.BITMAP_8BIT, MapKind.EXPLORE_MAP, area);
+mPlatform.setMap(map);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="setmapmap-map-maptype-type"><code>setMap(Map map, MapType type)</code></h5>
+<p>�ϴ���ͼ���ݵ�SLAMWARE����ע�⣺Ӧ��setPose����ʹ�ò�ȷ����ͼδ���ڸ��»�λ״̬����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_237">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_238">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>map</td>
+<td><a href="../robot/#map">Map</a></td>
+<td>Ҫ�ϴ��ĵ�ͼ����</td>
+<td>-</td>
+</tr>
+<tr>
+<td>type</td>
+<td>-</td>
+<td>��ͼ��������</td>
+<td>-</td>
+</tr>
+<tr>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_239">ע������</h6>
+<p>Ӧ��setPose����ʹ�ò�ȷ����ͼδ���ڸ��»�λ״̬�������õ�ͼʱ�򣬲����Ե��ò��������˵ķ�������moveto��
+<br>�������������õ�ͼ�Ĺ����У������ͼ��������Action����OperationFail�쳣��</p>
+<h6 id="_240">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+RectF area = new RectF(1.0f,1.5f,2.5f,3.5f);
+Map map = mPlatform.getMap(MapType.BITMAP_8BIT, MapKind.EXPLORE_MAP, area);
+mPlatform.setMap(map,MapType.BITMAP_8BIT);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="setmapmap-map-maptype-type-mapkind-kind"><code>setMap(Map map, MapType type, MapKind kind)</code></h5>
+<p>�ϴ���ͼ���ݵ�SLAMWARE����ע�⣺Ӧ��setPose����ʹ�ò�ȷ����ͼδ���ڸ��»�λ״̬����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_241">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_242">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>map</td>
+<td><a href="../robot/#map">Map</a></td>
+<td>Ҫ�ϴ��ĵ�ͼ����</td>
+<td>-</td>
+</tr>
+<tr>
+<td>type</td>
+<td><a href="../robot/#maptype">MapType</a></td>
+<td>��ͼ��������</td>
+<td>-</td>
+</tr>
+<tr>
+<td>kind</td>
+<td><a href="../robot/#mapkind">MapKind</a></td>
+<td>��ͼ����</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_243">ע������</h6>
+<p>Ӧ��setPose����ʹ�ò�ȷ����ͼδ���ڸ��»�λ״̬�������õ�ͼʱ�򣬲����Ե��ò��������˵ķ�������moveto��
+<br>�������������õ�ͼ�Ĺ����У������ͼ��������Action����OperationFail�쳣��</p>
+<h6 id="_244">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+RectF area = new RectF(1.0f,1.5f,2.5f,3.5f);
+Map map = mPlatform.getMap(MapType.BITMAP_8BIT, MapKind.EXPLORE_MAP, area);
+mPlatform.setMap(map,MapType.BITMAP_8BIT,MapKind.EXPLORE_MAP);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="setmaplocalizationboolean-v"><code>setMapLocalization(boolean v)</code></h5>
+<p>��ȡ�Ƿ����ö�λ���ܡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_245">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_246">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v</td>
+<td>boolean</td>
+<td>����ֵ������SLAMWARE�Ƿ�ý��ж�λ��</td>
+<td>true������,false �������</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_247">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_248">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mplatform.setMapLocalization(true);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="setmapupdateboolean-v"><code>setMapUpdate(boolean v)</code></h5>
+<p>�����Ƿ���µ�ͼ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_249">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_250">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v</td>
+<td>boolean</td>
+<td>����ֵ������SLAMWARE�Ƿ�Ӧ�ø��µ�ͼ��</td>
+<td>true �������,false ���������</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_251">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_252">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mplatform.setMapUpdate(true);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="setposepose-pose"><code>setPose(Pose pose)</code></h5>
+<p>���û����˵���̬��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_253">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_254">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pose</td>
+<td><a href="../robot/#pose">Pose</a></td>
+<td>�����˵�����̬</td>
+<td>pose�е�location ������û������</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_255">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӣ��ո�����poseʱ�򣬲�Ҫ��move������</p>
+<h6 id="_256">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Pose pose  = new Pose();
+mplatform.setPose(pose);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="setsystemparameterjavalangstring-param-javalangstring-value"><code>setSystemParameter(java.lang.String param, java.lang.String value)</code></h5>
+<p>����ϵͳ������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_257">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_258">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>param</td>
+<td>String</td>
+<td>��Ҫ�������õĲ�������</td>
+<td>�����������<a href="../robot/#systemparameters">SystemParameters</a></td>
+</tr>
+<tr>
+<td>value</td>
+<td>String</td>
+<td>��Ҫ���õ�ֵ</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_259">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӣ�</p>
+<h6 id="_260">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.setSystemParameter("max_moving_speed","high");
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="boolean-startfirmwareupdate"><code>boolean startFirmwareUpdate()</code></h5>
+<p>��ȡ�Ƿ�ʼ�̼����¡�����ֵΪboolean��ʾ�Ƿ�ʼ���¹̼���</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_261">����ֵ</h6>
+<p>����ֵΪboolean��ʾ�Ƿ�ʼ���¹̼�,true ��ʾ��ʼ��false ��ʾû��</p>
+<h6 id="_262">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_263">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ���������</p>
+<h6 id="_264">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+boolean flag = mPlatform.startFirmwareUpdate();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="isweepmoveaction-startsweep"><code>ISweepMoveAction startSweep()</code></h5>
+<p>ʹ�����˿�ʼ��ɨ��ע�⣺�÷�����������ɨ�ػ��汾��SLAMWARE Core��������ֵΪִ�и����������ɨ�ƶ�������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_265">����ֵ</h6>
+<p>����ֵ<a href="../action/#isweepmoveaction">ISweepMoveAction</a>Ϊִ�и����������ɨ�ƶ�������</p>
+<h6 id="_266">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_267">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_268">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ISweepMoveAction action = mPlatform.startSweep();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="isweepmoveaction-sweepspotlocation-location"><code>ISweepMoveAction sweepSpot(Location location)</code></h5>
+<p>ʹ�����˿�ʼ������ɨ��ע�⣺�÷�����������ɨ�ػ��汾��SLAMWARE Core��������ֵΪִ�и����������ɨ�ƶ�������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_269">����ֵ</h6>
+<p>����ֵISweepMoveActionΪִ�и����������ɨ�ƶ�������</p>
+<h6 id="_270">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>�ƶ���ĳһ�������</td>
+<td>location�е�������û����</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_271">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_272">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Locatin location = new Location(1.5f,1.2f,0.2f);
+ISweepMoveAction action = mPlatform.startSweep(location);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="boolean-addlineartifactusage-usage-line-line"><code>boolean addLine(ArtifactUsage usage, Line line)</code></h5>
+<p>�������ǽ����������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_273">����ֵ</h6>
+<p>����ֵboolean Ϊtrue ��ʾ��ӳɹ�, false ��ʾ���ʧ�ܡ�</p>
+<h6 id="_274">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>��������������������ǽ</td>
+<td>-</td>
+</tr>
+<tr>
+<td>line</td>
+<td>Line</td>
+<td>������һ����</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_275">ע������</h6>
+<p>ע�⡣����ΪArtifactUsageVirutalWall ��ӵ�������ǽ������ΪArtifactUsageVirtualTrack ��ӵ�����������</p>
+<h6 id="_276">ʾ������</h6>
+<pre><code>
+ AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ PointF startF = new PointF(0.4f,0.4f);
+ PointF endF = new PointF(0.5f,0.5f);
+ Line line1 = new Line(4,startF,endF);
+ platform.addLine(ArtifactUsage.ArtifactUsageVirtualTrack,line);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="boolean-addlinesartifactusage-usage-listline-lines"><code>boolean addLines(ArtifactUsage usage, List&lt;Line&gt; lines)</code></h5>
+<p>��Ӷ�������ǽ����������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_277">����ֵ</h6>
+<p>����ֵboolean Ϊtrue ��ʾ��ӳɹ�, false ��ʾ���ʧ�ܡ�</p>
+<h6 id="_278">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>��������������������ǽ</td>
+<td>-</td>
+</tr>
+<tr>
+<td>lines</td>
+<td>List</td>
+<td>�����Ǽ��ϴ�Ŷ��<a href="../geometry/#line">Line</a></td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_279">ע������</h6>
+<p>����ΪArtifactUsageVirutalWall ��ӵ�������ǽ������ΪArtifactUsageVirtualTrack ��ӵ�����������</p>
+<h6 id="_280">ʾ������</h6>
+<pre><code>
+ AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ PointF startF = new PointF(0.4f,0.4f);
+ PointF endF = new PointF(0.5f,0.5f);
+ Line line1 = new Line(4,startF,endF);
+ PointF startF1 = new PointF(0.1f,0.1f);
+ PointF endF1 = new PointF(0.2f,0.2f);
+ Line line2 = new Line(9,startF1,endF1);
+ ArrayList lines = new ArrayList();
+ lines.add(line1);
+ lines.add(line2);
+ mPlatform.addLines(ArtifactUsage.ArtifactUsageVirtualTrack,lines);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="boolean-removelinebyidartifactusage-usage-int-id"><code>boolean removeLineById(ArtifactUsage usage, int id)</code></h5>
+<p>�Ƴ�ָ��������ǽ����������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_281">����ֵ</h6>
+<p>����ֵboolean true �����Ƴ��ɹ���false�����Ƴ�ʧ�ܡ�</p>
+<h6 id="_282">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>��������������������ǽ</td>
+<td>-</td>
+</tr>
+<tr>
+<td>id</td>
+<td>int</td>
+<td>�Ƴ�ĳһ��<a href="geometry.md.md#line">Line</a>��id</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_283">ע������</h6>
+<p>id������Arraylist<Line> lines = platform.getLines(ArtifactUsage usage),lines��line��id</p>
+<h6 id="_284">ʾ������</h6>
+<pre><code>
+ArrayList<Line> list = (ArrayList<Line>) platform.getLines(ArtifactUsage.ArtifactUsageVirtualTrack);
+Boolean isSuccessful  = platform.removeLineById(ArtifactUsage.ArtifactUsageVirtualTrack,list.ge(0).getSegmentId());
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="boolean-clearlinesartifactusage-usage"><code>boolean clearLines(ArtifactUsage usage)</code></h5>
+<p>�Ƴ���������ǽ����������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_285">����ֵ</h6>
+<p>����ֵboolean true �����Ƴ��ɹ���false�����Ƴ�ʧ�ܡ�</p>
+<h6 id="_286">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>��������������������ǽ</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_287">ע������</h6>
+<p>����</p>
+<h6 id="_288">ʾ������</h6>
+<pre><code>
+ AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ boolean flag =  mPlatform.clearLines(ArtifactUsage.ArtifactUsageVirtualTrack);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-movelinenonnull-artifactusage-usage-nonnull-line-line"><code>boolean moveLine(@NonNull ArtifactUsage usage, @NonNull Line line)</code></h5>
+<p>�޸�һ�������߶ε�λ�á�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_289">����ֵ</h6>
+<p>����ֵΪboolean�������Ƿ��޸ĳɹ���</p>
+<h6 id="_290">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>�������߶ε�����</td>
+<td></td>
+</tr>
+<tr>
+<td>line</td>
+<td><a href="../geometry/#line">Line</a></td>
+<td>�������߶ζ���</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_291">ע������</h6>
+<p>�����߶α����Ѵ��ڡ�</p>
+<h6 id="_292">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+List<Line> lines = platform.getLines(ArtifactUsage.ArtifactUsageVirtualWall);
+if (lines.size() > 0) {
+  Line line = lines.get(0);
+  line.x = 1.2f;
+  line.y = 1.2f;
+  boolean result = platform.moveLine(ArtifactUsage.ArtifactUsageVirtualWall, line);
+}
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-movelinesnonnull-artifactusage-usage-nonnull-listline-lines"><code>boolean moveLines(@NonNull ArtifactUsage usage, @NonNull List&lt;Line&gt; lines)</code></h5>
+<p>�޸�һ�������߶ε�λ�á�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_293">����ֵ</h6>
+<p>����ֵΪboolean�������Ƿ��޸ĳɹ���</p>
+<h6 id="_294">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>���������߶ε�����</td>
+<td></td>
+</tr>
+<tr>
+<td>lines</td>
+<td>List&lt;<a href="geometry.md.md#line">Line</a>&gt;</td>
+<td>���������߶ζ���</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_295">ע������</h6>
+<p>����Ϊͬһ�������߶Ρ��������߶��Ѵ��ڡ�</p>
+<h6 id="_296">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+List<Line> lines = platform.getLines(ArtifactUsage.ArtifactUsageVirtualWall);
+if (lines.size() > 0) {
+  ArrayList<Line> modified = new ArrayList();
+  for (Line line: lines) {
+    line.x = 1.2f;
+    line.y = 1.2f;
+    modified.add(line);
+  }
+  boolean result = platform.moveLines(ArtifactUsage.ArtifactUsageVirtualWall, modified);
+}
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="powerstatus-getpowerstatus"><code>PowerStatus getPowerStatus()</code></h5>
+<p>ȡ��Դ��ص���Ϣ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_297">����ֵ</h6>
+<p>����ֵ<a href="../robot/#powerstatus">PowerStatus</a>Ϊ��Դ��ص���Ϣ��</p>
+<h6 id="_298">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_299">ע������</h6>
+<p>���ޡ�</p>
+<h6 id="_300">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+PowerStatus powerStatus = mPlatform.getPowerStatus();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="void-wakeup"><code>void wakeUp()</code></h5>
+<p>������״̬�����豸��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_301">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_302">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_303">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_304">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.wakeUp();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="imoveaction-recoverlocalizationrectf-arearecoverlocalizationoptions-options"><code>IMoveAction recoverLocalization(RectF area,RecoverLocalizationOptions options)</code></h5>
+<p>�������˱�����ʱ�ɵ��ô˽ӿڽ����ض�λ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_305">����ֵ</h6>
+<p>����ֵ<a href="../action/#imoveaction">IMoveAction</a>��ʾ��ǰ���������ڽ��е���Ϊ</p>
+<h6 id="_306">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>area</td>
+<td>RectF</td>
+<td>��һ�������ڽ����ض�λ</td>
+<td>-</td>
+</tr>
+<tr>
+<td>options</td>
+<td><a href="../robot/#recoverlocalizationoptions">RecoverLocalizationOptions</a></td>
+<td>�ض�λ����,RecoverLocalizationOptions,���������</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_307">ע������</h6>
+<p>���area����Ϊ��ʱ�������˽��ڵ�ǰ20*20��������дӶ�λ����������˽���ָ������������¶�λ��</p>
+<h6 id="_308">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+RecoverLocalizationOptions recoverLocalizationOptions = new RecoverLocalizationOptions();
+recoverLocalizationOptions.setRecoverMovementType(RecoverLocalizationMovement.Unknown);
+IMoveAction moveAction =  mPlatform.recoverLocalization(new RectF(1.0f,1.0f,1.0f,1.0f),recoverLocalizationOptions);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="imoveaction-recoverlocalizationbydock"><code>IMoveAction recoverLocalizationByDock()</code></h5>
+<p>���豸�ڳ��׮�ϣ����ô˽ӿڿ��Խ����ض�λ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v.4.6.0</p>
+</blockquote>
+<h6 id="_309">����ֵ</h6>
+<p>����ֵΪ<a href="../action/#imoveaction">IMoveAction</a>����ʾ��ǰ���������ڽ��е���Ϊ��</p>
+<h6 id="_310">ע������</h6>
+<p>�����豸������׮״̬ʱ�ſɵ��ô˽ӿڡ�</p>
+<h6 id="_311">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+IMoveAction action = platform.recoverLocalizationByDock();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="pointpdf-getauxlocation"><code>PointPDF getAuxLocation()</code></h5>
+<p>���ݵ�ǰ������λ�豸����Ϣ��ȡ��ǰ�����˵Ĵ���λ����Ϣ</p>
+<p>�������˱�����ʱ�������ȵ���getAuxLocation()��ȡ�����˵�ǰ����λ����Ϣ��Ȼ�����recoverLocalization��������д���λ����Ϣ������ʹ�����˳����ض�λ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_312">����ֵ</h6>
+<p>���ݸ�����λ�õ��Ļ����˴���λ����Ϣ��PointPDF����</p>
+<h6 id="_313">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_314">ע������</h6>
+<p>���ޡ�</p>
+<h6 id="_315">ʾ������</h6>
+<pre><code>
+ auto locationPdf = platform. getAuxLocation();
+ Location location = locationPdf.location;
+ float distant = locationPdf.circular_error_probability;
+ area((location.x() - distant), (location.y() - distant), 2*distant, 2*distant);RectangleF
+ auto act = platform. recoverLocalization(area);
+ act.waitUntilDone();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="compositemap-getcompositemap"><code>CompositeMap getCompositeMap()</code></h5>
+<p>��ȡ��ǰ��ͼ��������Ϣ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_316">����ֵ</h6>
+<p>����ɹ�����һ��<a href="../robot/#compositemap">CompositeMap</a>���󣬷��򷵻�null�������쳣��</p>
+<h6 id="_317">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_318">ע������</h6>
+<p>���ޡ�</p>
+<h6 id="_319">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+CompositeMap  map = mPlatform.getCompositeMap()��
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="void-setcompositemapcompositemap-map-pose-pose"><code>void setCompositeMap(CompositeMap map, Pose pose)</code></h5>
+<p>���õ�ǰ�ĵ�ͼ��Ϣ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_320">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_321">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>map</td>
+<td><a href="../robot/#compositemap">CompositeMap</a></td>
+<td>�״�ɨ���ĵ�ͼ</td>
+<td>-</td>
+</tr>
+<tr>
+<td>pose</td>
+<td><a href="../robot/#pose">Pose</a></td>
+<td>�����˵�����</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_322">ע������</h6>
+<p>���ü��ص�ͼ��һ�������ķ���,��ȡ��ͬʱ��Ҫ���б�Ĳ���</p>
+<h6 id="_323">ʾ������</h6>
+<pre><code>
+ AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ CompositeMapHelper compositeMapHelper = new CompositeMapHelper();
+ Pose pose = new Pose();
+ String path = "/sdcard/twoline1.stcm";
+ CompositeMap mCompositeMap = compositeMapHelper.loadFile(path);
+ mPlatform.setCompositeMap(mCompositeMap,pose);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="pose-gethomepose"><code>Pose getHomePose()</code></h5>
+<p>��ȡ�����λ�á�����Ҳ���������򷵻�(0,0)��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_324">����ֵ</h6>
+<p>����ֵ<a href="../robot/#pose">Pose</a>Ϊ�����λ�á�</p>
+<h6 id="_325">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_326">ע������</h6>
+<p>����</p>
+<h6 id="_327">ʾ������</h6>
+<pre><code>
+ AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ Pose pose = mPlatform.getHomePose();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-sethomeposepose-homepose"><code>boolean setHomePose(Pose homePose)</code></h5>
+<p>����SLAMWARE�ĳ��׮λ�ˡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_328">����ֵ</h6>
+<p>����ֵΪboolean�������Ƿ����óɹ���</p>
+<h6 id="_329">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>homePose</td>
+<td><a href="../robot/#pose">Pose</a></td>
+<td>���׮λ��</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_330">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+Pose homePose = new Pose(1f, 1f, 0f, 0f, 0f, 0f);
+boolean result = platform.setHomePose(homePose);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="listimpactsensorinfo-getsensors"><code>List&lt;ImpactSensorInfo&gt; getSensors()</code></h5>
+<p>��ȡ�����������еĴ�������Ϣ������ֵ��list���ϡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_331">����ֵ</h6>
+<p>����ֵ��list���ϣ���ŵ������еĴ�������Ϣ<a href="../robot/#impactsensorinfo">ImpactSensorInfo</a>��</p>
+<h6 id="_332">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_333">ע������</h6>
+<p>���ޡ�</p>
+<h6 id="_334">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+List<ImpactSensorInfo> list= mPlatform.getSensors();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="hashmapinteger-impactsensorvalue-getsensorvalues"><code>HashMap&lt;Integer, ImpactSensorValue&gt; getSensorValues()</code></h5>
+<p>��ȡ�����������еģ��ɻ�ȡ�ģ���������ֵ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_335">����ֵ</h6>
+<p>����ֵ��HashMap����ŵ������еĴ�������ֵ������keyΪ������ID��valueΪ����������<a href="../robot/#impactsensorvalue">ImpactSensorValue</a>��</p>
+<h6 id="_336">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_337">ע������</h6>
+<p>����Bumper��Cliff�����ǻ�����ڷ��ص�HashMap�
+����Sonar�������ǰû�д�����������ʱ�޷�ȡ��ֵ������������ڷ��ص�HashMap� </p>
+<h6 id="_338">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+HashMap hashMap = mPlatform.getSensorValues();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="impactsensorvalue-getsensorvalueinteger-var1"><code>ImpactSensorValue getSensorValue(Integer var1)</code></h5>
+<p>���ݴ�����ID��ȡ�������˶�Ӧ��������ֵ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_339">����ֵ</h6>
+<p>����<a href="../robot/#impactsensorvalue">ImpactSensorValue</a>���󣬼������˶�Ӧ��������ֵ��</p>
+<h6 id="_340">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>var1</td>
+<td>Integer</td>
+<td>������id</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_341">ע������</h6>
+<p>�����鷵��ֵ�Ƿ��� null ��
+���ָ��id�����ڣ��᷵��null��
+���id��Ӧ����Bumper��Cliff���ܻ᷵�طǿյĶ���
+���id��Ӧ����Sonar��������û�д�����������ʱ�޷�ȡ��ֵ��ʱ����null�� ����������ʱ���طǿն���</p>
+<h6 id="_342">ʾ������</h6>
+<pre><code>
+ Integer integer = new Integer(0);
+ AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ ImpactSensorValue impactSensorValue = mPlatform.getSensorValue(integer);
+ if (null != impactSensorValue)
+ {
+   // output impactSensorValue.getValue();
+ }
+ else
+ {
+   // output "impactSensorValue is null.";
+ }
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="listimpactsensorvalue-getsensorvalueslistinteger-ids"><code>List&lt;ImpactSensorValue&gt; getSensorValues(List&lt;Integer&gt; ids)</code></h5>
+<p>��ȡһ�鴫����������</p>
+<h6 id="_343">����ֵ</h6>
+<p>����ֵΪһ�鴫��������<a href="../robot/#impactsensorvalue">ImpactSensorValue</a>��</p>
+<h6 id="_344">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ids</td>
+<td>List<Integer></td>
+<td>һ�鴫����ID</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_345">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+List<ImpactSensorInfo> sensors = platform.getSensors();
+if (sensors.size() > 0) {
+  ArrayList<Integer> ids = new ArrayList();
+  for (ImpactSensorInfo sensor: sensors) {
+    ids.add(sensor.sensorId);
+  }
+  List<ImpactSensorValue> values = platform.getSensorValues(ids);
+}
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="imoveaction-movetolocation-location-moveoption-option-float-yaw"><code>IMoveAction moveTo(Location location, MoveOption option, float yaw)</code></h5>
+<p>ʹ�������ƶ���ָ����λ�á� </p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_346">����ֵ</h6>
+<p>����ֵ<a href="action#imoveaction">IMoveAction</a>��ǰ���������ڽ��е���Ϊ��</p>
+<h6 id="_347">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>ָ����λ��</td>
+<td></td>
+</tr>
+<tr>
+<td>option</td>
+<td><a href="../robot/#moveoption">MoveOption</a></td>
+<td>�˶�����</td>
+<td></td>
+</tr>
+<tr>
+<td>yaw</td>
+<td>float</td>
+<td>������ͣ������ʱ����ת��һ���Ļ��ȡ�</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_348">ע������</h6>
+<p>���ޡ�</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="imoveaction-movetojavautillist-locations-moveoption-option-float-yaw"><code>IMoveAction moveTo(java.util.List locations, MoveOption option, float yaw)</code></h5>
+<p>�ο������ע�ͣ�ֻ���ƶ����ܶ�㡣</p>
+<blockquote>
+<p>Stability: 0 - Deprecated</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_349">����ֵ</h6>
+<p>����ֵIMoveAction ��ǰ���������ڽ��е���Ϊ��</p>
+<h6 id="_350">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>locations</td>
+<td>List</td>
+<td>���ϴ��һϵ��ĵ�</td>
+<td>-</td>
+</tr>
+<tr>
+<td>option</td>
+<td>MoveOption</td>
+<td>�ƶ�ʱ��Ĳ�������</td>
+<td>-</td>
+</tr>
+<tr>
+<td>yaw</td>
+<td>float</td>
+<td>��һ���ĽǶ��ƶ���ĳ����</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_351">ע������</h6>
+<p>���ޡ�</p>
+<h6 id="_352">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+Location location =new Location(1.0f,1.0f,1.0f);
+MoveOption moveOption = new MoveOption();
+moveOption.setKeyPoints(true);
+moveOption.setWithYaw(true);
+//.............
+float yaw = 0.5f��
+IMoveAction moveAction =  mPlatform.moveTo(location,moveOption,yaw);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="imoveaction-movetolocation-location-moveoption-option"><code>IMoveAction moveTo(Location location, MoveOption option)</code></h5>
+<p>ʹ�������ƶ���ָ���ص㡣</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_353">����ֵ</h6>
+<p>����ֵΪ<a href="../action/#imoveaction">IMoveAction</a>����ʾ��ǰ�����˵���Ϊ��</p>
+<h6 id="_354">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>location</td>
+<td><a href="../robot/#location">Location</a></td>
+<td>Ŀ���</td>
+<td></td>
+</tr>
+<tr>
+<td>option</td>
+<td><a href="../robot/#moveoption">MoveOption</a></td>
+<td>�˶�����</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_355">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+MoveOption option = new MoveOption();
+Location location = new Location(1f, 1f, 1f);
+IMoveAction action = platform.moveTo(location, option);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="imoveaction-movetojavautillist-locations-moveoption-option"><code>IMoveAction moveTo(java.util.List locations, MoveOption option)</code></h5>
+<p>ʹ�������ƶ���yһ��ָ���ص㡣</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_356">����ֵ</h6>
+<p>����ֵΪ<a href="../action/#imoveaction">IMoveAction</a>����ʾ��ǰ�����˵���Ϊ��</p>
+<h6 id="_357">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>locations</td>
+<td>List</td>
+<td>һ��<a href="../robot/#location">Location</a>�ļ���</td>
+<td></td>
+</tr>
+<tr>
+<td>option</td>
+<td><a href="../robot/#moveoption">MoveOption</a></td>
+<td>�˶�����</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_358">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+MoveOption option = new MoveOption();
+List<Location> locations = new ArrayList();
+locations.add(new Location(1f, 1f, 1f));
+IMoveAction action = platform.moveTo(locations, option);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="publishdepthcamframeint-sensoriddepthcameraframe-depthcameraframe"><code>publishDepthCamFrame(int sensorId,DepthCameraFrame depthCameraFrame)</code></h5>
+<p>���������ͷ�����ݴ��ݸ����̣�����sensorId ��ͨ���������õ�sensorId, depthCameraFrame���������ͷ���ݶ���</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_359">����ֵ</h6>
+<p>�޷���ֵ</p>
+<h6 id="_360">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sensorId</td>
+<td>int</td>
+<td>�������ͷid</td>
+<td>-</td>
+</tr>
+<tr>
+<td>depthCameraFrame</td>
+<td><a href="../message/#depthcameraframe">DepthCameraFrame</a></td>
+<td>�������ͷ���ݶ���</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_361">ע������</h6>
+<p>���ޡ�</p>
+<h6 id="_362">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+DepthCameraFrame depthCameraFrame = new DepthCameraFrame();��
+depthCameraFrame.set(...);
+//.....................
+platform.publishDepthCamFrame(1,depthCameraFrame);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="listoperationauditlog-getoperationauditlogs"><code>List&lt;OperationAuditLog&gt; getOperationAuditLogs()</code></h5>
+<p>��ȡSLAMWARE������LOG��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_363">����ֵ</h6>
+<p>����SLAMWARE������LOG��</p>
+<h6 id="_364">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+List<OperationAuditLog> logs = platform.getOperationAuditLog();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="double-getodometry"><code>double getOdometry()</code></h5>
+<p>��ȡSLAMWARE��̼����ݡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_365">����ֵ</h6>
+<p>��ǰ��̼ƶ�����</p>
+<h6 id="_366">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+double odometry = platform.getOdometry();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-shutdownslamcoreslamcoreshutdownparam-param"><code>boolean shutdownSlamcore(SlamcoreShutdownParam param)</code></h5>
+<p>�ر�Slamcore��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_367">����ֵ</h6>
+<p>�Ƿ�ִ�гɹ���</p>
+<h6 id="_368">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>param</td>
+<td><a href="../robot/#slamcoreshutdownparam">SlamcoreShutdownParam</a></td>
+<td>�ػ�����</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_369">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+SlamwareShutdownParam param = new SlamcoreShutdownParam();
+param.setShutdownTimeIntervalMinute(5);
+boolean result = platform.shutdownSlamcore(param);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="icustomerlogreceiver-createcustomerlogreceiver"><code>ICustomerLogReceiver createCustomerLogReceiver()</code></h5>
+<p>���� ICustomerLogReceiver �����Ա���� CustomerLog��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_370">����ֵ</h6>
+<p>�ӱ� AbstractSlamwarePlatform ���󴴽�������һ�� <a href="../log-customer/#icustomerlogreceiver">ICustomerLogReceiver</a> ����</p>
+<h6 id="_371">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_372">ע������</h6>
+<p>���ޡ�</p>
+<h6 id="_373">ʾ������</h6>
+<pre><code>
+ICustomerLogReceiver customerLogReceiver = absPltfm.createCustomerLogReceiver();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="listdisabledsensormaskdata-getdisabledsensormaskdata"><code>List&lt;DisabledSensorMaskData&gt; getDisabledSensorMaskData()</code></h5>
+<p>��ȡ���õĴ������б��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_374">����ֵ</h6>
+<p>���õĴ������б�<a href="../robot/#disabledsensormaskdata">DisabledSensorMaskData</a>��</p>
+<h6 id="_375">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+List<DisabledSensorMaskData> disabledMask = platform.getDisabledSensorMaskData();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-setsensormasklistsensormaskctrldata-sensordata"><code>boolean setSensorMask(List&lt;SensorMaskCtrlData&gt; sensorData)</code></h5>
+<p>��һ�鴫�������û���ý��á�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_376">����ֵ</h6>
+<p>�����Ƿ�ɹ���</p>
+<h6 id="_377">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sensorData</td>
+<td></td>
+<td>List&lt;<a href="../robot/#sensormaskctrldata">SensorMaskCtrlData</a>&gt;</td>
+<td>��Ҫ���õĴ�����</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_378">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+List<ImpactSensorInfo> sensors = platform.getSensors()
+if (sensors.size() > 0) {
+  ArrayList<SensorMaskCtrlData> ctrlData = new ArrayList();
+  for (ImpactSensorInfo sensor: sensors) {
+    ctrlData.add(new SensorMaskCtrlData(sensor.getSensorId(), false, false));
+  }
+  platform.setSensorMask(ctrlData);
+}
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="void-hibernate"><code>void hibernate()</code></h5>
+<p>���豸����.</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_379">����ֵ</h6>
+<p>�޷���ֵ��</p>
+<h6 id="_380">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_381">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_382">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+mPlatform.hibernate();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="isystemeventprovider-createsystemeventprovider30"><code>ISystemEventProvider createSystemEventProvider(30)</code></h5>
+<p>���û������¼���Ϣ.</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_383">����ֵ</h6>
+<p><a href="../system/#isystemeventprovider">ISystemEventProvider</a>��</p>
+<h6 id="_384">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>i</td>
+<td>int</td>
+<td>ʱ����</td>
+<td>һ��ʱ���ڳ�����ȡ�����¼���Ϣ</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_385">ע������</h6>
+<p>ע�ⲻҪ�Ͽ���׿�豸�ͻ��������ӡ�</p>
+<h6 id="_386">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform mPlatform = DeviceManager.connect("192.168.11.1",1445);
+ISystemEventProvider systemEventProvider = mPlatform.createSystemEventProvider(30);
+ArrayList<SystemEvent> events = new ArrayList<>();
+if (systemEventProvider.readEvents(events)) 
+{
+    for (SystemEvent systemEvent : events) 
+    {
+            // to do user something
+    }
+}
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="boolean-setpoishashmapstringcompositepose-posemap"><code>boolean setPOIs(HashMap&lt;String,CompositePose&gt; poseMap)</code></h5>
+<p>���õ�ͼ�ϵ���Ȥ��.</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.8.3</p>
+</blockquote>
+<h6 id="_387">����ֵ</h6>
+<p>boolean��true:���óɹ� . false������ʧ��</p>
+<h6 id="_388">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>poseMap</td>
+<td>HashMap<String,<a href="robot.md#compositepose">CompositePose</a>></td>
+<td>poseEntryMap</td>
+<td>��Ҫ�����ֵ�ԣ�key��string��value��pose</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_389">ע������</h6>
+<p>���ޡ�</p>
+<h6 id="_390">ʾ������</h6>
+<pre><code>
+val poses = hashMapOf<String, CompositePose>()
+val compositePose = CompositePose()
+val metaData = MapMetaData()
+val datas = hashMapOf<String,String>()
+datas["key"] = "value"
+
+metaData.data = datas
+metaData.setValue("key", "value")
+compositePose.name = "demo"
+compositePose.flags = 'a'
+compositePose.metaData = metaData
+compositePose.tags = arrayListOf("tags1", "tags2")
+compositePose.pose = Pose(1f, 1f, 1f, 1f, 1f, 1f)
+
+val isSetOk = platform.setPOIs(poses)
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="hashmapstring-compositepose-getpois"><code>HashMap&lt;String, CompositePose&gt; getPOIs()</code></h5>
+<p>��ȡ��ͼ�����е���Ȥ�㡣</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.8.3</p>
+</blockquote>
+<h6 id="_391">����ֵ</h6>
+<p>HashMap<String, <a href="robot.md#compositepose">CompositePose</a>></p>
+<h6 id="_392">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>�ղΡ�</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_393">ע������</h6>
+<p>���ޡ�</p>
+<h6 id="_394">ʾ������</h6>
+<pre><code>
+val platform: AbstractSlamwarePlatform = DeviceManager.connect("192.168.11.1", 1445)
+val opis = platform.poIs
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="boolean-addpoicompositepose-var1"><code>boolean addPOI(CompositePose var1)</code></h5>
+<p>��ӵ�����Ȥ�㡣</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.8.3</p>
+</blockquote>
+<h6 id="_395">����ֵ</h6>
+<p>boolean��true����ӳɹ���false�����ʧ�ܡ�</p>
+<h6 id="_396">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>var1</td>
+<td><a href="../robot/#compositepose">CompositePose</a></td>
+<td>��</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_397">ע������</h6>
+<p>���ޡ�</p>
+<h6 id="_398">ʾ������</h6>
+<pre><code>
+val platform: AbstractSlamwarePlatform = DeviceManager.connect("192.168.11.1", 1445)
+val isAddPoiOk = platform.addPOI(compositePose)
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-editpoicompositepose-pose"><code>boolean editPOI(CompositePose pose)</code></h5>
+<p>�޸�һ��POI������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Add in v4.6.0</p>
+</blockquote>
+<h6 id="_399">����ֵ</h6>
+<p>�޸��Ƿ�ɹ���</p>
+<h6 id="_400">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pose</td>
+<td><a href="../robot/#compositepose">CompositePose</a></td>
+<td>��Ҫ�޸ĵ�POI����</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_401">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1", 1445);
+List<String, CompositePose> pois = platform.getPOIs();
+if (pois.size() > 0) {
+  CompositePose pose = pois.get(0).getValue();
+  pose.setName("New POI Name");
+  platform.editPOI(pose);
+}
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="compositepose-addpoioncurrentposestring-var1-mapmetadata-var2"><code>CompositePose addPOIOnCurrentPose(String var1, MapMetaData var2)</code></h5>
+<p>��ӵ�ǰ��Ȥ�㡣</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.8.3</p>
+</blockquote>
+<h6 id="_402">����ֵ</h6>
+<p>CompositePose�����ص�ǰ��</p>
+<h6 id="_403">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>var1</td>
+<td>String</td>
+<td>key</td>
+<td>��</td>
+</tr>
+<tr>
+<td>var2</td>
+<td><a href="../robot/#mapmetadata">MapMetaData</a></td>
+<td>value</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_404">ע������</h6>
+<p>��Ҫ�ظ����keyΪͬһ����metaData��������׳�UnsupportedCommandException��</p>
+<h6 id="_405">ʾ������</h6>
+<pre><code>
+val metaData = MapMetaData()
+val datas = hashMapOf<String,String>()
+datas["key"] = "value"
+metaData.data = datas
+metaData.setValue("key", "value")
+val isAddOk = platform.addPOIOnCurrentPose("demo",metaData)
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="stdpairstring-compositepose-querypoistring-var1"><code>StdPair&lt;String, CompositePose&gt; queryPOI(String var1)</code></h5>
+<p>��ѯ�ض�����Ȥ��.</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.8.3</p>
+</blockquote>
+<h6 id="_406">����ֵ</h6>
+<p>StdPair<String, <a href="robot.md#compositepose">CompositePose</a>></p>
+<h6 id="_407">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>var1</td>
+<td>String</td>
+<td>��Ȥ���key</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_408">ע������</h6>
+<p>����</p>
+<h6 id="_409">ʾ������</h6>
+<pre><code>
+val platform: AbstractSlamwarePlatform = DeviceManager.connect("192.168.11.1", 1445)
+val stdPair = platform.queryPOI("demo")
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="stdpairstring-compositepose-queryclosestpoinonnull-pose-pose"><code>StdPair&lt;String, CompositePose&gt; queryClosestPOI(@NonNull Pose pose)</code></h5>
+<p>��ȡ�����POI�㡣</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_410">����ֵ</h6>
+<p>�����λ�������һ��POI�㡣</p>
+<h6 id="_411">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pose</td>
+<td><a href="../robot/#pose">Pose</a></td>
+<td>һ��λ��</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_412">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+StdPair<String, CompositePose> pose = platform.queryClosesPOI(platform.getPose());
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-erasepoistring-var1"><code>boolean erasePOI(String var1)</code></h5>
+<p>����ĳ����Ȥ�㡣</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.8.3</p>
+</blockquote>
+<h6 id="_413">����ֵ</h6>
+<p>boolean��true�������ɹ���false������ʧ�ܡ�</p>
+<h6 id="_414">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>var1</td>
+<td>String</td>
+<td>POI��Ӧ��key</td>
+<td>��</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_415">ע������</h6>
+<p>���ޡ�</p>
+<h6 id="_416">ʾ������</h6>
+<pre><code>
+val platform: AbstractSlamwarePlatform = DeviceManager.connect("192.168.11.1", 1445)
+val isEraseOk = platform.erasePOI("demo")
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+<h5 id="boolean-clearpois"><code>boolean clearPOIs()</code></h5>
+<p>���ȫ������Ȥ�㡣</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.8.3</p>
+</blockquote>
+<h6 id="_417">����ֵ</h6>
+<p>boolean��true������ɹ���false�����ʧ�ܡ�</p>
+<h6 id="_418">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>�ղΡ�</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_419">ע������</h6>
+<p>���ޡ�</p>
+<h6 id="_420">ʾ������</h6>
+<pre><code>
+val platform: AbstractSlamwarePlatform = DeviceManager.connect("192.168.11.1", 1445)
+val isEraseOk = platform.clearPOIs()
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-setcubeconfigstring-path"><code>boolean setCubeConfig(String path)</code></h5>
+<p>�ϴ�CubeConfig��SLAMWARE��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_421">����ֵ</h6>
+<p>�Ƿ��ϴ��ɹ���</p>
+<h6 id="_422">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>path</td>
+<td>String</td>
+<td>CubeConfig�ļ�·��</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_423">ע������</h6>
+<p>��ȷ��Appӵ�жԸ��ļ�Ŀ¼�ķ���Ȩ�ޡ�</p>
+<h6 id="_424">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+platform.setCubeConfig("your_cube_config_path");
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="listrectanglearea-getrectangleareasartifactusage-usage"><code>List&lt;RectangleArea&gt; getRectangleAreas(ArtifactUsage usage)</code></h5>
+<p>��ȡָ�����͵ľ�������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.5.0</p>
+</blockquote>
+<h6 id="_425">����ֵ</h6>
+<p>һ������͵ľ�������<a href="../robot/#rectanglearea">RectangleArea</a>��</p>
+<h6 id="_426">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>������������</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_427">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<RectangleArea> areas = platform.getRectangleAreas(ArtifactUsage.ArtifactUsageForbiddenArea);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-addrectanglearearectanglearea-area"><code>boolean addRectangleArea(RectangleArea area)</code></h5>
+<p>���һ����������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.5.0</p>
+</blockquote>
+<h6 id="_428">����ֵ</h6>
+<p>�Ƿ���ӳɹ���</p>
+<h6 id="_429">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>area</td>
+<td><a href="../robot/#rectanglearea">RectangleArea</a></td>
+<td>�����������</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_430">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+RectangleArea area = new RectangleArea();
+area.setStart(new PointF(0f, 0f));
+area.setEnd(new PointF(-1f, -1f));
+area.setHalfWidth(0.5f);
+area.setUsage(ArtifactUsage.ArtifactUsageForbiddenArea);
+boolean result = platform.addRectangleArea(area);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-addrectangleareasartifactusage-usage-listrectanglearea-areas"><code>boolean addRectangleAreas(ArtifactUsage usage, List&lt;RectangleArea&gt; areas)</code></h5>
+<p>���һ����ͬ���͵ľ�������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.5.0</p>
+</blockquote>
+<h6 id="_431">����ֵ</h6>
+<p>�Ƿ���ӳɹ���</p>
+<h6 id="_432">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>�������������</td>
+<td></td>
+</tr>
+<tr>
+<td>areas</td>
+<td>List&lt;<a href="../robot/#rectanglearea">RectangleArea</a>&gt;</td>
+<td>��������������</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_433">ע������</h6>
+<p>������������������ͬ�����͡�</p>
+<h6 id="_434">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+ArtifactUsage usage = ArtifactUsage.ArtifactUsageForbiddenArea;
+ArrayList<RectangleArea> areas = new ArrayList();
+int count = 4;
+int i = 0;
+while (i < count) {
+  RectangleArea area = new RectangleArea();
+  area.setUsage(usage);
+  area.setStart(new PointF(0.5f * i, 0.5f * i));
+  area.setEnd(new PointF(1f * i, 1f * 1));
+  area.setHalfWidth((1f * i - 0.5f * i) / 2);
+  areas.add(area);
+  i++;
+}
+platform.addRectangleAreas(usage, areas);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-editrectanglearearectanglearea-area"><code>boolean editRectangleArea(RectangleArea area)</code></h5>
+<p>�޸�һ��������������ݡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.5.0</p>
+</blockquote>
+<h6 id="_435">����ֵ</h6>
+<p>�Ƿ��޸ĳɹ���</p>
+<h6 id="_436">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>area</td>
+<td><a href="../robot/#rectanglearea">RectangleArea</a></td>
+<td>��Ҫ�޸ĵľ����������</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_437">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<RectangleArea> areas = platform.getRectangleAreas(ArtifactUsage.ArtifactUsageForbiddenArea);
+if (areas.size() > 0) {
+  RectangleArea area = areas.get(0);
+  area.setUsage(ArtifactUsage.ArtifactUsageDangerousArea);
+  platform.editRectangleArea(area);
+}
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-removerectangleareabyidsartifactusage-usage-int-ids"><code>boolean removeRectangleAreaByIds(ArtifactUsage usage, int[] ids)</code></h5>
+<p>ɾ��һ���������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.5.0</p>
+</blockquote>
+<h6 id="_438">����ֵ</h6>
+<p>�Ƿ�ɾ���ɹ���</p>
+<h6 id="_439">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#artifactusage">ArtifactUsage</a></td>
+<td>��������</td>
+<td></td>
+</tr>
+<tr>
+<td>ids</td>
+<td>int[]</td>
+<td>һ������ID</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_440">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<RectangleArea> areas = platform.getRectangleAreas(ArtifactUsage.ArtifactUsageForbiddenArea);
+int[] ids = new int[areas.size()];
+int index = 0;
+while (index < areas.size()) {
+  ids[index++] = areas.get(index).getId();
+}
+boolean result = platform.removeRectangleAreaByIds(ArtifactUsage.ArtifactUsageForbiddenArea, ids);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-clearrectangleareasartifactusage-usage"><code>boolean clearRectangleAreas(ArtifactUsage usage)</code></h5>
+<p>���ָ�����;�������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.5.0</p>
+</blockquote>
+<h6 id="_441">����ֵ</h6>
+<p>�Ƿ�����ɹ���</p>
+<h6 id="_442">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>usage</td>
+<td><a href="../robot/#rectanglearea">ArtifactUsage</a></td>
+<td>������������</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_443">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+boolean result = platform.clearRectangleAreas(ArtifactUsage.ArtifactUsageForbiddenArea);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-resetlocalizationstatus"><code>boolean resetLocalizationStatus()</code></h5>
+<p>���ö�λ״̬��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.5.0</p>
+</blockquote>
+<h6 id="_444">����ֵ</h6>
+<p>�Ƿ����óɹ���</p>
+<h6 id="_445">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+platform.resetLocalizationStatus();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="listcompositepose-gethomedocks"><code>List&lt;CompositePose&gt; getHomeDocks()</code></h5>
+<p>��ȡSLAMWARE��ǰ���еĳ��׮λ�á�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_446">����ֵ</h6>
+<p>һ����׮λ�����ݡ�</p>
+<h6 id="_447">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<CompositePose> docks = platform.getHomeDocks();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-sethomedocksnonnull-listcompositepose-poses"><code>boolean setHomeDocks(@NonNull List&lt;CompositePose&gt; poses)</code></h5>
+<p>���һ����׮��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_448">����ֵ</h6>
+<p>�Ƿ���ӳɹ���</p>
+<h6 id="_449">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>poses</td>
+<td>List&lt;<a href="../robot/#compositepose">CompositePose</a>&gt;</td>
+<td>����ӵĳ��׮</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_450">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+ArrayList<CompositePose> poses = new ArrayList();
+CompositePose pose = new CompositePose();
+pose.setPose(new Pose(1f, 1f, 0f, 0f, 0f, 0f));
+MapMetaData data = new MapMetaData();
+data.set("display_name", "New DOCK");
+pose.setMetaData(data);
+poses.add(pose);
+platform.setHomeDocks(poses);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="compositepose-registerhomedocknonnull-mapmetadata-metadata"><code>CompositePose registerHomeDock(@NonNull MapMetaData metadata)</code></h5>
+<p>��SLAMWARE��ǰλ�����һ�����׮��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_451">����ֵ</h6>
+<p>���׮λ�á�</p>
+<h6 id="_452">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>metadata</td>
+<td><a href="../robot/#mapmetadata">MapMetaData</a></td>
+<td>���׮��MetaDat��Ϣ�������"display_name"����</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_453">ע������</h6>
+<p>ȷ��SLAMWARE��׮���ٵ��ô˽ӿڡ��Ƿ���ܻ�ʧ�ܡ�</p>
+<h6 id="_454">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+MapMetaData metadata = new MapMetaData();
+metadata.setValue("display_name", "New DOCK");
+platform.registerHomeDock(metadata);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="compositepose-addhomedocknonnull-compositepose-pose"><code>CompositePose addHomeDock(@NonNull CompositePose pose)</code></h5>
+<p>���һ�����׮��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_455">����ֵ</h6>
+<p>��ӵĳ��׮��Ϣ��</p>
+<h6 id="_456">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pose</td>
+<td><a href="../robot/#compositepose">CompositePose</a></td>
+<td>���׮λ��</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_457">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+CompositePose pose = new CompositePose();
+pose.setPose(new Pose(1f, 1f, 0f, 0f, 0f, 0f));
+MapMetaData data = new MapMetaData();
+data.set("display_name", "New DOCK);
+pose.setMetaData(data);
+CompositePose dock = platform.addHomeDock(pose);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-edithomedockcompositepose-pose"><code>boolean editHomeDock(CompositePose pose)</code></h5>
+<p>�޸�һ�����׮���ݡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_458">����ֵ</h6>
+<p>�Ƿ��޸ĳɹ���</p>
+<h6 id="_459">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pose</td>
+<td><a href="../robot/#compositepose">CompositePose</a></td>
+<td>��Ҫ�޸ĵĳ��׮����</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_460">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<CompositePose> docks = platform.getHomeDocks();
+if (docks.size() > 0) {
+  CompositePose pose = docks.get(0);
+  pose.setPose(new Pose(2f, 2f, 0f, 0f, 0f, 0f));
+  platform.editHomeDock(pose);
+}
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-erasehomedocknonnull-string-id"><code>boolean eraseHomeDock(@NonNull String id)</code></h5>
+<p>ɾ��һ�����׮��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_461">����ֵ</h6>
+<p>�Ƿ�ɾ���ɹ���</p>
+<h6 id="_462">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>String</td>
+<td>��Ҫɾ�����׮��ID</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_463">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<CompositePose> docks = platform.getHomeDocks();
+if (docks.size() > 0) {
+  CompositePose dock = docks.get(0);
+  platform.eraseHomeDock(dock.getName());
+}
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-clearhomedocks"><code>boolean clearHomeDocks()</code></h5>
+<p>ɾ�����г��׮��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_464">����ֵ</h6>
+<p>�Ƿ�ɾ���ɹ���</p>
+<h6 id="_465">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+boolean result = platform.clearHomeDocks();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="liststring-getsupportedmotionstrategies"><code>List&lt;String&gt; getSupportedMotionStrategies()</code></h5>
+<p>��ȡSLAMWARE֧�ֵ��˶����ԡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_466">����ֵ</h6>
+<p>һ���˶��������ơ�</p>
+<h6 id="_467">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<String> strategies = platform.getSupportedMotionStrategies();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="boolean-setmotionstrategynonnull-string-strategy"><code>boolean setMotionStrategy(@NonNull String strategy)</code></h5>
+<p>����SLAMWARE���˶����ԡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_468">����ֵ</h6>
+<p>�Ƿ����óɹ���</p>
+<h6 id="_469">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>strategy</td>
+<td>String</td>
+<td>��������</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h6 id="_470">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+List<String> strategies = platform.getSupportedMotionStrategies();
+if (strategies.size() > 0) {
+  String strategy = strategies.get(0);
+  platform.setMotionStrategy(strategy);
+}
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="string-getcurrentmotionstrategy"><code>String getCurrentMotionStrategy()</code></h5>
+<p>��ȡSLAMWARE��ǰ���˶����ԡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v4.6.0</p>
+</blockquote>
+<h6 id="_471">����ֵ</h6>
+<p>��ǰ���˶��������ơ�</p>
+<h6 id="_472">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform paltform = DeviceManager.connect("192.168.11.1", 1445);
+String strategy = platform.getCurrentMotionStrategy();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../geometry/" class="btn btn-neutral float-left" title="Slamware-geometry"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../message/" class="btn btn-neutral float-right" title="Slamware-message">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../geometry/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../message/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Slamware-action - My Docs</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Slamware-action";
+        var mkdocs_page_input_path = "action.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> My Docs
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Slamware-action</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#iaction">IAction�ӿ�</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_1">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#cancel">cancel()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getactionname">getActionName()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getprogress">getProgress()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getstatus">getStatus()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#waituntildone">waitUntilDone()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#isempty">isEmpty()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getactionid">getActionId()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getreason">getReason()</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#imoveaction-iaction">IMoveAction IAction�ӿ�</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_34">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getremainingmilestones">getRemainingMilestones()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getremainingpath">getRemainingPath()</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#isweepmoveaction">ISweepMoveAction��</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_43">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pause">pause()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#resume">resume()</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#isweepmoveaction-iaction">ISweepMoveAction IAction�ӿ�</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_52">����</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#path">path��</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_53">����</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#path_1">Path()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pathpath-path">Path(Path path)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pathjavautilvectorlocation-points">Path(java.util.Vector&lt;Location&gt; points)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getpoints">getPoints()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setpointsjavautilvectorlocation-points">setPoints(java.util.Vector&lt;Location&gt; points)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#actionstatus">ActionStatusö��</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_74">ö�ٳ���</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#waiting_for_start">WAITING_FOR_START</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#running">RUNNING</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#finished">FINISHED</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#paused">PAUSED</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#stopped">STOPPED</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#error">ERROR</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#movedirection">MoveDirectionö��</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#forward">FORWARD</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#backward">BACKWARD</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#turn_right">TURN_RIGHT</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#turn_left">TURN_LEFT</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../discovery/">Slamware-discovery</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../exceptions/">Slamware-exception</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../FirmwareUpdate/">Slamware-firmware-update</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../geometry/">Slamware-geometry</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../slamware/">Slamware</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../message/">Slamware-message</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../robot/">Slamware-robot</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../sdp/">Slamware-sdp</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../utils/">Slamware-utils</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log/">Slamware-log</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log-customer/">Slamware-log-customer</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">My Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Slamware-action</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="comslamtecslamwareaction">com.slamtec.slamware.action��</h2>
+<p><a id="classIAction"></a></p>
+<h3 id="iaction"><code>IAction</code>�ӿ�</h3>
+<h4 id="_1">����</h4>
+<h5 id="cancel"><code>cancel()</code></h5>
+<p>ȡ�����β�����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_2">����ֵ</h6>
+<p>�ޡ�</p>
+<h6 id="_3">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_4">ע������</h6>
+<p>�ӿ��׳����쳣�����У�</br>
+RequesFailException : ����ʧ���쳣</br>
+ConnectionFailException : ����ʧ���쳣</br>
+ConnectionTimeoutException : ���ӳ�ʱ�쳣</br>
+UnauthorizedRequestException : ����δ��Ȩ</br>
+UnsupportedCommandException : ��֧�ִ�����</p>
+<h6 id="_5">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.cancel();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="getactionname"><code>getActionName()</code></h5>
+<p>��ȡ�������ơ�����ֵΪ�������ƣ�string����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_6">����ֵ</h6>
+<p>��������Ϊjava.lang.String</p>
+<h6 id="_7">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_8">ע������</h6>
+<p>��</p>
+<h6 id="_9">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.getActionName();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="getprogress"><code>getProgress()</code></h5>
+<p>��ȡ�������̣�0~1��������ֵΪ�������̣�double����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_10">����ֵ</h6>
+<p>��������Ϊdouble</p>
+<h6 id="_11">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_12">ע������</h6>
+<p>��</p>
+<h6 id="_13">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.getProgress();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="getstatus"><code>getStatus()</code></h5>
+<p>��ȡ����״̬������ֵΪ����״̬��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_14">����ֵ</h6>
+<p>��������ΪActionStatus</p>
+<h6 id="_15">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_16">ע������</h6>
+<p>�ӿ��׳����쳣�����У�</br>
+RequesFailException : ����ʧ���쳣</br>
+ConnectionFailException : ����ʧ���쳣</br>
+ConnectionTimeoutException : ���ӳ�ʱ�쳣</br>
+UnauthorizedRequestException : ����δ��Ȩ</br>
+UnsupportedCommandException : ��֧�ִ�����</br>
+ParseInvalidException : ����ʧ��</br>
+InvalidArgumentException : ��Ч�Ĳ���</p>
+<h6 id="_17">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.getStatus();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="waituntildone"><code>waitUntilDone()</code></h5>
+<p>�ȴ�������ɡ�����ֵΪ��ɵĶ��������</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_18">����ֵ</h6>
+<p>��������ΪActionStatus</p>
+<h6 id="_19">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_20">ע������</h6>
+<p>����һ������ʽ�������ӿ��׳����쳣�����У�</br>
+RequesFailException : ����ʧ���쳣</br>
+ConnectionFailException : ����ʧ���쳣</br>
+ConnectionTimeoutException : ���ӳ�ʱ�쳣</br>
+UnauthorizedRequestException : ����δ��Ȩ</br>
+UnsupportedCommandException : ��֧�ִ�����</br>
+ParseInvalidException : ����ʧ��</br>
+InvalidArgumentException : ��Ч�Ĳ���</p>
+<h6 id="_21">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.waitUntilDone();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="isempty"><code>isEmpty()</code></h5>
+<p>��鵱ǰ�����Ƿ�Ϊ�ա�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_22">����ֵ</h6>
+<p>��������Ϊboolean</p>
+<h6 id="_23">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_24">ע������</h6>
+<p>��</p>
+<h6 id="_25">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.isEmpty();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="getactionid"><code>getActionId()</code></h5>
+<p>��ȡ��ǰ����id��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_26">����ֵ</h6>
+<p>��������Ϊint��ʾ��ǰ��actionId��</p>
+<h6 id="_27">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_28">ע������</h6>
+<p>��</p>
+<h6 id="_29">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.getActionId();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="getreason"><code>getReason()</code></h5>
+<p>��ȡ��ǰaction�����󷵻ص��ַ������ɹ���᷵�ز�Ϊnull�ҳ���Ϊ0���ַ�����ʧ�ܺ�᷵��˵��ʧ��ԭ����ַ�����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_30">����ֵ</h6>
+<p>��������Ϊjava.lang.String���ɹ���᷵�ز�Ϊnull�ҳ���Ϊ0���ַ�����ʧ�ܺ�᷵��ʧ��ԭ����ַ�������ȡ����ǰaction�����֡�
+�磺</p>
+<ul>
+<li>"failed"��ʾactionʧ�ܣ�</li>
+<li>"aborted"��ʾaction�����(��������cancel������actionû�н�����ʱ������µ�action)��</li>
+<li>��unreachable������ʾĿ��㲻�ɴ�(����·��ʧ��)��</li>
+<li>��unhealthy"������ǰ������״̬���ǽ���״̬,����ͨ��getRobotHealth(��ȥ���������Ϣ��</li>
+<li>"lifted",������ǰ�������뿪����,"low_localization_quality"������ǰ�����˶�λ�����ܵͣ�</li>
+<li>����moveTo�ӿڼ���<code>MoveOptionFlagKeyPoints���flag</code>,Ҳ������������moveto��getReason(�����ص�<code>blocked[lidar;wall;contact;depth_camera;sonar;cliff]</code>����ʾ��������������ʱ��ǰ�����ϰ��ﵼ��ʧ�ܡ���[]����Ϊ����ԭ���á������ָ�,������һ�����߶��(���������ͷ��ؼ���)��ʾ�����ϰ���Ĵ��������ࡣlidar�������״wall������ǽ��contact����ײ��������depth_camera���������ͷ��sornar����������cliff�����䴫������</li>
+</ul>
+<h6 id="_31">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_32">ע������</h6>
+<p>��</p>
+<h6 id="_33">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.getReason();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<p><a id="classIMoveAction"></a></p>
+<h3 id="imoveaction-iaction"><code>IMoveAction IAction</code>�ӿ�</h3>
+<h4 id="_34">����</h4>
+<h5 id="getremainingmilestones"><code>getRemainingMilestones()</code></h5>
+<p>��ȡʣ����̱�������ֵΪʣ�����̱���</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_35">����ֵ</h6>
+<p>����ʣ����̱�������ΪPath</p>
+<h6 id="_36">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_37">ע������</h6>
+<p>�ӿ��׳����쳣�����У�</br>
+RequesFailException : ����ʧ���쳣</br>
+ConnectionFailException : ����ʧ���쳣</br>
+ConnectionTimeoutException : ���ӳ�ʱ�쳣</br>
+UnauthorizedRequestException : ����δ��Ȩ</br>
+UnsupportedCommandException : ��֧�ִ�����</br>
+ParseInvalidException : ����ʧ��</br>
+InvalidArgumentException : ��Ч�Ĳ���</p>
+<h6 id="_38">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction action = platform.getCurrentAction();
+action.getRemainingMilestones();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="getremainingpath"><code>getRemainingPath()</code></h5>
+<p>��ȡ����һ��̱���ʣ��·��������ֵΪ����һ��̱���ʣ��·����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_39">����ֵ</h6>
+<p>������һ��̱�ʣ��·��������ΪPath</p>
+<h6 id="_40">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_41">ע������</h6>
+<p>�ӿ��׳����쳣�����У�</br>
+RequesFailException : ����ʧ���쳣</br>
+ConnectionFailException : ����ʧ���쳣</br>
+ConnectionTimeoutException : ���ӳ�ʱ�쳣</br>
+UnauthorizedRequestException : ����δ��Ȩ</br>
+UnsupportedCommandException : ��֧�ִ�����</br>
+ParseInvalidException : ����ʧ��</br>
+InvalidArgumentException : ��Ч�Ĳ���</p>
+<h6 id="_42">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction action = platform.getCurrentAction();
+action.getRemainingPath();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<p>�̳���com.slamtec.slamware.action.IAction�ӿڵķ������£�
+cancel, getActionName, getProgress, getStatus, waitUntilDone</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h3 id="isweepmoveaction"><code>ISweepMoveAction</code>��</h3>
+<h4 id="_43">����</h4>
+<h5 id="pause"><code>pause()</code></h5>
+<p>�õ�ǰ�����˵Ķ�����ͣ��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_44">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_45">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_46">ע������</h6>
+<p>�ӿ��׳����쳣�����У�</br>
+RequesFailException : ����ʧ���쳣</br>
+ConnectionFailException : ����ʧ���쳣</br>
+ConnectionTimeoutException : ���ӳ�ʱ�쳣</br>
+UnauthorizedRequestException : ����δ��Ȩ</br>
+UnsupportedCommandException : ��֧�ִ�����</br></p>
+<h6 id="_47">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+ISweepMoveAction action = platform.startSweep();
+action.pause();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="resume"><code>resume()</code></h5>
+<p>���»ָ���ǰ�����˵Ķ�����</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_48">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_49">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_50">ע������</h6>
+<p>�ӿ��׳����쳣�����У�</br>
+RequesFailException : ����ʧ���쳣</br>
+ConnectionFailException : ����ʧ���쳣</br>
+ConnectionTimeoutException : ���ӳ�ʱ�쳣</br>
+UnauthorizedRequestException : ����δ��Ȩ</br>
+UnsupportedCommandException : ��֧�ִ�����</br></p>
+<h6 id="_51">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+ISweepMoveAction action = platform.startSweep();
+action.pause();
+action.resume();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h3 id="isweepmoveaction-iaction"><code>ISweepMoveAction IAction</code>�ӿ�</h3>
+<p>��ʾ��ɨʱ���ƶ�������</p>
+<h4 id="_52">����</h4>
+<p>�̳���com.slamtec.slamware.action.IMoveAction�ӿڵķ������£�
+getRemainingMilestones, getRemainingPath</p>
+<p>�̳���com.slamtec.slamware.action.IAction�ӿڵķ������£�
+cancel, getActionName, getProgress, getStatus, waitUntilDone</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h3 id="path"><code>path</code>��</h3>
+<p>�࣬��ʾһ��·����</p>
+<h4 id="_53">����</h4>
+<h5 id="path_1"><code>Path()</code></h5>
+<p>��������Path��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_54">����ֵ</h6>
+<p>��</p>
+<h6 id="_55">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_56">ע������</h6>
+<p>��</p>
+<h6 id="_57">ʾ������</h6>
+<pre><code>
+Path path = new Path();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="pathpath-path"><code>Path(Path path)</code></h5>
+<p>��������Ϊpath�Ķ���Path��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_58">����ֵ</h6>
+<p>��</p>
+<h6 id="_59">����˵��</h6>
+<p>|��������|��������|����|��ע|</br>
+|path   |Path   |ͨ����ǰPath�������µ�Path����</p>
+<h6 id="_60">ע������</h6>
+<p>��</p>
+<h6 id="_61">ʾ������</h6>
+<pre><code>
+Path oldPath = new Path();
+Path newPath = new Path(oldPath);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="pathjavautilvectorlocation-points"><code>Path(java.util.Vector&lt;Location&gt; points)</code></h5>
+<p>��������Ϊpoints�Ķ���Path��</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_62">����ֵ</h6>
+<p>��</p>
+<h6 id="_63">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>points</td>
+<td>java.util.Vector&lt;\Location&gt;</td>
+<td>��ǰ����Path�����λ�ü���</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_64">ע������</h6>
+<p>��</p>
+<h6 id="_65">ʾ������</h6>
+<pre><code>
+java.util.Vector<Location> points = new java.util.Vector();
+points.add(new Location());
+Path path = new Path(points);
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="getpoints"><code>getPoints()</code></h5>
+<p>��ȡ��ǰPath�����λ�ü��ϡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_66">����ֵ</h6>
+<p>java.util.Vector<Location></p>
+<h6 id="_67">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>��</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_68">ע������</h6>
+<p>��</p>
+<h6 id="_69">ʾ������</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction action = platfrom.getCurrentAction();
+Path path = action.getRemainingPath();
+java.util.Vector<Location> locations = path.getPoints();
+</code></pre>
+
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h5 id="setpointsjavautilvectorlocation-points"><code>setPoints(java.util.Vector&lt;Location&gt; points)</code></h5>
+<p>Ϊ��ǰPath����λ�ü��ϡ�</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_70">����ֵ</h6>
+<p>��������Ϊvoid</p>
+<h6 id="_71">����˵��</h6>
+<table>
+<thead>
+<tr>
+<th>��������</th>
+<th>��������</th>
+<th>����</th>
+<th>��ע</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>points</td>
+<td>java.util.Vector&lt;Location</td>
+<td>��ǰ����Path�����λ�ü���</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_72">ע������</h6>
+<p>��</p>
+<h6 id="_73">ʾ������</h6>
+<p><pre><code>
+java.util.Vector<Location> locations = new java.util.Vector();
+locations.add(new Location(1.0, 1.0, 0.0));
+Path path = new Path();
+path.setPoints(locations);
+</code></pre></p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+
+<h3 id="actionstatus"><code>ActionStatus</code>ö��</h3>
+<p>��ʾ������״̬��</p>
+<h4 id="_74">ö�ٳ���</h4>
+<h5 id="waiting_for_start"><code>WAITING_FOR_START</code></h5>
+<p>�����Ѵ�����δ��ʼ��</p>
+<h5 id="running"><code>RUNNING</code></h5>
+<p>�������ڽ��С�</p>
+<h5 id="finished"><code>FINISHED</code></h5>
+<p>�����ɹ���ɡ�</p>
+<h5 id="paused"><code>PAUSED</code></h5>
+<p>��������ͣ��</p>
+<h5 id="stopped"><code>STOPPED</code></h5>
+<p>������ֹͣ��</p>
+<h5 id="error"><code>ERROR</code></h5>
+<p>������������</p>
+<!--�ֽڷ�--------------------------------------------------------------------->
+<p><a id="classMoveDirection"></a></p>
+<h3 id="movedirection"><code>MoveDirection</code>ö��</h3>
+<p>�˹����ƻ�����ʱҪ��������ƶ��ķ���</p>
+<h5 id="forward"><code>FORWARD</code></h5>
+<p>��ǰ�ƶ�����Ϊ��ǰ��</p>
+<h5 id="backward"><code>BACKWARD</code></h5>
+<p>��ǰ�ƶ�����Ϊ���</p>
+<h5 id="turn_right"><code>TURN_RIGHT</code></h5>
+<p>��ǰ�ƶ�����Ϊ���ҡ�</p>
+<h5 id="turn_left"><code>TURN_LEFT</code></h5>
+<p>��ǰ�ƶ�����Ϊ����</p>
+<!--ҳβ--------------------------------------------------------------------->
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href=".." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../discovery/" class="btn btn-neutral float-right" title="Slamware-discovery">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../discovery/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

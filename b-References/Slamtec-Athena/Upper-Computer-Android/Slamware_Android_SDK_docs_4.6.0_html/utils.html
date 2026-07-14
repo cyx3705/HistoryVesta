@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Slamware-utils - My Docs</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Slamware-utils";
+        var mkdocs_page_input_path = "utils.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> My Docs
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../action/">Slamware-action</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../discovery/">Slamware-discovery</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../exceptions/">Slamware-exception</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../FirmwareUpdate/">Slamware-firmware-update</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../geometry/">Slamware-geometry</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../slamware/">Slamware</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../message/">Slamware-message</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../robot/">Slamware-robot</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../sdp/">Slamware-sdp</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Slamware-utils</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#stdpair">StdPair类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_1">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#stdpair_1">StdPair()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_6">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#stdpairfirstelemt-first-secondelemt-second">StdPair(FirstElemT first, SecondElemT second)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_11">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getfirst">getFirst()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_16">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setfirstfirstelemt-first">setFirst(FirstElemT first)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_21">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getsecond">getSecond()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_26">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setsecondsecondelemt-second">setSecond(SecondElemT second)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log/">Slamware-log</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log-customer/">Slamware-log-customer</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">My Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Slamware-utils</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="comslamtecslamwareutils">com.slamtec.slamware.utils包</h2>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="stdpair"><code>StdPair</code>类</h3>
+<p>模板类 StdPair&lt;FirstElemT, SecondElemT&gt;， 类似于 C++ 的 std::pair，FirstElemT 和 SecondElemT 分别为第一和第二元素的数据类型。</p>
+<h4 id="_1">方法</h4>
+<h5 id="stdpair_1"><code>StdPair()</code></h5>
+<p>默认构造函数</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_2">返回值</h6>
+<p>无</p>
+<h6 id="_3">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_4">注意事项</h6>
+<p>无</p>
+<h6 id="_5">示例代码</h6>
+<pre><code>
+StdPair tPair = new StdPair();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_6">方法</h4>
+<h5 id="stdpairfirstelemt-first-secondelemt-second"><code>StdPair(FirstElemT first, SecondElemT second)</code></h5>
+<p>带参构造函数</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_7">返回值</h6>
+<p>无</p>
+<h6 id="_8">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>first</td>
+<td>FirstElemT</td>
+<td>第一元素</td>
+<td>-</td>
+</tr>
+<tr>
+<td>second</td>
+<td>SecondElemT</td>
+<td>第二元素</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_9">注意事项</h6>
+<p>无</p>
+<h6 id="_10">示例代码</h6>
+<pre><code>
+FirstElemT first = new FirstElemT();
+SecondElemT second = new SecondElemT();
+StdPair tPair = new StdPair(first, second);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_11">方法</h4>
+<h5 id="getfirst"><code>getFirst()</code></h5>
+<p>获取第一元素</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_12">返回值</h6>
+<p>返回类型为 FirstElemT</p>
+<h6 id="_13">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_14">注意事项</h6>
+<p>无</p>
+<h6 id="_15">示例代码</h6>
+<pre><code>
+StdPair tPair = new StdPair();
+FirstElemT first = tPair.getFirst();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_16">方法</h4>
+<h5 id="setfirstfirstelemt-first"><code>setFirst(FirstElemT first)</code></h5>
+<p>设置第一元素</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_17">返回值</h6>
+<p>无</p>
+<h6 id="_18">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>first</td>
+<td>FirstElemT</td>
+<td>第一元素</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_19">注意事项</h6>
+<p>无</p>
+<h6 id="_20">示例代码</h6>
+<pre><code>
+StdPair tPair = new StdPair();
+FirstElemT first = new FirstElemT();
+tPair.setFirst(first);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_21">方法</h4>
+<h5 id="getsecond"><code>getSecond()</code></h5>
+<p>获取第二元素</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_22">返回值</h6>
+<p>返回类型为SecondElemT</p>
+<h6 id="_23">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_24">注意事项</h6>
+<p>无</p>
+<h6 id="_25">示例代码</h6>
+<pre><code>
+StdPair tPair = new StdPair();
+SecondElemT second = tPair.getSecond();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_26">方法</h4>
+<h5 id="setsecondsecondelemt-second"><code>setSecond(SecondElemT second)</code></h5>
+<p>设置第二元素</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_27">返回值</h6>
+<p>无</p>
+<h6 id="_28">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>second</td>
+<td>SecondElemT</td>
+<td>第二元素</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_29">注意事项</h6>
+<p>无</p>
+<h6 id="_30">示例代码</h6>
+<pre><code>
+StdPair tPair = new StdPair();
+SecondElemT second = new FirstElemT();
+tPair.setFirst(second);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../sdp/" class="btn btn-neutral float-left" title="Slamware-sdp"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../log/" class="btn btn-neutral float-right" title="Slamware-log">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../sdp/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../log/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

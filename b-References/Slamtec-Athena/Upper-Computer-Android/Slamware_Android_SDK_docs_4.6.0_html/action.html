@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Slamware-action - My Docs</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Slamware-action";
+        var mkdocs_page_input_path = "action.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> My Docs
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Slamware-action</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#iaction">IAction接口</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_1">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#cancel">cancel()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getactionname">getActionName()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getprogress">getProgress()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getstatus">getStatus()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#waituntildone">waitUntilDone()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#isempty">isEmpty()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getactionid">getActionId()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getreason">getReason()</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#imoveaction-iaction">IMoveAction IAction接口</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_34">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getremainingmilestones">getRemainingMilestones()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getremainingpath">getRemainingPath()</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#isweepmoveaction">ISweepMoveAction类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_43">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pause">pause()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#resume">resume()</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#isweepmoveaction-iaction">ISweepMoveAction IAction接口</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_52">方法</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#path">path类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_53">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#path_1">Path()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pathpath-path">Path(Path path)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pathjavautilvectorlocation-points">Path(java.util.Vector&lt;Location&gt; points)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getpoints">getPoints()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setpointsjavautilvectorlocation-points">setPoints(java.util.Vector&lt;Location&gt; points)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#actionstatus">ActionStatus枚举</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_74">枚举常量</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#waiting_for_start">WAITING_FOR_START</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#running">RUNNING</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#finished">FINISHED</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#paused">PAUSED</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#stopped">STOPPED</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#error">ERROR</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#movedirection">MoveDirection枚举</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#forward">FORWARD</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#backward">BACKWARD</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#turn_right">TURN_RIGHT</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#turn_left">TURN_LEFT</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../discovery/">Slamware-discovery</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../exceptions/">Slamware-exception</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../FirmwareUpdate/">Slamware-firmware-update</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../geometry/">Slamware-geometry</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../slamware/">Slamware</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../message/">Slamware-message</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../robot/">Slamware-robot</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../sdp/">Slamware-sdp</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../utils/">Slamware-utils</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log/">Slamware-log</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log-customer/">Slamware-log-customer</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">My Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Slamware-action</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="comslamtecslamwareaction">com.slamtec.slamware.action包</h2>
+<p><a id="classIAction"></a></p>
+<h3 id="iaction"><code>IAction</code>接口</h3>
+<h4 id="_1">方法</h4>
+<h5 id="cancel"><code>cancel()</code></h5>
+<p>取消本次操作。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_2">返回值</h6>
+<p>无。</p>
+<h6 id="_3">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_4">注意事项</h6>
+<p>接口抛出的异常类型有：</br>
+RequesFailException : 请求失败异常</br>
+ConnectionFailException : 连接失败异常</br>
+ConnectionTimeoutException : 连接超时异常</br>
+UnauthorizedRequestException : 请求未授权</br>
+UnsupportedCommandException : 不支持此命令</p>
+<h6 id="_5">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.cancel();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getactionname"><code>getActionName()</code></h5>
+<p>获取动作名称。返回值为动作名称（string）。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_6">返回值</h6>
+<p>返回类型为java.lang.String</p>
+<h6 id="_7">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_8">注意事项</h6>
+<p>无</p>
+<h6 id="_9">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.getActionName();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getprogress"><code>getProgress()</code></h5>
+<p>获取动作进程（0~1）。返回值为动作进程（double）。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_10">返回值</h6>
+<p>返回类型为double</p>
+<h6 id="_11">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_12">注意事项</h6>
+<p>无</p>
+<h6 id="_13">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.getProgress();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getstatus"><code>getStatus()</code></h5>
+<p>获取动作状态。返回值为动作状态。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_14">返回值</h6>
+<p>返回类型为ActionStatus</p>
+<h6 id="_15">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_16">注意事项</h6>
+<p>接口抛出的异常类型有：</br>
+RequesFailException : 请求失败异常</br>
+ConnectionFailException : 连接失败异常</br>
+ConnectionTimeoutException : 连接超时异常</br>
+UnauthorizedRequestException : 请求未授权</br>
+UnsupportedCommandException : 不支持此命令</br>
+ParseInvalidException : 解析失败</br>
+InvalidArgumentException : 无效的参数</p>
+<h6 id="_17">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.getStatus();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="waituntildone"><code>waitUntilDone()</code></h5>
+<p>等待动作完成。返回值为完成的动作结果。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_18">返回值</h6>
+<p>返回类型为ActionStatus</p>
+<h6 id="_19">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_20">注意事项</h6>
+<p>这是一个阻塞式方法。接口抛出的异常类型有：</br>
+RequesFailException : 请求失败异常</br>
+ConnectionFailException : 连接失败异常</br>
+ConnectionTimeoutException : 连接超时异常</br>
+UnauthorizedRequestException : 请求未授权</br>
+UnsupportedCommandException : 不支持此命令</br>
+ParseInvalidException : 解析失败</br>
+InvalidArgumentException : 无效的参数</p>
+<h6 id="_21">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.waitUntilDone();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="isempty"><code>isEmpty()</code></h5>
+<p>检查当前动作是否为空。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_22">返回值</h6>
+<p>返回类型为boolean</p>
+<h6 id="_23">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_24">注意事项</h6>
+<p>无</p>
+<h6 id="_25">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.isEmpty();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getactionid"><code>getActionId()</code></h5>
+<p>获取当前动作id。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_26">返回值</h6>
+<p>返回类型为int表示当前的actionId。</p>
+<h6 id="_27">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_28">注意事项</h6>
+<p>无</p>
+<h6 id="_29">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.getActionId();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getreason"><code>getReason()</code></h5>
+<p>获取当前action结束后返回的字符串，成功后会返回不为null且长度为0的字符串，失败后会返回说明失败原因的字符串。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_30">返回值</h6>
+<p>返回类型为java.lang.String。成功后会返回不为null且长度为0的字符串，失败后会返回失败原因的字符串。获取到当前action的名字。
+如：</p>
+<ul>
+<li>"failed"表示action失败；</li>
+<li>"aborted"表示action被打断(主动调用cancel或者在action没有结束得时候启动新的action)；</li>
+<li>“unreachable”，表示目标点不可达(搜索路径失败)；</li>
+<li>“unhealthy"表明当前机器人状态不是健康状态,可以通过getRobotHealth(）去看具体的信息；</li>
+<li>"lifted",表明当前机器人离开地面,"low_localization_quality"表明当前机器人定位质量很低；</li>
+<li>对于moveTo接口加上<code>MoveOptionFlagKeyPoints这个flag</code>,也就是虚拟轨道的moveto：getReason(）返回的<code>blocked[lidar;wall;contact;depth_camera;sonar;cliff]</code>，表示在虚拟轨道导航的时候前方有障碍物导致失败。“[]”内为具体原因，用“；”分隔,可以有一个或者多个(触发几个就返回几个)表示发现障碍物的传感器种类。lidar：激光雷达；wall：虚拟墙；contact：碰撞传感器；depth_camera：深度摄像头；sornar：超声波；cliff：跌落传感器。</li>
+</ul>
+<h6 id="_31">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_32">注意事项</h6>
+<p>无</p>
+<h6 id="_33">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IAction action = platform.getCurrentAction();
+action.getReason();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<p><a id="classIMoveAction"></a></p>
+<h3 id="imoveaction-iaction"><code>IMoveAction IAction</code>接口</h3>
+<h4 id="_34">方法</h4>
+<h5 id="getremainingmilestones"><code>getRemainingMilestones()</code></h5>
+<p>获取剩余里程碑。返回值为剩余的里程碑。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_35">返回值</h6>
+<p>返回剩余里程碑，类型为Path</p>
+<h6 id="_36">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_37">注意事项</h6>
+<p>接口抛出的异常类型有：</br>
+RequesFailException : 请求失败异常</br>
+ConnectionFailException : 连接失败异常</br>
+ConnectionTimeoutException : 连接超时异常</br>
+UnauthorizedRequestException : 请求未授权</br>
+UnsupportedCommandException : 不支持此命令</br>
+ParseInvalidException : 解析失败</br>
+InvalidArgumentException : 无效的参数</p>
+<h6 id="_38">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction action = platform.getCurrentAction();
+action.getRemainingMilestones();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getremainingpath"><code>getRemainingPath()</code></h5>
+<p>获取到下一里程碑的剩余路径。返回值为到下一里程碑的剩余路径。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_39">返回值</h6>
+<p>返回下一里程碑剩余路径，类型为Path</p>
+<h6 id="_40">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_41">注意事项</h6>
+<p>接口抛出的异常类型有：</br>
+RequesFailException : 请求失败异常</br>
+ConnectionFailException : 连接失败异常</br>
+ConnectionTimeoutException : 连接超时异常</br>
+UnauthorizedRequestException : 请求未授权</br>
+UnsupportedCommandException : 不支持此命令</br>
+ParseInvalidException : 解析失败</br>
+InvalidArgumentException : 无效的参数</p>
+<h6 id="_42">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction action = platform.getCurrentAction();
+action.getRemainingPath();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<p>继承自com.slamtec.slamware.action.IAction接口的方法如下：
+cancel, getActionName, getProgress, getStatus, waitUntilDone</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="isweepmoveaction"><code>ISweepMoveAction</code>类</h3>
+<h4 id="_43">方法</h4>
+<h5 id="pause"><code>pause()</code></h5>
+<p>让当前机器人的动作暂停。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_44">返回值</h6>
+<p>返回类型为void</p>
+<h6 id="_45">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_46">注意事项</h6>
+<p>接口抛出的异常类型有：</br>
+RequesFailException : 请求失败异常</br>
+ConnectionFailException : 连接失败异常</br>
+ConnectionTimeoutException : 连接超时异常</br>
+UnauthorizedRequestException : 请求未授权</br>
+UnsupportedCommandException : 不支持此命令</br></p>
+<h6 id="_47">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+ISweepMoveAction action = platform.startSweep();
+action.pause();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="resume"><code>resume()</code></h5>
+<p>重新恢复当前机器人的动作。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_48">返回值</h6>
+<p>返回类型为void</p>
+<h6 id="_49">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_50">注意事项</h6>
+<p>接口抛出的异常类型有：</br>
+RequesFailException : 请求失败异常</br>
+ConnectionFailException : 连接失败异常</br>
+ConnectionTimeoutException : 连接超时异常</br>
+UnauthorizedRequestException : 请求未授权</br>
+UnsupportedCommandException : 不支持此命令</br></p>
+<h6 id="_51">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+ISweepMoveAction action = platform.startSweep();
+action.pause();
+action.resume();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="isweepmoveaction-iaction"><code>ISweepMoveAction IAction</code>接口</h3>
+<p>表示清扫时的移动动作。</p>
+<h4 id="_52">方法</h4>
+<p>继承自com.slamtec.slamware.action.IMoveAction接口的方法如下：
+getRemainingMilestones, getRemainingPath</p>
+<p>继承自com.slamtec.slamware.action.IAction接口的方法如下：
+cancel, getActionName, getProgress, getStatus, waitUntilDone</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="path"><code>path</code>类</h3>
+<p>类，表示一条路径。</p>
+<h4 id="_53">方法</h4>
+<h5 id="path_1"><code>Path()</code></h5>
+<p>创建对象Path。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_54">返回值</h6>
+<p>无</p>
+<h6 id="_55">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_56">注意事项</h6>
+<p>无</p>
+<h6 id="_57">示例代码</h6>
+<pre><code>
+Path path = new Path();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="pathpath-path"><code>Path(Path path)</code></h5>
+<p>创建参数为path的对象Path。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_58">返回值</h6>
+<p>无</p>
+<h6 id="_59">参数说明</h6>
+<p>|参数名称|参数类型|描述|备注|</br>
+|path   |Path   |通过当前Path对象构造新的Path对象</p>
+<h6 id="_60">注意事项</h6>
+<p>无</p>
+<h6 id="_61">示例代码</h6>
+<pre><code>
+Path oldPath = new Path();
+Path newPath = new Path(oldPath);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="pathjavautilvectorlocation-points"><code>Path(java.util.Vector&lt;Location&gt; points)</code></h5>
+<p>创建参数为points的对象Path。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_62">返回值</h6>
+<p>无</p>
+<h6 id="_63">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>points</td>
+<td>java.util.Vector&lt;\Location&gt;</td>
+<td>当前构造Path对象的位置集合</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_64">注意事项</h6>
+<p>无</p>
+<h6 id="_65">示例代码</h6>
+<pre><code>
+java.util.Vector<Location> points = new java.util.Vector();
+points.add(new Location());
+Path path = new Path(points);
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getpoints"><code>getPoints()</code></h5>
+<p>获取当前Path对象的位置集合。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_66">返回值</h6>
+<p>java.util.Vector<Location></p>
+<h6 id="_67">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_68">注意事项</h6>
+<p>无</p>
+<h6 id="_69">示例代码</h6>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445);
+IMoveAction action = platfrom.getCurrentAction();
+Path path = action.getRemainingPath();
+java.util.Vector<Location> locations = path.getPoints();
+</code></pre>
+
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setpointsjavautilvectorlocation-points"><code>setPoints(java.util.Vector&lt;Location&gt; points)</code></h5>
+<p>为当前Path设置位置集合。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_70">返回值</h6>
+<p>返回类型为void</p>
+<h6 id="_71">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>points</td>
+<td>java.util.Vector&lt;Location</td>
+<td>当前构造Path对象的位置集合</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_72">注意事项</h6>
+<p>无</p>
+<h6 id="_73">示例代码</h6>
+<p><pre><code>
+java.util.Vector<Location> locations = new java.util.Vector();
+locations.add(new Location(1.0, 1.0, 0.0));
+Path path = new Path();
+path.setPoints(locations);
+</code></pre></p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="actionstatus"><code>ActionStatus</code>枚举</h3>
+<p>表示动作的状态。</p>
+<h4 id="_74">枚举常量</h4>
+<h5 id="waiting_for_start"><code>WAITING_FOR_START</code></h5>
+<p>动作已创建但未开始。</p>
+<h5 id="running"><code>RUNNING</code></h5>
+<p>动作正在进行。</p>
+<h5 id="finished"><code>FINISHED</code></h5>
+<p>动作成功完成。</p>
+<h5 id="paused"><code>PAUSED</code></h5>
+<p>动作已暂停。</p>
+<h5 id="stopped"><code>STOPPED</code></h5>
+<p>动作已停止。</p>
+<h5 id="error"><code>ERROR</code></h5>
+<p>动作遇到错误。</p>
+<!--分节符--------------------------------------------------------------------->
+<p><a id="classMoveDirection"></a></p>
+<h3 id="movedirection"><code>MoveDirection</code>枚举</h3>
+<p>人工控制机器人时要求机器人移动的方向。</p>
+<h5 id="forward"><code>FORWARD</code></h5>
+<p>当前移动动作为向前。</p>
+<h5 id="backward"><code>BACKWARD</code></h5>
+<p>当前移动动作为向后。</p>
+<h5 id="turn_right"><code>TURN_RIGHT</code></h5>
+<p>当前移动动作为向右。</p>
+<h5 id="turn_left"><code>TURN_LEFT</code></h5>
+<p>当前移动动作为向左。</p>
+<!--页尾--------------------------------------------------------------------->
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href=".." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../discovery/" class="btn btn-neutral float-right" title="Slamware-discovery">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../discovery/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

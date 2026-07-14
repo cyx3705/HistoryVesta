@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Slamware-geometry - My Docs</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Slamware-geometry";
+        var mkdocs_page_input_path = "geometry.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> My Docs
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../action/">Slamware-action</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../discovery/">Slamware-discovery</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../exceptions/">Slamware-exception</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../FirmwareUpdate/">Slamware-firmware-update</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Slamware-geometry</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#line">Line类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_1">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#lineint-segmentid-pointf-startpoint-pointf-endpoint">Line(int segmentId, PointF startPoint, PointF endPoint)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#lineint-segmentid-float-startx-float-starty-float-endx-float-endy">Line(int segmentId, float startX, float startY, float endX, float endY)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#lineline-line">Line(Line line)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#linepointf-startp-pointf-endp">Line(PointF startP, PointF endP)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getstartpoint">getStartPoint()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setstartpointpointf-startpointf">setStartPoint(PointF startPointF)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getendpoint">getEndPoint()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setendpointpointf-endpoint">setEndPoint(PointF endPoint)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getstartx">getStartX()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getstarty">getStartY()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getendx">getEndX()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getendy">getEndY()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getsegmentid">getSegmentId()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setsegmentidint-segmentid">setSegmentId(int segmentId)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pointf">PointF类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_58">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pointf_1">PointF()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pointffloat-x-float-y">PointF(float x, float y)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pointfpointf-rhs">PointF(PointF rhs)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getx">getX()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setxfloat-x">setX(float x)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#gety">getY()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setyfloat-y">setY(float y)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#size">Size类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_87">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#size_1">Size()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#sizeint-width-int-height">Size(int width, int height)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#sizesize-rhs">Size(Size rhs)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getwidth">getWidth()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setwidthint-width">setWidth(int width)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#getheight">getHeight()</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#setheightint-height">setHeight(int height)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../slamware/">Slamware</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../message/">Slamware-message</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../robot/">Slamware-robot</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../sdp/">Slamware-sdp</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../utils/">Slamware-utils</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log/">Slamware-log</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log-customer/">Slamware-log-customer</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">My Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Slamware-geometry</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="comslamtecslamwaregeometry">com.slamtec.slamware.geometry包</h2>
+<p><a id="classLine"></a></p>
+<h3 id="line"><code>Line</code>类</h3>
+<p>表示一条线。</p>
+<h4 id="_1">方法</h4>
+<h5 id="lineint-segmentid-pointf-startpoint-pointf-endpoint"><code>Line(int segmentId, PointF startPoint, PointF endPoint)</code></h5>
+<p>创建对象Line且segment id，start point和end point为指定值。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_2">返回值</h6>
+<p>无</p>
+<h6 id="_3">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>segmentId</td>
+<td>int</td>
+<td>ID标识</td>
+<td>-</td>
+</tr>
+<tr>
+<td>startPoint</td>
+<td>PointF</td>
+<td>线段起始点坐标</td>
+<td>-</td>
+</tr>
+<tr>
+<td>endPoint</td>
+<td>PointF</td>
+<td>线段结束点坐标</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_4">注意事项</h6>
+<p>无</p>
+<h6 id="_5">示例代码</h6>
+<pre><code>
+int segmentId = 1;
+PointF startPoint = new PointF(1.5f,2.0f);
+PointF endPoint = new PointF(2.5f,4.0f);
+Line line = new Line(segmentId,startPoint,endPoint);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="lineint-segmentid-float-startx-float-starty-float-endx-float-endy"><code>Line(int segmentId, float startX, float startY, float endX, float endY)</code></h5>
+<p>创建对象Line 且segment id, startX, startY, endX, endy 为指定值。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_6">返回值</h6>
+<p>无</p>
+<h6 id="_7">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>segmentId</td>
+<td>int</td>
+<td>ID标识</td>
+<td>-</td>
+</tr>
+<tr>
+<td>startX</td>
+<td>float</td>
+<td>线段起始点X</td>
+<td>-</td>
+</tr>
+<tr>
+<td>startY</td>
+<td>float</td>
+<td>线段起始点Y</td>
+<td>-</td>
+</tr>
+<tr>
+<td>endX</td>
+<td>float</td>
+<td>线段结束点X</td>
+<td>-</td>
+</tr>
+<tr>
+<td>endY</td>
+<td>float</td>
+<td>线段结束点Y</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_8">注意事项</h6>
+<p>无</p>
+<h6 id="_9">示例代码</h6>
+<pre><code>
+Line line = new Line(1,1f,2f,3f,4f);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="lineline-line"><code>Line(Line line)</code></h5>
+<p>创建对象Line 且以Line为参数。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_10">返回值</h6>
+<p>无</p>
+<h6 id="_11">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>line</td>
+<td>Line</td>
+<td>用以构造新的Line对象</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_12">注意事项</h6>
+<p>无</p>
+<h6 id="_13">示例代码</h6>
+<pre><code>
+int segmentId = 1;
+PointF startPoint = new PointF(1.5f,2.0f);
+PointF endPoint = new PointF(2.5f,4.0f);
+Line line = new Line(segmentId,startPoint,endPoint);
+Line lineCopy = new Line(line);。
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="linepointf-startp-pointf-endp"><code>Line(PointF startP, PointF endP)</code></h5>
+<p>创建对象Line 且startP和endP为指定值。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_14">返回值</h6>
+<p>无</p>
+<h6 id="_15">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>startP</td>
+<td>PointF</td>
+<td>线段起始点坐标</td>
+<td>-</td>
+</tr>
+<tr>
+<td>endP</td>
+<td>PointF</td>
+<td>线段结束点坐标</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_16">注意事项</h6>
+<p>无</p>
+<h6 id="_17">示例代码</h6>
+<pre><code>
+PointF startPoint = new PointF(1.5f,2.0f);
+PointF endPoint = new PointF(2.5f,4.0f);
+Line line = new Line(startPoint,endPoint);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getstartpoint"><code>getStartPoint()</code></h5>
+<p>获取起始点坐标。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_18">返回值</h6>
+<p>返回类型为PointF</p>
+<h6 id="_19">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_20">注意事项</h6>
+<p>无</p>
+<h6 id="_21">示例代码</h6>
+<pre><code>
+int segmentId = 1;
+PointF startPoint = new PointF(1.5f,2.0f);
+PointF endPoint = new PointF(2.5f,4.0f);
+Line line = new Line(segmentId,startPoint,endPoint);
+PointF startPoint1 = line.getStartPoint();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setstartpointpointf-startpointf"><code>setStartPoint(PointF startPointF)</code></h5>
+<p>设置线段起始点坐标。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_22">返回值</h6>
+<p>返回类型为void</p>
+<h6 id="_23">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>startPointF</td>
+<td>PointF</td>
+<td>线段起始点坐标</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_24">注意事项</h6>
+<p>无</p>
+<h6 id="_25">示例代码</h6>
+<pre><code>
+int segmentId = 1;
+PointF startPoint = new PointF(1.5f,2.0f);
+PointF endPoint = new PointF(2.5f,4.0f);
+Line line = new Line(segmentId,startPoint,endPoint);
+line.setStartPoint(new PointF(1.4f,1.6f));
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getendpoint"><code>getEndPoint()</code></h5>
+<p>获取结束点坐标。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_26">返回值</h6>
+<p>返回类型为PointF</p>
+<h6 id="_27">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_28">注意事项</h6>
+<p>无</p>
+<h6 id="_29">示例代码</h6>
+<pre><code>
+int segmentId = 1;
+PointF startPoint = new PointF(1.5f,2.0f);
+PointF endPoint = new PointF(2.5f,4.0f);
+Line line = new Line(segmentId,startPoint,endPoint);
+PointF endPointF = line.getEndPoint();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setendpointpointf-endpoint"><code>setEndPoint(PointF endPoint)</code></h5>
+<p>设置结束点坐标。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_30">返回值</h6>
+<p>返回类型为void</p>
+<h6 id="_31">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>endPoint</td>
+<td>PointF</td>
+<td>线段结束点坐标</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_32">注意事项</h6>
+<p>无</p>
+<h6 id="_33">示例代码</h6>
+<pre><code>
+int segmentId = 1;
+PointF startPoint = new PointF(1.5f,2.0f);
+PointF endPoint = new PointF(2.5f,4.0f);
+Line line = new Line(segmentId,startPoint,endPoint);
+line.setEndPoint(new PointF(1.4f,1.6f));
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getstartx"><code>getStartX()</code></h5>
+<p>获取起始点X。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_34">返回值</h6>
+<p>返回类型为float</p>
+<h6 id="_35">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_36">注意事项</h6>
+<p>无</p>
+<h6 id="_37">示例代码</h6>
+<pre><code>
+int segmentId = 1;
+PointF startPoint = new PointF(1.5f,2.0f);
+PointF endPoint = new PointF(2.5f,4.0f);
+Line line = new Line(segmentId,startPoint,endPoint);
+float startX = line.getStartX();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getstarty"><code>getStartY()</code></h5>
+<p>获取起始点Y。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_38">返回值</h6>
+<p>返回类型为float</p>
+<h6 id="_39">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_40">注意事项</h6>
+<p>无</p>
+<h6 id="_41">示例代码</h6>
+<pre><code>
+int segmentId = 1;
+PointF startPoint = new PointF(1.5f,2.0f);
+PointF endPoint = new PointF(2.5f,4.0f);
+Line line = new Line(segmentId,startPoint,endPoint);
+float startY = line.getStartY();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getendx"><code>getEndX()</code></h5>
+<p>获取结束点X。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_42">返回值</h6>
+<p>返回类型为float</p>
+<h6 id="_43">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_44">注意事项</h6>
+<p>无</p>
+<h6 id="_45">示例代码</h6>
+<pre><code>
+int segmentId = 1;
+PointF startPoint = new PointF(1.5f,2.0f);
+PointF endPoint = new PointF(2.5f,4.0f);
+Line line = new Line(segmentId,startPoint,endPoint);
+float endX = line.getEndX();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getendy"><code>getEndY()</code></h5>
+<p>获取结束点Y。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_46">返回值</h6>
+<p>返回类型为float</p>
+<h6 id="_47">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_48">注意事项</h6>
+<p>无</p>
+<h6 id="_49">示例代码</h6>
+<pre><code>
+int segmentId = 1;
+PointF startPoint = new PointF(1.5f,2.0f);
+PointF endPoint = new PointF(2.5f,4.0f);
+Line line = new Line(segmentId,startPoint,endPoint);
+float endY = line.getEndY();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getsegmentid"><code>getSegmentId()</code></h5>
+<p>获取标识ID。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_50">返回值</h6>
+<p>返回类型为int</p>
+<h6 id="_51">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_52">注意事项</h6>
+<p>无</p>
+<h6 id="_53">示例代码</h6>
+<pre><code>
+int segmentId = 1;
+PointF startPoint = new PointF(1.5f,2.0f);
+PointF endPoint = new PointF(2.5f,4.0f);
+Line line = new Line(segmentId,startPoint,endPoint);
+int id = line.getSegmentId();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setsegmentidint-segmentid"><code>setSegmentId(int segmentId)</code></h5>
+<p>设置标识ID。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_54">返回值</h6>
+<p>返回类型为void</p>
+<h6 id="_55">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>segmentId</td>
+<td>int</td>
+<td>线段标识ID</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_56">注意事项</h6>
+<p>无</p>
+<h6 id="_57">示例代码</h6>
+<pre><code>
+int segmentId = 1;
+PointF startPoint = new PointF(1.5f,2.0f);
+PointF endPoint = new PointF(2.5f,4.0f);
+Line line = new Line(startPoint,endPoint);
+line.setSegmentId(segmentId);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="pointf"><code>PointF</code>类</h3>
+<p>表示一个2d浮点数据类型。</p>
+<h4 id="_58">方法</h4>
+<h5 id="pointf_1"><code>PointF()</code></h5>
+<p>创建对象PointF。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_59">返回值</h6>
+<p>无</p>
+<h6 id="_60">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_61">注意事项</h6>
+<p>无</p>
+<h6 id="_62">示例代码</h6>
+<pre><code>
+PointF startPoint = new PointF();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="pointffloat-x-float-y"><code>PointF(float x, float y)</code></h5>
+<p>创建对象PointF且x，y为指定值。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_63">返回值</h6>
+<p>无</p>
+<h6 id="_64">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>x</td>
+<td>float</td>
+<td>构造PointF对象的x坐标</td>
+<td>-</td>
+</tr>
+<tr>
+<td>y</td>
+<td>float</td>
+<td>构造PointF对象的y坐标</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_65">注意事项</h6>
+<p>无</p>
+<h6 id="_66">示例代码</h6>
+<pre><code>
+PointF startPoint = new PointF(1.5f,2.0f);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="pointfpointf-rhs"><code>PointF(PointF rhs)</code></h5>
+<p>创建对象PointF且以PointF为参数。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_67">返回值</h6>
+<p>无</p>
+<h6 id="_68">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>rhs</td>
+<td>PointF</td>
+<td>构造PointF对象的源PointF对象</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_69">注意事项</h6>
+<p>无</p>
+<h6 id="_70">示例代码</h6>
+<pre><code>
+PointF startPoint = new PointF(1.5f,2.0f);
+PointF copyPointF = new PointF(startPoint);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getx"><code>getX()</code></h5>
+<p>获取X坐标值。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_71">返回值</h6>
+<p>返回类型为float</p>
+<h6 id="_72">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_73">注意事项</h6>
+<p>无</p>
+<h6 id="_74">示例代码</h6>
+<pre><code>
+PointF startPoint = new PointF(1.5f,2.0f);
+float x = startPoint.getX();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setxfloat-x"><code>setX(float x)</code></h5>
+<p>设置X坐标值。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_75">返回值</h6>
+<p>返回类型为void</p>
+<h6 id="_76">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>x</td>
+<td>float</td>
+<td>X坐标值</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_77">注意事项</h6>
+<p>无</p>
+<h6 id="_78">示例代码</h6>
+<pre><code>
+PointF startPoint = new PointF(1.5f,2.0f);
+startPoint.setX(1.8f);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="gety"><code>getY()</code></h5>
+<p>获取Y坐标值。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_79">返回值</h6>
+<p>返回类型为float</p>
+<h6 id="_80">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_81">注意事项</h6>
+<p>无</p>
+<h6 id="_82">示例代码</h6>
+<pre><code>
+PointF startPoint = new PointF(1.5f,2.0f);
+float y = startPoint.getY();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setyfloat-y"><code>setY(float y)</code></h5>
+<p>设置Y坐标值。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_83">返回值</h6>
+<p>返回类型为void</p>
+<h6 id="_84">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>y</td>
+<td>float</td>
+<td>Y坐标值</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_85">注意事项</h6>
+<p>无</p>
+<h6 id="_86">示例代码</h6>
+<pre><code>
+PointF startPoint = new PointF(1.5f,2.0f);
+startPoint.setY(1.6f);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="size">Size类</h3>
+<p>表示整数型的size数据类型。</p>
+<h4 id="_87">方法</h4>
+<h5 id="size_1"><code>Size()</code></h5>
+<p>创建对象Size。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_88">返回值</h6>
+<p>无</p>
+<h6 id="_89">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_90">注意事项</h6>
+<p>无</p>
+<h6 id="_91">示例代码</h6>
+<pre><code>
+Size size = new Size();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="sizeint-width-int-height"><code>Size(int width, int height)</code></h5>
+<p>创建对象Size且width和height为指定值。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_92">返回值</h6>
+<p>无</p>
+<h6 id="_93">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>width</td>
+<td>int</td>
+<td>构造Size对象的宽度值</td>
+<td>-</td>
+</tr>
+<tr>
+<td>height</td>
+<td>int</td>
+<td>构造Size对象的高度值</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_94">注意事项</h6>
+<p>无</p>
+<h6 id="_95">示例代码</h6>
+<pre><code>
+Size size = new Size(5,5);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="sizesize-rhs"><code>Size(Size rhs)</code></h5>
+<p>创建对象Size且以Size为参数。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_96">返回值</h6>
+<p>无</p>
+<h6 id="_97">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>rhs</td>
+<td>Size</td>
+<td>构造Size对象的源Size对象</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_98">注意事项</h6>
+<p>无</p>
+<h6 id="_99">示例代码</h6>
+<pre><code>
+Size size = new Size(5,5);
+Size copySize = new Size(size);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getwidth"><code>getWidth()</code></h5>
+<p>获取width。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_100">返回值</h6>
+<p>返回类型为int</p>
+<h6 id="_101">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_102">注意事项</h6>
+<p>无</p>
+<h6 id="_103">示例代码</h6>
+<pre><code>
+Size size = new Size(5,5);
+int width = size.getWidth();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setwidthint-width"><code>setWidth(int width)</code></h5>
+<p>设置width。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_104">返回值</h6>
+<p>返回类型为void</p>
+<h6 id="_105">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>width</td>
+<td>int</td>
+<td>设置Size对象的宽度值</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_106">注意事项</h6>
+<p>无</p>
+<h6 id="_107">示例代码</h6>
+<pre><code>
+Size size = new Size(5,5);
+size.setWidth(20);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="getheight"><code>getHeight()</code></h5>
+<p>获取height。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_108">返回值</h6>
+<p>返回类型为int</p>
+<h6 id="_109">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_110">注意事项</h6>
+<p>无</p>
+<h6 id="_111">示例代码</h6>
+<pre><code>
+Size size = new Size(5,5);
+int height = size.getHeight()
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h5 id="setheightint-height"><code>setHeight(int height)</code></h5>
+<p>设置height。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_112">返回值</h6>
+<p>返回类型为void</p>
+<h6 id="_113">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>height</td>
+<td>int</td>
+<td>设置Size对象的高度值</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_114">注意事项</h6>
+<p>无</p>
+<h6 id="_115">示例代码</h6>
+<pre><code>
+Size size = new Size(5,5);
+size.setHeight(10);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+<!--This is the end of this page---------------------- ----------------------->
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../FirmwareUpdate/" class="btn btn-neutral float-left" title="Slamware-firmware-update"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../slamware/" class="btn btn-neutral float-right" title="Slamware">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../FirmwareUpdate/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../slamware/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

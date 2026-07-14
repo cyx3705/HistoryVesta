@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Slamware-exception - My Docs</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Slamware-exception";
+        var mkdocs_page_input_path = "exceptions.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> My Docs
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../action/">Slamware-action</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../discovery/">Slamware-discovery</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Slamware-exception</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#alreadyconnectedexception">AlreadyConnectedException类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_1">返回值</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_2">参数说明</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_3">注意事项</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#connectionfailexception">ConnectionFailException类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_4">返回值</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_5">参数说明</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_6">注意事项</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#connectionlostexception">ConnectionLostException类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_7">返回值</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_8">参数说明</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_9">注意事项</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#connectiontimeoutexception">ConnectionTimeOutException类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_10">返回值</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_11">参数说明</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_12">注意事项</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#invalidargumentexception">InvalidArgumentException类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_13">返回值</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_14">参数说明</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_15">注意事项</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#operationfailexception">OperationFailException类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_16">返回值</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_17">参数说明</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_18">注意事项</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#outofresourceexception">OutOfResourceException类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_19">返回值</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_20">参数说明</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_21">注意事项</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#parseinvalidexception">ParseInvalidException类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_22">返回值</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_23">参数说明</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_24">注意事项</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pathfindfailexception">PathFindFailException类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_25">返回值</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_26">参数说明</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_27">注意事项</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#requestfailexception">RequestFailException类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_28">返回值</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_29">参数说明</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_30">注意事项</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#requesttimeoutexception">RequestTimeOutException类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_31">返回值</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_32">参数说明</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_33">注意事项</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#unauthorizedrequestexception">UnauthorizedRequestException类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_34">返回值</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_35">参数说明</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_36">注意事项</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#unsupportedcommandexception">UnsupportedCommandException类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_37">返回值</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_38">参数说明</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_39">注意事项</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cxxstdexception">CxxStdException类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_40">返回值</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_41">参数说明</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_42">注意事项</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../FirmwareUpdate/">Slamware-firmware-update</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../geometry/">Slamware-geometry</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../slamware/">Slamware</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../message/">Slamware-message</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../robot/">Slamware-robot</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../sdp/">Slamware-sdp</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../utils/">Slamware-utils</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log/">Slamware-log</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log-customer/">Slamware-log-customer</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">My Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Slamware-exception</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="comslamtecslamwareexceptions">com.slamtec.slamware.exceptions包</h2>
+<h3 id="alreadyconnectedexception"><code>AlreadyConnectedException</code>类</h3>
+<p>已连接到机器，异常信息为“Already Connected to the device”。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_1">返回值</h6>
+<p>无</p>
+<h6 id="_2">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_3">注意事项</h6>
+<p>无</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<p><a id="classConnectionFailException"></a></p>
+<h3 id="connectionfailexception"><code>ConnectionFailException</code>类</h3>
+<p>连接机器人失败，异常信息为“Connection Failed”。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_4">返回值</h6>
+<p>无</p>
+<h6 id="_5">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_6">注意事项</h6>
+<p>无</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="connectionlostexception"><code>ConnectionLostException</code>类</h3>
+<p>连接丢失，异常信息为“Connection Lost” 。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_7">返回值</h6>
+<p>无</p>
+<h6 id="_8">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_9">注意事项</h6>
+<p>无</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<p><a id="classConnectionTimeOutException"></a></p>
+<h3 id="connectiontimeoutexception"><code>ConnectionTimeOutException</code>类</h3>
+<p>连接超时，异常信息为“Connection Time Out”。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_10">返回值</h6>
+<p>无</p>
+<h6 id="_11">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_12">注意事项</h6>
+<p>无</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<p><a id="classInvalidArgumentException"></a></p>
+<h3 id="invalidargumentexception"><code>InvalidArgumentException</code>类</h3>
+<p>参数无效，异常信息为“Invalid Argument” 。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_13">返回值</h6>
+<p>无</p>
+<h6 id="_14">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_15">注意事项</h6>
+<p>无</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<p><a id="classOperationFailException"></a></p>
+<h3 id="operationfailexception"><code>OperationFailException</code>类</h3>
+<p>操作失败，异常信息为“Operation Failed”。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_16">返回值</h6>
+<p>无</p>
+<h6 id="_17">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_18">注意事项</h6>
+<p>无</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="outofresourceexception"><code>OutOfResourceException</code>类</h3>
+<p>资源不足，异常信息为“Out of Resource”。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_19">返回值</h6>
+<p>无</p>
+<h6 id="_20">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_21">注意事项</h6>
+<p>无</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<p><a id="classParseInvalidException"></a></p>
+<h3 id="parseinvalidexception"><code>ParseInvalidException</code>类</h3>
+<p>参数解析无效，异常信息为“Failed to parse device data” 。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_22">返回值</h6>
+<p>无</p>
+<h6 id="_23">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_24">注意事项</h6>
+<p>无</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="pathfindfailexception"><code>PathFindFailException</code>类</h3>
+<p>未能找到路径，异常信息为“Failed to find path”。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_25">返回值</h6>
+<p>无</p>
+<h6 id="_26">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_27">注意事项</h6>
+<p>无</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<p><a id="classRequestFailException"></a></p>
+<h3 id="requestfailexception"><code>RequestFailException</code>类</h3>
+<p>请求失败，异常信息为“Request Failed” 。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_28">返回值</h6>
+<p>无</p>
+<h6 id="_29">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_30">注意事项</h6>
+<p>无</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<p><a id="classRequestTimeOutException"></a></p>
+<h3 id="requesttimeoutexception"><code>RequestTimeOutException</code>类</h3>
+<p>请求时间超时，异常信息为“Request Time Out” 。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_31">返回值</h6>
+<p>无</p>
+<h6 id="_32">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_33">注意事项</h6>
+<p>无</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<p><a id="classUnauthorizedRequestException"></a></p>
+<h3 id="unauthorizedrequestexception"><code>UnauthorizedRequestException</code>类</h3>
+<p>请求未授权，异常信息为“Unauthorized request” 。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_34">返回值</h6>
+<p>无</p>
+<h6 id="_35">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_36">注意事项</h6>
+<p>无</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<p><a id="classUnsupportedCommandException"></a></p>
+<h3 id="unsupportedcommandexception"><code>UnsupportedCommandException</code>类</h3>
+<p>命令不支持，异常信息为“ Unsupported Command”。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_37">返回值</h6>
+<p>无</p>
+<h6 id="_38">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_39">注意事项</h6>
+<p>无</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<p><a id="CxxStdException"></a></p>
+<h3 id="cxxstdexception"><code>CxxStdException</code>类</h3>
+<p>对应于底层抛出的其它C++异常，异常信息为“CxxStdException”或其它表示错误信息的字符串。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_40">返回值</h6>
+<p>无</p>
+<h6 id="_41">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_42">注意事项</h6>
+<p>无</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../discovery/" class="btn btn-neutral float-left" title="Slamware-discovery"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../FirmwareUpdate/" class="btn btn-neutral float-right" title="Slamware-firmware-update">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../discovery/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../FirmwareUpdate/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

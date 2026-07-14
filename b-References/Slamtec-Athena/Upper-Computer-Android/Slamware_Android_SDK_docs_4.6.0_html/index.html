@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="None" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>My Docs</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Home";
+        var mkdocs_page_input_path = "index.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="." class="icon icon-home"> My Docs
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href=".">Home</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#get-started">Get Started</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_1">开发环境搭建</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#sdk">下载和安装SDK</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#hello-world">Hello World</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#api">API 概览</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="action/">Slamware-action</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="discovery/">Slamware-discovery</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="exceptions/">Slamware-exception</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="FirmwareUpdate/">Slamware-firmware-update</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="geometry/">Slamware-geometry</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="slamware/">Slamware</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="message/">Slamware-message</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="robot/">Slamware-robot</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="sdp/">Slamware-sdp</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="utils/">Slamware-utils</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="log/">Slamware-log</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="log-customer/">Slamware-log-customer</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href=".">My Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Home</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="welcome-to-slamware-android-sdk">Welcome to Slamware Android SDK</h1>
+<p>Slamware是适用于移动机器人的模块化自主定位导航解决方案。 </p>
+<h2 id="get-started">Get Started</h2>
+<h3 id="_1">开发环境搭建</h3>
+<blockquote>
+<p>开发环境要求</p>
+<p>基于Android 操作系统对Slamware SDK进行应用开发，您的开发环境需满足如下条件：</p>
+<p>您的计算机应当安装Android 5.0或以上版本。本文档将基于Android 5.0进行介绍。</p>
+</blockquote>
+<ol>
+<li>打开Android Studio并点击点击File&gt;New&gt;New Project来新建一个项目（未曾建立过其他项目或者Android Studio 刚下载安装则请点击Start a new Android Studio Project来新建项目；</li>
+<li>为新建项目命名，选择域名，选择存放位置，然后点击Next；</li>
+<li>选择所编译的应用程序将要运行的目标设备，然后点击Next；</li>
+<li>为该设备的应用程序选择一个Activity，此处选择Empty Activity，然后点击Next；</li>
+<li>进一步设置该Activity并点击完成。</li>
+</ol>
+<h3 id="sdk">下载和安装SDK</h3>
+<p>请在思岚科技官方网站上的<a href="https://www.slamtec.com/cn/support" target="_blank">支持与下载页面</a> 下载适合您的平台的SDK并解压至本地。</p>
+<p>Slamware Android SDk主要包括slamtec_agent.jar文件和armeabi文件夹。使用该SDK可以开发Android应用程序。</p>
+<h3 id="hello-world">Hello World</h3>
+<p>在上述步骤完成后，将下载的SDk文件夹中的文件slamtec_agent.jar文件放在libs文件夹下，armeabi文件放在jniLibs文件夹下，然后在之前创建的Activity文件中添加如下代码：</p>
+<pre><code>
+AbstractSlamwarePlatform platform = DeviceManager.connect("192.168.11.1",1445); // 连接到机器人底盘
+Pose pose = platform.getPose();// 当前机器人的位置,
+</code></pre>
+
+<h3 id="api">API 概览</h3>
+<ul>
+<li><a href="slamware/">com.slamtec.slamware</a>包</li>
+<li><a href="action/">com.slamtec.slamware.action</a>包</li>
+<li><a href="discovery/">com.slamtec.slamware.discovery</a>包</li>
+<li><a href="FirmwareUpdate/">com.slamtec.slamware.FirmwareUpdate</a>包</li>
+<li><a href="geometry/">com.slamtec.slamware.geometry</a>包</li>
+<li><a href="robot/">com.slamtec.slamware.robot</a>包</li>
+<li><a href="exceptions/">com.slamtec.slamware.exceptions</a>包</li>
+<li><a href="message/">com.slamtec.slamware.message</a>包</li>
+<li><a href="sdp/">com.slamtec.slamware.sdp</a>包</li>
+<li><a href="utils/">com.slamtec.slamware.utils</a>包</li>
+<li><a href="log/">com.slamtec.slamware.log</a>包</li>
+<li><a href="log-customer/">com.slamtec.slamware.log.customer</a>包</li>
+</ul>
+<!----文档规则
+##包：二级标题##
+###类、接口、枚举：三级标题###
+####方法、Fields、枚举常量：四级标题####
+#####具体方法：五级标题#####
+######返回值、参数说明、注意事项、示例代码：六级标题######
+1. 引用其他类：
+* 被引用的类上方加标签：<a id="className"></a>
+* 引用类的地方写成：[Name](#className)
+2. 引用其他md文件(被引用的md文件在同一文件夹下，使用相对路径)：[Name](./Name.md)
+3. 表格：
+|参数名称|参数类型|描述|备注|
+|-|-|-|-|
+|待添加。|-|-|-|
+|-|-|-|-|
+|-|-|-|-|
+4. 引用代码：<pre><code>此处粘贴待添加的代码</code></pre>
+5. 用于标记接口稳定性的接口级别标签&接口被添加、被删除的软件版本标签：
+> Stability: 3 - Stable
+
+> Added in v2.5.0 //表示添加的软件版本为v2.5.0
+
+
+稳定性等级分为0，1，2，3四个级别。0表示deprecated，1表示will deprecate，2表示Experimental，3表示stable。详情如下：
+### Stability: 0 - Deprecated
+This API has been completely deprecated, and is not accessible in current version
+
+### Stability: 1 - Will Deprecate
+This API is going to be deprecated in the future release of SDK, please stop using these APIs
+
+### Stability: 2 - Experimental
+This API is very new and still under development. The interface and semantic might change in future releases, and should not be used in production environments or need to be updated when updating SDK
+
+### Stability: 3 - Stable
+This API is stable, and will not be broken unless absolutely necessary
+--------------------------------------------------------------------->
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="action/" class="btn btn-neutral float-right" title="Slamware-action">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+      <span><a href="action/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
+
+<!--
+MkDocs version : 1.5.3
+Build Date UTC : 2024-02-27 06:25:09.011365+00:00
+-->

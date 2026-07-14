@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Slamware-log-customer - My Docs</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Slamware-log-customer";
+        var mkdocs_page_input_path = "log-customer.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> My Docs
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../action/">Slamware-action</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../discovery/">Slamware-discovery</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../exceptions/">Slamware-exception</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../FirmwareUpdate/">Slamware-firmware-update</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../geometry/">Slamware-geometry</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../slamware/">Slamware</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../message/">Slamware-message</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../robot/">Slamware-robot</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../sdp/">Slamware-sdp</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../utils/">Slamware-utils</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../log/">Slamware-log</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Slamware-log-customer</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#resultcode">ResultCode枚举</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#unknown">Unknown</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#ok">Ok</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#failed">Failed</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#servicenotfound">ServiceNotFound</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#servicestopping">ServiceStopping</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#commandnotfound">CommandNotFound</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#serverstatus">ServerStatus类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_1">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#serverstatus_1">ServerStatus()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_6">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getserviceuuid">getServiceUuid()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_11">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setserviceuuidstring-serviceuuid">setServiceUuid(String serviceUuid)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_16">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getlatestseqnum">getLatestSeqNum()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_21">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setlatestseqnumlong-latestseqnum">setLatestSeqNum(long latestSeqNum)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_26">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getseqnumrange">getSeqNumRange()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_31">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setseqnumrangeseqnumrange-seqnumrange">setSeqNumRange(SeqNumRange seqNumRange)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#readresult">ReadResult类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_36">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#readresult_1">ReadResult()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_41">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getserverstatus">getServerStatus()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_46">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setserverstatusserverstatus-serverstatus">setServerStatus(ServerStatus serverStatus)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_51">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getseqnumrange_1">getSeqNumRange()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_56">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setseqnumrangeseqnumrange-seqnumrange_1">setSeqNumRange(SeqNumRange seqNumRange)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_61">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getlogs">getLogs()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_66">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setlogsjavautilarraylistlogdata-logs">setLogs(java.util.ArrayList&lt;LogData&gt; logs)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#customerlogreceiverlastrecvstatus">CustomerLogReceiverLastRecvStatus类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_71">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#customerlogreceiverlastrecvstatus_1">CustomerLogReceiverLastRecvStatus()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_76">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getserviceuuid_1">getServiceUuid()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_81">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setserviceuuidstring-serviceuuid_1">setServiceUuid(String serviceUuid)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_86">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getlastreceivedseqnum">getLastReceivedSeqNum()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_91">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setlastreceivedseqnumlong-lastreceivedseqnum">setLastReceivedSeqNum(long lastReceivedSeqNum)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#customerlogreceiverinitarg">CustomerLogReceiverInitArg类</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_96">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#customerlogreceiverinitarg_1">CustomerLogReceiverInitArg()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_101">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getlastrecvstatus">getLastRecvStatus()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_106">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setlastrecvstatuscustomerlogreceiverlastrecvstatus-lastrecvstatus">setLastRecvStatus(CustomerLogReceiverLastRecvStatus lastRecvStatus)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#icustomerlogreceiver">ICustomerLogReceiver接口</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#_111">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#isinitialized">isInitialized()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_116">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#getlastrecvstatus_1">getLastRecvStatus()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_121">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#initcustomerlogreceiverinitarg-initarg">init(CustomerLogReceiverInitArg initArg)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_126">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#queryserverstatus">queryServerStatus()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_131">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#recvlogsint-maxcnttoread">recvLogs(int maxCntToRead)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_136">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#setnextreadstartseqnumlong-startseqnum">setNextReadStartSeqNum(long startSeqNum)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_141">方法</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#resetnextreadstartseqnum">resetNextReadStartSeqNum()</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">My Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Slamware-log-customer</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="comslamtecslamwarelogcustomer">com.slamtec.slamware.log.customer包</h2>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="resultcode"><code>ResultCode</code>枚举</h3>
+<p>表示CustomerLog相关接口调用返回值的枚举类。</p>
+<h5 id="unknown"><code>Unknown</code></h5>
+<p>未知情况</p>
+<h5 id="ok"><code>Ok</code></h5>
+<p>成功</p>
+<h5 id="failed"><code>Failed</code></h5>
+<p>失败（不指明失败的具体原因）</p>
+<h5 id="servicenotfound"><code>ServiceNotFound</code></h5>
+<p>服务没有找到</p>
+<h5 id="servicestopping"><code>ServiceStopping</code></h5>
+<p>服务正在停止</p>
+<h5 id="commandnotfound"><code>CommandNotFound</code></h5>
+<p>命令未找到（例如旧的固件不支持后来新增的命令时，会返回此值）。</p>
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="serverstatus"><code>ServerStatus</code>类</h3>
+<p>表示设备端的 CustomerLog 服务的状态数据。</p>
+<h4 id="_1">方法</h4>
+<h5 id="serverstatus_1"><code>ServerStatus()</code></h5>
+<p>默认构造函数。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_2">返回值</h6>
+<p>返回类型为void</p>
+<h6 id="_3">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_4">注意事项</h6>
+<p>无</p>
+<h6 id="_5">示例代码</h6>
+<pre><code>
+ServerStatus serverStatus = new ServerStatus();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_6">方法</h4>
+<h5 id="getserviceuuid"><code>getServiceUuid()</code></h5>
+<p>获取服务的UUID字符串。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_7">返回值</h6>
+<p>返回类型为 String</p>
+<h6 id="_8">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_9">注意事项</h6>
+<p>无</p>
+<h6 id="_10">示例代码</h6>
+<pre><code>
+String serviceUuid = serverStatus.getServiceUuid();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_11">方法</h4>
+<h5 id="setserviceuuidstring-serviceuuid"><code>setServiceUuid(String serviceUuid)</code></h5>
+<p>设置服务的UUID字符串。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_12">返回值</h6>
+<p>返回类型为 void</p>
+<h6 id="_13">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>serviceUuid</td>
+<td>String</td>
+<td>服务的UUID字符串</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_14">注意事项</h6>
+<p>无</p>
+<h6 id="_15">示例代码</h6>
+<pre><code>
+serverStatus.setServiceUuid(serviceUuid);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_16">方法</h4>
+<h5 id="getlatestseqnum"><code>getLatestSeqNum()</code></h5>
+<p>获取最后一条产生的CustomerLog的序列号。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_17">返回值</h6>
+<p>返回类型为 long</p>
+<h6 id="_18">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_19">注意事项</h6>
+<p>无</p>
+<h6 id="_20">示例代码</h6>
+<pre><code>
+long latestSeqNum = serverStatus.getLatestSeqNum();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_21">方法</h4>
+<h5 id="setlatestseqnumlong-latestseqnum"><code>setLatestSeqNum(long latestSeqNum)</code></h5>
+<p>设置最后一条产生的CustomerLog的序列号。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_22">返回值</h6>
+<p>返回类型为 void</p>
+<h6 id="_23">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>latestSeqNum</td>
+<td>long</td>
+<td>最后一条产生的CustomerLog的序列号</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_24">注意事项</h6>
+<p>无</p>
+<h6 id="_25">示例代码</h6>
+<pre><code>
+serverStatus.setLatestSeqNum(123456);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_26">方法</h4>
+<h5 id="getseqnumrange"><code>getSeqNumRange()</code></h5>
+<p>获取Log的序列号的范围。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_27">返回值</h6>
+<p>返回类型为 SeqNumRange</p>
+<h6 id="_28">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_29">注意事项</h6>
+<p>无。</p>
+<h6 id="_30">示例代码</h6>
+<pre><code>
+SeqNumRange seqNumRange = serverStatus.getSeqNumRange();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_31">方法</h4>
+<h5 id="setseqnumrangeseqnumrange-seqnumrange"><code>setSeqNumRange(SeqNumRange seqNumRange)</code></h5>
+<p>设置Log的序列号的范围。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_32">返回值</h6>
+<p>返回类型为 void</p>
+<h6 id="_33">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>seqNumRange</td>
+<td>SeqNumRange</td>
+<td>Log的序列号的范围</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_34">注意事项</h6>
+<p>无。</p>
+<h6 id="_35">示例代码</h6>
+<pre><code>
+serverStatus.setSeqNumRange(seqNumRange);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="readresult"><code>ReadResult</code>类</h3>
+<p>读取CustomerLog的结果数据。</p>
+<h4 id="_36">方法</h4>
+<h5 id="readresult_1"><code>ReadResult()</code></h5>
+<p>默认构造函数。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_37">返回值</h6>
+<p>返回类型为void</p>
+<h6 id="_38">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_39">注意事项</h6>
+<p>无</p>
+<h6 id="_40">示例代码</h6>
+<pre><code>
+ReadResult res = new ReadResult();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_41">方法</h4>
+<h5 id="getserverstatus"><code>getServerStatus()</code></h5>
+<p>获取服务状态数据。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_42">返回值</h6>
+<p>返回类型为 ServerStatus</p>
+<h6 id="_43">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_44">注意事项</h6>
+<p>无</p>
+<h6 id="_45">示例代码</h6>
+<pre><code>
+ServerStatus serverStatus = res.getServerStatus();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_46">方法</h4>
+<h5 id="setserverstatusserverstatus-serverstatus"><code>setServerStatus(ServerStatus serverStatus)</code></h5>
+<p>设置服务状态数据。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_47">返回值</h6>
+<p>返回类型为 void</p>
+<h6 id="_48">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>serverStatus</td>
+<td>ServerStatus</td>
+<td>服务状态数据</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_49">注意事项</h6>
+<p>无</p>
+<h6 id="_50">示例代码</h6>
+<pre><code>
+res.setServerStatus(serverStatus);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_51">方法</h4>
+<h5 id="getseqnumrange_1"><code>getSeqNumRange()</code></h5>
+<p>获取Log的序列号的范围。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_52">返回值</h6>
+<p>返回类型为 SeqNumRange</p>
+<h6 id="_53">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_54">注意事项</h6>
+<p>无。</p>
+<h6 id="_55">示例代码</h6>
+<pre><code>
+SeqNumRange seqNumRange = res.getSeqNumRange();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_56">方法</h4>
+<h5 id="setseqnumrangeseqnumrange-seqnumrange_1"><code>setSeqNumRange(SeqNumRange seqNumRange)</code></h5>
+<p>设置Log的序列号的范围。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_57">返回值</h6>
+<p>返回类型为 void</p>
+<h6 id="_58">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>seqNumRange</td>
+<td>SeqNumRange</td>
+<td>Log的序列号的范围</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_59">注意事项</h6>
+<p>无。</p>
+<h6 id="_60">示例代码</h6>
+<pre><code>
+res.setSeqNumRange(seqNumRange);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_61">方法</h4>
+<h5 id="getlogs"><code>getLogs()</code></h5>
+<p>获取Log数据。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_62">返回值</h6>
+<p>返回类型为 java.util.ArrayList&lt;LogData&gt;</p>
+<h6 id="_63">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_64">注意事项</h6>
+<p>无</p>
+<h6 id="_65">示例代码</h6>
+<pre><code>
+java.util.ArrayList&lt;LogData&gt; logs = res.getLogs();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_66">方法</h4>
+<h5 id="setlogsjavautilarraylistlogdata-logs"><code>setLogs(java.util.ArrayList&lt;LogData&gt; logs)</code></h5>
+<p>设置Log数据。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_67">返回值</h6>
+<p>返回类型为 void</p>
+<h6 id="_68">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>logs</td>
+<td>java.util.ArrayList&lt;LogData&gt;</td>
+<td>Log数据</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_69">注意事项</h6>
+<p>无</p>
+<h6 id="_70">示例代码</h6>
+<pre><code>
+res.setLogs(logs);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="customerlogreceiverlastrecvstatus"><code>CustomerLogReceiverLastRecvStatus</code>类</h3>
+<p>表示CustomerLogReceiver最后接收状态的数据，可以用于尝试断开连接后从上次的状态开始接收Log数据。</p>
+<h4 id="_71">方法</h4>
+<h5 id="customerlogreceiverlastrecvstatus_1"><code>CustomerLogReceiverLastRecvStatus()</code></h5>
+<p>默认构造函数。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_72">返回值</h6>
+<p>返回类型为void</p>
+<h6 id="_73">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_74">注意事项</h6>
+<p>无</p>
+<h6 id="_75">示例代码</h6>
+<pre><code>
+CustomerLogReceiverLastRecvStatus lastRecvStatus = new CustomerLogReceiverLastRecvStatus();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_76">方法</h4>
+<h5 id="getserviceuuid_1"><code>getServiceUuid()</code></h5>
+<p>获取服务的UUID字符串。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_77">返回值</h6>
+<p>返回类型为 String</p>
+<h6 id="_78">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_79">注意事项</h6>
+<p>无</p>
+<h6 id="_80">示例代码</h6>
+<pre><code>
+String serviceUuid = lastRecvStatus.getServiceUuid();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_81">方法</h4>
+<h5 id="setserviceuuidstring-serviceuuid_1"><code>setServiceUuid(String serviceUuid)</code></h5>
+<p>设置服务的UUID字符串。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_82">返回值</h6>
+<p>返回类型为 void</p>
+<h6 id="_83">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>serviceUuid</td>
+<td>String</td>
+<td>服务的UUID字符串</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_84">注意事项</h6>
+<p>无</p>
+<h6 id="_85">示例代码</h6>
+<pre><code>
+lastRecvStatus.setServiceUuid(serviceUuid);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_86">方法</h4>
+<h5 id="getlastreceivedseqnum"><code>getLastReceivedSeqNum()</code></h5>
+<p>获取最后一条收到的Log的序列号。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_87">返回值</h6>
+<p>返回类型为 long</p>
+<h6 id="_88">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_89">注意事项</h6>
+<p>无</p>
+<h6 id="_90">示例代码</h6>
+<pre><code>
+long lastReceivedSeqNum = lastRecvStatus.getLastReceivedSeqNum();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_91">方法</h4>
+<h5 id="setlastreceivedseqnumlong-lastreceivedseqnum"><code>setLastReceivedSeqNum(long lastReceivedSeqNum)</code></h5>
+<p>设置最后一条收到的Log的序列号。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_92">返回值</h6>
+<p>返回类型为 void</p>
+<h6 id="_93">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>latestSeqNum</td>
+<td>long</td>
+<td>最后一条收到的Log的序列号</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_94">注意事项</h6>
+<p>无</p>
+<h6 id="_95">示例代码</h6>
+<pre><code>
+lastRecvStatus.setLastReceivedSeqNum(lastReceivedSeqNum);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="customerlogreceiverinitarg"><code>CustomerLogReceiverInitArg</code>类</h3>
+<p>用于初始化CustomerLogReceiver的数据。</p>
+<h4 id="_96">方法</h4>
+<h5 id="customerlogreceiverinitarg_1"><code>CustomerLogReceiverInitArg()</code></h5>
+<p>默认构造函数。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_97">返回值</h6>
+<p>返回类型为void</p>
+<h6 id="_98">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_99">注意事项</h6>
+<p>无</p>
+<h6 id="_100">示例代码</h6>
+<pre><code>
+CustomerLogReceiverInitArg initArg = new CustomerLogReceiverInitArg();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_101">方法</h4>
+<h5 id="getlastrecvstatus"><code>getLastRecvStatus()</code></h5>
+<p>获取最后一次的接收状态数据。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_102">返回值</h6>
+<p>返回类型为 CustomerLogReceiverLastRecvStatus</p>
+<h6 id="_103">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_104">注意事项</h6>
+<p>无</p>
+<h6 id="_105">示例代码</h6>
+<pre><code>
+CustomerLogReceiverLastRecvStatus lastRecvStatus = initArg.getLastRecvStatus();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_106">方法</h4>
+<h5 id="setlastrecvstatuscustomerlogreceiverlastrecvstatus-lastrecvstatus"><code>setLastRecvStatus(CustomerLogReceiverLastRecvStatus lastRecvStatus)</code></h5>
+<p>设置最后一次的接收状态数据。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_107">返回值</h6>
+<p>返回类型为 void</p>
+<h6 id="_108">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lastRecvStatus</td>
+<td>CustomerLogReceiverLastRecvStatus</td>
+<td>最后一次的接收状态数据</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_109">注意事项</h6>
+<p>无</p>
+<h6 id="_110">示例代码</h6>
+<pre><code>
+initArg.setLastRecvStatus(lastRecvStatus);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h3 id="icustomerlogreceiver"><code>ICustomerLogReceiver</code>接口</h3>
+<p>用于接收 CustomerLog 的接口，可通过 AbstractSlamwarePlatform 对象来创建支持该接口的实例。</p>
+<h4 id="_111">方法</h4>
+<h5 id="isinitialized"><code>isInitialized()</code></h5>
+<p>是否已经初始化。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_112">返回值</h6>
+<p>返回类型为 boolean，true表示已经初始化成功了。</p>
+<h6 id="_113">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_114">注意事项</h6>
+<p>无</p>
+<h6 id="_115">示例代码</h6>
+<pre><code>
+boolean isInitialized = customerLogReceiver.isInitialized();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_116">方法</h4>
+<h5 id="getlastrecvstatus_1"><code>getLastRecvStatus()</code></h5>
+<p>获取最后一次的接收状态。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_117">返回值</h6>
+<p>返回类型为 CustomerLogReceiverLastRecvStatus</p>
+<h6 id="_118">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_119">注意事项</h6>
+<p>无</p>
+<h6 id="_120">示例代码</h6>
+<pre><code>
+CustomerLogReceiverLastRecvStatus lastRecvStatus = customerLogReceiver.getLastRecvStatus();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_121">方法</h4>
+<h5 id="initcustomerlogreceiverinitarg-initarg"><code>init(CustomerLogReceiverInitArg initArg)</code></h5>
+<p>尝试初始化。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_122">返回值</h6>
+<p>返回类型为 ResultCode</p>
+<h6 id="_123">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>initArg</td>
+<td>CustomerLogReceiverInitArg</td>
+<td>初始化参数数据</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_124">注意事项</h6>
+<p>一个对象只能被初始化一次。
+默认情况下 initArg 可以传 null，表示使用默认参数，从设备端现存的第一条Log开始接收。
+如果要尝试从上次断开的地方开始继续接收Log，可以参考 recvLogs() 接口的示例代码。 </p>
+<h6 id="_125">示例代码</h6>
+<pre><code>
+CustomerLogReceiverInitArg initArg = null; // null means use the default arguments on the robot.
+ResultCode resCode = customerLogReceiver.init(initArg);
+if (ResultCode.Ok == resCode)
+    ; // succeed to initialize
+else
+    ; // failed
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_126">方法</h4>
+<h5 id="queryserverstatus"><code>queryServerStatus()</code></h5>
+<p>获取设备端CustomerLog服务的状态数据。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_127">返回值</h6>
+<p>返回类型为 StdPair&lt;ResultCode, ServerStatus&gt;</p>
+<h6 id="_128">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_129">注意事项</h6>
+<p>无。</p>
+<h6 id="_130">示例代码</h6>
+<pre><code>
+StdPair&lt;ResultCode, ServerStatus&gt; tPairStatus = customerLogReceiver.queryServerStatus();
+if (ResultCode.Ok == tPairStatus.getFirst())
+    ; // succeed to get the server status
+else
+    ; // failed
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_131">方法</h4>
+<h5 id="recvlogsint-maxcnttoread"><code>recvLogs(int maxCntToRead)</code></h5>
+<p>接收Log数据。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_132">返回值</h6>
+<p>返回类型为 StdPair&lt;ResultCode, ReadResult&gt;</p>
+<h6 id="_133">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>maxCntToRead</td>
+<td>int</td>
+<td>最多读取Log的条数</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_134">注意事项</h6>
+<p>如果 maxCntToRead 小于等于0，则最多读取设备端设定的默认条数的Log。
+其它注意事项可参考示例代码中的注释。</p>
+<h6 id="_135">示例代码</h6>
+<pre><code>
+
+{
+
+    private void testCustomerLogReceiver_() {
+        try {
+            // connect to the robot.
+            String ip = "10.0.2.2";
+            int port = 1445;
+            Log.i("MyCorePlatform", "start to connect.");
+            com.slamtec.slamware.AbstractSlamwarePlatform corePltfm = com.slamtec.slamware.discovery.DeviceManager.connect(ip, port);
+            if (null == corePltfm)
+            {
+                Log.e("MyCorePlatform", "Failed to connect.");
+                return;
+            }
+            Log.i("MyCorePlatform", "Connected");
+
+            // Create Customer Log Receiver for receiving logs;
+            // If the connection is lost, the old log receiver will not work, a new one should be created.
+            com.slamtec.slamware.log.customer.ICustomerLogReceiver logReceiver = corePltfm.createCustomerLogReceiver();
+            if (null == logReceiver)
+            {
+                Log.e("MyLogReceiver", "Failed to create.");
+                return;
+            }
+            Log.i("MyLogReceiver", "Created");
+
+            com.slamtec.slamware.log.customer.CustomerLogReceiverInitArg initArg = null;
+            // if you want to resume the last receive status, load the saved status data like the following codes:
+            /*
+            {
+                initArg = new com.slamtec.slamware.log.customer.CustomerLogReceiverInitArg();
+                initArg.setLastRecvStatus(lastRecvStatus); // lastRecvStatus is the last receive status data you saved before
+            }
+            */
+            com.slamtec.slamware.log.customer.ResultCode resCode = logReceiver.init(initArg);
+            if (com.slamtec.slamware.log.customer.ResultCode.Ok != resCode)
+            {
+                Log.e("MyLogReceiver", "Failed to init, resCode: " + resCode.name());
+                return;
+            }
+
+            boolean isWorking = true;
+            while (isWorking)
+            {
+                // some other operations of your application
+
+                int maxCntToRead = 0; // set to zero to use the default value of the robot.
+                com.slamtec.slamware.utils.StdPair<com.slamtec.slamware.log.customer.ResultCode, com.slamtec.slamware.log.customer.ReadResult> pairRes
+                        = logReceiver.recvLogs(maxCntToRead);
+                if (com.slamtec.slamware.log.customer.ResultCode.Ok == pairRes.getFirst())
+                {
+                    showMyLogsResult_(pairRes.getSecond());
+                }
+                else
+                {
+                    Log.e("MyLogs", ("ResultCode: " + pairRes.getFirst().name()));
+                }
+
+                // some other operations of your application
+                Thread.sleep(100);
+            }
+
+            // you may save it for the next time to continue to receive logs if you want.
+            /*
+            {
+                com.slamtec.slamware.log.customer.CustomerLogReceiverLastRecvStatus lastRecvStatus = logReceiver.getLastRecvStatus();
+                // now you can save lastRecvStatus somewhere for the next time
+            }
+            */
+        }
+        catch (Exception e) {
+            Log.e("MyException", e.toString());
+        }
+    }
+
+    private void showMyLogsResult_(com.slamtec.slamware.log.customer.ReadResult tRes) {
+
+        java.util.ArrayList<com.slamtec.slamware.log.LogData> logsList = tRes.getLogs();
+        int iLogsCnt = (null != logsList ? logsList.size() : 0);
+        Log.i("MyLogs", ("LogsCnt: " + iLogsCnt));
+        if (iLogsCnt < 1)
+            return;
+
+        for (int i = 0; i < iLogsCnt; ++i)
+        {
+            Log.i("MyLogs", ("logs[" + i + "]"));
+            com.slamtec.slamware.log.LogData logDat = logsList.get(i);
+            if (null == logDat)
+            {
+                // it should not be null here, there may be some problems.
+                Log.e("MyLogs", "null log data.");
+                continue;
+            }
+
+            boolean bIsJsonLog = logDat.getIsJsonLog();
+            if (bIsJsonLog)
+            {
+                // if it is json Log, you can parse the string of log to a JSON object.
+                // ALL customer logs are json log.
+            }
+
+            String strMsg = ("LogSource: " + logDat.getLogSource() + "\n");
+            strMsg += ("LogLevel: " + logDat.getLogLevel().name() + "\n");
+            strMsg += ("IsJsonLog: " + bIsJsonLog + "\n");
+            strMsg += ("StringOfLog: " + logDat.getStringOfLog() + "\n");
+            Log.i("MyLogs", strMsg);
+        }
+    }
+
+}
+
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_136">方法</h4>
+<h5 id="setnextreadstartseqnumlong-startseqnum"><code>setNextReadStartSeqNum(long startSeqNum)</code></h5>
+<p>设置下一次开始接收的序列号。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_137">返回值</h6>
+<p>返回类型为 void</p>
+<h6 id="_138">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>startSeqNum</td>
+<td>long</td>
+<td>下一次开始接收的序列号</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_139">注意事项</h6>
+<p>无。</p>
+<h6 id="_140">示例代码</h6>
+<pre><code>
+customerLogReceiver.setNextReadStartSeqNum(123);
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+
+<h4 id="_141">方法</h4>
+<h5 id="resetnextreadstartseqnum"><code>resetNextReadStartSeqNum()</code></h5>
+<p>取消设置下一次开始接收的序列号。</p>
+<blockquote>
+<p>Stability: 3 - Stable</p>
+<p>Added in v2.5.0</p>
+</blockquote>
+<h6 id="_142">返回值</h6>
+<p>返回类型为 void</p>
+<h6 id="_143">参数说明</h6>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数类型</th>
+<th>描述</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h6 id="_144">注意事项</h6>
+<p>无。</p>
+<h6 id="_145">示例代码</h6>
+<pre><code>
+customerLogReceiver.resetNextReadStartSeqNum();
+</code></pre>
+
+<p>&nbsp;
+&nbsp;</p>
+<!--分节符--------------------------------------------------------------------->
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../log/" class="btn btn-neutral float-left" title="Slamware-log"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../log/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
