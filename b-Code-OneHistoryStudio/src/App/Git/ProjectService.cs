@@ -6,6 +6,13 @@ namespace OneHistoryStudio.Git;
 
 public sealed record WorktreeInfo(string BranchName, string WorktreePath, string LastCommitTime = "");
 
+/// <summary>某项目根下以 z/Z 开头的一级子文件夹(V2.0.1 Meta 文件)。</summary>
+public sealed record MetaFolderInfo(
+    string ProjectName,
+    string MetaName,
+    string FullPath,
+    string LastWriteTime = "");
+
 public enum CommitOutcome
 {
     Success,
@@ -116,7 +123,7 @@ public sealed class ProjectService
 
     public async Task<(GitResult Git, List<WorktreeInfo> Worktrees)> ListWorktreesAsync()
     {
-        var result = await GitRunner.RunAsync(BareRepo, "worktree list --porcelain");
+        var result = await GitRunner.RunAsync(BareRepo, ["worktree", "list", "--porcelain"]);
         if (!result.Success)
             return (result, new List<WorktreeInfo>());
 
@@ -128,7 +135,7 @@ public sealed class ProjectService
 
         // 最后提交时间:单次 for-each-ref 补全(UI-01 列表列),失败不影响主流程
         var times = await GitRunner.RunAsync(BareRepo,
-            "for-each-ref --format=\"%(refname:short)|%(committerdate:iso-local)\" refs/heads/");
+            ["for-each-ref", "--format=%(refname:short)|%(committerdate:iso-local)", "refs/heads/"]);
         if (times.Success)
         {
             var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -193,20 +200,22 @@ public sealed class ProjectService
             return (false, $"裸仓库路径不存在: {BareRepo}(检查 {KeyBareRepo} 配置)");
 
         var targetPath = Path.Combine(WorktreeRoot, name);
+        if (!TryValidateManagedDirectChild(targetPath, rejectReparsePoint: true, out var pathError))
+            return (false, $"目标工作树路径不安全: {pathError}");
         if (Directory.Exists(targetPath))
             return (false, $"目标工作树目录已存在: {targetPath}\n请更换项目名称或手动清理该目录");
 
-        var branchCheck = await GitRunner.RunAsync(BareRepo, $"branch --list \"{name}\"");
+        var branchCheck = await GitRunner.RunAsync(BareRepo, ["branch", "--list", name]);
         if (branchCheck.Success && branchCheck.Output.Contains(name, StringComparison.Ordinal))
             return (false, $"分支 \"{name}\" 已存在于裸仓库中");
 
         progress?.Report($"创建分支 {name}(基于 {baseBranch})...");
-        var createBranch = await GitRunner.RunAsync(BareRepo, $"branch \"{name}\" \"{baseBranch}\"");
+        var createBranch = await GitRunner.RunAsync(BareRepo, ["branch", name, baseBranch]);
         if (!createBranch.Success)
             return (false, $"创建分支失败:\n{createBranch.Output}");
 
         progress?.Report($"创建工作树 {targetPath} ...");
-        var addWorktree = await GitRunner.RunAsync(BareRepo, $"worktree add \"{targetPath}\" \"{name}\"");
+        var addWorktree = await GitRunner.RunAsync(BareRepo, ["worktree", "add", targetPath, name]);
         if (!addWorktree.Success)
         {
             return (false,
@@ -236,8 +245,17 @@ public sealed class ProjectService
         var sb = new StringBuilder();
         if (target != null)
         {
+            if (!TryValidateManagedDirectChild(
+                    target.WorktreePath,
+                    rejectReparsePoint: true,
+                    out var pathError))
+            {
+                return (false, $"工作树路径不在受管边界内，拒绝删除: {pathError}\n{target.WorktreePath}");
+            }
+
             progress?.Report($"移除工作树 {target.WorktreePath} ...");
-            var removeWt = await GitRunner.RunAsync(BareRepo, $"worktree remove \"{target.WorktreePath}\" --force");
+            var removeWt = await GitRunner.RunAsync(BareRepo,
+                ["worktree", "remove", target.WorktreePath, "--force"]);
             if (removeWt.Success)
             {
                 sb.AppendLine($"工作树已移除: {target.WorktreePath}");
@@ -254,7 +272,7 @@ public sealed class ProjectService
         }
 
         progress?.Report($"强制删除分支 {name} ...");
-        var deleteBranch = await GitRunner.RunAsync(BareRepo, $"branch -D \"{name}\"");
+        var deleteBranch = await GitRunner.RunAsync(BareRepo, ["branch", "-D", name]);
         if (!deleteBranch.Success)
             return (false, sb + $"删除分支失败:\n{deleteBranch.Output}");
 
@@ -306,12 +324,12 @@ public sealed class ProjectService
                 progress?.Report($"   [警告] {file.RelativePath}({file.FormattedSize})");
         }
 
-        var addResult = await GitRunner.RunAsync(worktree.WorktreePath, "add .");
+        var addResult = await GitRunner.RunAsync(worktree.WorktreePath, ["add", "."]);
         if (!addResult.Success)
             return new CommitReport(CommitOutcome.Failed, $"git add 失败:\n{addResult.Output}");
 
         var commitResult = await GitRunner.RunAsync(
-            worktree.WorktreePath, $"commit -m \"{commitMessage.Replace("\"", "\\\"")}\"");
+            worktree.WorktreePath, ["commit", "-m", commitMessage]);
         if (!commitResult.Success)
         {
             if (commitResult.Output.Contains("nothing to commit", StringComparison.OrdinalIgnoreCase)
@@ -385,7 +403,7 @@ public sealed class ProjectService
         if (!Directory.Exists(worktreePath))
             return (false, $"工作树目录不存在: {worktreePath}");
 
-        var result = await GitRunner.RunAsync(worktreePath, $"push origin \"{name}\"", timeoutSeconds: 600);
+        var result = await GitRunner.RunAsync(worktreePath, ["push", "origin", name], timeoutSeconds: 600);
         return result.Success
             ? (true, $"已推送到 GitHub(origin/{name})\n{result.Output}".Trim())
             : (false, $"推送失败(退出码 {result.ExitCode}):\n{result.Output}");
@@ -393,7 +411,7 @@ public sealed class ProjectService
 
     public async Task<(bool Success, string Message)> PushAllAsync()
     {
-        var result = await GitRunner.RunAsync(BareRepo, "push --all origin", timeoutSeconds: 1800);
+        var result = await GitRunner.RunAsync(BareRepo, ["push", "--all", "origin"], timeoutSeconds: 1800);
         return result.Success
             ? (true, $"已推送全部分支到 GitHub\n{result.Output}".Trim())
             : (false, $"一键全推失败(退出码 {result.ExitCode}):\n{result.Output}");
@@ -605,7 +623,8 @@ public sealed class ProjectService
     public async Task<List<BranchInfo>?> GetAllBranchesInfoAsync(IProgress<string>? progress)
     {
         var shaTime = await GitRunner.RunAsync(BareRepo,
-            "for-each-ref --sort=committerdate --format=\"%(refname:short)|%(objectname)|%(committerdate:iso-local)\" refs/heads/");
+            ["for-each-ref", "--sort=committerdate",
+                "--format=%(refname:short)|%(objectname)|%(committerdate:iso-local)", "refs/heads/"]);
         if (!shaTime.Success)
             return null;
 
@@ -626,7 +645,7 @@ public sealed class ProjectService
         // 提交说明逐分支单独取,避免 subject 中的 | 破坏解析(V1 同款)
         foreach (var b in list)
         {
-            var msg = await GitRunner.RunAsync(BareRepo, $"log -1 --pretty=%s \"{b.Name}\"");
+            var msg = await GitRunner.RunAsync(BareRepo, ["log", "-1", "--pretty=%s", b.Name]);
             b.LastCommitMessage = msg.Success ? msg.Output.Trim() : "(无法获取提交信息)";
         }
 
@@ -653,7 +672,7 @@ public sealed class ProjectService
         {
             var b = allBranches[i];
             progress?.Report($"读取提交历史 {i + 1}/{allBranches.Count}: {b.Name}");
-            var rev = await GitRunner.RunAsync(BareRepo, $"rev-list \"{b.Name}\"");
+            var rev = await GitRunner.RunAsync(BareRepo, ["rev-list", b.Name]);
             var shas = rev.Success
                 ? rev.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList()
                 : new List<string>();
@@ -855,19 +874,52 @@ public sealed class ProjectService
     {
         if (!Directory.Exists(BareRepo))
             return (false, $"裸仓库路径不存在: {BareRepo}");
+        if (!TryValidateWorktreeRoot(out var rootError))
+            return (false, $"工作树根目录不安全: {rootError}");
 
-        // 1. 删除全部现有 worktree 目录(代码数据都在裸仓库,删的只是视图)
-        var listResult = await GitRunner.RunAsync(BareRepo, "worktree list --porcelain");
+        // 先生成并验证完整计划。任何路径越界时必须在零删除状态下拒绝。
+        var listResult = await GitRunner.RunAsync(BareRepo, ["worktree", "list", "--porcelain"]);
         if (!listResult.Success)
             return (false, $"获取工作树列表失败:\n{listResult.Output}");
 
+        var branchesResult = await GitRunner.RunAsync(BareRepo,
+            ["for-each-ref", "--format=%(refname:short)", "refs/heads/"]);
+        if (!branchesResult.Success)
+            return (false, $"获取分支列表失败:\n{branchesResult.Output}");
+
         var paths = listResult.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
-            .Where(l => l.StartsWith("worktree ", StringComparison.Ordinal))
-            .Select(l => l["worktree ".Length..].Trim())
-            .Where(p => !p.EndsWith(".git", StringComparison.OrdinalIgnoreCase)
-                        && !p.Equals(BareRepo, StringComparison.OrdinalIgnoreCase))
+            .Where(line => line.StartsWith("worktree ", StringComparison.Ordinal))
+            .Select(line => line["worktree ".Length..].Trim())
+            .Where(path => !PathsEqual(path, BareRepo))
             .ToList();
 
+        var branches = branchesResult.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(branch => branch.Trim())
+            .Where(branch => branch.Length > 0)
+            .ToList();
+
+        var invalidPaths = new List<string>();
+        foreach (var path in paths)
+        {
+            if (!TryValidateManagedDirectChild(path, rejectReparsePoint: true, out var error))
+                invalidPaths.Add($"现有 worktree {path}: {error}");
+        }
+
+        foreach (var branch in branches)
+        {
+            var target = Path.Combine(WorktreeRoot, branch);
+            if (!TryValidateManagedDirectChild(target, rejectReparsePoint: true, out var error))
+                invalidPaths.Add($"分支 {branch} 的重建目标 {target}: {error}");
+        }
+
+        if (invalidPaths.Count > 0)
+        {
+            return (false,
+                "修复计划包含越界或高风险路径，已在删除任何目录前拒绝执行:\n  - " +
+                string.Join("\n  - ", invalidPaths));
+        }
+
+        // 1. 删除已通过边界验证的 worktree 目录(代码数据都在裸仓库,删的只是视图)
         var removed = 0;
         foreach (var path in paths)
         {
@@ -886,21 +938,11 @@ public sealed class ProjectService
 
         // 2. 清理 Git 残留 worktree 记录
         progress?.Report("git worktree prune ...");
-        var prune = await GitRunner.RunAsync(BareRepo, "worktree prune");
+        var prune = await GitRunner.RunAsync(BareRepo, ["worktree", "prune"]);
         if (!prune.Success)
             return (false, $"worktree prune 失败:\n{prune.Output}");
 
-        // 3. 按分支清单重建(目录名 = 分支名)
-        var branchesResult = await GitRunner.RunAsync(BareRepo,
-            "for-each-ref --format=\"%(refname:short)\" refs/heads/");
-        if (!branchesResult.Success)
-            return (false, $"获取分支列表失败:\n{branchesResult.Output}");
-
-        var branches = branchesResult.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
-            .Select(b => b.Trim())
-            .Where(b => b.Length > 0)
-            .ToList();
-
+        // 3. 按已验证的分支清单重建(目录名 = 分支名)
         var rebuilt = 0;
         var failedList = new List<string>();
         for (var i = 0; i < branches.Count; i++)
@@ -908,7 +950,7 @@ public sealed class ProjectService
             var branch = branches[i];
             var targetDir = Path.Combine(WorktreeRoot, branch);
             progress?.Report($"[{i + 1}/{branches.Count}] 重建 worktree: {branch}");
-            var add = await GitRunner.RunAsync(BareRepo, $"worktree add \"{targetDir}\" \"{branch}\"");
+            var add = await GitRunner.RunAsync(BareRepo, ["worktree", "add", targetDir, branch]);
             if (add.Success)
             {
                 rebuilt++;
@@ -927,7 +969,7 @@ public sealed class ProjectService
         {
             foreach (var wt in verifyList)
             {
-                var status = await GitRunner.RunAsync(wt.WorktreePath, "status --porcelain");
+                var status = await GitRunner.RunAsync(wt.WorktreePath, ["status", "--porcelain"]);
                 if (!status.Success)
                     broken.Add(wt.BranchName);
             }
@@ -956,5 +998,211 @@ public sealed class ProjectService
 
         System.Diagnostics.Process.Start("explorer.exe", path);
         return (true, $"已在资源管理器中打开: {path}");
+    }
+
+    // ---------------------------------------------------------------- Meta 文件夹(V2.0.1 MF-10/12)
+
+    /// <summary>
+    /// 扫描全部 worktree 根下以 z/Z 开头的一级子文件夹。
+    /// 单项目枚举失败只计入警告并跳过,不拖垮整次扫描。
+    /// </summary>
+    public async Task<(GitResult Git, List<MetaFolderInfo> Metas, List<string> Warnings)> ListMetaFoldersAsync()
+    {
+        var (git, worktrees) = await ListWorktreesAsync();
+        if (!git.Success)
+            return (git, new List<MetaFolderInfo>(), new List<string>());
+
+        var metas = new List<MetaFolderInfo>();
+        var warnings = new List<string>();
+
+        foreach (var w in worktrees)
+        {
+            if (!Directory.Exists(w.WorktreePath))
+                continue;
+
+            try
+            {
+                foreach (var dir in Directory.EnumerateDirectories(w.WorktreePath))
+                {
+                    var name = Path.GetFileName(dir);
+                    if (name.Length == 0 || (name[0] != 'z' && name[0] != 'Z'))
+                        continue;
+
+                    var time = "";
+                    try
+                    {
+                        time = Directory.GetLastWriteTime(dir).ToString("yyyy-MM-dd HH:mm");
+                    }
+                    catch
+                    {
+                        // 取时间失败不影响列入
+                    }
+
+                    metas.Add(new MetaFolderInfo(w.BranchName, name, dir, time));
+                }
+            }
+            catch (Exception ex)
+            {
+                warnings.Add($"{w.BranchName}: {ex.Message}");
+            }
+        }
+
+        metas.Sort((a, b) =>
+        {
+            var c = string.Compare(a.ProjectName, b.ProjectName, StringComparison.OrdinalIgnoreCase);
+            return c != 0 ? c : string.Compare(a.MetaName, b.MetaName, StringComparison.OrdinalIgnoreCase);
+        });
+
+        return (git, metas, warnings);
+    }
+
+    public async Task<(bool Success, string Message)> OpenMetaFolderAsync(
+        string? path,
+        string? projectName,
+        string? metaName)
+    {
+        string target;
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            target = path.Trim();
+        }
+        else if (!string.IsNullOrWhiteSpace(projectName) && !string.IsNullOrWhiteSpace(metaName))
+        {
+            target = Path.Combine(WorktreeRoot, projectName.Trim(), metaName.Trim());
+        }
+        else
+        {
+            return (false, "请提供 path= 或同时提供 name= 与 meta=");
+        }
+
+        try
+        {
+            target = NormalizePath(target);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return (false, $"元文件夹路径无效: {ex.Message}");
+        }
+
+        if (!Directory.Exists(target))
+            return (false, $"目录不存在: {target}");
+
+        var folderName = Path.GetFileName(target.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        if (folderName.Length == 0 || (folderName[0] != 'z' && folderName[0] != 'Z'))
+            return (false, $"不是 Z 级元文件夹(名称须以 z/Z 开头): {target}");
+
+        if ((File.GetAttributes(target) & FileAttributes.ReparsePoint) != 0)
+            return (false, $"元文件夹不能是符号链接或目录联接: {target}");
+
+        var parent = Directory.GetParent(target)?.FullName;
+        var (git, worktrees) = await ListWorktreesAsync();
+        if (!git.Success)
+            return (false, $"无法验证元文件夹所属工作树:\n{git.Output}");
+        if (parent == null || !worktrees.Any(worktree => PathsEqual(parent, worktree.WorktreePath)))
+            return (false, $"目录不是已登记 worktree 的一级元文件夹: {target}");
+
+        System.Diagnostics.Process.Start("explorer.exe", target);
+        return (true, $"已在资源管理器中打开: {target}");
+    }
+
+    private bool TryValidateManagedDirectChild(
+        string path,
+        bool rejectReparsePoint,
+        out string error)
+    {
+        try
+        {
+            if (!TryValidateWorktreeRoot(out error))
+                return false;
+
+            var root = NormalizePath(WorktreeRoot);
+            var candidate = NormalizePath(path);
+
+            if (PathsEqual(candidate, BareRepo))
+            {
+                error = "目标是裸仓库";
+                return false;
+            }
+
+            var parent = Directory.GetParent(candidate)?.FullName;
+            if (parent == null || !PathsEqual(parent, root))
+            {
+                error = $"目标必须是工作树根目录的直接子目录({root})";
+                return false;
+            }
+
+            if (rejectReparsePoint && Directory.Exists(candidate)
+                && (File.GetAttributes(candidate) & FileAttributes.ReparsePoint) != 0)
+            {
+                error = "目标是符号链接或目录联接";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException
+                                   or PathTooLongException or IOException or UnauthorizedAccessException)
+        {
+            error = ex.Message;
+            return false;
+        }
+    }
+
+    private bool TryValidateWorktreeRoot(out string error)
+    {
+        try
+        {
+            var root = NormalizePath(WorktreeRoot);
+            if (!Directory.Exists(root))
+            {
+                error = $"目录不存在: {root}";
+                return false;
+            }
+
+            var volumeRoot = Path.GetPathRoot(root);
+            if (volumeRoot != null && PathsEqual(root, volumeRoot))
+            {
+                error = "不能把磁盘根目录配置为工作树根目录";
+                return false;
+            }
+
+            if ((File.GetAttributes(root) & FileAttributes.ReparsePoint) != 0)
+            {
+                error = "工作树根目录不能是符号链接或目录联接";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException
+                                   or PathTooLongException or IOException or UnauthorizedAccessException)
+        {
+            error = ex.Message;
+            return false;
+        }
+    }
+
+    private static bool PathsEqual(string left, string right)
+    {
+        try
+        {
+            return NormalizePath(left).Equals(NormalizePath(right), StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
+        }
+    }
+
+    private static string NormalizePath(string path)
+    {
+        var fullPath = Path.GetFullPath(path);
+        var pathRoot = Path.GetPathRoot(fullPath);
+        if (pathRoot != null && fullPath.Equals(pathRoot, StringComparison.OrdinalIgnoreCase))
+            return pathRoot;
+
+        return fullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
     }
 }

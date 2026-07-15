@@ -35,12 +35,12 @@ public static class WorktreeLfsHelper
         if (IsLfsPointerFile(absolutePath))
             return true;
 
-        var attrResult = await GitRunner.RunAsync(worktreePath, $"check-attr filter -- \"{normalized}\"");
+        var attrResult = await GitRunner.RunAsync(worktreePath, ["check-attr", "filter", "--", normalized]);
         if (attrResult.Success
             && attrResult.Output.Contains("filter: lfs", StringComparison.OrdinalIgnoreCase))
             return true;
 
-        var lfsResult = await GitRunner.RunAsync(worktreePath, $"lfs ls-files -- \"{normalized}\"");
+        var lfsResult = await GitRunner.RunAsync(worktreePath, ["lfs", "ls-files", "--", normalized]);
         if (lfsResult.Success && !string.IsNullOrWhiteSpace(lfsResult.Output))
             return true;
 
@@ -50,19 +50,19 @@ public static class WorktreeLfsHelper
     public static async Task<(bool Success, string Message)> SetupLfsForFilesAsync(
         string worktreePath, IEnumerable<string> relativePaths)
     {
-        var installResult = await GitRunner.RunAsync(worktreePath, "lfs install");
+        var installResult = await GitRunner.RunAsync(worktreePath, ["lfs", "install"]);
         if (!installResult.Success)
             return (false, "git lfs install 失败:\n" + installResult.Output);
 
         foreach (var relativePath in relativePaths)
         {
             var normalized = relativePath.Replace('\\', '/');
-            var trackResult = await GitRunner.RunAsync(worktreePath, $"lfs track \"{normalized}\"");
+            var trackResult = await GitRunner.RunAsync(worktreePath, ["lfs", "track", normalized]);
             if (!trackResult.Success)
                 return (false, $"git lfs track 失败({normalized}):\n" + trackResult.Output);
         }
 
-        var addAttrResult = await GitRunner.RunAsync(worktreePath, "add .gitattributes");
+        var addAttrResult = await GitRunner.RunAsync(worktreePath, ["add", ".gitattributes"]);
         if (!addAttrResult.Success)
             return (false, "添加 .gitattributes 失败:\n" + addAttrResult.Output);
 
@@ -71,7 +71,7 @@ public static class WorktreeLfsHelper
 
     public static async Task<bool> IsGitLfsAvailableAsync(string worktreePath)
     {
-        var result = await GitRunner.RunAsync(worktreePath, "lfs version");
+        var result = await GitRunner.RunAsync(worktreePath, ["lfs", "version"]);
         return result.Success && result.Output.Contains("git-lfs", StringComparison.OrdinalIgnoreCase);
     }
 }

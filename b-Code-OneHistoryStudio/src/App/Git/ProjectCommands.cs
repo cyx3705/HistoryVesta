@@ -26,6 +26,8 @@ public static class ProjectCommands
         registry.Register(BuildRepair(projects, history));
         registry.Register(BuildConfig(projects));
         registry.Register(BuildNote(projects, history));
+        registry.Register(BuildMetaList(projects));
+        registry.Register(BuildMetaOpen(projects));
     }
 
     // ---------------------------------------------------------------- proj.list(PJ-01)
@@ -418,5 +420,102 @@ public static class ProjectCommands
         Summary = "显示 proj.* 当前生效配置(经 app.set 修改)",
         Example = "proj.config",
         Handler = CommandDescriptor.Sync(_ => CommandResult.Ok(projects.DescribeConfig())),
+    };
+
+    // ---------------------------------------------------------------- proj.metalist(V2.0.1 MF-10)
+
+    private static CommandDescriptor BuildMetaList(ProjectService projects) => new()
+    {
+        Name = "proj.metalist",
+        Summary = "列出全部项目根下以 z/Z 开头的一级元文件夹",
+        Example = "proj.metalist filter=AD",
+        Parameters =
+        [
+            new ParameterSpec
+            {
+                Name = "filter",
+                Description = "项目名/元文件夹名/路径关键字过滤(包含匹配,忽略大小写)",
+                Position = 0,
+            },
+        ],
+        Handler = async ctx =>
+        {
+            var (git, metas, warnings) = await projects.ListMetaFoldersAsync();
+            if (!git.Success)
+                return CommandResult.Fail($"获取工作树列表失败:\n{git.Output}");
+
+            var filter = ctx.GetString("filter");
+            if (!string.IsNullOrWhiteSpace(filter))
+            {
+                metas = metas
+                    .Where(m =>
+                        m.ProjectName.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                        m.MetaName.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                        m.FullPath.Contains(filter, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            var sb = new StringBuilder();
+            if (metas.Count == 0)
+            {
+                sb.Append("没有匹配的元文件夹");
+            }
+            else
+            {
+                sb.Append($"共 {metas.Count} 个元文件夹:");
+                for (var i = 0; i < metas.Count; i++)
+                {
+                    var m = metas[i];
+                    var time = m.LastWriteTime.Length > 0 ? $"  [{m.LastWriteTime}]" : "";
+                    sb.Append($"\n  {i + 1,3}. {m.ProjectName} / {m.MetaName}{time}  →  {m.FullPath}");
+                }
+            }
+
+            if (warnings.Count > 0)
+            {
+                sb.Append($"\n⚠ {warnings.Count} 个项目扫描失败(已跳过):");
+                foreach (var w in warnings)
+                    sb.Append($"\n  · {w}");
+            }
+
+            return CommandResult.Ok(sb.ToString(), metas);
+        },
+    };
+
+    // ---------------------------------------------------------------- proj.metaopen(V2.0.1 MF-12)
+
+    private static CommandDescriptor BuildMetaOpen(ProjectService projects) => new()
+    {
+        Name = "proj.metaopen",
+        Summary = "在系统资源管理器中打开指定元文件夹(path= 或 name=+meta=)",
+        Example = "proj.metaopen name=2026-016-AD学习 meta=z-AD库文件汇总",
+        Parameters =
+        [
+            new ParameterSpec
+            {
+                Name = "path",
+                Description = "元文件夹完整路径",
+            },
+            new ParameterSpec
+            {
+                Name = "name",
+                Description = "所属项目分支名(= 工作树文件夹名)",
+                Position = 0,
+            },
+            new ParameterSpec
+            {
+                Name = "meta",
+                Description = "元文件夹名(须以 z/Z 开头)",
+                Position = 1,
+            },
+        ],
+        Handler = async ctx =>
+        {
+            var (success, message) = await projects.OpenMetaFolderAsync(
+                ctx.GetString("path"),
+                ctx.GetString("name"),
+                ctx.GetString("meta"));
+            return success ? CommandResult.Ok(message) : CommandResult.Fail(message);
+        },
     };
 }

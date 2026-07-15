@@ -42,6 +42,9 @@ public sealed class ModuleHost : IDisposable
 
     public IReadOnlyList<ModuleMeta> Modules => _current.Modules;
 
+    /// <summary>每次整体重载完成后触发(在重载线程上);MD-08 面板同步等旁路逻辑挂此处。</summary>
+    public event Action? ReloadCompleted;
+
     /// <summary>接入指令注册表(ShellWindow 创建后调用,再 Start)。</summary>
     public void Attach(CommandRegistry registry) => _registry = registry;
 
@@ -81,10 +84,13 @@ public sealed class ModuleHost : IDisposable
 
     private void OnFileEvent(string? file)
     {
-        // 只关心模块本体和它的 XML 注释文档
+        // 只关心模块本体、XML 注释文档与模块旁面板(MD-08)
         var ext = Path.GetExtension(file ?? "").ToLowerInvariant();
-        if (ext is ".dll" or ".xml")
+        if (ext is ".dll" or ".xml"
+            || (file?.EndsWith(".panel.json", StringComparison.OrdinalIgnoreCase) ?? false))
+        {
             ScheduleReload(file);
+        }
     }
 
     /// <summary>文件事件防抖:拷贝大 DLL 会触发多次 Changed,静默 800ms 后才真正重载。</summary>
@@ -129,6 +135,7 @@ public sealed class ModuleHost : IDisposable
 
         GC.Collect();
         GC.WaitForPendingFinalizers();
+        ReloadCompleted?.Invoke();
     }
 
     private void SwapRegistrations(Snapshot old, Snapshot next)

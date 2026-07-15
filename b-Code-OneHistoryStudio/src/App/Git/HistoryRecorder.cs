@@ -40,6 +40,18 @@ public sealed class HistoryRecorder
                     updated TEXT NOT NULL
                 )
                 """);
+            _data.ExecuteSql(
+                """
+                CREATE TABLE IF NOT EXISTS mcp_history (
+                    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                    time       TEXT    NOT NULL,
+                    client     TEXT    NOT NULL,
+                    tool       TEXT    NOT NULL,
+                    arguments  TEXT,
+                    result     TEXT    NOT NULL,
+                    elapsed_ms INTEGER NOT NULL DEFAULT 0
+                )
+                """);
         }
         catch (Exception ex)
         {
@@ -60,6 +72,22 @@ public sealed class HistoryRecorder
         catch (Exception ex)
         {
             _log.Warn("history", $"留痕写入失败(不影响操作本身): {ex.Message}");
+        }
+    }
+
+    /// <summary>MCP 调用留痕(MO-01/MS-05);result ∈ 成功/失败/拒绝/超时。失败只告警不阻断。</summary>
+    public void RecordMcp(string client, string tool, string arguments, string result, long elapsedMs)
+    {
+        try
+        {
+            _data.ExecuteSql(
+                $"INSERT INTO mcp_history (time, client, tool, arguments, result, elapsed_ms) VALUES (" +
+                $"'{DateTime.Now:yyyy-MM-dd HH:mm:ss}','{Esc(Truncate(client, 100))}','{Esc(tool)}'," +
+                $"'{Esc(Truncate(arguments, 500))}','{Esc(result)}',{elapsedMs})");
+        }
+        catch (Exception ex)
+        {
+            _log.Warn("history", $"MCP 留痕写入失败(不影响调用本身): {ex.Message}");
         }
     }
 

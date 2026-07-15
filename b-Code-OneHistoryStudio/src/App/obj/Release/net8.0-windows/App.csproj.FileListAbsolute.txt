@@ -72,3 +72,5 @@ C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App\obj\Release\net8.0-windows\OneHistoryStudio.pdb
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App\obj\Release\net8.0-windows\App.genruntimeconfig.cache
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App\obj\Release\net8.0-windows\ref\OneHistoryStudio.dll
+C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App\obj\Release\net8.0-windows\Views\MetaView.baml
+C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App\obj\Release\net8.0-windows\Views\MetaView.g.cs

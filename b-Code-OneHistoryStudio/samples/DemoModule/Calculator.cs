@@ -1,4 +1,4 @@
-namespace DemoModule;
+﻿namespace DemoModule;
 
 public class Calculator
 {

@@ -72,3 +72,5 @@ C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App\obj\Debug\net8.0-windows\Views\OverviewView.baml
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App\obj\Debug\net8.0-windows\Views\BranchTreeView.g.cs
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App\obj\Debug\net8.0-windows\Views\OverviewView.g.cs
+C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App\obj\Debug\net8.0-windows\Views\MetaView.baml
+C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App\obj\Debug\net8.0-windows\Views\MetaView.g.cs

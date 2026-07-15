@@ -20,6 +20,7 @@ public partial class App : Application
 {
     private ShellLog? _log;
     private Modules.ModuleHost? _modules;
+    private Mcp.McpGateway? _mcp;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -71,16 +72,20 @@ public partial class App : Application
             settings.Get("workspace.root") ?? projects.WorktreeRoot);
 
         // 模块托管(V2-M3,MD-01~07):Modules 目录热重载,DLL 即指令域
-        var moduleHost = new Modules.ModuleHost(
-            settings.Get(Modules.ModuleCommands.KeyModuleDir)
-                ?? System.IO.Path.Combine(paths.Root, "Modules"),
-            log);
+        var modulesDir = settings.Get(Modules.ModuleCommands.KeyModuleDir)
+                         ?? System.IO.Path.Combine(paths.Root, "Modules");
+        var moduleHost = new Modules.ModuleHost(modulesDir, log);
         _modules = moduleHost;
+
+        // MD-08(V21-M4):窗口创建前先做一次文件级面板同步,
+        // 上一会话遗留/预先放置的模块旁面板本次启动即成窗口
+        var panelsDir = System.IO.Path.Combine(paths.Root, "panels");
+        Modules.ModulePanelSync.SyncFiles(modulesDir, panelsDir, log);
 
         var config = new ShellConfig
         {
             AppName = "OneHistory 项目管理工具",
-            AppVersion = "2.0.0",
+            AppVersion = "2.1.0",
             DataService = dataService,
             Workspace = workspace,
             // 中央区不注入内容,保留模板占位页(总览/继承树改为独立工具窗口)
@@ -103,6 +108,16 @@ public partial class App : Application
             DefaultTabTarget = "overview",
             DefaultRatio = 0.55,
             ContentFactory = () => new Views.BranchTreeView(() => window?.Commands),
+        });
+        // Meta文件(V2.0.1):与项目总览同组标签,汇总各项目 z/Z 一级元文件夹
+        config.ToolWindows.Add(new ToolWindowDescriptor
+        {
+            Id = "meta",
+            Title = "Meta文件",
+            DefaultSide = DockSide.Tab,
+            DefaultTabTarget = "overview",
+            DefaultRatio = 0.55,
+            ContentFactory = () => new Views.MetaView(() => window?.Commands),
         });
 
         // 默认布局按附录 A:资源(左 18%)| 主窗口 | 控制面板(右 22%),底部表窗口+控制台标签组(28%)
@@ -139,6 +154,8 @@ public partial class App : Application
         {
             ProjectCommands.RegisterAll(registry, projects, history);
             Modules.ModuleCommands.RegisterAll(registry, moduleHost, settings);
+            // V2.1:元数据自描述层(M1)+ 网关生命周期指令(M2);网关实例在 window 之后创建
+            Mcp.McpCommands.RegisterAll(registry, () => window?.Commands, () => _mcp, settings);
             registry.Register(BuildLogFloodCommand(log));
             registry.Register(BuildSeedBenchCommand(dataService));
             registry.Register(BuildSleepCommand());
@@ -147,9 +164,27 @@ public partial class App : Application
         window = new ShellWindow(config, new FileLayoutStore(paths), log, settings, paths.Root);
         MainWindow = window;
 
+        // MD-08:模块热重载后同步模块旁面板;有变化时经总线 panel.reload
+        // (既有面板原地刷新即时生效;全新面板按框架 P-08 约定重启后出现,提示见控制台)
+        var capturedWindow = () => window;
+        moduleHost.ReloadCompleted += () =>
+        {
+            if (Modules.ModulePanelSync.SyncFiles(moduleHost.ModulesDirectory, panelsDir, log))
+                _ = capturedWindow()?.Commands.ExecuteAsync("panel.reload", "模块面板");
+        };
+
         // 模块宿主接入注册表并首次装载(此刻在 UI 线程,Dispatcher.Invoke 内联执行)
         moduleHost.Attach(window.Commands.Registry);
         moduleHost.Start();
+
+        // MCP 网关(V21-M2):默认关闭(MS-01),mcp.start 显式开启;mcp.autostart=true 时随宿主启动
+        _mcp = new Mcp.McpGateway(() => window?.Commands, settings, log, history);
+        if (settings.Get(Mcp.McpGateway.KeyAutostart) is { } auto
+            && auto.Equals("true", StringComparison.OrdinalIgnoreCase))
+        {
+            var (ok, msg) = _mcp.Start(null);
+            log.Log(ok ? ShellLogLevel.Info : ShellLogLevel.Warn, "mcp", $"自启动: {msg}");
+        }
 
         window.Show();
 
@@ -189,6 +224,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _mcp?.Dispose(); // 停监听、释放端口
         _modules?.Dispose(); // 停掉文件监听与防抖定时器
         _log?.Dispose(); // 冲刷文件写入队列
         base.OnExit(e);

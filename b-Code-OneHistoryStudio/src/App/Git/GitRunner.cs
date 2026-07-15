@@ -14,14 +14,16 @@ public sealed record GitResult(int ExitCode, string Output)
 /// </summary>
 public static class GitRunner
 {
-    public static async Task<GitResult> RunAsync(string gitDir, string arguments, int timeoutSeconds = 300)
+    public static async Task<GitResult> RunAsync(
+        string gitDir,
+        IReadOnlyList<string> arguments,
+        int timeoutSeconds = 300)
     {
         try
         {
             var psi = new ProcessStartInfo
             {
                 FileName = "git",
-                Arguments = $"-C \"{gitDir}\" {arguments}",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -30,7 +32,13 @@ public static class GitRunner
                 StandardErrorEncoding = Encoding.UTF8,
             };
 
-            using var process = Process.Start(psi)!;
+            psi.ArgumentList.Add("-C");
+            psi.ArgumentList.Add(gitDir);
+            foreach (var argument in arguments)
+                psi.ArgumentList.Add(argument);
+
+            using var process = Process.Start(psi)
+                ?? throw new InvalidOperationException("无法启动 git 进程");
             var outputTask = process.StandardOutput.ReadToEndAsync();
             var errorTask = process.StandardError.ReadToEndAsync();
 
@@ -50,7 +58,8 @@ public static class GitRunner
                     // 进程可能已自行退出
                 }
 
-                return new GitResult(-1, $"git 命令超时({timeoutSeconds}s): git {psi.Arguments}");
+                return new GitResult(-1,
+                    $"git 命令超时({timeoutSeconds}s): git -C {FormatArgument(gitDir)} {FormatArguments(arguments)}");
             }
 
             var output = (await outputTask.ConfigureAwait(false) + "\n"
@@ -61,5 +70,16 @@ public static class GitRunner
         {
             return new GitResult(-1, $"执行 git 命令异常: {ex.Message}");
         }
+    }
+
+    private static string FormatArguments(IEnumerable<string> arguments)
+        => string.Join(' ', arguments.Select(FormatArgument));
+
+    private static string FormatArgument(string argument)
+    {
+        if (argument.Length > 0 && !argument.Any(char.IsWhiteSpace) && !argument.Contains('"'))
+            return argument;
+
+        return $"\"{argument.Replace("\\", "\\\\").Replace("\"", "\\\"")}\"";
     }
 }

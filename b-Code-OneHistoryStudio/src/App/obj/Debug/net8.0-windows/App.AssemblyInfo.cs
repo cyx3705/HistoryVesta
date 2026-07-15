@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OneHistoryStudio")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+701bb15c19dc8371566078544960dfe0abf3bbbf")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8d380329d58be95ad08a21e6096c94e5713eda40")]
 [assembly: System.Reflection.AssemblyProductAttribute("OneHistoryStudio")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OneHistoryStudio")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

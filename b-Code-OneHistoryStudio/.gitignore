@@ -1,0 +1,13 @@
+# Visual Studio user state and caches
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# .NET build and test outputs
+**/bin/
+**/obj/
+TestResults/
+
+# Publish/ is intentionally not ignored until artifact policy is decided.
