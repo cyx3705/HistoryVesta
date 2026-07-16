@@ -96,7 +96,10 @@ public sealed class McpGateway : IDisposable
         var bus = _busAccessor();
         if (bus == null)
             return null;
-        return _exporter = new CommandSchemaExporter(bus.Registry);
+        return _exporter = new CommandSchemaExporter(bus.Registry)
+        {
+            DescriptionsProvider = _history.AllMcpDescriptions, // V2.1.1:提示词覆盖对客户端生效
+        };
     }
 
     // ---------------------------------------------------------------- 生命周期(MG-05)

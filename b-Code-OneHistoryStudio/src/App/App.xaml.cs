@@ -85,7 +85,7 @@ public partial class App : Application
         var config = new ShellConfig
         {
             AppName = "OneHistory 项目管理工具",
-            AppVersion = "2.1.0",
+            AppVersion = "2.1.1",
             DataService = dataService,
             Workspace = workspace,
             // 中央区不注入内容,保留模板占位页(总览/继承树改为独立工具窗口)
@@ -108,6 +108,26 @@ public partial class App : Application
             DefaultTabTarget = "overview",
             DefaultRatio = 0.55,
             ContentFactory = () => new Views.BranchTreeView(() => window?.Commands),
+        });
+
+        // V2.1.1 管理页:MCP 工具(提示词可改可存)与模块清单,并入顶部标签组
+        config.ToolWindows.Add(new ToolWindowDescriptor
+        {
+            Id = "mcp",
+            Title = "MCP 工具",
+            DefaultSide = DockSide.Tab,
+            DefaultTabTarget = "overview",
+            DefaultRatio = 0.55,
+            ContentFactory = () => new Views.McpToolsView(() => window?.Commands),
+        });
+        config.ToolWindows.Add(new ToolWindowDescriptor
+        {
+            Id = "modules",
+            Title = "模块管理",
+            DefaultSide = DockSide.Tab,
+            DefaultTabTarget = "overview",
+            DefaultRatio = 0.55,
+            ContentFactory = () => new Views.ModulesView(() => window?.Commands),
         });
         // Meta文件(V2.0.1):与项目总览同组标签,汇总各项目 z/Z 一级元文件夹
         config.ToolWindows.Add(new ToolWindowDescriptor
@@ -154,8 +174,9 @@ public partial class App : Application
         {
             ProjectCommands.RegisterAll(registry, projects, history);
             Modules.ModuleCommands.RegisterAll(registry, moduleHost, settings);
-            // V2.1:元数据自描述层(M1)+ 网关生命周期指令(M2);网关实例在 window 之后创建
-            Mcp.McpCommands.RegisterAll(registry, () => window?.Commands, () => _mcp, settings);
+            // V2.1:元数据自描述层(M1)+ 网关生命周期指令(M2)+ 提示词管理(V2.1.1 mcp.desc);
+            // 网关实例在 window 之后创建
+            Mcp.McpCommands.RegisterAll(registry, () => window?.Commands, () => _mcp, settings, history);
             registry.Register(BuildLogFloodCommand(log));
             registry.Register(BuildSeedBenchCommand(dataService));
             registry.Register(BuildSleepCommand());
@@ -349,6 +370,14 @@ public partial class App : Application
                 log.Info("app", "已清理演示面板 panels/motor.json");
             }
 
+            // V2.1.1:UI-12 的 projmod 按钮面板被「模块管理」页(modules)取代,一次性回收
+            var staleProjmod = System.IO.Path.Combine(panelsDir, "projmod.json");
+            if (System.IO.File.Exists(staleProjmod))
+            {
+                System.IO.File.Delete(staleProjmod);
+                log.Info("app", "已回收 panels/projmod.json(功能并入「模块管理」页)");
+            }
+
             SeedPanelIfMissing(panelsDir, log, "projops.json",
                 """
                 {
@@ -363,23 +392,6 @@ public partial class App : Application
                     { "type": "button", "label": "创建分支 + 工作树", "command": "proj.create name=\"{name}\" base=\"{base}\"" },
                     { "type": "button", "label": "打开工作树文件夹", "command": "proj.open name=\"{name}\"" },
                     { "type": "label",  "id": "hint", "label": "提示", "default": "删除项目请在控制台执行 proj.delete" }
-                  ]
-                }
-                """);
-
-            SeedPanelIfMissing(panelsDir, log, "projmod.json",
-                """
-                {
-                  "id": "projmod",
-                  "title": "模块管理",
-                  "visible": true,
-                  "side": "right",
-                  "ratio": 0.24,
-                  "controls": [
-                    { "type": "label",  "id": "hint", "label": "说明", "default": "模块 DLL 放入目录即自动装载" },
-                    { "type": "button", "label": "模块清单", "command": "module.list" },
-                    { "type": "button", "label": "重载全部模块", "command": "module.reload" },
-                    { "type": "button", "label": "打开模块目录", "command": "module.open" }
                   ]
                 }
                 """);

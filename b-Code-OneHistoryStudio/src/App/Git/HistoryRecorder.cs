@@ -42,6 +42,14 @@ public sealed class HistoryRecorder
                 """);
             _data.ExecuteSql(
                 """
+                CREATE TABLE IF NOT EXISTS mcp_descriptions (
+                    command     TEXT PRIMARY KEY,
+                    description TEXT NOT NULL,
+                    updated     TEXT NOT NULL
+                )
+                """);
+            _data.ExecuteSql(
+                """
                 CREATE TABLE IF NOT EXISTS mcp_history (
                     id         INTEGER PRIMARY KEY AUTOINCREMENT,
                     time       TEXT    NOT NULL,
@@ -89,6 +97,43 @@ public sealed class HistoryRecorder
         {
             _log.Warn("history", $"MCP 留痕写入失败(不影响调用本身): {ex.Message}");
         }
+    }
+
+    /// <summary>MCP 工具提示词覆盖(V2.1.1,mcp.desc):写/更新。</summary>
+    public void SetMcpDescription(string command, string text)
+        => _data.ExecuteSql(
+            $"INSERT OR REPLACE INTO mcp_descriptions (command, description, updated) VALUES (" +
+            $"'{Esc(command)}','{Esc(text)}','{DateTime.Now:yyyy-MM-dd HH:mm:ss}')");
+
+    /// <summary>MCP 工具提示词覆盖:清除(恢复指令自带 Summary)。</summary>
+    public void DeleteMcpDescription(string command)
+        => _data.ExecuteSql($"DELETE FROM mcp_descriptions WHERE command='{Esc(command)}'");
+
+    /// <summary>全部提示词覆盖(导出层读取侧合成用);失败返回空表。</summary>
+    public IReadOnlyDictionary<string, string> AllMcpDescriptions()
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            var (result, _) = _data.ExecuteSql("SELECT command, description FROM mcp_descriptions");
+            if (result == null)
+                return map;
+            var ci = IndexOf(result.Columns, "command");
+            var di = IndexOf(result.Columns, "description");
+            if (ci < 0 || di < 0)
+                return map;
+            foreach (var row in result.Rows)
+            {
+                if (row[ci] is string c && row[di] is string d && c.Length > 0)
+                    map[c] = d;
+            }
+        }
+        catch (Exception ex)
+        {
+            _log.Warn("history", $"读取 MCP 提示词覆盖失败: {ex.Message}");
+        }
+
+        return map;
     }
 
     /// <summary>写/更新分支描述(proj.note)。</summary>

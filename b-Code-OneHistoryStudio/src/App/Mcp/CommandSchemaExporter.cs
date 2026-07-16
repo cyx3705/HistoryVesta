@@ -15,7 +15,9 @@ public sealed record McpToolInfo(
     string CommandName,
     string Description,
     JsonObject InputSchema,
-    bool Dangerous);
+    bool Dangerous,
+    string DefaultDescription = "",
+    bool Customized = false);
 
 /// <summary>
 /// 指令元数据自描述层(V2.1 §3,MC-01~06):
@@ -30,6 +32,12 @@ public sealed partial class CommandSchemaExporter
     public CommandSchemaExporter(CommandRegistry registry) => _registry = registry;
 
     /// <summary>
+    /// 提示词覆盖提供者(V2.1.1,装配点接 HistoryRecorder.AllMcpDescriptions):
+    /// 覆盖在导出读取侧合成——mcp.desc 保存后,客户端下次 tools/list 即见新提示词,无需重启。
+    /// </summary>
+    public Func<IReadOnlyDictionary<string, string>>? DescriptionsProvider { get; set; }
+
+    /// <summary>
     /// 硬排除清单(MS-03,任何策略下都不暴露):
     /// app.exit(远端不得杀宿主)、debug.*(承压/注水等自测工具)、
     /// mcp.*(防远端自锁与递归启停)。代码内常量,不走配置。
@@ -39,11 +47,12 @@ public sealed partial class CommandSchemaExporter
            || commandName.StartsWith("debug.", StringComparison.OrdinalIgnoreCase)
            || commandName.StartsWith("mcp.", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>全量导出(MC-01):注册表指令 − 硬排除,含危险标记;调用即现算。</summary>
+    /// <summary>全量导出(MC-01):注册表指令 − 硬排除,含危险标记与提示词覆盖;调用即现算。</summary>
     public IReadOnlyList<McpToolInfo> ExportTools()
     {
         var tools = new List<McpToolInfo>();
         var usedNames = new HashSet<string>(StringComparer.Ordinal);
+        var overrides = DescriptionsProvider?.Invoke();
 
         foreach (var descriptor in _registry.All())
         {
@@ -53,16 +62,21 @@ public sealed partial class CommandSchemaExporter
             var toolName = MakeToolName(descriptor.Name, usedNames);
             usedNames.Add(toolName);
 
-            var description = descriptor.Summary;
+            var defaultDescription = descriptor.Summary;
             if (!string.IsNullOrWhiteSpace(descriptor.Example))
-                description += $"\n示例: {descriptor.Example}";
+                defaultDescription += $"\n示例: {descriptor.Example}";
+
+            var custom = overrides?.GetValueOrDefault(descriptor.Name);
+            var customized = !string.IsNullOrWhiteSpace(custom);
 
             tools.Add(new McpToolInfo(
                 toolName,
                 descriptor.Name,
-                description,
+                customized ? custom! : defaultDescription,
                 BuildInputSchema(descriptor),
-                Dangerous: descriptor.ConfirmPrompt != null));
+                Dangerous: descriptor.ConfirmPrompt != null,
+                DefaultDescription: defaultDescription,
+                Customized: customized));
         }
 
         return tools;

@@ -10,11 +10,11 @@ none
 false
 TRACE;RELEASE;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App\App.xaml
-31423903392
+51680106224
 
-172049334574
+19-1463054101
 207-632643446
-Views\BranchTreeView.xaml;Views\MetaView.xaml;Views\OverviewView.xaml;
+Views\BranchTreeView.xaml;Views\McpToolsView.xaml;Views\MetaView.xaml;Views\ModulesView.xaml;Views\OverviewView.xaml;
 
 False
 

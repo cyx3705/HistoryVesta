@@ -47,7 +47,7 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "App",
+              "Title": "App.csproj",
               "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\App.csproj",
               "RelativeDocumentMoniker": "src\\App\\App.csproj",
               "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\App.csproj",
@@ -115,8 +115,7 @@
               "RelativeToolTip": "src\\App\\Git\\HistoryRecorder.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-15T12:20:16.149Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-15T12:20:16.149Z"
             },
             {
               "$type": "Document",
