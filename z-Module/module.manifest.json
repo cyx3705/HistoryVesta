@@ -1,0 +1,7 @@
+{
+  "name": "ToolKit",
+  "version": "1.0.0",
+  "description": "Studio 工具箱:哈希/GUID/时间戳",
+  "artifact": "b-Code-ToolKit/bin/Release/net8.0/ToolKit.dll",
+  "mcpExposure": "standard"
+}
