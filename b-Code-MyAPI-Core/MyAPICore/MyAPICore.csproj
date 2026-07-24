@@ -1,0 +1,88 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<RuntimeIdentifiers>win-x64;win-arm64;linux-x64</RuntimeIdentifiers>
+		<OutputType>Exe</OutputType>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<ApplicationIcon>xiaomao.ico</ApplicationIcon>
+		<PlatformTarget>x64</PlatformTarget>
+
+		<!-- 主程序打包成单个 exe -->
+		<PublishSingleFile>true</PublishSingleFile>
+		<SelfContained>false</SelfContained>
+
+		<!-- 关键设置：发布时不把所有内容强行塞进 exe -->
+		<IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
+		<IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+
+		<!-- 调试与发布优化 -->
+		<PublishReadyToRun>false</PublishReadyToRun>
+		<DebugType>None</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+		<StaticWebAssetsEnabled>true</StaticWebAssetsEnabled>
+		<GenerateStaticWebAssetsManifest>true</GenerateStaticWebAssetsManifest>
+
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="Shared\**" />
+		<Content Remove="Shared\**" />
+		<EmbeddedResource Remove="Shared\**" />
+		<None Remove="Shared\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="xiaomao.ico" />
+	</ItemGroup>
+
+	<!-- NuGet 包 -->
+	<ItemGroup>
+		<PackageReference Include="MudBlazor" Version="8.15.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+		<PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
+	</ItemGroup>
+
+	<!-- ==================== 模块引用（重点） ==================== -->
+	<ItemGroup>
+		<ProjectReference Include="..\AskAIModule\AskAIModule.csproj" />
+		<ProjectReference Include="..\BaseVariable\BaseVariable.csproj" Private="true" />
+		<ProjectReference Include="..\NodeRegistryModule\NodeRegistryModule.csproj" />
+		<ProjectReference Include="..\RegisterModule\BaseRegister.csproj" Private="true" />
+		<ProjectReference Include="..\CmdModule\CmdModule.csproj" Private="true" />
+		<ProjectReference Include="..\MyUtilsModule\MyUtilsModule.csproj" Private="true" />
+		<ProjectReference Include="..\QuartzModule\QuartzModule.csproj" Private="true" />
+		<ProjectReference Include="..\ReverseProxyModule\BaseReverseProxy.csproj" Private="true" />
+		<ProjectReference Include="..\TestModule\TestModule.csproj" />
+		<ProjectReference Include="..\VBtestmodule\MyVBModule.vbproj" Private="true" />
+	</ItemGroup>
+
+	<!-- ==================== 发布后处理：复制 DLL + XML ==================== -->
+	<Target Name="CopyModulesAfterPublish" AfterTargets="Publish">
+
+		<!-- 复制 DLL 文件 -->
+		<ItemGroup>
+			<ModuleDlls Include="$(TargetDir)*Module*.dll" />
+			<ModuleDlls Include="$(TargetDir)BaseRegister.dll" />
+			<ModuleDlls Include="$(TargetDir)BaseVariable.dll" />
+			<ModuleDlls Include="$(TargetDir)BaseReverseProxy.dll" />
+		</ItemGroup>
+
+		<Copy SourceFiles="@(ModuleDlls)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+
+		<!-- 复制 XML 文档文件（增加 Condition 避免报错） -->
+		<ItemGroup>
+			<ModuleXmls Include="$(TargetDir)*Module*.xml" />
+			<ModuleXmls Include="$(TargetDir)MyAPICore.xml" />
+		</ItemGroup>
+
+		<Copy SourceFiles="@(ModuleXmls)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" Condition="Exists('%(FullPath)')" />
+
+		<Message Text="=== 已将模块 DLL 和 XML 文档复制到发布目录 ===" Importance="High" />
+	</Target>
+
+</Project>

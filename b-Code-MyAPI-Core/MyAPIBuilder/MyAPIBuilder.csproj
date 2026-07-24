@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<OutputType>Exe</OutputType>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<PlatformTarget>x64</PlatformTarget>
+		<ApplicationIcon>xiaomao.ico</ApplicationIcon>
+
+		<!-- ==================== 安装包生成器核心配置 ==================== -->
+		<!-- Build 时正常生成 exe -->
+		<PublishSingleFile>false</PublishSingleFile>
+		<SelfContained>false</SelfContained>
+
+		<!-- Publish 时才启用单文件打包 -->
+		<PublishSingleFile Condition="'$(Configuration)' == 'Release'">true</PublishSingleFile>
+		<SelfContained Condition="'$(Configuration)' == 'Release'">true</SelfContained>
+
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+		<PublishTrimmed>false</PublishTrimmed>
+		<PublishReadyToRun>false</PublishReadyToRun>
+
+		<!-- 优化设置 -->
+		<DebugType>None</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Include="xiaomao.ico" />
+	</ItemGroup>
+
+	<!-- ==================== 项目引用 ==================== -->
+	<ItemGroup>
+		<ProjectReference Include="..\BaseVariable\BaseVariable.csproj" />
+	</ItemGroup>
+
+</Project>

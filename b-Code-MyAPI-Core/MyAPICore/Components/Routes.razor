@@ -1,0 +1,10 @@
+﻿@using MyAPICore.Components.Layout  
+
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+    <NotFound>
+        <h1>页面未找到</h1>
+    </NotFound>
+</Router>

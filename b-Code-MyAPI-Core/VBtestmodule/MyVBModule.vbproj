@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>MyVBModule</RootNamespace>
+    <TargetFramework>net8.0</TargetFramework>
+	  <!-- 新增这两行 -->
+	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+	  <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BaseVariable\BaseVariable.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,181 @@
+﻿@* Components/Layout/MainLayout.razor *@
+@namespace MyAPICore.Components.Layout
+@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@using MudBlazor
+
+<!-- MudBlazor Providers -->
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<div class="page">
+    <header class="navbar">
+        <div class="container">
+            <!-- 左侧：Logo + 导航 -->
+            
+                <h1 class="logo">
+                    <a href="/" class="logo-link">MyAPI</a>
+                </h1>
+
+                <nav class="nav-links">
+                    <a href="/cmd" class="nav-item">控制台</a>
+                    <a href="/tasks" class="nav-item">任务管理</a>
+                    <a href="/settings" class="nav-item">设置</a>
+                    <a href="/designer" class="nav-item">设计器</a>
+                    <a href="/mudtest" class="nav-item">测试页面</a>
+                </nav>
+           
+
+            <!-- 右侧：搜索框 -->
+            <div class="search-box">
+                <MudTextField @bind-Value="searchText"
+                              Placeholder="搜索页面或功能..."
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Immediate="true"
+                              OnKeyUp="HandleSearchKeyUp"
+                              Class="search-input" />
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        @Body
+    </main>
+
+    <footer class="footerback">
+        <div class="footer">
+            <p>© 2026 MyAPI. All rights reserved.</p>
+            </div>
+    </footer>
+</div>
+
+@code {
+    private string searchText = "";
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(searchText))
+        {
+            var query = searchText.Trim().ToLower();
+
+            if (query.Contains("设计") || query.Contains("designer"))
+                NavigationManager.NavigateTo("/designer");
+            else if (query.Contains("任务") || query.Contains("task"))
+                NavigationManager.NavigateTo("/tasks");
+            else if (query.Contains("设置") || query.Contains("setting"))
+                NavigationManager.NavigateTo("/settings");
+            else if (query.Contains("测试") || query.Contains("test"))
+                NavigationManager.NavigateTo("/mudtest");
+            else if (query.Contains("控制") || query.Contains("cmd"))
+                NavigationManager.NavigateTo("/cmd");
+
+            searchText = "";
+        }
+    }
+}
+
+<style>
+    .page {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .navbar {
+        background: #2c3e50;
+        color: white;
+        padding: 1rem 0;
+        height: 110px; /* 调整为更舒适的高度 */
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+        height: 100%;
+    }
+
+   
+
+    .logo {
+        margin: 0;
+        font-size: 2.25rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+    .logo-link {
+    color: white;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    }
+    .logo-link:hover {
+    color: #00b4d8;           /* 悬停时变色（可自行改颜色） */
+    opacity: 0.9;
+    }
+    .nav-links {
+        display: flex;
+        gap: 2rem;
+        font-size: 1.05rem;
+    }
+
+    .nav-item {
+        color: white;
+        text-decoration: none;
+        padding: 0.4rem 0.9rem;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+    .search-box {
+        width: 340px;
+        flex-shrink: 0;
+    }
+
+    .search-input {
+        background: white;
+        border-radius: 8px;
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 2rem 0;
+        width: 100%;
+        max-width: 1400px; /* 设置最大宽度 */
+        margin: 0 auto; /* 居中 */
+        padding-left: 1.5rem; /* 左侧白边 */
+        padding-right: 1.5rem; /* 右侧白边 */
+    }
+
+.footerback {
+    background: #f8f9fa;
+    color: #666;
+    border-top: 1px solid #eee;
+    width: 100%;                    /* 强制占满宽度 */
+    margin-left: 0;                 /* 清除左边距 */
+    margin-right: 0;                /* 清除右边距 */
+    padding: 1.5rem 0;
+    margin-top: auto;
+}
+   .footer {
+    max-width: 1400px;              /* 内容最大宽度 */
+    margin: 0 auto;                 /* 水平居中 */
+    padding: 0 1.5rem;              /* 左右留白 */
+    text-align: center;             /* 文字居中 */
+    font-size: 0.92rem;
+    }
+
+       
+</style>

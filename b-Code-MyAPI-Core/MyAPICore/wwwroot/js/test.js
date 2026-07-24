@@ -1,0 +1,1 @@
+﻿console.log("=== test.js 成功加载 ===");
