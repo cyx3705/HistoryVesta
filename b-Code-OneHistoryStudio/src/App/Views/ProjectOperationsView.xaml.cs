@@ -23,7 +23,6 @@ public partial class ProjectOperationsView : UserControl
         _busAccessor = busAccessor;
         _selection = selection;
         SelectedCommitMessageBox.Text = "一键推送更新";
-        UpdateSubmoduleInputs();
         RuleGrid.ItemsSource = _rules;
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
@@ -121,11 +120,8 @@ public partial class ProjectOperationsView : UserControl
     private void OnCommitMessageChanged(object sender, TextChangedEventArgs e)
         => UpdateProjectActions();
 
-    private void OnSubmoduleOptionsChanged(object sender, System.Windows.RoutedEventArgs e)
-    {
-        UpdateSubmoduleInputs();
-        UpdateProjectActions();
-    }
+    private void OnOperationModeChanged(object sender, System.Windows.RoutedEventArgs e)
+        => UpdateProjectActions();
 
     private async void OnRefreshProjectsClick(object sender, System.Windows.RoutedEventArgs e)
         => await RefreshProjectsAsync();
@@ -155,24 +151,18 @@ public partial class ProjectOperationsView : UserControl
 
     private async void OnCommitSelectedClick(object sender, System.Windows.RoutedEventArgs e)
     {
+        var mode = CurrentOperationMode();
+        var project = CurrentProjectName();
         if (_busAccessor() is not { } bus
-            || CurrentProjectName() is not { Length: > 0 } project
-            || SelectedCommitMessageBox.Text.Trim() is not { Length: > 0 } message)
+            || SelectedCommitMessageBox.Text.Trim() is not { Length: > 0 } message
+            || ProjectOperationCommandBuilder.RequiresCurrentProject(mode) && project.Length == 0)
             return;
 
         SetProjectOperationRunning(true);
         try
         {
-            var includeSubmodules = SelectedIncludeSubmodulesCheckBox.IsChecked == true;
-            var submessage = includeSubmodules && SelectedUseParentMessageCheckBox.IsChecked != true
-                ? SelectedSubmoduleMessageBox.Text.Trim()
-                : string.Empty;
-            var submessageArg = submessage.Length > 0
-                ? $" submsg={CommandParser.QuoteArg(submessage)}"
-                : string.Empty;
-            var result = await bus.ExecuteAsync(
-                $"proj.commit name={CommandParser.QuoteArg(project)} msg={CommandParser.QuoteArg(message)} " +
-                $"submodules={Bool(includeSubmodules)}{submessageArg}", "UI");
+            var result = await bus.ExecuteAsync(ProjectOperationCommandBuilder.BuildCommit(
+                mode, project, message), "UI");
             StatusText.Text = ViewKit.ResultSummary(result);
         }
         finally
@@ -183,16 +173,17 @@ public partial class ProjectOperationsView : UserControl
 
     private async void OnPushSelectedClick(object sender, System.Windows.RoutedEventArgs e)
     {
-        if (_busAccessor() is not { } bus || CurrentProjectName() is not { Length: > 0 } project)
+        var mode = CurrentOperationMode();
+        var project = CurrentProjectName();
+        if (_busAccessor() is not { } bus
+            || ProjectOperationCommandBuilder.RequiresCurrentProject(mode) && project.Length == 0)
             return;
 
         SetProjectOperationRunning(true);
         try
         {
-            var includeSubmodules = SelectedIncludeSubmodulesCheckBox.IsChecked == true;
-            var result = await bus.ExecuteAsync(
-                $"proj.push name={CommandParser.QuoteArg(project)} " +
-                $"submodules={Bool(includeSubmodules)}", "UI");
+            var result = await bus.ExecuteAsync(ProjectOperationCommandBuilder.BuildPush(
+                mode, project), "UI");
             StatusText.Text = ViewKit.ResultSummary(result);
         }
         finally
@@ -400,22 +391,23 @@ public partial class ProjectOperationsView : UserControl
     private void UpdateProjectActions()
     {
         var hasCurrent = CurrentProjectName().Length > 0;
+        var mode = CurrentOperationMode();
+        var scopeReady = !ProjectOperationCommandBuilder.RequiresCurrentProject(mode) || hasCurrent;
         CreateProjectButton.IsEnabled = hasCurrent && NewProjectName().Length > 0;
         OpenProjectButton.IsEnabled = hasCurrent;
-        SelectedActionTitle.Text = hasCurrent
+        SelectedActionTitle.Text = !ProjectOperationCommandBuilder.RequiresCurrentProject(mode)
+            ? "全部工作树"
+            : hasCurrent
             ? $"当前项目 · {CurrentProjectName()}"
             : "当前未选择项目";
-        SelectedCommitButton.IsEnabled = !_projectOperationRunning && hasCurrent
+        SelectedCommitButton.IsEnabled = !_projectOperationRunning && scopeReady
                                          && SelectedCommitMessageBox.Text.Trim().Length > 0;
-        SelectedPushButton.IsEnabled = !_projectOperationRunning && hasCurrent;
-    }
-
-    private void UpdateSubmoduleInputs()
-    {
-        var include = SelectedIncludeSubmodulesCheckBox.IsChecked == true;
-        SelectedUseParentMessageCheckBox.IsEnabled = include;
-        SelectedSubmoduleMessageBox.IsEnabled = include
-                                                && SelectedUseParentMessageCheckBox.IsChecked != true;
+        SelectedPushButton.IsEnabled = !_projectOperationRunning && scopeReady;
+        SelectedCommitMessageBox.IsEnabled = !_projectOperationRunning;
+        CurrentSubmodulesModeButton.IsEnabled = !_projectOperationRunning;
+        CurrentBothModeButton.IsEnabled = !_projectOperationRunning;
+        AllSubmodulesModeButton.IsEnabled = !_projectOperationRunning;
+        AllBothModeButton.IsEnabled = !_projectOperationRunning;
     }
 
     private void SetProjectOperationRunning(bool running)
@@ -434,6 +426,17 @@ public partial class ProjectOperationsView : UserControl
     }
 
     private static string Bool(bool value) => value ? "true" : "false";
+
+    private ProjectOperationMode CurrentOperationMode()
+    {
+        if (CurrentSubmodulesModeButton.IsChecked == true)
+            return ProjectOperationMode.CurrentSubmodules;
+        if (AllSubmodulesModeButton.IsChecked == true)
+            return ProjectOperationMode.AllSubmodules;
+        if (AllBothModeButton.IsChecked == true)
+            return ProjectOperationMode.AllBoth;
+        return ProjectOperationMode.CurrentBoth;
+    }
 
     public sealed class RuleEditRow : INotifyPropertyChanged
     {

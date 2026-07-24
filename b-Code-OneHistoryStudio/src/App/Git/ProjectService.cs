@@ -29,7 +29,10 @@ public sealed record CommitReport(
     string BeforeSha = "",
     string AfterSha = "",
     IReadOnlyList<SubmoduleOperationEntry>? Submodules = null,
-    bool PartialCompletion = false);
+    bool PartialCompletion = false,
+    RepositoryTarget Target = RepositoryTarget.Parent,
+    bool ParentExecuted = false,
+    bool ParentPointerPending = false);
 
 /// <summary>
 /// proj.* 指令域的业务实现:OneHistory 项目库(裸仓库 + worktree)管理。
@@ -319,13 +322,25 @@ public sealed class ProjectService
         bool includeSubmodules = false,
         string? submoduleMessage = null,
         CancellationToken cancellation = default)
+        => await CommitAsync(name, message, progress,
+            includeSubmodules ? RepositoryTarget.Both : RepositoryTarget.Parent,
+            submoduleMessage, cancellation);
+
+    public async Task<CommitReport> CommitAsync(
+        string name,
+        string message,
+        IProgress<string>? progress,
+        RepositoryTarget target,
+        string? submoduleMessage = null,
+        CancellationToken cancellation = default)
     {
         name = name.Trim();
         var worktreePath = Path.Combine(WorktreeRoot, name);
         if (!Directory.Exists(worktreePath))
-            return new CommitReport(CommitOutcome.Failed, $"工作树目录不存在: {worktreePath}");
+            return new CommitReport(CommitOutcome.Failed, $"工作树目录不存在: {worktreePath}",
+                Target: target);
         return await CommitWorktreeAsync(new WorktreeInfo(name, worktreePath), message, progress,
-            includeSubmodules, submoduleMessage, cancellation);
+            target, submoduleMessage, cancellation);
     }
 
     private sealed record RepositoryCommitPlan(
@@ -341,19 +356,19 @@ public sealed class ProjectService
         WorktreeInfo worktree,
         string commitMessage,
         IProgress<string>? progress,
-        bool includeSubmodules = false,
+        RepositoryTarget target,
         string? submoduleMessage = null,
         CancellationToken cancellation = default)
     {
         if (string.IsNullOrWhiteSpace(commitMessage))
-            return new CommitReport(CommitOutcome.Failed, "提交描述不能为空");
+            return new CommitReport(CommitOutcome.Failed, "提交描述不能为空", Target: target);
 
         List<GitlinkDescriptor> links = [];
-        if (includeSubmodules)
+        if (target != RepositoryTarget.Parent)
         {
             var discovered = await _gitlinks.DiscoverAsync(worktree.WorktreePath, cancellation);
             if (!discovered.Success)
-                return new CommitReport(CommitOutcome.Failed, discovered.Message);
+                return new CommitReport(CommitOutcome.Failed, discovered.Message, Target: target);
             links = discovered.Items;
             var invalid = links.FirstOrDefault(link => string.IsNullOrWhiteSpace(link.Branch)
                                                       || !link.HasIdentity || link.NestedGitlinkDirty);
@@ -365,7 +380,7 @@ public sealed class ProjectService
                         ? "缺少 user.name 或 user.email"
                         : "存在发生变化的第二层 gitlink";
                 return new CommitReport(CommitOutcome.Failed,
-                    $"子模块预检失败 [{invalid.RelativePath}]: {reason}");
+                    $"子模块预检失败 [{invalid.RelativePath}]: {reason}", Target: target);
             }
         }
 
@@ -379,19 +394,34 @@ public sealed class ProjectService
                 new WorktreeInfo(link.RelativePath, link.FullPath), childMessage, progress,
                 excludedDirectories: [], addAll: true, cancellation);
             if (prepared.Error != null)
-                return prepared.Error with { Submodules = BuildSkippedEntries(links) };
+                return prepared.Error with { Submodules = BuildSkippedEntries(links), Target = target };
             childPlans.Add((link, prepared.Plan!));
         }
 
-        var parentPrepared = await PrepareCommitPlanAsync(worktree, commitMessage.Trim(), progress,
-            links.Select(link => link.FullPath), addAll: false, cancellation);
-        if (parentPrepared.Error != null)
-            return parentPrepared.Error with { Submodules = BuildSkippedEntries(links) };
+        RepositoryCommitPlan? parentPlan = null;
+        if (target != RepositoryTarget.Submodules)
+        {
+            var parentPrepared = await PrepareCommitPlanAsync(worktree, commitMessage.Trim(), progress,
+                links.Select(link => link.FullPath), addAll: false, cancellation);
+            if (parentPrepared.Error != null)
+                return parentPrepared.Error with
+                {
+                    Submodules = BuildSkippedEntries(links),
+                    Target = target,
+                    ParentExecuted = true,
+                };
+            parentPlan = parentPrepared.Plan!;
+        }
 
-        if (childPlans.Count > 0 && !_confirm(BuildSubmoduleCommitPrompt(worktree.BranchName, childPlans)))
+        var parentBefore = parentPlan?.BeforeSha
+                           ?? await ReadHeadShaAsync(worktree.WorktreePath, cancellation);
+
+        if (childPlans.Count > 0
+            && !_confirm(BuildSubmoduleCommitPrompt(worktree.BranchName, childPlans, target)))
         {
             return new CommitReport(CommitOutcome.Rejected, "用户取消子模块联动提交",
-                Submodules: BuildSkippedEntries(links));
+                BeforeSha: parentBefore, AfterSha: parentBefore,
+                Submodules: BuildSkippedEntries(links), Target: target);
         }
 
         var entries = BuildSkippedEntries(links).ToList();
@@ -404,21 +434,82 @@ public sealed class ProjectService
             ReplaceEntry(entries, entry);
             if (child.Outcome is not CommitOutcome.Success and not CommitOutcome.Skipped)
             {
+                var pending = await HasPendingParentPointerAsync(
+                    worktree.WorktreePath, links, cancellation);
                 return new CommitReport(child.Outcome,
                     $"子模块提交失败 [{link.RelativePath}]: {child.Message}",
-                    child.HasSizeWarning, child.RejectedFiles, parentPrepared.Plan!.BeforeSha,
-                    parentPrepared.Plan.BeforeSha, entries,
-                    entries.Any(item => item.Outcome == SubmoduleOperationOutcome.Success));
+                    child.HasSizeWarning, child.RejectedFiles, parentBefore,
+                    parentBefore, entries,
+                    entries.Any(item => item.Outcome == SubmoduleOperationOutcome.Success),
+                    target, ParentExecuted: false, ParentPointerPending: pending);
             }
         }
 
-        var parent = await ExecuteCommitPlanAsync(parentPrepared.Plan!, progress, cancellation);
+        if (target == RepositoryTarget.Submodules)
+        {
+            var anyCommitted = entries.Any(item => item.Outcome == SubmoduleOperationOutcome.Success);
+            var pending = await HasPendingParentPointerAsync(
+                worktree.WorktreePath, links, cancellation);
+            var message = anyCommitted
+                ? $"已提交 {entries.Count(item => item.Outcome == SubmoduleOperationOutcome.Success)} 个子模块；" +
+                  "父分支尚未记录新 gitlink，请执行“分支及子模块”完成收口"
+                : links.Count == 0
+                    ? "未发现直属子模块，已跳过"
+                    : pending
+                        ? "子模块没有新变更；父分支仍有待收口 gitlink"
+                        : "子模块均无变更，已跳过";
+            return new CommitReport(
+                anyCommitted ? CommitOutcome.Success : CommitOutcome.Skipped,
+                message,
+                BeforeSha: parentBefore,
+                AfterSha: parentBefore,
+                Submodules: entries,
+                Target: target,
+                ParentExecuted: false,
+                ParentPointerPending: pending);
+        }
+
+        var parent = await ExecuteCommitPlanAsync(parentPlan!, progress, cancellation);
+        var parentPending = parent.Outcome is not CommitOutcome.Success
+                            && await HasPendingParentPointerAsync(
+                                worktree.WorktreePath, links, cancellation);
         return parent with
         {
             Submodules = entries,
             PartialCompletion = parent.Outcome is not CommitOutcome.Success and not CommitOutcome.Skipped
                                 && entries.Any(item => item.Outcome == SubmoduleOperationOutcome.Success),
+            Target = target,
+            ParentExecuted = true,
+            ParentPointerPending = parentPending,
         };
+    }
+
+    private async Task<bool> HasPendingParentPointerAsync(
+        string parentPath,
+        IEnumerable<GitlinkDescriptor> links,
+        CancellationToken cancellation)
+    {
+        foreach (var link in links)
+        {
+            var childHead = await GitRunner.RunAsync(link.FullPath, ["rev-parse", "HEAD"],
+                cancellation: cancellation);
+            if (!childHead.Success)
+                return true;
+            var recorded = await _gitlinks.GetHeadGitlinkShaAsync(
+                parentPath, link.RelativePath, cancellation);
+            if (!recorded.Success || !recorded.Sha.Equals(
+                    FirstLine(childHead.Output), StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    private static async Task<string> ReadHeadShaAsync(
+        string repository, CancellationToken cancellation)
+    {
+        var result = await GitRunner.RunAsync(repository, ["rev-parse", "HEAD"],
+            cancellation: cancellation);
+        return result.Success ? FirstLine(result.Output) : string.Empty;
     }
 
     private async Task<(RepositoryCommitPlan? Plan, CommitReport? Error)> PrepareCommitPlanAsync(
@@ -538,76 +629,122 @@ public sealed class ProjectService
 
     public async Task<PushReport> PushAsync(
         string name, bool includeSubmodules = false, CancellationToken cancellation = default)
+        => await PushAsync(name,
+            includeSubmodules ? RepositoryTarget.Both : RepositoryTarget.Parent, cancellation);
+
+    public async Task<PushReport> PushAsync(
+        string name, RepositoryTarget target, CancellationToken cancellation = default)
     {
         name = name.Trim();
         var worktreePath = Path.Combine(WorktreeRoot, name);
         if (!Directory.Exists(worktreePath))
-            return new PushReport(false, $"工作树目录不存在: {worktreePath}");
+            return new PushReport(false, $"工作树目录不存在: {worktreePath}", Target: target);
 
         var entries = new List<SubmoduleOperationEntry>();
-        if (includeSubmodules)
+        var pendingParentCount = 0;
+        if (target != RepositoryTarget.Parent)
         {
             var prepared = await PrepareSubmodulePushesAsync(
-                [(worktreePath, worktreePath)], cancellation);
+                [(worktreePath, worktreePath)], target == RepositoryTarget.Both, cancellation);
+            pendingParentCount = prepared.ParentPointerPendingCount;
             if (!prepared.Success)
-                return new PushReport(false, prepared.Message, Submodules: prepared.Entries);
+                return new PushReport(false, prepared.Message, Submodules: prepared.Entries,
+                    Target: target, ParentPointerPending: pendingParentCount > 0);
             var pushed = await PushSubmodulesAsync(prepared.Items, cancellation);
             entries = pushed.Entries;
             if (!pushed.Success)
                 return new PushReport(false, pushed.Message, Submodules: entries,
-                    PartialCompletion: entries.Any(item => item.Pushed));
+                    PartialCompletion: entries.Any(item => item.Pushed), Target: target,
+                    ParentPointerPending: pendingParentCount > 0);
+
+            if (target == RepositoryTarget.Submodules)
+            {
+                var message = entries.Count == 0
+                    ? "未发现直属子模块，已跳过"
+                    : $"已推送 {entries.Count} 个子模块，父分支未推送" +
+                      (pendingParentCount > 0 ? "；父 gitlink 尚待收口" : string.Empty);
+                return new PushReport(true, message, ParentPushed: false, Submodules: entries,
+                    Target: target, ParentPointerPending: pendingParentCount > 0);
+            }
         }
 
         var result = await GitRunner.RunAsync(worktreePath, ["push", "origin", name],
             timeoutSeconds: 600, cancellation: cancellation);
         return result.Success
-            ? new PushReport(true, $"已推送到 GitHub(origin/{name})\n{result.Output}".Trim(), true, entries)
+            ? new PushReport(true, $"已推送到 GitHub(origin/{name})\n{result.Output}".Trim(),
+                true, entries, Target: target)
             : new PushReport(false, $"父仓库推送失败(退出码 {result.ExitCode}):\n{result.Output}",
-                Submodules: entries, PartialCompletion: entries.Any(item => item.Pushed));
+                Submodules: entries, PartialCompletion: entries.Any(item => item.Pushed),
+                Target: target, ParentPointerPending: pendingParentCount > 0);
     }
 
     public async Task<BatchPushReport> PushAllAsync(
         bool includeSubmodules = false, CancellationToken cancellation = default)
+        => await PushAllAsync(
+            includeSubmodules ? RepositoryTarget.Both : RepositoryTarget.Parent, cancellation);
+
+    public async Task<BatchPushReport> PushAllAsync(
+        RepositoryTarget target, CancellationToken cancellation = default)
     {
         var entries = new List<SubmoduleOperationEntry>();
-        if (includeSubmodules)
+        var pendingParentCount = 0;
+        if (target != RepositoryTarget.Parent)
         {
             var (listResult, worktrees) = await ListWorktreesAsync();
             if (!listResult.Success)
-                return new BatchPushReport(false, $"获取工作树列表失败:\n{listResult.Output}", false, []);
+                return new BatchPushReport(false, $"获取工作树列表失败:\n{listResult.Output}",
+                    false, [], Target: target);
             var parents = worktrees.Where(item => Directory.Exists(item.WorktreePath))
                 .Select(item => (item.WorktreePath, item.WorktreePath));
-            var prepared = await PrepareSubmodulePushesAsync(parents, cancellation);
+            var prepared = await PrepareSubmodulePushesAsync(
+                parents, target == RepositoryTarget.Both, cancellation);
+            pendingParentCount = prepared.ParentPointerPendingCount;
             if (!prepared.Success)
-                return new BatchPushReport(false, prepared.Message, false, prepared.Entries);
+                return new BatchPushReport(false, prepared.Message, false, prepared.Entries,
+                    Target: target, ParentPointerPendingCount: pendingParentCount);
             var pushed = await PushSubmodulesAsync(prepared.Items, cancellation);
             entries = pushed.Entries;
             if (!pushed.Success)
                 return new BatchPushReport(false, pushed.Message, false, entries,
-                    entries.Any(item => item.Pushed));
+                    entries.Any(item => item.Pushed), target, pendingParentCount);
+
+            if (target == RepositoryTarget.Submodules)
+            {
+                var message = entries.Count == 0
+                    ? "全部工作树均未发现直属子模块，已跳过"
+                    : $"已推送 {entries.Count} 个子模块，全部父分支未推送" +
+                      (pendingParentCount > 0 ? $"；{pendingParentCount} 个父项目 gitlink 尚待收口" : string.Empty);
+                return new BatchPushReport(true, message, false, entries,
+                    Target: target, ParentPointerPendingCount: pendingParentCount);
+            }
         }
 
         var result = await GitRunner.RunAsync(BareRepo, ["push", "--all", "origin"],
             timeoutSeconds: 1800, cancellation: cancellation);
         return result.Success
-            ? new BatchPushReport(true, $"已推送全部分支到 GitHub\n{result.Output}".Trim(), true, entries)
+            ? new BatchPushReport(true, $"已推送全部分支到 GitHub\n{result.Output}".Trim(),
+                true, entries, Target: target)
             : new BatchPushReport(false, $"一键全推失败(退出码 {result.ExitCode}):\n{result.Output}",
-                false, entries, entries.Any(item => item.Pushed));
+                false, entries, entries.Any(item => item.Pushed), target, pendingParentCount);
     }
 
     private async Task<(bool Success, string Message,
         List<(string ParentPath, GitlinkDescriptor Link)> Items,
-        List<SubmoduleOperationEntry> Entries)> PrepareSubmodulePushesAsync(
-        IEnumerable<(string ParentPath, string Identity)> parents, CancellationToken cancellation)
+        List<SubmoduleOperationEntry> Entries,
+        int ParentPointerPendingCount)> PrepareSubmodulePushesAsync(
+        IEnumerable<(string ParentPath, string Identity)> parents,
+        bool requireParentPointerMatch,
+        CancellationToken cancellation)
     {
         var items = new List<(string ParentPath, GitlinkDescriptor Link)>();
         var entries = new List<SubmoduleOperationEntry>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var pendingParents = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var (parentPath, _) in parents)
         {
             var discovered = await _gitlinks.DiscoverAsync(parentPath, cancellation);
             if (!discovered.Success)
-                return (false, discovered.Message, [], entries);
+                return (false, discovered.Message, [], entries, pendingParents.Count);
             foreach (var link in discovered.Items)
             {
                 if (!seen.Add(Path.GetFullPath(link.FullPath)))
@@ -623,25 +760,34 @@ public sealed class ProjectService
                 {
                     entries.Add(new SubmoduleOperationEntry(link.RelativePath, link.Branch,
                         link.HeadSha, link.HeadSha, SubmoduleOperationOutcome.Rejected, failure, link.Kind));
-                    return (false, $"子模块推送预检失败 [{link.RelativePath}]: {failure}", [], entries);
+                    return (false, $"子模块推送预检失败 [{link.RelativePath}]: {failure}",
+                        [], entries, pendingParents.Count);
                 }
 
                 var recorded = await _gitlinks.GetHeadGitlinkShaAsync(parentPath, link.RelativePath,
                     cancellation);
-                if (!recorded.Success || !recorded.Sha.Equals(link.HeadSha, StringComparison.OrdinalIgnoreCase))
+                var pointerMatches = recorded.Success
+                                     && recorded.Sha.Equals(link.HeadSha, StringComparison.OrdinalIgnoreCase);
+                if (!pointerMatches)
                 {
+                    pendingParents.Add(parentPath);
                     var message = recorded.Success
                         ? $"父 HEAD 记录 {recorded.Sha[..Math.Min(12, recorded.Sha.Length)]}，子 HEAD 为 {link.HeadSha[..Math.Min(12, link.HeadSha.Length)]}"
                         : recorded.Message;
-                    entries.Add(new SubmoduleOperationEntry(link.RelativePath, link.Branch,
-                        link.HeadSha, link.HeadSha, SubmoduleOperationOutcome.Rejected, message, link.Kind));
-                    return (false, $"子模块指针尚未由父项目提交 [{link.RelativePath}]: {message}", [], entries);
+                    if (requireParentPointerMatch)
+                    {
+                        entries.Add(new SubmoduleOperationEntry(link.RelativePath, link.Branch,
+                            link.HeadSha, link.HeadSha, SubmoduleOperationOutcome.Rejected, message, link.Kind));
+                        return (false, $"子模块指针尚未由父项目提交 [{link.RelativePath}]: {message}",
+                            [], entries, pendingParents.Count);
+                    }
                 }
                 items.Add((parentPath, link));
             }
         }
         return (true, string.Empty,
-            items.OrderBy(item => item.Link.FullPath, StringComparer.OrdinalIgnoreCase).ToList(), entries);
+            items.OrderBy(item => item.Link.FullPath, StringComparer.OrdinalIgnoreCase).ToList(),
+            entries, pendingParents.Count);
     }
 
     private static async Task<(bool Success, string Message, List<SubmoduleOperationEntry> Entries)>
@@ -675,13 +821,25 @@ public sealed class ProjectService
         bool includeSubmodules = false,
         string? submoduleMessage = null,
         CancellationToken cancellation = default)
+        => await CommitAllAsync(message, progress, onProjectDone,
+            includeSubmodules ? RepositoryTarget.Both : RepositoryTarget.Parent,
+            submoduleMessage, cancellation);
+
+    public async Task<BatchCommitReport> CommitAllAsync(
+        string message,
+        IProgress<string>? progress,
+        Action<string, CommitReport>? onProjectDone,
+        RepositoryTarget target,
+        string? submoduleMessage = null,
+        CancellationToken cancellation = default)
     {
         var (listResult, worktrees) = await ListWorktreesAsync();
         if (!listResult.Success)
-            return new BatchCommitReport(false, $"获取工作树列表失败:\n{listResult.Output}", []);
+            return new BatchCommitReport(false, $"获取工作树列表失败:\n{listResult.Output}", [],
+                Target: target);
         worktrees = worktrees.Where(worktree => Directory.Exists(worktree.WorktreePath)).ToList();
         if (worktrees.Count == 0)
-            return new BatchCommitReport(false, "未发现可提交的工作树", []);
+            return new BatchCommitReport(false, "未发现可提交的工作树", [], Target: target);
 
         var results = new List<ProjectCommitResult>();
         for (var i = 0; i < worktrees.Count; i++)
@@ -689,7 +847,7 @@ public sealed class ProjectService
             var worktree = worktrees[i];
             progress?.Report($"[{i + 1}/{worktrees.Count}] {worktree.BranchName} ...");
             var report = await CommitWorktreeAsync(worktree, message, progress,
-                includeSubmodules, submoduleMessage, cancellation);
+                target, submoduleMessage, cancellation);
             results.Add(new ProjectCommitResult(worktree.BranchName, report));
             onProjectDone?.Invoke(worktree.BranchName, report);
             progress?.Report($"[{i + 1}/{worktrees.Count}] {worktree.BranchName} " +
@@ -706,9 +864,13 @@ public sealed class ProjectService
             .Select(item => item.Project).ToList();
         if (failedNames.Count > 0)
             summary += $"\n失败/拒绝项目: {string.Join(", ", failedNames)}";
+        var pendingCount = results.Count(item => item.Report.ParentPointerPending);
+        if (pendingCount > 0)
+            summary += $"\n待收口父项目: {pendingCount}";
         return new BatchCommitReport(failed == 0 && rejected == 0, summary, results,
             results.Any(item => item.Report.PartialCompletion)
-            || success + skipped > 0 && failed + rejected > 0);
+            || success + skipped > 0 && failed + rejected > 0,
+            target, pendingCount);
     }
 
     private static string BuildLfsPrompt(string name, IEnumerable<LargeFileEntry> files)
@@ -723,7 +885,9 @@ public sealed class ProjectService
     }
 
     private static string BuildSubmoduleCommitPrompt(
-        string parent, IEnumerable<(GitlinkDescriptor Link, RepositoryCommitPlan Plan)> plans)
+        string parent,
+        IEnumerable<(GitlinkDescriptor Link, RepositoryCommitPlan Plan)> plans,
+        RepositoryTarget target)
     {
         var list = plans.ToList();
         var prompt = new StringBuilder();
@@ -731,7 +895,9 @@ public sealed class ProjectService
         foreach (var (link, plan) in list)
             prompt.AppendLine($"  • {link.RelativePath} [{link.Branch}] 修改 {link.ModifiedCount} / 删除 {link.DeletedCount} / 未跟踪 {link.UntrackedCount}\n    描述: {plan.Message}");
         prompt.AppendLine();
-        prompt.Append("执行顺序固定为子模块先提交、父项目后提交。多仓库无法原子回退，是否继续?");
+        prompt.Append(target == RepositoryTarget.Submodules
+            ? "本次只提交子模块，父分支将保留待收口 gitlink。多仓库无法原子回退，是否继续?"
+            : "执行顺序固定为子模块先提交、父项目后提交。多仓库无法原子回退，是否继续?");
         return prompt.ToString();
     }
 

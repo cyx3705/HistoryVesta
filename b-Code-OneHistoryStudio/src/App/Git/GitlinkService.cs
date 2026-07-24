@@ -16,6 +16,13 @@ public enum SubmoduleOperationOutcome
     Failed,
 }
 
+public enum RepositoryTarget
+{
+    Parent,
+    Submodules,
+    Both,
+}
+
 public sealed record GitlinkDescriptor(
     string RelativePath,
     string FullPath,
@@ -47,7 +54,9 @@ public sealed record PushReport(
     string Message,
     bool ParentPushed = false,
     IReadOnlyList<SubmoduleOperationEntry>? Submodules = null,
-    bool PartialCompletion = false);
+    bool PartialCompletion = false,
+    RepositoryTarget Target = RepositoryTarget.Parent,
+    bool ParentPointerPending = false);
 
 public sealed record ProjectCommitResult(string Project, CommitReport Report);
 
@@ -55,14 +64,18 @@ public sealed record BatchCommitReport(
     bool Success,
     string Message,
     IReadOnlyList<ProjectCommitResult> Projects,
-    bool PartialCompletion = false);
+    bool PartialCompletion = false,
+    RepositoryTarget Target = RepositoryTarget.Parent,
+    int ParentPointerPendingCount = 0);
 
 public sealed record BatchPushReport(
     bool Success,
     string Message,
     bool ParentPushed,
     IReadOnlyList<SubmoduleOperationEntry> Submodules,
-    bool PartialCompletion = false);
+    bool PartialCompletion = false,
+    RepositoryTarget Target = RepositoryTarget.Parent,
+    int ParentPointerPendingCount = 0);
 
 /// <summary>直属 160000 gitlink 的结构化发现与只读状态校验。</summary>
 public sealed class GitlinkService

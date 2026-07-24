@@ -13,15 +13,12 @@ public partial class OverviewView : UserControl
     private List<WorktreeRow> _allRows = [];
     private bool _initialLoadDone;
     private bool _suppressSelection;
-    private bool _bulkOperationRunning;
 
     public OverviewView(Func<CommandBus?> busAccessor, ProjectSelectionState selection)
     {
         InitializeComponent();
         _busAccessor = busAccessor;
         _selection = selection;
-        BulkCommitMessageBox.Text = "一键推送更新";
-        UpdateSubmoduleInputs();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }
@@ -128,80 +125,4 @@ public partial class OverviewView : UserControl
     private void OnOpenRootClick(object sender, System.Windows.RoutedEventArgs e)
         => _ = _busAccessor()?.ExecuteAsync("proj.open", "UI");
 
-    private void OnBulkMessageChanged(object sender, TextChangedEventArgs e)
-        => UpdateBulkActions();
-
-    private void OnBulkSubmoduleOptionsChanged(object sender, System.Windows.RoutedEventArgs e)
-    {
-        UpdateSubmoduleInputs();
-        UpdateBulkActions();
-    }
-
-    private async void OnCommitAllClick(object sender, System.Windows.RoutedEventArgs e)
-    {
-        if (_busAccessor() is not { } bus || BulkCommitMessageBox.Text.Trim() is not { Length: > 0 } message)
-            return;
-
-        SetBulkOperationRunning(true);
-        try
-        {
-            var includeSubmodules = BulkIncludeSubmodulesCheckBox.IsChecked == true;
-            var submessage = includeSubmodules && BulkUseParentMessageCheckBox.IsChecked != true
-                ? BulkSubmoduleMessageBox.Text.Trim()
-                : string.Empty;
-            var submessageArg = submessage.Length > 0
-                ? $" submsg={CommandParser.QuoteArg(submessage)}"
-                : string.Empty;
-            var result = await bus.ExecuteAsync(
-                $"proj.commitall msg={CommandParser.QuoteArg(message)} " +
-                $"submodules={Bool(includeSubmodules)}{submessageArg}", "UI");
-            StatusText.Text = ViewKit.ResultSummary(result);
-            if (result.Success)
-                await RefreshAsync();
-        }
-        finally
-        {
-            SetBulkOperationRunning(false);
-        }
-    }
-
-    private async void OnPushAllClick(object sender, System.Windows.RoutedEventArgs e)
-    {
-        if (_busAccessor() is not { } bus)
-            return;
-
-        SetBulkOperationRunning(true);
-        try
-        {
-            var includeSubmodules = BulkIncludeSubmodulesCheckBox.IsChecked == true;
-            var result = await bus.ExecuteAsync(
-                $"proj.pushall submodules={Bool(includeSubmodules)}", "UI");
-            StatusText.Text = ViewKit.ResultSummary(result);
-        }
-        finally
-        {
-            SetBulkOperationRunning(false);
-        }
-    }
-
-    private void SetBulkOperationRunning(bool running)
-    {
-        _bulkOperationRunning = running;
-        UpdateBulkActions();
-    }
-
-    private void UpdateBulkActions()
-    {
-        CommitAllButton.IsEnabled = !_bulkOperationRunning && BulkCommitMessageBox.Text.Trim().Length > 0;
-        PushAllButton.IsEnabled = !_bulkOperationRunning;
-    }
-
-    private void UpdateSubmoduleInputs()
-    {
-        var include = BulkIncludeSubmodulesCheckBox.IsChecked == true;
-        BulkUseParentMessageCheckBox.IsEnabled = include;
-        BulkSubmoduleMessageBox.IsEnabled = include && BulkUseParentMessageCheckBox.IsChecked != true;
-    }
-
-    private static string Bool(bool value) => value ? "true" : "false";
 }

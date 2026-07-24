@@ -14,6 +14,31 @@ public static class ProjectCommands
     private static CommandResult Fail(string message, object data)
         => new() { Success = false, Message = message, Data = data };
 
+    private static RepositoryTarget ResolveTarget(CommandContext context)
+        => ResolveRepositoryTarget(context.GetString("target"), context.GetBool("submodules"));
+
+    public static RepositoryTarget ResolveRepositoryTarget(
+        string? target, bool includeSubmodules)
+    {
+        if (!string.IsNullOrWhiteSpace(target))
+        {
+            return target.Trim().ToLowerInvariant() switch
+            {
+                "submodules" => RepositoryTarget.Submodules,
+                "both" => RepositoryTarget.Both,
+                _ => RepositoryTarget.Parent,
+            };
+        }
+        return includeSubmodules ? RepositoryTarget.Both : RepositoryTarget.Parent;
+    }
+
+    private static ParameterSpec TargetParameter() => new()
+    {
+        Name = "target",
+        Description = "实际仓库目标；存在时优先于兼容参数 submodules",
+        AllowedValues = ["parent", "submodules", "both"],
+    };
+
     /// <summary>proj.commit / proj.commitall 共用的单项目提交留痕(R4:结果映射唯一实现)。</summary>
     private static void RecordCommit(HistoryRecorder history, string branch, string msg, CommitReport report)
     {
@@ -229,7 +254,7 @@ public static class ProjectCommands
     {
         Name = "proj.commit",
         Summary = "提交单个项目到本地仓库；可按子模块先、父项目后联动提交",
-        Example = "proj.commit name=2026-018-MyAPI msg=\"更新说明\" submodules=true submsg=\"更新子模块\"",
+        Example = "proj.commit name=2026-018-MyAPI msg=\"更新说明\" target=both",
         Parameters =
         [
             new ParameterSpec
@@ -246,10 +271,11 @@ public static class ProjectCommands
                 Required = true,
                 Position = 1,
             },
+            TargetParameter(),
             new ParameterSpec
             {
                 Name = "submodules",
-                Description = "true 时联动提交直属 gitlink；命令默认 false，页面默认 true",
+                Description = "V2.3.1 兼容参数：true=both，false=parent；target 存在时忽略",
                 Type = ParamType.Bool,
                 Default = "false",
             },
@@ -263,8 +289,9 @@ public static class ProjectCommands
         {
             var name = ctx.RequireString("name");
             var msg = ctx.RequireString("msg");
+            var target = ResolveTarget(ctx);
             var report = await projects.CommitAsync(name, msg, ctx.Progress,
-                ctx.GetBool("submodules"), ctx.GetString("submsg"), ctx.Cancellation);
+                target, ctx.GetString("submsg"), ctx.Cancellation);
             RecordCommit(history, name, msg, report);
             return report.Outcome switch
             {
@@ -284,7 +311,7 @@ public static class ProjectCommands
     {
         Name = "proj.push",
         Summary = "推送单个分支；可先推直属子模块，全部成功后再推父项目",
-        Example = "proj.push name=2026-018-MyAPI submodules=true",
+        Example = "proj.push name=2026-018-MyAPI target=both",
         Parameters =
         [
             new ParameterSpec
@@ -294,10 +321,11 @@ public static class ProjectCommands
                 Required = true,
                 Position = 0,
             },
+            TargetParameter(),
             new ParameterSpec
             {
                 Name = "submodules",
-                Description = "true 时先推送直属 gitlink；命令默认 false，页面默认 true",
+                Description = "V2.3.1 兼容参数：true=both，false=parent；target 存在时忽略",
                 Type = ParamType.Bool,
                 Default = "false",
             },
@@ -305,9 +333,10 @@ public static class ProjectCommands
         Handler = async ctx =>
         {
             var name = ctx.RequireString("name");
-            var report = await projects.PushAsync(name, ctx.GetBool("submodules"), ctx.Cancellation);
+            var report = await projects.PushAsync(name, ResolveTarget(ctx), ctx.Cancellation);
             history.Record(name, "push",
-                $"子模块={report.Submodules?.Count ?? 0}; parentPushed={report.ParentPushed}",
+                $"target={report.Target}; 子模块={report.Submodules?.Count ?? 0}; " +
+                $"parentPushed={report.ParentPushed}; pointerPending={report.ParentPointerPending}",
                 report.Success ? "成功" : "失败");
             RecordSubmodules(history, name, "submodule.push", report.Submodules ?? []);
             return report.Success
@@ -322,7 +351,7 @@ public static class ProjectCommands
     {
         Name = "proj.commitall",
         Summary = "一键提交全部工作树；可联动各项目直属子模块",
-        Example = "proj.commitall msg=\"每日推送\" submodules=true",
+        Example = "proj.commitall msg=\"每日推送\" target=both",
         Parameters =
         [
             new ParameterSpec
@@ -332,10 +361,11 @@ public static class ProjectCommands
                 Required = true,
                 Position = 0,
             },
+            TargetParameter(),
             new ParameterSpec
             {
                 Name = "submodules",
-                Description = "true 时联动提交每个项目的直属 gitlink",
+                Description = "V2.3.1 兼容参数：true=both，false=parent；target 存在时忽略",
                 Type = ParamType.Bool,
                 Default = "false",
             },
@@ -350,13 +380,19 @@ public static class ProjectCommands
             "每个项目提交前将检查文件大小:\n" +
             "• ≥ 警告阈值的文件会警告后继续\n" +
             "• ≥ LFS 阈值的文件检查 LFS 状态,未启用则逐项目询问" +
-            (ctx.GetBool("submodules") ? "\n• 子模块先提交，父项目后提交；多仓库无法原子回退" : ""),
+            (ResolveTarget(ctx) switch
+            {
+                RepositoryTarget.Submodules => "\n• 本次只提交子模块，父分支将保留待收口 gitlink",
+                RepositoryTarget.Both => "\n• 子模块先提交，父项目后提交；多仓库无法原子回退",
+                _ => string.Empty,
+            }),
         Handler = async ctx =>
         {
             var msg = ctx.RequireString("msg");
+            var target = ResolveTarget(ctx);
             var report = await projects.CommitAllAsync(msg, ctx.Progress,
                 (branch, item) => RecordCommit(history, branch, msg, item),
-                ctx.GetBool("submodules"), ctx.GetString("submsg"), ctx.Cancellation);
+                target, ctx.GetString("submsg"), ctx.Cancellation);
             history.Record("(全部)", "commitall", msg, report.Success ? "成功" : "失败");
             return report.Success
                 ? CommandResult.Ok(report.Message, report)
@@ -370,23 +406,29 @@ public static class ProjectCommands
     {
         Name = "proj.pushall",
         Summary = "推送全部分支；可先去重推送所有直属子模块",
-        Example = "proj.pushall submodules=true",
+        Example = "proj.pushall target=both",
         Parameters =
         [
+            TargetParameter(),
             new ParameterSpec
             {
                 Name = "submodules",
-                Description = "true 时先去重推送全部项目的直属 gitlink",
+                Description = "V2.3.1 兼容参数：true=both，false=parent；target 存在时忽略",
                 Type = ParamType.Bool,
                 Default = "false",
             },
         ],
         ConfirmPrompt = ctx =>
             "确定要执行 git push --all origin 吗?\n\n此操作会推送裸仓库中的所有本地分支到 GitHub。" +
-            (ctx.GetBool("submodules") ? "\n直属子模块将先推送，任一失败都会阻止父仓库推送。" : ""),
+            (ResolveTarget(ctx) switch
+            {
+                RepositoryTarget.Submodules => "\n本次只推送全部直属子模块，父分支不会推送。",
+                RepositoryTarget.Both => "\n直属子模块将先推送，任一失败都会阻止父仓库推送。",
+                _ => string.Empty,
+            }),
         Handler = async ctx =>
         {
-            var report = await projects.PushAllAsync(ctx.GetBool("submodules"), ctx.Cancellation);
+            var report = await projects.PushAllAsync(ResolveTarget(ctx), ctx.Cancellation);
             history.Record("(全部)", "pushall", $"子模块={report.Submodules.Count}",
                 report.Success ? "成功" : "失败");
             RecordSubmodules(history, "(全部)", "submodule.push", report.Submodules);

@@ -15,42 +15,6 @@
         <TextBlock DockPanel.Dock="Bottom" x:Name="StatusText" Foreground="#666"
                    Margin="0,6,0,0" Text="双击项目在资源管理器中打开" TextWrapping="Wrap" />
 
-        <GroupBox DockPanel.Dock="Bottom" Header="全部项目提交与推送" Margin="0,8,0,0">
-            <Grid Margin="6">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="统一提交描述:" Margin="0,0,6,6"
-                           VerticalAlignment="Center" />
-                <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3" x:Name="BulkCommitMessageBox"
-                         MinWidth="180" Margin="0,0,0,6" VerticalContentAlignment="Center"
-                         TextChanged="OnBulkMessageChanged" />
-                <WrapPanel Grid.Row="1" Grid.ColumnSpan="4" Margin="0,0,0,6">
-                    <CheckBox x:Name="BulkIncludeSubmodulesCheckBox" Content="包含子模块"
-                              IsChecked="True" Margin="0,0,12,0" Click="OnBulkSubmoduleOptionsChanged" />
-                    <CheckBox x:Name="BulkUseParentMessageCheckBox" Content="沿用父提交描述"
-                              IsChecked="True" Click="OnBulkSubmoduleOptionsChanged" />
-                    <TextBlock Text="子模块描述:" Margin="16,0,6,0" VerticalAlignment="Center" />
-                    <TextBox x:Name="BulkSubmoduleMessageBox" MinWidth="180" IsEnabled="False"
-                             VerticalContentAlignment="Center" TextChanged="OnBulkMessageChanged" />
-                </WrapPanel>
-                <WrapPanel Grid.Row="2" Grid.ColumnSpan="4">
-                    <Button x:Name="CommitAllButton" Content="提交全部工作树"
-                            Padding="10,3" Click="OnCommitAllClick" />
-                    <Button x:Name="PushAllButton" Content="推送全部分支"
-                            Padding="10,3" Margin="6,0,0,0" Click="OnPushAllClick" />
-                </WrapPanel>
-            </Grid>
-        </GroupBox>
-
         <ListView x:Name="WorktreeList" SelectionChanged="OnProjectSelected"
                   MouseDoubleClick="OnRowDoubleClick">
             <ListView.View>
