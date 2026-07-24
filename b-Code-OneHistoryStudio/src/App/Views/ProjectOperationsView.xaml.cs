@@ -23,6 +23,7 @@ public partial class ProjectOperationsView : UserControl
         _busAccessor = busAccessor;
         _selection = selection;
         SelectedCommitMessageBox.Text = "一键推送更新";
+        UpdateSubmoduleInputs();
         RuleGrid.ItemsSource = _rules;
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
@@ -120,6 +121,12 @@ public partial class ProjectOperationsView : UserControl
     private void OnCommitMessageChanged(object sender, TextChangedEventArgs e)
         => UpdateProjectActions();
 
+    private void OnSubmoduleOptionsChanged(object sender, System.Windows.RoutedEventArgs e)
+    {
+        UpdateSubmoduleInputs();
+        UpdateProjectActions();
+    }
+
     private async void OnRefreshProjectsClick(object sender, System.Windows.RoutedEventArgs e)
         => await RefreshProjectsAsync();
 
@@ -156,8 +163,16 @@ public partial class ProjectOperationsView : UserControl
         SetProjectOperationRunning(true);
         try
         {
+            var includeSubmodules = SelectedIncludeSubmodulesCheckBox.IsChecked == true;
+            var submessage = includeSubmodules && SelectedUseParentMessageCheckBox.IsChecked != true
+                ? SelectedSubmoduleMessageBox.Text.Trim()
+                : string.Empty;
+            var submessageArg = submessage.Length > 0
+                ? $" submsg={CommandParser.QuoteArg(submessage)}"
+                : string.Empty;
             var result = await bus.ExecuteAsync(
-                $"proj.commit name={CommandParser.QuoteArg(project)} msg={CommandParser.QuoteArg(message)}", "UI");
+                $"proj.commit name={CommandParser.QuoteArg(project)} msg={CommandParser.QuoteArg(message)} " +
+                $"submodules={Bool(includeSubmodules)}{submessageArg}", "UI");
             StatusText.Text = ViewKit.ResultSummary(result);
         }
         finally
@@ -174,8 +189,10 @@ public partial class ProjectOperationsView : UserControl
         SetProjectOperationRunning(true);
         try
         {
+            var includeSubmodules = SelectedIncludeSubmodulesCheckBox.IsChecked == true;
             var result = await bus.ExecuteAsync(
-                $"proj.push name={CommandParser.QuoteArg(project)}", "UI");
+                $"proj.push name={CommandParser.QuoteArg(project)} " +
+                $"submodules={Bool(includeSubmodules)}", "UI");
             StatusText.Text = ViewKit.ResultSummary(result);
         }
         finally
@@ -391,6 +408,14 @@ public partial class ProjectOperationsView : UserControl
         SelectedCommitButton.IsEnabled = !_projectOperationRunning && hasCurrent
                                          && SelectedCommitMessageBox.Text.Trim().Length > 0;
         SelectedPushButton.IsEnabled = !_projectOperationRunning && hasCurrent;
+    }
+
+    private void UpdateSubmoduleInputs()
+    {
+        var include = SelectedIncludeSubmodulesCheckBox.IsChecked == true;
+        SelectedUseParentMessageCheckBox.IsEnabled = include;
+        SelectedSubmoduleMessageBox.IsEnabled = include
+                                                && SelectedUseParentMessageCheckBox.IsChecked != true;
     }
 
     private void SetProjectOperationRunning(bool running)

@@ -25,7 +25,11 @@ public sealed record CommitReport(
     CommitOutcome Outcome,
     string Message,
     bool HasSizeWarning = false,
-    List<LargeFileEntry>? RejectedFiles = null);
+    List<LargeFileEntry>? RejectedFiles = null,
+    string BeforeSha = "",
+    string AfterSha = "",
+    IReadOnlyList<SubmoduleOperationEntry>? Submodules = null,
+    bool PartialCompletion = false);
 
 /// <summary>
 /// proj.* 指令域的业务实现:OneHistory 项目库(裸仓库 + worktree)管理。
@@ -44,6 +48,7 @@ public sealed class ProjectService
 
     private readonly ISettingsService _settings;
     private readonly string _dataDir;
+    private readonly GitlinkService _gitlinks = new();
 
     /// <summary>执行中途的二次确认通道(LFS 启用询问等);由装配点接到总线 Confirmation。</summary>
     private readonly Func<string, bool> _confirm;
@@ -305,214 +310,458 @@ public sealed class ProjectService
         return (true, sb.ToString());
     }
 
-    // ---------------------------------------------------------------- 提交(PJ-05,移植 V1 四态流程)
+    // ---------------------------------------------------------------- 提交(PJ-05)
 
-    public async Task<CommitReport> CommitAsync(string name, string message, IProgress<string>? progress)
+    public async Task<CommitReport> CommitAsync(
+        string name,
+        string message,
+        IProgress<string>? progress,
+        bool includeSubmodules = false,
+        string? submoduleMessage = null,
+        CancellationToken cancellation = default)
     {
         name = name.Trim();
         var worktreePath = Path.Combine(WorktreeRoot, name);
         if (!Directory.Exists(worktreePath))
             return new CommitReport(CommitOutcome.Failed, $"工作树目录不存在: {worktreePath}");
-
-        return await CommitWorktreeAsync(new WorktreeInfo(name, worktreePath), message, progress);
+        return await CommitWorktreeAsync(new WorktreeInfo(name, worktreePath), message, progress,
+            includeSubmodules, submoduleMessage, cancellation);
     }
 
+    private sealed record RepositoryCommitPlan(
+        WorktreeInfo Worktree,
+        string Message,
+        FileSizeCheckStatus CheckStatus,
+        List<LargeFileEntry> LargeFiles,
+        List<LargeFileEntry> NeedsLfs,
+        string BeforeSha,
+        bool AddAll);
+
     private async Task<CommitReport> CommitWorktreeAsync(
-        WorktreeInfo worktree, string commitMessage, IProgress<string>? progress)
+        WorktreeInfo worktree,
+        string commitMessage,
+        IProgress<string>? progress,
+        bool includeSubmodules = false,
+        string? submoduleMessage = null,
+        CancellationToken cancellation = default)
     {
+        if (string.IsNullOrWhiteSpace(commitMessage))
+            return new CommitReport(CommitOutcome.Failed, "提交描述不能为空");
+
+        List<GitlinkDescriptor> links = [];
+        if (includeSubmodules)
+        {
+            var discovered = await _gitlinks.DiscoverAsync(worktree.WorktreePath, cancellation);
+            if (!discovered.Success)
+                return new CommitReport(CommitOutcome.Failed, discovered.Message);
+            links = discovered.Items;
+            var invalid = links.FirstOrDefault(link => string.IsNullOrWhiteSpace(link.Branch)
+                                                      || !link.HasIdentity || link.NestedGitlinkDirty);
+            if (invalid != null)
+            {
+                var reason = string.IsNullOrWhiteSpace(invalid.Branch)
+                    ? "处于 detached HEAD"
+                    : !invalid.HasIdentity
+                        ? "缺少 user.name 或 user.email"
+                        : "存在发生变化的第二层 gitlink";
+                return new CommitReport(CommitOutcome.Failed,
+                    $"子模块预检失败 [{invalid.RelativePath}]: {reason}");
+            }
+        }
+
+        var childMessage = string.IsNullOrWhiteSpace(submoduleMessage)
+            ? commitMessage.Trim()
+            : submoduleMessage.Trim();
+        var childPlans = new List<(GitlinkDescriptor Link, RepositoryCommitPlan Plan)>();
+        foreach (var link in links.Where(link => link.IsDirty))
+        {
+            var prepared = await PrepareCommitPlanAsync(
+                new WorktreeInfo(link.RelativePath, link.FullPath), childMessage, progress,
+                excludedDirectories: [], addAll: true, cancellation);
+            if (prepared.Error != null)
+                return prepared.Error with { Submodules = BuildSkippedEntries(links) };
+            childPlans.Add((link, prepared.Plan!));
+        }
+
+        var parentPrepared = await PrepareCommitPlanAsync(worktree, commitMessage.Trim(), progress,
+            links.Select(link => link.FullPath), addAll: false, cancellation);
+        if (parentPrepared.Error != null)
+            return parentPrepared.Error with { Submodules = BuildSkippedEntries(links) };
+
+        if (childPlans.Count > 0 && !_confirm(BuildSubmoduleCommitPrompt(worktree.BranchName, childPlans)))
+        {
+            return new CommitReport(CommitOutcome.Rejected, "用户取消子模块联动提交",
+                Submodules: BuildSkippedEntries(links));
+        }
+
+        var entries = BuildSkippedEntries(links).ToList();
+        foreach (var (link, plan) in childPlans)
+        {
+            progress?.Report($"[{worktree.BranchName}/{link.RelativePath}] 提交子模块...");
+            var child = await ExecuteCommitPlanAsync(plan, progress, cancellation);
+            var entry = new SubmoduleOperationEntry(link.RelativePath, link.Branch,
+                child.BeforeSha, child.AfterSha, ToSubmoduleOutcome(child.Outcome), child.Message, link.Kind);
+            ReplaceEntry(entries, entry);
+            if (child.Outcome is not CommitOutcome.Success and not CommitOutcome.Skipped)
+            {
+                return new CommitReport(child.Outcome,
+                    $"子模块提交失败 [{link.RelativePath}]: {child.Message}",
+                    child.HasSizeWarning, child.RejectedFiles, parentPrepared.Plan!.BeforeSha,
+                    parentPrepared.Plan.BeforeSha, entries,
+                    entries.Any(item => item.Outcome == SubmoduleOperationOutcome.Success));
+            }
+        }
+
+        var parent = await ExecuteCommitPlanAsync(parentPrepared.Plan!, progress, cancellation);
+        return parent with
+        {
+            Submodules = entries,
+            PartialCompletion = parent.Outcome is not CommitOutcome.Success and not CommitOutcome.Skipped
+                                && entries.Any(item => item.Outcome == SubmoduleOperationOutcome.Success),
+        };
+    }
+
+    private async Task<(RepositoryCommitPlan? Plan, CommitReport? Error)> PrepareCommitPlanAsync(
+        WorktreeInfo worktree,
+        string message,
+        IProgress<string>? progress,
+        IEnumerable<string> excludedDirectories,
+        bool addAll,
+        CancellationToken cancellation)
+    {
+        var name = await GitRunner.RunAsync(worktree.WorktreePath, ["config", "--get", "user.name"],
+            cancellation: cancellation);
+        var email = await GitRunner.RunAsync(worktree.WorktreePath, ["config", "--get", "user.email"],
+            cancellation: cancellation);
+        if (!name.Success || string.IsNullOrWhiteSpace(FirstLine(name.Output))
+                          || !email.Success || string.IsNullOrWhiteSpace(FirstLine(email.Output)))
+            return (null, new CommitReport(CommitOutcome.Failed,
+                $"仓库缺少提交身份 user.name/user.email: {worktree.BranchName}"));
+
+        var head = await GitRunner.RunAsync(worktree.WorktreePath, ["rev-parse", "HEAD"],
+            cancellation: cancellation);
+        if (!head.Success)
+            return (null, new CommitReport(CommitOutcome.Failed,
+                $"无法读取仓库 HEAD [{worktree.BranchName}]:\n{head.Output}"));
+
         progress?.Report($"[{worktree.BranchName}] 扫描文件大小...");
         var warnBytes = WarnBytes;
         var rejectBytes = RejectBytes;
         var (checkStatus, largeFiles) = await Task.Run(() =>
-            WorktreeFileScanner.ScanDirectory(worktree.WorktreePath, warnBytes, rejectBytes));
-
-        var oversized = largeFiles.Where(f => f.SizeBytes >= rejectBytes).ToList();
-
+            WorktreeFileScanner.ScanDirectory(worktree.WorktreePath, warnBytes, rejectBytes,
+                excludedDirectories), cancellation);
+        var oversized = largeFiles.Where(file => file.SizeBytes >= rejectBytes).ToList();
+        var needsLfs = new List<LargeFileEntry>();
         if (oversized.Count > 0)
         {
             if (!await WorktreeLfsHelper.IsGitLfsAvailableAsync(worktree.WorktreePath))
+                return (null, new CommitReport(CommitOutcome.Failed,
+                    $"发现 {oversized.Count} 个 ≥{rejectBytes / 1024 / 1024}MB 文件,但未检测到 Git LFS,无法处理"));
+            foreach (var file in oversized)
             {
-                return new CommitReport(CommitOutcome.Failed,
-                    $"发现 {oversized.Count} 个 ≥{rejectBytes / 1024 / 1024}MB 文件,但未检测到 Git LFS,无法处理");
+                if (!await WorktreeLfsHelper.IsFileManagedByLfsAsync(worktree.WorktreePath, file.RelativePath))
+                    needsLfs.Add(file);
+                else
+                    progress?.Report($"   [LFS] {file.RelativePath}({file.FormattedSize})已用指针,放行");
             }
-
-            var resolve = await ResolveOversizedFilesAsync(worktree, oversized, progress);
-            if (resolve.Outcome != CommitOutcome.Success)
-                return resolve;
         }
 
-        var hasWarning = checkStatus == FileSizeCheckStatus.Warning;
-        if (hasWarning)
+        if (needsLfs.Count > 0 && !_confirm(BuildLfsPrompt(worktree.BranchName, needsLfs)))
+        {
+            return (null, new CommitReport(CommitOutcome.Rejected,
+                $"用户拒绝启用 LFS,已跳过项目 [{worktree.BranchName}]", RejectedFiles: needsLfs));
+        }
+
+        if (checkStatus == FileSizeCheckStatus.Warning)
         {
             progress?.Report($"[{worktree.BranchName}] ⚠ {largeFiles.Count} 个文件 ≥ {warnBytes / 1024 / 1024}MB,仍继续提交:");
             foreach (var file in largeFiles)
                 progress?.Report($"   [警告] {file.RelativePath}({file.FormattedSize})");
         }
 
-        var addResult = await GitRunner.RunAsync(worktree.WorktreePath, ["add", "."]);
-        if (!addResult.Success)
-            return new CommitReport(CommitOutcome.Failed, $"git add 失败:\n{addResult.Output}");
+        return (new RepositoryCommitPlan(worktree, message, checkStatus, largeFiles, needsLfs,
+            FirstLine(head.Output), addAll), null);
+    }
 
-        var commitResult = await GitRunner.RunAsync(
-            worktree.WorktreePath, ["commit", "-m", commitMessage]);
+    private async Task<CommitReport> ExecuteCommitPlanAsync(
+        RepositoryCommitPlan plan, IProgress<string>? progress, CancellationToken cancellation)
+    {
+        if (plan.NeedsLfs.Count > 0)
+        {
+            progress?.Report($"[{plan.Worktree.BranchName}] 配置 Git LFS...");
+            var setup = await WorktreeLfsHelper.SetupLfsForFilesAsync(plan.Worktree.WorktreePath,
+                plan.NeedsLfs.Select(file => file.RelativePath));
+            if (!setup.Success)
+                return new CommitReport(CommitOutcome.Failed, $"Git LFS 配置失败:\n{setup.Message}",
+                    BeforeSha: plan.BeforeSha, AfterSha: plan.BeforeSha);
+        }
+
+        var addResult = await GitRunner.RunAsync(plan.Worktree.WorktreePath,
+            plan.AddAll ? ["add", "-A"] : ["add", "."], cancellation: cancellation);
+        if (!addResult.Success)
+            return new CommitReport(CommitOutcome.Failed, $"git add 失败:\n{addResult.Output}",
+                BeforeSha: plan.BeforeSha, AfterSha: plan.BeforeSha);
+
+        var staged = await GitRunner.RunAsync(plan.Worktree.WorktreePath,
+            ["diff", "--cached", "--quiet"], cancellation: cancellation);
+        if (staged.ExitCode == 0)
+            return new CommitReport(CommitOutcome.Skipped, "无变更,已跳过",
+                plan.CheckStatus == FileSizeCheckStatus.Warning,
+                BeforeSha: plan.BeforeSha, AfterSha: plan.BeforeSha);
+        if (staged.ExitCode != 1)
+            return new CommitReport(CommitOutcome.Failed, $"检查暂存区失败:\n{staged.Output}",
+                BeforeSha: plan.BeforeSha, AfterSha: plan.BeforeSha);
+
+        var commitResult = await GitRunner.RunAsync(plan.Worktree.WorktreePath,
+            ["commit", "-m", plan.Message], cancellation: cancellation);
         if (!commitResult.Success)
         {
             if (commitResult.Output.Contains("nothing to commit", StringComparison.OrdinalIgnoreCase)
                 || commitResult.Output.Contains("无文件要提交", StringComparison.OrdinalIgnoreCase))
-            {
-                return new CommitReport(CommitOutcome.Skipped, "无变更,已跳过", hasWarning);
-            }
-
-            return new CommitReport(CommitOutcome.Failed, $"git commit 失败:\n{commitResult.Output}");
+                return new CommitReport(CommitOutcome.Skipped, "无变更,已跳过",
+                    plan.CheckStatus == FileSizeCheckStatus.Warning,
+                    BeforeSha: plan.BeforeSha, AfterSha: plan.BeforeSha);
+            return new CommitReport(CommitOutcome.Failed, $"git commit 失败:\n{commitResult.Output}",
+                BeforeSha: plan.BeforeSha, AfterSha: plan.BeforeSha);
         }
 
-        var summary = commitResult.Output.Split('\n').FirstOrDefault()?.Trim() ?? "";
-        return new CommitReport(CommitOutcome.Success, $"已提交到本地裸仓库 {summary}".Trim(), hasWarning);
-    }
-
-    /// <summary>≥阈值文件的 LFS 处理:已用指针放行;未用则经确认通道询问,拒绝则整项目跳过。</summary>
-    private async Task<CommitReport> ResolveOversizedFilesAsync(
-        WorktreeInfo worktree, List<LargeFileEntry> oversized, IProgress<string>? progress)
-    {
-        progress?.Report($"[{worktree.BranchName}] 发现 {oversized.Count} 个 ≥{RejectBytes / 1024 / 1024}MB 文件,检查 LFS 状态...");
-
-        var lfsManaged = new List<LargeFileEntry>();
-        var needsLfs = new List<LargeFileEntry>();
-        foreach (var file in oversized)
-        {
-            if (await WorktreeLfsHelper.IsFileManagedByLfsAsync(worktree.WorktreePath, file.RelativePath))
-                lfsManaged.Add(file);
-            else
-                needsLfs.Add(file);
-        }
-
-        foreach (var file in lfsManaged)
-            progress?.Report($"   [LFS] {file.RelativePath}({file.FormattedSize})已用指针,放行");
-
-        if (needsLfs.Count == 0)
-            return new CommitReport(CommitOutcome.Success, "");
-
-        var prompt = new StringBuilder();
-        prompt.AppendLine($"项目【{worktree.BranchName}】发现 {needsLfs.Count} 个文件超过 {RejectBytes / 1024 / 1024} MB,且未使用 Git LFS 指针:");
-        prompt.AppendLine();
-        foreach (var file in needsLfs)
-            prompt.AppendLine($"  • {file.RelativePath}({file.FormattedSize})");
-        prompt.AppendLine();
-        prompt.Append("是否对这些文件启用 Git LFS 指针后继续提交?选择「否」将跳过该项目。");
-
-        if (!_confirm(prompt.ToString()))
-        {
-            foreach (var file in needsLfs)
-                progress?.Report($"   [拒绝] {file.RelativePath}({file.FormattedSize})");
-            return new CommitReport(CommitOutcome.Rejected,
-                $"用户拒绝启用 LFS,已跳过项目 [{worktree.BranchName}]", RejectedFiles: needsLfs);
-        }
-
-        progress?.Report($"[{worktree.BranchName}] 配置 Git LFS...");
-        var (success, message) = await WorktreeLfsHelper.SetupLfsForFilesAsync(
-            worktree.WorktreePath, needsLfs.Select(f => f.RelativePath));
-        if (!success)
-            return new CommitReport(CommitOutcome.Failed, $"Git LFS 配置失败:\n{message}");
-
-        foreach (var file in needsLfs)
-            progress?.Report($"   [LFS 新启用] {file.RelativePath}({file.FormattedSize})");
-        return new CommitReport(CommitOutcome.Success, "");
+        var after = await GitRunner.RunAsync(plan.Worktree.WorktreePath, ["rev-parse", "HEAD"],
+            cancellation: cancellation);
+        var afterSha = after.Success ? FirstLine(after.Output) : string.Empty;
+        var summary = FirstLine(commitResult.Output);
+        return new CommitReport(CommitOutcome.Success, $"已提交到本地仓库 {summary}".Trim(),
+            plan.CheckStatus == FileSizeCheckStatus.Warning,
+            BeforeSha: plan.BeforeSha, AfterSha: afterSha);
     }
 
     // ---------------------------------------------------------------- 推送(PJ-06 / PJ-08)
 
-    public async Task<(bool Success, string Message)> PushAsync(string name)
+    public async Task<PushReport> PushAsync(
+        string name, bool includeSubmodules = false, CancellationToken cancellation = default)
     {
         name = name.Trim();
         var worktreePath = Path.Combine(WorktreeRoot, name);
         if (!Directory.Exists(worktreePath))
-            return (false, $"工作树目录不存在: {worktreePath}");
+            return new PushReport(false, $"工作树目录不存在: {worktreePath}");
 
-        var result = await GitRunner.RunAsync(worktreePath, ["push", "origin", name], timeoutSeconds: 600);
+        var entries = new List<SubmoduleOperationEntry>();
+        if (includeSubmodules)
+        {
+            var prepared = await PrepareSubmodulePushesAsync(
+                [(worktreePath, worktreePath)], cancellation);
+            if (!prepared.Success)
+                return new PushReport(false, prepared.Message, Submodules: prepared.Entries);
+            var pushed = await PushSubmodulesAsync(prepared.Items, cancellation);
+            entries = pushed.Entries;
+            if (!pushed.Success)
+                return new PushReport(false, pushed.Message, Submodules: entries,
+                    PartialCompletion: entries.Any(item => item.Pushed));
+        }
+
+        var result = await GitRunner.RunAsync(worktreePath, ["push", "origin", name],
+            timeoutSeconds: 600, cancellation: cancellation);
         return result.Success
-            ? (true, $"已推送到 GitHub(origin/{name})\n{result.Output}".Trim())
-            : (false, $"推送失败(退出码 {result.ExitCode}):\n{result.Output}");
+            ? new PushReport(true, $"已推送到 GitHub(origin/{name})\n{result.Output}".Trim(), true, entries)
+            : new PushReport(false, $"父仓库推送失败(退出码 {result.ExitCode}):\n{result.Output}",
+                Submodules: entries, PartialCompletion: entries.Any(item => item.Pushed));
     }
 
-    public async Task<(bool Success, string Message)> PushAllAsync()
+    public async Task<BatchPushReport> PushAllAsync(
+        bool includeSubmodules = false, CancellationToken cancellation = default)
     {
-        var result = await GitRunner.RunAsync(BareRepo, ["push", "--all", "origin"], timeoutSeconds: 1800);
+        var entries = new List<SubmoduleOperationEntry>();
+        if (includeSubmodules)
+        {
+            var (listResult, worktrees) = await ListWorktreesAsync();
+            if (!listResult.Success)
+                return new BatchPushReport(false, $"获取工作树列表失败:\n{listResult.Output}", false, []);
+            var parents = worktrees.Where(item => Directory.Exists(item.WorktreePath))
+                .Select(item => (item.WorktreePath, item.WorktreePath));
+            var prepared = await PrepareSubmodulePushesAsync(parents, cancellation);
+            if (!prepared.Success)
+                return new BatchPushReport(false, prepared.Message, false, prepared.Entries);
+            var pushed = await PushSubmodulesAsync(prepared.Items, cancellation);
+            entries = pushed.Entries;
+            if (!pushed.Success)
+                return new BatchPushReport(false, pushed.Message, false, entries,
+                    entries.Any(item => item.Pushed));
+        }
+
+        var result = await GitRunner.RunAsync(BareRepo, ["push", "--all", "origin"],
+            timeoutSeconds: 1800, cancellation: cancellation);
         return result.Success
-            ? (true, $"已推送全部分支到 GitHub\n{result.Output}".Trim())
-            : (false, $"一键全推失败(退出码 {result.ExitCode}):\n{result.Output}");
+            ? new BatchPushReport(true, $"已推送全部分支到 GitHub\n{result.Output}".Trim(), true, entries)
+            : new BatchPushReport(false, $"一键全推失败(退出码 {result.ExitCode}):\n{result.Output}",
+                false, entries, entries.Any(item => item.Pushed));
+    }
+
+    private async Task<(bool Success, string Message,
+        List<(string ParentPath, GitlinkDescriptor Link)> Items,
+        List<SubmoduleOperationEntry> Entries)> PrepareSubmodulePushesAsync(
+        IEnumerable<(string ParentPath, string Identity)> parents, CancellationToken cancellation)
+    {
+        var items = new List<(string ParentPath, GitlinkDescriptor Link)>();
+        var entries = new List<SubmoduleOperationEntry>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (parentPath, _) in parents)
+        {
+            var discovered = await _gitlinks.DiscoverAsync(parentPath, cancellation);
+            if (!discovered.Success)
+                return (false, discovered.Message, [], entries);
+            foreach (var link in discovered.Items)
+            {
+                if (!seen.Add(Path.GetFullPath(link.FullPath)))
+                    continue;
+                var failure = string.IsNullOrWhiteSpace(link.Branch)
+                    ? "处于 detached HEAD"
+                    : link.IsDirty
+                        ? "工作树不干净，请先提交"
+                        : !link.HasOrigin
+                            ? "不存在 origin"
+                            : null;
+                if (failure != null)
+                {
+                    entries.Add(new SubmoduleOperationEntry(link.RelativePath, link.Branch,
+                        link.HeadSha, link.HeadSha, SubmoduleOperationOutcome.Rejected, failure, link.Kind));
+                    return (false, $"子模块推送预检失败 [{link.RelativePath}]: {failure}", [], entries);
+                }
+
+                var recorded = await _gitlinks.GetHeadGitlinkShaAsync(parentPath, link.RelativePath,
+                    cancellation);
+                if (!recorded.Success || !recorded.Sha.Equals(link.HeadSha, StringComparison.OrdinalIgnoreCase))
+                {
+                    var message = recorded.Success
+                        ? $"父 HEAD 记录 {recorded.Sha[..Math.Min(12, recorded.Sha.Length)]}，子 HEAD 为 {link.HeadSha[..Math.Min(12, link.HeadSha.Length)]}"
+                        : recorded.Message;
+                    entries.Add(new SubmoduleOperationEntry(link.RelativePath, link.Branch,
+                        link.HeadSha, link.HeadSha, SubmoduleOperationOutcome.Rejected, message, link.Kind));
+                    return (false, $"子模块指针尚未由父项目提交 [{link.RelativePath}]: {message}", [], entries);
+                }
+                items.Add((parentPath, link));
+            }
+        }
+        return (true, string.Empty,
+            items.OrderBy(item => item.Link.FullPath, StringComparer.OrdinalIgnoreCase).ToList(), entries);
+    }
+
+    private static async Task<(bool Success, string Message, List<SubmoduleOperationEntry> Entries)>
+        PushSubmodulesAsync(
+            IEnumerable<(string ParentPath, GitlinkDescriptor Link)> items,
+            CancellationToken cancellation)
+    {
+        var entries = new List<SubmoduleOperationEntry>();
+        foreach (var (_, link) in items)
+        {
+            var result = await GitRunner.RunAsync(link.FullPath,
+                ["push", "origin", link.Branch], timeoutSeconds: 600, cancellation: cancellation);
+            var entry = new SubmoduleOperationEntry(link.RelativePath, link.Branch,
+                link.HeadSha, link.HeadSha,
+                result.Success ? SubmoduleOperationOutcome.Success : SubmoduleOperationOutcome.Failed,
+                result.Success ? result.Output : $"退出码 {result.ExitCode}: {result.Output}",
+                link.Kind, result.Success);
+            entries.Add(entry);
+            if (!result.Success)
+                return (false, $"子模块推送失败 [{link.RelativePath}]:\n{result.Output}", entries);
+        }
+        return (true, entries.Count == 0 ? "没有子模块需要推送" : $"已推送 {entries.Count} 个子模块", entries);
     }
 
     // ---------------------------------------------------------------- 批量提交(PJ-07)
 
-    public async Task<(bool Success, string Message)> CommitAllAsync(
-        string message, IProgress<string>? progress,
-        Action<string, CommitReport>? onProjectDone = null)
+    public async Task<BatchCommitReport> CommitAllAsync(
+        string message,
+        IProgress<string>? progress,
+        Action<string, CommitReport>? onProjectDone = null,
+        bool includeSubmodules = false,
+        string? submoduleMessage = null,
+        CancellationToken cancellation = default)
     {
         var (listResult, worktrees) = await ListWorktreesAsync();
         if (!listResult.Success)
-            return (false, $"获取工作树列表失败:\n{listResult.Output}");
-
-        worktrees = worktrees.Where(w => Directory.Exists(w.WorktreePath)).ToList();
+            return new BatchCommitReport(false, $"获取工作树列表失败:\n{listResult.Output}", []);
+        worktrees = worktrees.Where(worktree => Directory.Exists(worktree.WorktreePath)).ToList();
         if (worktrees.Count == 0)
-            return (false, "未发现可提交的工作树");
+            return new BatchCommitReport(false, "未发现可提交的工作树", []);
 
-        if (!await WorktreeLfsHelper.IsGitLfsAvailableAsync(worktrees[0].WorktreePath))
-            return (false, "未检测到 Git LFS(git lfs),请先安装后再执行批量提交");
-
-        int success = 0, skipped = 0, rejected = 0, failed = 0;
-        var warnedProjects = new List<string>();
-        var rejectedDetails = new List<(string Branch, List<LargeFileEntry> Files)>();
-        var failedProjects = new List<string>();
-
+        var results = new List<ProjectCommitResult>();
         for (var i = 0; i < worktrees.Count; i++)
         {
             var worktree = worktrees[i];
             progress?.Report($"[{i + 1}/{worktrees.Count}] {worktree.BranchName} ...");
-
-            var report = await CommitWorktreeAsync(worktree, message, progress);
-            onProjectDone?.Invoke(worktree.BranchName, report); // DT-01:逐项目留痕
-            switch (report.Outcome)
-            {
-                case CommitOutcome.Success:
-                    success++;
-                    if (report.HasSizeWarning)
-                        warnedProjects.Add(worktree.BranchName);
-                    progress?.Report($"[{i + 1}/{worktrees.Count}] {worktree.BranchName} ✓ {report.Message}");
-                    break;
-                case CommitOutcome.Skipped:
-                    skipped++;
-                    progress?.Report($"[{i + 1}/{worktrees.Count}] {worktree.BranchName} ○ 无变更");
-                    break;
-                case CommitOutcome.Rejected:
-                    rejected++;
-                    if (report.RejectedFiles != null)
-                        rejectedDetails.Add((worktree.BranchName, report.RejectedFiles));
-                    progress?.Report($"[{i + 1}/{worktrees.Count}] {worktree.BranchName} ✗ 拒绝(未启用 LFS)");
-                    break;
-                case CommitOutcome.Failed:
-                    failed++;
-                    failedProjects.Add(worktree.BranchName);
-                    progress?.Report($"[{i + 1}/{worktrees.Count}] {worktree.BranchName} ✗ 失败: {report.Message}");
-                    break;
-            }
+            var report = await CommitWorktreeAsync(worktree, message, progress,
+                includeSubmodules, submoduleMessage, cancellation);
+            results.Add(new ProjectCommitResult(worktree.BranchName, report));
+            onProjectDone?.Invoke(worktree.BranchName, report);
+            progress?.Report($"[{i + 1}/{worktrees.Count}] {worktree.BranchName} " +
+                             (report.Outcome is CommitOutcome.Success or CommitOutcome.Skipped ? "✓ " : "✗ ") +
+                             report.Message);
         }
 
-        var sb = new StringBuilder();
-        sb.Append($"批量提交完成: 成功 {success} | 无变更跳过 {skipped} | 拒绝(未启用LFS){rejected} | 失败 {failed}");
-        if (warnedProjects.Count > 0)
-            sb.Append($"\n⚠ 含大文件警告: {string.Join(", ", warnedProjects)}");
-        foreach (var (branch, files) in rejectedDetails)
-        {
-            sb.Append($"\n【{branch}】拒绝明细:");
-            foreach (var file in files)
-                sb.Append($"\n  • {file.RelativePath}({file.FormattedSize})");
-        }
-
-        if (failedProjects.Count > 0)
-            sb.Append($"\n✗ 失败项目: {string.Join(", ", failedProjects)}");
-
-        return (failed == 0, sb.ToString());
+        var success = results.Count(item => item.Report.Outcome == CommitOutcome.Success);
+        var skipped = results.Count(item => item.Report.Outcome == CommitOutcome.Skipped);
+        var rejected = results.Count(item => item.Report.Outcome == CommitOutcome.Rejected);
+        var failed = results.Count(item => item.Report.Outcome == CommitOutcome.Failed);
+        var summary = $"批量提交完成: 成功 {success} | 无变更跳过 {skipped} | 拒绝 {rejected} | 失败 {failed}";
+        var failedNames = results.Where(item => item.Report.Outcome is CommitOutcome.Failed or CommitOutcome.Rejected)
+            .Select(item => item.Project).ToList();
+        if (failedNames.Count > 0)
+            summary += $"\n失败/拒绝项目: {string.Join(", ", failedNames)}";
+        return new BatchCommitReport(failed == 0 && rejected == 0, summary, results,
+            results.Any(item => item.Report.PartialCompletion)
+            || success + skipped > 0 && failed + rejected > 0);
     }
+
+    private static string BuildLfsPrompt(string name, IEnumerable<LargeFileEntry> files)
+    {
+        var list = files.ToList();
+        var prompt = new StringBuilder();
+        prompt.AppendLine($"项目【{name}】发现 {list.Count} 个超限文件尚未使用 Git LFS 指针:");
+        foreach (var file in list)
+            prompt.AppendLine($"  • {file.RelativePath}({file.FormattedSize})");
+        prompt.Append("是否启用 Git LFS 后继续?选择「否」将中止该项目且不创建提交。");
+        return prompt.ToString();
+    }
+
+    private static string BuildSubmoduleCommitPrompt(
+        string parent, IEnumerable<(GitlinkDescriptor Link, RepositoryCommitPlan Plan)> plans)
+    {
+        var list = plans.ToList();
+        var prompt = new StringBuilder();
+        prompt.AppendLine($"项目【{parent}】将联动提交 {list.Count} 个子模块:");
+        foreach (var (link, plan) in list)
+            prompt.AppendLine($"  • {link.RelativePath} [{link.Branch}] 修改 {link.ModifiedCount} / 删除 {link.DeletedCount} / 未跟踪 {link.UntrackedCount}\n    描述: {plan.Message}");
+        prompt.AppendLine();
+        prompt.Append("执行顺序固定为子模块先提交、父项目后提交。多仓库无法原子回退，是否继续?");
+        return prompt.ToString();
+    }
+
+    private static IReadOnlyList<SubmoduleOperationEntry> BuildSkippedEntries(
+        IEnumerable<GitlinkDescriptor> links)
+        => links.Select(link => new SubmoduleOperationEntry(link.RelativePath, link.Branch,
+            link.HeadSha, link.HeadSha, SubmoduleOperationOutcome.Skipped,
+            link.IsDirty ? "尚未执行" : "工作树干净，已跳过", link.Kind)).ToList();
+
+    private static void ReplaceEntry(
+        List<SubmoduleOperationEntry> entries, SubmoduleOperationEntry replacement)
+    {
+        var index = entries.FindIndex(item => item.RelativePath.Equals(
+            replacement.RelativePath, StringComparison.OrdinalIgnoreCase));
+        if (index >= 0)
+            entries[index] = replacement;
+        else
+            entries.Add(replacement);
+    }
+
+    private static SubmoduleOperationOutcome ToSubmoduleOutcome(CommitOutcome outcome) => outcome switch
+    {
+        CommitOutcome.Success => SubmoduleOperationOutcome.Success,
+        CommitOutcome.Skipped => SubmoduleOperationOutcome.Skipped,
+        CommitOutcome.Rejected => SubmoduleOperationOutcome.Rejected,
+        _ => SubmoduleOperationOutcome.Failed,
+    };
+
+    private static string FirstLine(string value)
+        => value.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim() ?? string.Empty;
 
     // ---------------------------------------------------------------- 扫描(PJ-10)
 

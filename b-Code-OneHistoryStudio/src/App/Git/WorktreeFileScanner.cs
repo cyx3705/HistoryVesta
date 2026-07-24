@@ -31,7 +31,8 @@ public record LargeFileEntry(string RelativePath, long SizeBytes)
 public static class WorktreeFileScanner
 {
     public static (FileSizeCheckStatus Status, List<LargeFileEntry> LargeFiles) ScanDirectory(
-        string rootPath, long warnBytes, long rejectBytes)
+        string rootPath, long warnBytes, long rejectBytes,
+        IEnumerable<string>? excludedDirectories = null)
     {
         var largeFiles = new List<LargeFileEntry>();
         var status = FileSizeCheckStatus.Ok;
@@ -39,32 +40,48 @@ public static class WorktreeFileScanner
         if (!Directory.Exists(rootPath))
             return (FileSizeCheckStatus.Rejected, largeFiles);
 
-        foreach (var file in Directory.EnumerateFiles(rootPath, "*", SearchOption.AllDirectories))
-        {
-            if (ShouldSkipGitPath(file))
-                continue;
+        var excluded = (excludedDirectories ?? [])
+            .Select(path => Path.GetFullPath(path)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+            .ToList();
 
-            var info = new FileInfo(file);
-            if (info.Length >= rejectBytes)
+        var pending = new Stack<string>();
+        pending.Push(Path.GetFullPath(rootPath));
+        while (pending.Count > 0)
+        {
+            var directory = pending.Pop();
+            foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.TopDirectoryOnly))
             {
-                status = FileSizeCheckStatus.Rejected;
-                largeFiles.Add(new LargeFileEntry(GetRelativePath(rootPath, file), info.Length));
+                var info = new FileInfo(file);
+                if (info.Length >= rejectBytes)
+                {
+                    status = FileSizeCheckStatus.Rejected;
+                    largeFiles.Add(new LargeFileEntry(GetRelativePath(rootPath, file), info.Length));
+                }
+                else if (info.Length >= warnBytes)
+                {
+                    if (status != FileSizeCheckStatus.Rejected)
+                        status = FileSizeCheckStatus.Warning;
+                    largeFiles.Add(new LargeFileEntry(GetRelativePath(rootPath, file), info.Length));
+                }
             }
-            else if (info.Length >= warnBytes)
+
+            foreach (var child in Directory.EnumerateDirectories(
+                         directory, "*", SearchOption.TopDirectoryOnly))
             {
-                if (status != FileSizeCheckStatus.Rejected)
-                    status = FileSizeCheckStatus.Warning;
-                largeFiles.Add(new LargeFileEntry(GetRelativePath(rootPath, file), info.Length));
+                var fullChild = Path.GetFullPath(child)
+                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                if (Path.GetFileName(fullChild).Equals(".git", StringComparison.OrdinalIgnoreCase)
+                    || excluded.Any(path => fullChild.Equals(path, StringComparison.OrdinalIgnoreCase)
+                                            || fullChild.StartsWith(path + Path.DirectorySeparatorChar,
+                                                StringComparison.OrdinalIgnoreCase))
+                    || (File.GetAttributes(fullChild) & FileAttributes.ReparsePoint) != 0)
+                    continue;
+                pending.Push(fullChild);
             }
         }
 
         return (status, largeFiles.OrderByDescending(f => f.SizeBytes).ToList());
-    }
-
-    private static bool ShouldSkipGitPath(string filePath)
-    {
-        var parts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        return parts.Any(p => p.Equals(".git", StringComparison.OrdinalIgnoreCase));
     }
 
     private static string GetRelativePath(string rootPath, string filePath)

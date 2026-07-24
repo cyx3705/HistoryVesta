@@ -102,7 +102,7 @@ public static class GitRunner
             }
 
             var output = (await outputTask.ConfigureAwait(false) + "\n"
-                          + await errorTask.ConfigureAwait(false)).Trim();
+                          + await errorTask.ConfigureAwait(false)).TrimEnd();
             return new GitResult(process.ExitCode, output);
         }
         catch (Exception ex)

@@ -11,9 +11,19 @@ namespace OneHistoryStudio.Git;
 /// </summary>
 public static class ProjectCommands
 {
+    private static CommandResult Fail(string message, object data)
+        => new() { Success = false, Message = message, Data = data };
+
     /// <summary>proj.commit / proj.commitall 共用的单项目提交留痕(R4:结果映射唯一实现)。</summary>
     private static void RecordCommit(HistoryRecorder history, string branch, string msg, CommitReport report)
-        => history.Record(branch, "commit", msg,
+    {
+        var submodules = report.Submodules ?? [];
+        var detail = submodules.Count == 0
+            ? msg
+            : $"{msg}; 子模块 成功={submodules.Count(item => item.Outcome == SubmoduleOperationOutcome.Success)} " +
+              $"跳过={submodules.Count(item => item.Outcome == SubmoduleOperationOutcome.Skipped)} " +
+              $"失败={submodules.Count(item => item.Outcome is SubmoduleOperationOutcome.Failed or SubmoduleOperationOutcome.Rejected)}";
+        history.Record(branch, "commit", detail,
             report.Outcome switch
             {
                 CommitOutcome.Success => "成功",
@@ -22,6 +32,28 @@ public static class ProjectCommands
                 _ => "失败",
             },
             (report.HasSizeWarning ? 1 : 0) + (report.RejectedFiles?.Count ?? 0));
+        RecordSubmodules(history, branch, "submodule.commit", submodules);
+    }
+
+    private static void RecordSubmodules(
+        HistoryRecorder history,
+        string parent,
+        string action,
+        IEnumerable<SubmoduleOperationEntry> entries)
+    {
+        foreach (var entry in entries)
+        {
+            history.Record($"{parent}/{entry.RelativePath}", action,
+                $"branch={entry.Branch}; before={entry.BeforeSha}; after={entry.AfterSha}",
+                entry.Outcome switch
+                {
+                    SubmoduleOperationOutcome.Success => "成功",
+                    SubmoduleOperationOutcome.Skipped => "跳过",
+                    SubmoduleOperationOutcome.Rejected => "拒绝",
+                    _ => "失败",
+                });
+        }
+    }
 
     public static void RegisterAll(
         CommandRegistry registry, ProjectService projects, HistoryRecorder history, string source = "app")
@@ -196,8 +228,8 @@ public static class ProjectCommands
     private static CommandDescriptor BuildCommit(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "proj.commit",
-        Summary = "提交单个项目到本地裸仓库(大小检查→LFS 处理→add→commit)",
-        Example = "proj.commit name=2026-018-MyAPI msg=\"更新说明\"",
+        Summary = "提交单个项目到本地仓库；可按子模块先、父项目后联动提交",
+        Example = "proj.commit name=2026-018-MyAPI msg=\"更新说明\" submodules=true submsg=\"更新子模块\"",
         Parameters =
         [
             new ParameterSpec
@@ -214,20 +246,34 @@ public static class ProjectCommands
                 Required = true,
                 Position = 1,
             },
+            new ParameterSpec
+            {
+                Name = "submodules",
+                Description = "true 时联动提交直属 gitlink；命令默认 false，页面默认 true",
+                Type = ParamType.Bool,
+                Default = "false",
+            },
+            new ParameterSpec
+            {
+                Name = "submsg",
+                Description = "子模块统一提交描述；空时沿用 msg",
+            },
         ],
         Handler = async ctx =>
         {
             var name = ctx.RequireString("name");
             var msg = ctx.RequireString("msg");
-            var report = await projects.CommitAsync(name, msg, ctx.Progress);
+            var report = await projects.CommitAsync(name, msg, ctx.Progress,
+                ctx.GetBool("submodules"), ctx.GetString("submsg"), ctx.Cancellation);
             RecordCommit(history, name, msg, report);
             return report.Outcome switch
             {
                 CommitOutcome.Success => CommandResult.Ok(
-                    report.HasSizeWarning ? report.Message + "(含大文件警告,见上方明细)" : report.Message),
-                CommitOutcome.Skipped => CommandResult.Ok(report.Message),
-                CommitOutcome.Rejected => CommandResult.Fail(report.Message),
-                _ => CommandResult.Fail(report.Message),
+                    report.HasSizeWarning ? report.Message + "(含大文件警告,见上方明细)" : report.Message,
+                    report),
+                CommitOutcome.Skipped => CommandResult.Ok(report.Message, report),
+                CommitOutcome.Rejected => Fail(report.Message, report),
+                _ => Fail(report.Message, report),
             };
         },
     };
@@ -237,8 +283,8 @@ public static class ProjectCommands
     private static CommandDescriptor BuildPush(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "proj.push",
-        Summary = "推送单个分支到 GitHub(git push origin 分支名)",
-        Example = "proj.push name=2026-018-MyAPI",
+        Summary = "推送单个分支；可先推直属子模块，全部成功后再推父项目",
+        Example = "proj.push name=2026-018-MyAPI submodules=true",
         Parameters =
         [
             new ParameterSpec
@@ -248,13 +294,25 @@ public static class ProjectCommands
                 Required = true,
                 Position = 0,
             },
+            new ParameterSpec
+            {
+                Name = "submodules",
+                Description = "true 时先推送直属 gitlink；命令默认 false，页面默认 true",
+                Type = ParamType.Bool,
+                Default = "false",
+            },
         ],
         Handler = async ctx =>
         {
             var name = ctx.RequireString("name");
-            var (success, message) = await projects.PushAsync(name);
-            history.Record(name, "push", "", success ? "成功" : "失败");
-            return success ? CommandResult.Ok(message) : CommandResult.Fail(message);
+            var report = await projects.PushAsync(name, ctx.GetBool("submodules"), ctx.Cancellation);
+            history.Record(name, "push",
+                $"子模块={report.Submodules?.Count ?? 0}; parentPushed={report.ParentPushed}",
+                report.Success ? "成功" : "失败");
+            RecordSubmodules(history, name, "submodule.push", report.Submodules ?? []);
+            return report.Success
+                ? CommandResult.Ok(report.Message, report)
+                : Fail(report.Message, report);
         },
     };
 
@@ -263,8 +321,8 @@ public static class ProjectCommands
     private static CommandDescriptor BuildCommitAll(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "proj.commitall",
-        Summary = "一键提交全部工作树到本地裸仓库(逐项大小检查,汇总四类结果)",
-        Example = "proj.commitall msg=\"每日推送\"",
+        Summary = "一键提交全部工作树；可联动各项目直属子模块",
+        Example = "proj.commitall msg=\"每日推送\" submodules=true",
         Parameters =
         [
             new ParameterSpec
@@ -274,19 +332,35 @@ public static class ProjectCommands
                 Required = true,
                 Position = 0,
             },
+            new ParameterSpec
+            {
+                Name = "submodules",
+                Description = "true 时联动提交每个项目的直属 gitlink",
+                Type = ParamType.Bool,
+                Default = "false",
+            },
+            new ParameterSpec
+            {
+                Name = "submsg",
+                Description = "全部子模块统一提交描述；空时沿用 msg",
+            },
         ],
-        ConfirmPrompt = _ =>
+        ConfirmPrompt = ctx =>
             "确定要对全部工作树执行 git add . & git commit 吗?\n\n" +
             "每个项目提交前将检查文件大小:\n" +
             "• ≥ 警告阈值的文件会警告后继续\n" +
-            "• ≥ LFS 阈值的文件检查 LFS 状态,未启用则逐项目询问",
+            "• ≥ LFS 阈值的文件检查 LFS 状态,未启用则逐项目询问" +
+            (ctx.GetBool("submodules") ? "\n• 子模块先提交，父项目后提交；多仓库无法原子回退" : ""),
         Handler = async ctx =>
         {
             var msg = ctx.RequireString("msg");
-            var (success, message) = await projects.CommitAllAsync(msg, ctx.Progress,
-                (branch, report) => RecordCommit(history, branch, msg, report));
-            history.Record("(全部)", "commitall", msg, success ? "成功" : "失败");
-            return success ? CommandResult.Ok(message) : CommandResult.Fail(message);
+            var report = await projects.CommitAllAsync(msg, ctx.Progress,
+                (branch, item) => RecordCommit(history, branch, msg, item),
+                ctx.GetBool("submodules"), ctx.GetString("submsg"), ctx.Cancellation);
+            history.Record("(全部)", "commitall", msg, report.Success ? "成功" : "失败");
+            return report.Success
+                ? CommandResult.Ok(report.Message, report)
+                : Fail(report.Message, report);
         },
     };
 
@@ -295,15 +369,30 @@ public static class ProjectCommands
     private static CommandDescriptor BuildPushAll(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "proj.pushall",
-        Summary = "推送全部分支到 GitHub(git push --all origin)",
-        Example = "proj.pushall",
-        ConfirmPrompt = _ =>
-            "确定要执行 git push --all origin 吗?\n\n此操作会推送裸仓库中的所有本地分支到 GitHub。",
-        Handler = async _ =>
+        Summary = "推送全部分支；可先去重推送所有直属子模块",
+        Example = "proj.pushall submodules=true",
+        Parameters =
+        [
+            new ParameterSpec
+            {
+                Name = "submodules",
+                Description = "true 时先去重推送全部项目的直属 gitlink",
+                Type = ParamType.Bool,
+                Default = "false",
+            },
+        ],
+        ConfirmPrompt = ctx =>
+            "确定要执行 git push --all origin 吗?\n\n此操作会推送裸仓库中的所有本地分支到 GitHub。" +
+            (ctx.GetBool("submodules") ? "\n直属子模块将先推送，任一失败都会阻止父仓库推送。" : ""),
+        Handler = async ctx =>
         {
-            var (success, message) = await projects.PushAllAsync();
-            history.Record("(全部)", "pushall", "", success ? "成功" : "失败");
-            return success ? CommandResult.Ok(message) : CommandResult.Fail(message);
+            var report = await projects.PushAllAsync(ctx.GetBool("submodules"), ctx.Cancellation);
+            history.Record("(全部)", "pushall", $"子模块={report.Submodules.Count}",
+                report.Success ? "成功" : "失败");
+            RecordSubmodules(history, "(全部)", "submodule.push", report.Submodules);
+            return report.Success
+                ? CommandResult.Ok(report.Message, report)
+                : Fail(report.Message, report);
         },
     };
 

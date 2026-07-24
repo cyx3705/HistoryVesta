@@ -12,6 +12,8 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -55,7 +57,18 @@
                 <TextBox Grid.Row="1" Grid.Column="1" x:Name="SelectedCommitMessageBox"
                          Margin="0,0,0,6" VerticalContentAlignment="Center"
                          TextChanged="OnCommitMessageChanged" />
-                <WrapPanel Grid.Row="2" Grid.ColumnSpan="2">
+                <WrapPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="0,0,0,6">
+                    <CheckBox x:Name="SelectedIncludeSubmodulesCheckBox" Content="包含子模块"
+                              IsChecked="True" Margin="0,0,12,0" Click="OnSubmoduleOptionsChanged" />
+                    <CheckBox x:Name="SelectedUseParentMessageCheckBox" Content="沿用父提交描述"
+                              IsChecked="True" Click="OnSubmoduleOptionsChanged" />
+                </WrapPanel>
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="子模块描述:" Margin="0,0,6,6"
+                           VerticalAlignment="Center" />
+                <TextBox Grid.Row="3" Grid.Column="1" x:Name="SelectedSubmoduleMessageBox"
+                         Margin="0,0,0,6" VerticalContentAlignment="Center" IsEnabled="False"
+                         TextChanged="OnCommitMessageChanged" />
+                <WrapPanel Grid.Row="4" Grid.ColumnSpan="2">
                     <Button x:Name="SelectedCommitButton" Content="提交到本地仓库" Padding="10,3"
                             IsEnabled="False" Click="OnCommitSelectedClick" />
                     <Button x:Name="SelectedPushButton" Content="推送到 GitHub" Padding="10,3"
