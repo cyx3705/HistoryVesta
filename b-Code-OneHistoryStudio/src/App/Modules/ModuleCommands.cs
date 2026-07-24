@@ -11,7 +11,8 @@ public static class ModuleCommands
 {
     public const string KeyModuleDir = "module.dir";
 
-    public static void RegisterAll(CommandRegistry registry, ModuleHost host, ISettingsService settings)
+    public static void RegisterAll(
+        CommandRegistry registry, ModuleHost host, ISettingsService settings, string source = "app")
     {
         registry.Register(new CommandDescriptor
         {
@@ -29,14 +30,15 @@ public static class ModuleCommands
                 foreach (var m in modules)
                 {
                     sb.Append($"\n  {m.ModuleName} {m.Version}  [{(m.Open ? "全暴露" : "精准暴露")}]" +
-                              $"  {m.CommandCount} 条指令  ← {m.AssemblyFile}");
+                              $"  {m.CommandCount} 条指令  ← {(m.Slot.Length > 0 ? m.Slot + "/" : "")}{m.AssemblyFile}" +
+                              $"{(m.Slot.Length > 0 ? "(槽)" : "(根)")}");
                     if (m.Description.Length > 0)
                         sb.Append($"\n      {m.Description}");
                 }
 
                 return CommandResult.Ok(sb.ToString(), modules);
             }),
-        });
+        }, source);
 
         registry.Register(new CommandDescriptor
         {
@@ -49,7 +51,7 @@ public static class ModuleCommands
                 return CommandResult.Ok(
                     $"重载完成: {host.Modules.Count} 个模块,{host.Modules.Sum(m => m.CommandCount)} 条指令");
             },
-        });
+        }, source);
 
         registry.Register(new CommandDescriptor
         {
@@ -77,7 +79,7 @@ public static class ModuleCommands
                 return CommandResult.Ok(
                     $"模块目录已切换并重载: {path}({host.Modules.Count} 个模块)");
             },
-        });
+        }, source);
 
         registry.Register(new CommandDescriptor
         {
@@ -93,6 +95,6 @@ public static class ModuleCommands
                 });
                 return CommandResult.Ok($"已打开模块目录: {host.ModulesDirectory}");
             }),
-        });
+        }, source);
     }
 }

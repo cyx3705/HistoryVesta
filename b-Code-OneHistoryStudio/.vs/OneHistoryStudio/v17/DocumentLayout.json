@@ -3,10 +3,6 @@
   "WorkspaceRootPath": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{87EF640E-A0AD-43DE-9FF3-1D01966DA756}|src\\App\\App.csproj|c:\\onehistory\\onehistory-projects\\2026-018-myapi\\b-code-onehistorystudio\\src\\app\\app.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{87EF640E-A0AD-43DE-9FF3-1D01966DA756}|src\\App\\App.csproj|solutionrelative:src\\app\\app.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{87EF640E-A0AD-43DE-9FF3-1D01966DA756}|src\\App\\App.csproj|c:\\onehistory\\onehistory-projects\\2026-018-myapi\\b-code-onehistorystudio\\src\\app\\git\\historyrecorder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{87EF640E-A0AD-43DE-9FF3-1D01966DA756}|src\\App\\App.csproj|solutionrelative:src\\app\\git\\historyrecorder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -42,36 +38,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "App.csproj",
-              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\App.csproj",
-              "RelativeDocumentMoniker": "src\\App\\App.csproj",
-              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\App.csproj",
-              "RelativeToolTip": "src\\App\\App.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-07-15T16:46:29.328Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "ProjectService.cs",
-              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\Git\\ProjectService.cs",
-              "RelativeDocumentMoniker": "src\\App\\Git\\ProjectService.cs",
-              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\Git\\ProjectService.cs",
-              "RelativeToolTip": "src\\App\\Git\\ProjectService.cs",
-              "ViewState": "AgIAAIkAAAAAAAAAAADwv6gAAABAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-15T12:20:54.626Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 3,
               "Title": "WorktreeLfsHelper.cs",
               "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\Git\\WorktreeLfsHelper.cs",
               "RelativeDocumentMoniker": "src\\App\\Git\\WorktreeLfsHelper.cs",
@@ -83,7 +54,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 4,
               "Title": "WorktreeFileScanner.cs",
               "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\Git\\WorktreeFileScanner.cs",
               "RelativeDocumentMoniker": "src\\App\\Git\\WorktreeFileScanner.cs",
@@ -95,7 +66,32 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 0,
+              "Title": "HistoryRecorder.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\Git\\HistoryRecorder.cs",
+              "RelativeDocumentMoniker": "src\\App\\Git\\HistoryRecorder.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\Git\\HistoryRecorder.cs",
+              "RelativeToolTip": "src\\App\\Git\\HistoryRecorder.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-15T12:20:16.149Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ProjectService.cs",
+              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\Git\\ProjectService.cs",
+              "RelativeDocumentMoniker": "src\\App\\Git\\ProjectService.cs",
+              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\Git\\ProjectService.cs",
+              "RelativeToolTip": "src\\App\\Git\\ProjectService.cs",
+              "ViewState": "AgIAAIkAAAAAAAAAAADwv6gAAABAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-15T12:20:54.626Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "ProjectCommands.cs",
               "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\Git\\ProjectCommands.cs",
               "RelativeDocumentMoniker": "src\\App\\Git\\ProjectCommands.cs",
@@ -107,19 +103,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "HistoryRecorder.cs",
-              "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\Git\\HistoryRecorder.cs",
-              "RelativeDocumentMoniker": "src\\App\\Git\\HistoryRecorder.cs",
-              "ToolTip": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\Git\\HistoryRecorder.cs",
-              "RelativeToolTip": "src\\App\\Git\\HistoryRecorder.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-15T12:20:16.149Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 5,
               "Title": "CommandSchemaExporter.cs",
               "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\Mcp\\CommandSchemaExporter.cs",
               "RelativeDocumentMoniker": "src\\App\\Mcp\\CommandSchemaExporter.cs",
@@ -131,7 +115,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 6,
               "Title": "AppShell.Core.csproj",
               "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\AppShell.Core\\AppShell.Core.csproj",
               "RelativeDocumentMoniker": "src\\AppShell.Core\\AppShell.Core.csproj",
@@ -139,8 +123,7 @@
               "RelativeToolTip": "src\\AppShell.Core\\AppShell.Core.csproj",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-07-14T14:39:32.468Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-14T14:39:32.468Z"
             }
           ]
         }

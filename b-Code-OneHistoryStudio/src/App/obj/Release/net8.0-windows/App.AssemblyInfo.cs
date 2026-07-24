@@ -12,11 +12,11 @@ using System.Reflection;
 
 [assembly: System.Reflection.AssemblyCompanyAttribute("OneHistoryStudio")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
-[assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+491d401f621bc614b6057d82b4b75c64460f8c0f")]
+[assembly: System.Reflection.AssemblyFileVersionAttribute("2.3.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("2.3.0")]
 [assembly: System.Reflection.AssemblyProductAttribute("OneHistoryStudio")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OneHistoryStudio")]
-[assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
+[assembly: System.Reflection.AssemblyVersionAttribute("2.3.0.0")]
 [assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows7.0")]
 [assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows7.0")]
 

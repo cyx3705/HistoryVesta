@@ -152,6 +152,31 @@ public sealed class ProjectService
         return (result, list);
     }
 
+    /// <summary>按登记分支解析工作树，并强制其仍是受管根下的直接、非重解析点子目录。</summary>
+    public async Task<(bool Success, string Message, WorktreeInfo? Worktree)> ResolveWorktreeAsync(string name)
+    {
+        name = name.Trim();
+        if (name.Length == 0)
+            return (false, "项目名称不能为空", null);
+
+        var (git, worktrees) = await ListWorktreesAsync();
+        if (!git.Success)
+            return (false, $"读取登记工作树失败:\n{git.Output}", null);
+
+        var worktree = worktrees.FirstOrDefault(item =>
+            item.BranchName.Equals(name, StringComparison.OrdinalIgnoreCase)
+            || Path.GetFileName(item.WorktreePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+                .Equals(name, StringComparison.OrdinalIgnoreCase));
+        if (worktree == null)
+            return (false, $"未找到已登记项目: {name}", null);
+        if (!Directory.Exists(worktree.WorktreePath))
+            return (false, $"项目工作树不存在: {worktree.WorktreePath}", null);
+        if (!TryValidateManagedDirectChild(worktree.WorktreePath, rejectReparsePoint: true, out var error))
+            return (false, $"项目工作树越出受管边界: {error}", null);
+
+        return (true, worktree.WorktreePath, worktree);
+    }
+
     /// <summary>解析 git worktree list --porcelain 输出(移植自 V1)。</summary>
     public static List<WorktreeInfo> ParseWorktreeList(string output)
     {

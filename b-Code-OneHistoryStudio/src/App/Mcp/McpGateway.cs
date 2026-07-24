@@ -23,22 +23,26 @@ public sealed class McpGateway : IDisposable
     public const string KeyToken = "mcp.token";
     public const string KeyAutostart = "mcp.autostart";
     public const string KeyTimeout = "mcp.timeout";
+    public const string KeyConfirm = "mcp.confirm";              // deny(默认) / host
+    public const string KeyConfirmTimeout = "mcp.confirmtimeout"; // 秒,默认 60,夹取 10~600
 
     private const int DefaultPort = 8737;
-
-    /// <summary>readonly 档白名单(§6.2):只读查询类指令,代码内清单。</summary>
-    private static readonly HashSet<string> ReadonlyWhitelist = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "help", "history",
-        "proj.list", "proj.tree", "proj.scan", "proj.config", "proj.metalist",
-        "db.query", "db.tables", "db.schema", "db.list",
-        "module.list", "win.list", "layout.list", "app.get",
-    };
+    private static readonly Encoding StrictUtf8 = new UTF8Encoding(
+        encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
     private readonly Func<CommandBus?> _busAccessor;
     private readonly ISettingsService _settings;
     private readonly IShellLog _log;
     private readonly HistoryRecorder _history;
+    private readonly PromptGovernanceStore _prompts;
+    private readonly ApplicationIdentity _identity;
+
+    /// <summary>宿主确认中继对话框(client, 完整提示, 超时秒) → true/false/null;host 档需要。</summary>
+    private readonly Func<string, string, int, bool?>? _remoteConfirm;
+
+    /// <summary>CX-02 §9-4:同一时刻只弹一个中继确认框,多个远程请求按序处理。</summary>
+    private readonly SemaphoreSlim _confirmGate = new(1, 1);
+
     private readonly object _lifecycleLock = new();
 
     private CommandSchemaExporter? _exporter;
@@ -49,13 +53,31 @@ public sealed class McpGateway : IDisposable
     private string _lastCall = "(无)";
 
     public McpGateway(
-        Func<CommandBus?> busAccessor, ISettingsService settings, IShellLog log, HistoryRecorder history)
+        Func<CommandBus?> busAccessor, ISettingsService settings, IShellLog log, HistoryRecorder history,
+        PromptGovernanceStore prompts, ApplicationIdentity identity,
+        Func<string, string, int, bool?>? remoteConfirm = null)
     {
         _busAccessor = busAccessor;
         _settings = settings;
         _log = log;
         _history = history;
+        _prompts = prompts;
+        _identity = identity;
+        _remoteConfirm = remoteConfirm;
     }
+
+    /// <summary>确认中继模式(CX-02):deny=危险指令一律拒绝(默认);host=宿主弹框人工裁决。</summary>
+    public string ConfirmMode
+    {
+        get
+        {
+            var m = _settings.Get(KeyConfirm);
+            return m != null && m.Equals("host", StringComparison.OrdinalIgnoreCase) ? "host" : "deny";
+        }
+    }
+
+    public int ConfirmTimeout
+        => int.TryParse(_settings.Get(KeyConfirmTimeout), out var t) ? Math.Clamp(t, 10, 600) : 60;
 
     public bool IsRunning => _listener is { IsListening: true };
 
@@ -76,16 +98,31 @@ public sealed class McpGateway : IDisposable
 
     public string LastCall => _lastCall;
 
-    /// <summary>当前策略下 tools/list 会暴露的工具(每次现算,与模块热重载天然同步)。</summary>
+    /// <summary>
+    /// 当前策略下 tools/list 会暴露的工具(每次现算,与模块热重载天然同步)。
+    /// 危险指令(带确认闸口)默认不暴露;仅当 mcp.confirm=host 且策略=standard 时暴露,
+    /// 供 Codex 发现"可请求、由人把关"的操作(V2.2 CX-02)。
+    /// </summary>
     public IReadOnlyList<McpToolInfo> VisibleTools()
     {
         var exporter = GetExporter();
         if (exporter == null)
             return Array.Empty<McpToolInfo>();
         var policy = Policy;
+        var relayOn = ConfirmMode == "host" && policy == "standard";
+        var registry = _busAccessor()?.Registry;
+        if (registry == null)
+            return Array.Empty<McpToolInfo>();
+
         return exporter.ExportTools()
-            .Where(t => !t.Dangerous
-                        && (policy == "standard" || ReadonlyWhitelist.Contains(t.CommandName)))
+            .Where(t =>
+            {
+                if (!registry.TryGet(t.CommandName, out var descriptor))
+                    return false;
+                if (t.Dangerous)
+                    return relayOn && McpExposurePolicy.HardExclusionReason(t.CommandName) == null;
+                return McpExposurePolicy.IsVisible(descriptor, policy);
+            })
             .ToList();
     }
 
@@ -98,7 +135,7 @@ public sealed class McpGateway : IDisposable
             return null;
         return _exporter = new CommandSchemaExporter(bus.Registry)
         {
-            DescriptionsProvider = _history.AllMcpDescriptions, // V2.1.1:提示词覆盖对客户端生效
+            DescriptionsProvider = _prompts.AllEffectiveDescriptions,
         };
     }
 
@@ -231,9 +268,17 @@ public sealed class McpGateway : IDisposable
         }
 
         string body;
-        using (var reader = new StreamReader(request.InputStream, Encoding.UTF8))
+        try
         {
+            using var reader = new StreamReader(
+                request.InputStream, StrictUtf8, detectEncodingFromByteOrderMarks: true);
             body = await reader.ReadToEndAsync().ConfigureAwait(false);
+        }
+        catch (DecoderFallbackException)
+        {
+            await WriteJsonAsync(
+                context, RpcError(null, -32700, "请求体不是有效的 UTF-8 JSON"), 400).ConfigureAwait(false);
+            return;
         }
 
         if (body.Length > 1_048_576)
@@ -305,8 +350,8 @@ public sealed class McpGateway : IDisposable
             ["capabilities"] = new JsonObject { ["tools"] = new JsonObject() },
             ["serverInfo"] = new JsonObject
             {
-                ["name"] = "OneHistoryStudio",
-                ["version"] = "2.1.0",
+                ["name"] = _identity.Name,
+                ["version"] = _identity.Version,
             },
         });
     }
@@ -316,10 +361,13 @@ public sealed class McpGateway : IDisposable
         var tools = new JsonArray();
         foreach (var t in VisibleTools())
         {
+            var description = t.Dangerous
+                ? t.Description + "\n⚠ 危险操作:调用会请求宿主端人工确认(mcp.confirm=host),批准后才执行。"
+                : t.Description;
             tools.Add(new JsonObject
             {
                 ["name"] = t.ToolName,
-                ["description"] = t.Description,
+                ["description"] = description,
                 ["inputSchema"] = JsonNode.Parse(t.InputSchema.ToJsonString()),
             });
         }
@@ -343,18 +391,57 @@ public sealed class McpGateway : IDisposable
         if (tool == null)
             return RpcError(id, -32602, $"未知工具: {toolName}");
 
-        // MS-04:危险指令(总线确认闸口类)对 MCP 一律拒绝——远端没有"人"来点确认
+        var bus = _busAccessor();
+        if (bus == null)
+            return RpcError(id, -32603, "宿主总线未就绪");
+
+        var commandText = CommandSchemaExporter.BuildCommandText(tool.CommandName, arguments);
+
+        // 危险指令(总线确认闸口类):按 mcp.confirm 处置(CX-02 / MS-04)
         if (tool.Dangerous)
         {
-            _history.RecordMcp(_clientName, tool.ToolName, argsText, "拒绝", 0);
-            _log.Warn("mcp", $"拒绝危险工具调用: {tool.ToolName}(MS-04)");
-            return RpcResult(id, ToolText(
-                $"已拒绝: {tool.CommandName} 是需二次确认的危险指令,须在宿主 UI/控制台人工执行(V2.1 安全策略 MS-04)",
-                isError: true));
+            if (ConfirmMode != "host")
+            {
+                _history.RecordMcp(_clientName, tool.ToolName, argsText, "拒绝", 0);
+                _log.Warn("mcp", $"拒绝危险工具调用: {tool.ToolName}(mcp.confirm=deny)");
+                return RpcResult(id, ToolText(
+                    $"已拒绝: {tool.CommandName} 是需二次确认的危险指令。当前 mcp.confirm=deny;" +
+                    "宿主执行 app.set key=mcp.confirm value=host 后,远程请求将弹框由人工裁决。",
+                    isError: true));
+            }
+
+            if (Policy == "readonly")
+            {
+                _history.RecordMcp(_clientName, tool.ToolName, argsText, "拒绝", 0);
+                return RpcResult(id, ToolText(
+                    $"已拒绝: 当前策略为 readonly,不受理危险指令;宿主切 standard 后方可经中继确认执行。",
+                    isError: true));
+            }
+
+            var decision = await RelayConfirmAsync(bus, tool.CommandName, arguments, commandText)
+                .ConfigureAwait(false);
+            if (decision == false)
+            {
+                _history.RecordMcp(_clientName, tool.ToolName, argsText, "远程拒绝", 0);
+                _log.Warn("mcp", $"中继确认:宿主拒绝 {tool.ToolName}");
+                return RpcResult(id, ToolText("宿主已拒绝该远程请求(人工点否)。", isError: true));
+            }
+
+            if (decision == null)
+            {
+                _history.RecordMcp(_clientName, tool.ToolName, argsText, "确认超时", 0);
+                _log.Warn("mcp", $"中继确认:超时拒绝 {tool.ToolName}");
+                return RpcResult(id, ToolText(
+                    $"确认超时({ConfirmTimeout}s 内无人操作),已按拒绝处理。", isError: true));
+            }
+
+            _log.Info("mcp", $"中继确认:宿主批准 {tool.ToolName},执行中");
+            return await ExecuteToolAsync(id, bus, tool, commandText, argsText,
+                preApproved: true, relayNote: "远程确认通过").ConfigureAwait(false);
         }
 
         // §6.2:readonly 档只放行白名单
-        if (Policy == "readonly" && !ReadonlyWhitelist.Contains(tool.CommandName))
+        if (Policy == "readonly" && !McpExposurePolicy.IsReadonlyAllowed(tool.CommandName))
         {
             _history.RecordMcp(_clientName, tool.ToolName, argsText, "拒绝", 0);
             _log.Warn("mcp", $"拒绝调用(策略 readonly 未暴露): {tool.ToolName}");
@@ -363,15 +450,23 @@ public sealed class McpGateway : IDisposable
                 isError: true));
         }
 
-        var bus = _busAccessor();
-        if (bus == null)
-            return RpcError(id, -32603, "宿主总线未就绪");
+        return await ExecuteToolAsync(id, bus, tool, commandText, argsText,
+            preApproved: false, relayNote: null).ConfigureAwait(false);
+    }
 
-        var commandText = CommandSchemaExporter.BuildCommandText(tool.CommandName, arguments);
+    /// <summary>组装指令经总线执行并映射为 MCP 结果;preApproved=true 时置确认预批准域(CX-03)。</summary>
+    private async Task<JsonObject> ExecuteToolAsync(
+        JsonNode? id, CommandBus bus, McpToolInfo tool, string commandText, string argsText,
+        bool preApproved, string? relayNote)
+    {
         var timeoutSeconds = int.TryParse(_settings.Get(KeyTimeout), out var t) ? Math.Clamp(t, 5, 3600) : 120;
-
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        var execTask = bus.ExecuteAsync(commandText, $"MCP:{_clientName}");
+
+        Task<CommandResult> Run() => bus.ExecuteAsync(commandText, $"MCP:{_clientName}");
+        var execTask = preApproved
+            ? McpConfirmationScope.RunPreApprovedAsync(Run)
+            : Run();
+
         var finished = await Task.WhenAny(execTask, Task.Delay(TimeSpan.FromSeconds(timeoutSeconds)))
             .ConfigureAwait(false);
 
@@ -381,7 +476,7 @@ public sealed class McpGateway : IDisposable
         {
             // MG-07:超时只切断响应,不撕裂总线执行——指令继续跑完并留痕
             _lastCall = $"{tool.ToolName}(超时 {timeoutSeconds}s)";
-            _history.RecordMcp(_clientName, tool.ToolName, argsText, "超时", sw.ElapsedMilliseconds);
+            _history.RecordMcp(_clientName, tool.ToolName, argsText, Note(relayNote, "超时"), sw.ElapsedMilliseconds);
             return RpcResult(id, ToolText(
                 $"执行超时({timeoutSeconds}s): 指令仍在宿主内继续执行并留痕,可稍后经只读指令查询结果",
                 isError: true));
@@ -391,7 +486,7 @@ public sealed class McpGateway : IDisposable
         sw.Stop();
         _lastCall = $"{tool.ToolName} → {(result.Success ? "成功" : "失败")}({sw.ElapsedMilliseconds}ms)";
         _history.RecordMcp(_clientName, tool.ToolName, argsText,
-            result.Success ? "成功" : "失败", sw.ElapsedMilliseconds);
+            Note(relayNote, result.Success ? "成功" : "失败"), sw.ElapsedMilliseconds);
 
         // MG-04:Message → 文本段;Data 非空追加 JSON 结构化段
         var content = new JsonArray
@@ -419,6 +514,68 @@ public sealed class McpGateway : IDisposable
             ["content"] = content,
             ["isError"] = !result.Success,
         });
+
+        static string Note(string? note, string outcome)
+            => note == null ? outcome : $"{note}·{outcome}";
+    }
+
+    /// <summary>
+    /// 宿主确认中继(CX-02):复用描述符 ConfirmPrompt 文案,标注 MCP 客户端弹框由人裁决。
+    /// 返回 true=批准 / false=拒绝 / null=超时。ConfirmPrompt 对本次输入返回 null
+    /// (如受保护分支)时直接放行,交由指令处理器按业务规则拒绝。
+    /// </summary>
+    private async Task<bool?> RelayConfirmAsync(
+        CommandBus bus, string commandName, JsonElement? arguments, string commandText)
+    {
+        if (_remoteConfirm == null)
+            return false; // 无对话通道 → 安全缺省拒绝
+
+        var prompt = BuildConfirmPrompt(bus, commandName, arguments);
+        if (prompt == null)
+            return true; // 本次输入无需人工确认(处理器自行判定)
+
+        var full = $"【MCP 客户端 “{_clientName}” 的远程请求】\n\n{prompt}\n\n等价指令: {commandText}";
+        await _confirmGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            return _remoteConfirm(_clientName, full, ConfirmTimeout);
+        }
+        finally
+        {
+            _confirmGate.Release();
+        }
+    }
+
+    private string? BuildConfirmPrompt(CommandBus bus, string commandName, JsonElement? arguments)
+    {
+        if (!bus.Registry.TryGet(commandName, out var descriptor) || descriptor.ConfirmPrompt == null)
+            return null;
+
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (arguments is { ValueKind: JsonValueKind.Object } obj)
+        {
+            foreach (var prop in obj.EnumerateObject())
+            {
+                values[prop.Name] = prop.Value.ValueKind switch
+                {
+                    JsonValueKind.String => prop.Value.GetString() ?? "",
+                    JsonValueKind.True => "true",
+                    JsonValueKind.False => "false",
+                    _ => prop.Value.GetRawText(),
+                };
+            }
+        }
+
+        try
+        {
+            var ctx = new CommandContext(descriptor, values, $"MCP:{_clientName}", null, CancellationToken.None);
+            return descriptor.ConfirmPrompt(ctx);
+        }
+        catch (Exception)
+        {
+            // 文案构建失败不影响中继:回落到通用提示,人工仍能裁决
+            return $"远程请求执行危险指令: {commandName}\n(参数: {(arguments?.GetRawText() ?? "{}")})";
+        }
     }
 
     private static readonly JsonSerializerOptions DataJson = new()

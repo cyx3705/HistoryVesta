@@ -97,7 +97,7 @@ namespace OneHistoryStudio.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/OneHistoryStudio;V1.0.0.0;component/views/branchtreeview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/OneHistoryStudio;V2.1.7.0;component/views/branchtreeview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\Views\BranchTreeView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

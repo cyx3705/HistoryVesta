@@ -5,6 +5,7 @@
 
 | 版本 | 日期 | 里程碑 | 说明 |
 |---|---|---|---|
+| 0.4.3 | 2026-07-16 | 派生反哺 | OneHistoryStudio V2.1.2~V2.1.5 期间产生、V2.1.6 质量整备(Q16-M1)审阅后整体回灌五文件:①CommandRegistry——Register 增 source 溯源(默认 "framework",兼容旧调用)+ GetSource + Changed 事件,Unregister 同步清理并触发;②CommandParser——指令名放宽为多段(域.动作.子动作…);③CommandBus——ExecuteAsync 增可选 CancellationToken,取消返回「指令已取消」;④DockingHost——首建布局默认比例种子保护 + 比例施加覆盖停靠组全部成员(比例语义修正);⑤BuiltinCommands——help 按域分组计数/列宽 24/详情补参数类型与安全·线程提示。逐条审阅确认均为通用能力,无派生应用专有逻辑;模板独立构建 0 警告 0 错误 |
 | 0.4.2 | 2026-07-15 | 派生反哺 | 由首个派生应用 OneHistoryStudio(V2-M2/M3)回灌两处修正:①控制台多行日志逐行拆分入列表 + 滚动单位 Item→Pixel,修复「底部长日志显示不全」(ConsoleRow/ConsoleView,谨慎区,验收 8 于派生侧复跑通过);②CommandRegistry 新增 Unregister(name)——模块热重载场景下线指令域所需,调用方只应注销自己注册过的名称,Register 冲突即抛的规则不变(§5.3) |
 | 0.4.1-M4 | 2026-07-12 | M4 修补 | 修复 x64 回收站删除闪退(SHFILEOPSTRUCT 误用 Pack=1,详见下方 M4 要点);资源窗口新增“打开文件夹…”与“恢复默认工作区”(res.root 的图形入口) |
 | 0.4.0-M4 | 2026-07-12 | M4 | 控制窗口群(JSON 面板)+ 资源窗口 + res.*/panel.* 指令组。验收 5 / 6 达成;R-06 越界拒绝实测。二次开发权限规则见 docs/二次开发演进手册.md |

@@ -5,58 +5,71 @@ using OneHistoryStudio.Git;
 
 namespace OneHistoryStudio.Views;
 
-/// <summary>
-/// 项目总览工具窗口内容(UI-01/03):worktree 列表 + 搜索过滤。
-/// 架构不变量 1:按钮动作组装指令文本经总线执行(来源 "UI"),
-/// 视图只消费 CommandResult.Data;搜索框是纯视图过滤,不改状态、不发指令。
-/// </summary>
+/// <summary>项目工作树列表、当前项目选择与批量提交推送。</summary>
 public partial class OverviewView : UserControl
 {
     private readonly Func<CommandBus?> _busAccessor;
-    private List<WorktreeRow> _allRows = new();
+    private readonly ProjectSelectionState _selection;
+    private List<WorktreeRow> _allRows = [];
     private bool _initialLoadDone;
+    private bool _suppressSelection;
+    private bool _bulkOperationRunning;
 
-    public OverviewView(Func<CommandBus?> busAccessor)
+    public OverviewView(Func<CommandBus?> busAccessor, ProjectSelectionState selection)
     {
         InitializeComponent();
         _busAccessor = busAccessor;
-
-        // Loaded 在停靠重排时会反复触发,首次加载只做一次
-        Loaded += async (_, _) =>
-        {
-            if (_initialLoadDone)
-                return;
-            _initialLoadDone = true;
-            await RefreshAsync();
-        };
+        _selection = selection;
+        BulkCommitMessageBox.Text = "一键推送更新";
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
     }
 
     public sealed record WorktreeRow(int Index, string BranchName, string LastCommitTime, string WorktreePath);
+
+    private async void OnLoaded(object sender, System.Windows.RoutedEventArgs e)
+    {
+        _selection.Changed -= OnSharedSelectionChanged;
+        _selection.Changed += OnSharedSelectionChanged;
+        if (!_initialLoadDone)
+        {
+            _initialLoadDone = true;
+            await RefreshAsync();
+        }
+        else
+        {
+            ApplySharedSelection();
+        }
+    }
+
+    private void OnUnloaded(object sender, System.Windows.RoutedEventArgs e)
+        => _selection.Changed -= OnSharedSelectionChanged;
 
     private async void OnRefreshClick(object sender, System.Windows.RoutedEventArgs e)
         => await RefreshAsync();
 
     private async Task RefreshAsync()
     {
-        var bus = _busAccessor();
-        if (bus == null)
+        if (_busAccessor() is not { } bus)
             return;
-
         RefreshButton.IsEnabled = false;
         try
         {
             var result = await bus.ExecuteAsync("proj.list", "UI");
-            if (result.Success && result.Data is List<WorktreeInfo> list)
+            if (!result.Success || result.Data is not List<WorktreeInfo> list)
             {
-                _allRows = list
-                    .Select((w, i) => new WorktreeRow(i + 1, w.BranchName, w.LastCommitTime, w.WorktreePath))
-                    .ToList();
-                ApplyFilter();
+                StatusText.Text = "项目加载失败，详见控制台";
+                return;
             }
-            else
+
+            _allRows = list.Select((item, index) => new WorktreeRow(
+                index + 1, item.BranchName, item.LastCommitTime, item.WorktreePath)).ToList();
+            if (_selection.CurrentProjectName is { } current
+                && !_allRows.Any(row => row.BranchName.Equals(current, StringComparison.OrdinalIgnoreCase)))
             {
-                ListStatus.Text = "加载失败,详见控制台";
+                _selection.CurrentProjectName = null;
             }
+            ApplyFilter();
         }
         finally
         {
@@ -69,11 +82,33 @@ public partial class OverviewView : UserControl
         var keyword = SearchBox.Text.Trim();
         var rows = keyword.Length == 0
             ? _allRows
-            : _allRows.Where(r => r.BranchName.Contains(keyword, StringComparison.OrdinalIgnoreCase)).ToList();
+            : _allRows.Where(row => row.BranchName.Contains(keyword, StringComparison.OrdinalIgnoreCase)).ToList();
         WorktreeList.ItemsSource = rows;
-        ListStatus.Text = keyword.Length == 0
-            ? $"共 {_allRows.Count} 个工作树;双击一行在资源管理器中打开(proj.open)"
+        ApplySharedSelection();
+        StatusText.Text = keyword.Length == 0
+            ? $"共 {_allRows.Count} 个工作树；双击项目在资源管理器中打开"
             : $"匹配 {rows.Count}/{_allRows.Count} 个工作树";
+    }
+
+    private void ApplySharedSelection()
+    {
+        var rows = WorktreeList.ItemsSource as IEnumerable<WorktreeRow> ?? [];
+        _suppressSelection = true;
+        WorktreeList.SelectedItem = _selection.CurrentProjectName is { } current
+            ? rows.FirstOrDefault(row => row.BranchName.Equals(current, StringComparison.OrdinalIgnoreCase))
+            : null;
+        _suppressSelection = false;
+        if (WorktreeList.SelectedItem != null)
+            WorktreeList.ScrollIntoView(WorktreeList.SelectedItem);
+    }
+
+    private void OnSharedSelectionChanged(object? sender, EventArgs e)
+        => Dispatcher.BeginInvoke(ApplySharedSelection);
+
+    private void OnProjectSelected(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_suppressSelection && WorktreeList.SelectedItem is WorktreeRow row)
+            _selection.CurrentProjectName = row.BranchName;
     }
 
     private void OnSearchChanged(object sender, TextChangedEventArgs e)
@@ -85,9 +120,62 @@ public partial class OverviewView : UserControl
     private void OnRowDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (WorktreeList.SelectedItem is WorktreeRow row)
-            _ = _busAccessor()?.ExecuteAsync($"proj.open name=\"{row.BranchName}\"", "UI");
+            _ = _busAccessor()?.ExecuteAsync(
+                $"proj.open name={CommandParser.QuoteArg(row.BranchName)}", "UI");
     }
 
     private void OnOpenRootClick(object sender, System.Windows.RoutedEventArgs e)
         => _ = _busAccessor()?.ExecuteAsync("proj.open", "UI");
+
+    private void OnBulkMessageChanged(object sender, TextChangedEventArgs e)
+        => UpdateBulkActions();
+
+    private async void OnCommitAllClick(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (_busAccessor() is not { } bus || BulkCommitMessageBox.Text.Trim() is not { Length: > 0 } message)
+            return;
+
+        SetBulkOperationRunning(true);
+        try
+        {
+            var result = await bus.ExecuteAsync(
+                $"proj.commitall msg={CommandParser.QuoteArg(message)}", "UI");
+            StatusText.Text = ViewKit.ResultSummary(result);
+            if (result.Success)
+                await RefreshAsync();
+        }
+        finally
+        {
+            SetBulkOperationRunning(false);
+        }
+    }
+
+    private async void OnPushAllClick(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (_busAccessor() is not { } bus)
+            return;
+
+        SetBulkOperationRunning(true);
+        try
+        {
+            var result = await bus.ExecuteAsync("proj.pushall", "UI");
+            StatusText.Text = ViewKit.ResultSummary(result);
+        }
+        finally
+        {
+            SetBulkOperationRunning(false);
+        }
+    }
+
+    private void SetBulkOperationRunning(bool running)
+    {
+        _bulkOperationRunning = running;
+        UpdateBulkActions();
+    }
+
+    private void UpdateBulkActions()
+    {
+        CommitAllButton.IsEnabled = !_bulkOperationRunning && BulkCommitMessageBox.Text.Trim().Length > 0;
+        PushAllButton.IsEnabled = !_bulkOperationRunning;
+    }
 }

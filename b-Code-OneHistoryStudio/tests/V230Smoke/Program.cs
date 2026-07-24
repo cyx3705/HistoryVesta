@@ -1,0 +1,228 @@
+using AppShell.Core.Commands;
+using AppShell.Core.Storage;
+using OneHistoryStudio.Git;
+using OneHistoryStudio.Mcp;
+
+const string baseBranch = "0000-000-Template";
+const string parentBranch = "2026-001-Parent";
+const string childBranch = "2026-002-Child";
+
+var root = Path.Combine(Environment.CurrentDirectory, "tests", $".tmp-v230-{Guid.NewGuid():N}");
+var seed = Path.Combine(root, "seed");
+var bare = Path.Combine(root, "projects.git");
+var remote = Path.Combine(root, "remote.git");
+var template = Path.Combine(root, baseBranch);
+var parent = Path.Combine(root, parentBranch);
+var child = Path.Combine(root, childBranch);
+Directory.CreateDirectory(root);
+
+try
+{
+    Ensure(await GitRunner.RunAsync(root, ["init", "-b", baseBranch, seed]), "init seed");
+    await ConfigureIdentity(seed);
+    await File.WriteAllTextAsync(Path.Combine(seed, "README.md"), "template\n");
+    Ensure(await GitRunner.RunAsync(seed, ["add", "."]), "add template");
+    Ensure(await GitRunner.RunAsync(seed, ["commit", "-m", "template root"]), "commit template");
+    Ensure(await GitRunner.RunAsync(root, ["clone", "--bare", seed, bare]), "clone project bare");
+    Ensure(await GitRunner.RunAsync(root, ["clone", "--bare", seed, remote]), "clone remote bare");
+    Ensure(await GitRunner.RunAsync(bare, ["remote", "set-url", "origin", remote]), "set origin");
+
+    Ensure(await GitRunner.RunAsync(bare, ["worktree", "add", template, baseBranch]), "worktree template");
+    await ConfigureIdentity(template);
+    Ensure(await GitRunner.RunAsync(bare,
+        ["worktree", "add", "-b", parentBranch, parent, baseBranch]), "worktree parent");
+    await ConfigureIdentity(parent);
+    await CommitFile(parent, "parent.txt", "parent one\n", "parent one");
+    await CommitFile(parent, "parent.txt", "parent two\n", "parent two");
+    var forkSha = Sha(await GitRunner.RunAsync(parent, ["rev-parse", "HEAD"]));
+
+    Ensure(await GitRunner.RunAsync(bare,
+        ["worktree", "add", "-b", childBranch, child, parentBranch]), "worktree child");
+    await ConfigureIdentity(child);
+    await CommitFile(child, "child.txt", "child one\n", "child one");
+    var childOneSha = Sha(await GitRunner.RunAsync(child, ["rev-parse", "HEAD"]));
+    await CommitFile(child, "child.txt", "child two\n", "child two");
+    var childTwoSha = Sha(await GitRunner.RunAsync(child, ["rev-parse", "HEAD"]));
+
+    Ensure(await GitRunner.RunAsync(bare, ["push", "--all", "origin"]), "initial push all");
+    await CommitFile(child, "child.txt", "child local three\n", "child local three");
+    var childThreeSha = Sha(await GitRunner.RunAsync(child, ["rev-parse", "HEAD"]));
+
+    var settings = new MemorySettings();
+    settings.Set(ProjectService.KeyBareRepo, bare);
+    settings.Set(ProjectService.KeyWorktreeRoot, root);
+    settings.Set(ProjectService.KeyBaseBranch, baseBranch);
+    settings.Set(ProjectService.KeyProtected, baseBranch);
+    var projects = new ProjectService(settings, _ => true, root);
+    var service = new BranchHistoryService(projects);
+
+    var history = await service.GetHistoryAsync(childBranch, refreshTree: true, refreshRemote: true);
+    True(history.Success && history.Report != null, $"history loaded: {history.Message}");
+    var report = history.Report!;
+    Equal(parentBranch, report.ParentBranch, "nested branch parent detected");
+    Equal(forkSha, report.ForkSha, "merge-base fork detected");
+    Equal(childThreeSha, report.HeadSha, "head detected");
+    Equal(3, report.TotalOwnCommits, "own commit count");
+    True(report.Entries[0].IsForkPoint, "fork is first baseline row");
+    Equal(forkSha, report.Entries[0].Sha, "fork baseline sha");
+    Equal(childOneSha, report.Entries[1].Sha, "history chronological first own commit");
+    Equal(childThreeSha, report.Entries[^1].Sha, "history chronological head");
+    Equal(CommitRemoteState.Pushed, report.Entries[1].RemoteState, "pushed commit marked");
+    Equal(CommitRemoteState.LocalOnly, report.Entries[^1].RemoteState, "local commit marked");
+    Equal(BranchRemoteState.Ahead, report.RemoteState, "branch ahead state");
+
+    var newestPage = await service.GetHistoryAsync(childBranch, limit: 1, skip: 0);
+    var olderPage = await service.GetHistoryAsync(childBranch, limit: 1, skip: 1);
+    True(newestPage.Success && newestPage.Report is { HasMore: true, Entries.Count: 2 }
+          && newestPage.Report.Entries[^1].Sha == childThreeSha,
+        "first page contains baseline plus newest commit");
+    True(olderPage.Success && olderPage.Report is { HasMore: true, Entries.Count: 2 }
+          && olderPage.Report.Entries[^1].Sha == childTwoSha,
+        "skip loads the next older page without losing baseline");
+
+    var detail = await service.GetCommitAsync(childBranch, childOneSha);
+    True(detail.Success && detail.Detail?.Files.Any(file => file.Path == "child.txt") == true,
+        "commit detail contains changed file");
+    var diff = await service.GetDiffAsync(childBranch, forkSha);
+    True(diff.Success && diff.Report is { CommitCount: 3, FileCount: > 0 },
+        "fork-to-head diff counts commits and files");
+
+    await File.WriteAllTextAsync(Path.Combine(child, "dirty.tmp"), "dirty");
+    var dirtyRollback = await service.RollbackAsync(childBranch, childOneSha, "must reject dirty");
+    True(!dirtyRollback.Success && dirtyRollback.Message.Contains("未跟踪"),
+        "dirty worktree rejected before rollback");
+    File.Delete(Path.Combine(child, "dirty.tmp"));
+
+    var emptyMessage = await service.RollbackAsync(childBranch, childOneSha, "   ");
+    True(!emptyMessage.Success && emptyMessage.Message.Contains("不能为空"),
+        "blank rollback message rejected");
+    var changedAfterConfirmation = await service.RollbackAsync(
+        childBranch, childOneSha, "stale confirmation", expectedHead: new string('0', 40));
+    True(!changedAfterConfirmation.Success && changedAfterConfirmation.Message.Contains("HEAD 已变化"),
+        "rollback rejects a head changed after confirmation");
+
+    var rollback = await service.RollbackAsync(childBranch, childOneSha, "restore child one");
+    True(rollback.Success && rollback.Changed && rollback.AfterSha != childThreeSha,
+        $"rollback commit created: {rollback.Message}");
+    Equal("child one\n", (await File.ReadAllTextAsync(Path.Combine(child, "child.txt")))
+            .Replace("\r\n", "\n", StringComparison.Ordinal),
+        "rollback restored target tree content");
+    var rollbackParents = await GitRunner.RunAsync(child, ["rev-list", "--first-parent", "--count",
+        $"{childThreeSha}..HEAD"]);
+    Ensure(rollbackParents, "count recovery commits");
+    Equal("1", rollbackParents.Output.Trim(), "rollback appended one commit");
+
+    var protectedReset = await service.ResetAsync(baseBranch, forkSha);
+    True(!protectedReset.Success && protectedReset.Message.Contains("受保护"),
+        "protected branch hard reset rejected");
+    var reset = await service.ResetAsync(childBranch, childThreeSha);
+    True(reset.Success && reset.Changed, $"local hard reset: {reset.Message}");
+    Equal(childThreeSha, Sha(await GitRunner.RunAsync(child, ["rev-parse", "HEAD"])),
+        "hard reset moved local head");
+    Equal(childTwoSha, Sha(await GitRunner.RunAsync(remote, ["rev-parse", $"refs/heads/{childBranch}"])),
+        "hard reset did not touch remote");
+
+    var staleLocalConfirmation = await service.ForcePushAsync(
+        childBranch, expectedLocal: new string('0', 40));
+    True(!staleLocalConfirmation.Success && staleLocalConfirmation.Message.Contains("本地 HEAD 已变化"),
+        "force push rejects local head changed after confirmation");
+    var forcePush = await service.ForcePushAsync(childBranch);
+    True(forcePush.Success, $"lease force push succeeded: {forcePush.Message}");
+    Equal(childThreeSha, Sha(await GitRunner.RunAsync(remote, ["rev-parse", $"refs/heads/{childBranch}"])),
+        "force-with-lease updated remote");
+    var protectedForcePush = await service.ForcePushAsync(baseBranch);
+    True(!protectedForcePush.Success && protectedForcePush.Message.Contains("受保护"),
+        "protected branch force push rejected");
+
+    var intruder = Path.Combine(root, "intruder");
+    Ensure(await GitRunner.RunAsync(root, ["clone", remote, intruder]), "clone intruder");
+    await ConfigureIdentity(intruder);
+    Ensure(await GitRunner.RunAsync(intruder, ["checkout", childBranch]), "checkout intruder branch");
+    await CommitFile(intruder, "intruder.txt", "remote changed\n", "remote competitor");
+    Ensure(await GitRunner.RunAsync(intruder, ["push", "origin", childBranch]), "push remote competitor");
+    var staleLease = await service.ForcePushAsync(childBranch);
+    True(!staleLease.Success && staleLease.Message.Contains("force-with-lease"),
+        "stale lease rejects remote overwrite");
+
+    var registry = new CommandRegistry();
+    BranchHistoryCommands.RegisterAll(registry, service, null!);
+    var commands = registry.All().ToDictionary(command => command.Name, StringComparer.OrdinalIgnoreCase);
+    True(commands.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals([
+        "proj.history", "proj.history.show", "proj.history.diff",
+        "proj.rollback", "proj.reset", "proj.forcepush",
+    ]), "V2.3 command catalog complete");
+    True(McpExposurePolicy.IsReadonlyAllowed("proj.history") &&
+         McpExposurePolicy.IsReadonlyAllowed("proj.history.show") &&
+         McpExposurePolicy.IsReadonlyAllowed("proj.history.diff"), "history reads are readonly MCP tools");
+    True(commands["proj.rollback"].ConfirmPrompt != null &&
+         commands["proj.reset"].ConfirmPrompt != null &&
+         commands["proj.forcepush"].ConfirmPrompt != null, "history writes are dangerous commands");
+
+    Console.WriteLine("V230Smoke: PASS");
+}
+catch (Exception ex)
+{
+    Console.Error.WriteLine(ex);
+    Environment.ExitCode = 1;
+}
+finally
+{
+    if (Directory.Exists(root))
+        DeleteTree(root);
+}
+Environment.Exit(Environment.ExitCode);
+
+static async Task ConfigureIdentity(string repository)
+{
+    Ensure(await GitRunner.RunAsync(repository, ["config", "user.name", "V230 Smoke"]), "git user name");
+    Ensure(await GitRunner.RunAsync(repository, ["config", "user.email", "v230@example.invalid"]),
+        "git user email");
+}
+
+static async Task CommitFile(string repository, string relativePath, string content, string message)
+{
+    await File.WriteAllTextAsync(Path.Combine(repository, relativePath), content);
+    Ensure(await GitRunner.RunAsync(repository, ["add", "--", relativePath]), $"add {relativePath}");
+    Ensure(await GitRunner.RunAsync(repository, ["commit", "-m", message]), $"commit {message}");
+}
+
+static string Sha(GitResult result)
+{
+    Ensure(result, "resolve sha");
+    return result.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries)[0].Trim();
+}
+
+static void Ensure(GitResult result, string name)
+{
+    if (!result.Success)
+        throw new InvalidOperationException($"FAIL: {name}\n{result.Output}");
+}
+
+static void True(bool condition, string name)
+{
+    if (!condition)
+        throw new InvalidOperationException($"FAIL: {name}");
+}
+
+static void Equal<T>(T expected, T actual, string name)
+{
+    if (!EqualityComparer<T>.Default.Equals(expected, actual))
+        throw new InvalidOperationException($"FAIL: {name}; expected={expected}, actual={actual}");
+}
+
+static void DeleteTree(string path)
+{
+    foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+        File.SetAttributes(file, FileAttributes.Normal);
+    Directory.Delete(path, recursive: true);
+}
+
+sealed class MemorySettings : ISettingsService
+{
+    private readonly Dictionary<string, string> _values = new(StringComparer.OrdinalIgnoreCase);
+
+    public string? Get(string key) => _values.GetValueOrDefault(key);
+    public int GetInt(string key, int fallback) => int.TryParse(Get(key), out var value) ? value : fallback;
+    public void Set(string key, string value) => _values[key] = value;
+    public IReadOnlyList<KeyValuePair<string, string>> All() => _values.ToList();
+}

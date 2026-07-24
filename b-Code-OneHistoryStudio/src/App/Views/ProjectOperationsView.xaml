@@ -1,0 +1,162 @@
+<UserControl x:Class="OneHistoryStudio.Views.ProjectOperationsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="White">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Bottom" x:Name="StatusText" Foreground="#555"
+                   Margin="0,6,0,0" Text="选择项目后管理文件格式规则" TextWrapping="Wrap" />
+
+        <GroupBox DockPanel.Dock="Top" Header="项目" Margin="0,0,0,8">
+            <Grid Margin="6">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="新项目名称:" Margin="0,0,6,6"
+                           VerticalAlignment="Center" />
+                <TextBox Grid.Row="0" Grid.Column="1" x:Name="NewProjectNameBox" Margin="0,0,0,6"
+                         VerticalContentAlignment="Center" TextChanged="OnNewProjectNameChanged" />
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="基础分支 / 当前项目:" Margin="0,0,6,6"
+                           VerticalAlignment="Center" />
+                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="CurrentProjectBox" IsEditable="True"
+                          Margin="0,0,0,6" SelectionChanged="OnProjectSelected" />
+                <WrapPanel Grid.Row="2" Grid.ColumnSpan="2">
+                    <Button x:Name="CreateProjectButton" Content="创建工作树" Padding="10,3"
+                            IsEnabled="False" Click="OnCreateClick" />
+                    <Button x:Name="OpenProjectButton" Content="打开所选项目" Padding="10,3"
+                            Margin="6,0,0,0" IsEnabled="False" Click="OnOpenClick" />
+                    <Button x:Name="RefreshProjectsButton" Content="刷新项目" Padding="10,3"
+                            Margin="6,0,0,0" Click="OnRefreshProjectsClick" />
+                </WrapPanel>
+            </Grid>
+        </GroupBox>
+
+        <GroupBox DockPanel.Dock="Top" Header="所选项目提交与推送" Margin="0,0,0,8">
+            <Grid Margin="6">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Row="0" Grid.ColumnSpan="2" x:Name="SelectedActionTitle"
+                           Text="当前未选择项目" FontWeight="SemiBold" Margin="0,0,0,6"
+                           TextWrapping="Wrap" />
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="提交描述:" Margin="0,0,6,6"
+                           VerticalAlignment="Center" />
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="SelectedCommitMessageBox"
+                         Margin="0,0,0,6" VerticalContentAlignment="Center"
+                         TextChanged="OnCommitMessageChanged" />
+                <WrapPanel Grid.Row="2" Grid.ColumnSpan="2">
+                    <Button x:Name="SelectedCommitButton" Content="提交到本地仓库" Padding="10,3"
+                            IsEnabled="False" Click="OnCommitSelectedClick" />
+                    <Button x:Name="SelectedPushButton" Content="推送到 GitHub" Padding="10,3"
+                            Margin="6,0,0,0" IsEnabled="False" Click="OnPushSelectedClick" />
+                </WrapPanel>
+            </Grid>
+        </GroupBox>
+
+        <DockPanel x:Name="RulePanel" IsEnabled="False">
+            <TextBlock DockPanel.Dock="Top" x:Name="RuleTitle" FontWeight="SemiBold"
+                       Text="Git 文件规则" Margin="0,0,0,6" TextWrapping="Wrap" />
+            <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" x:Name="PatternBox" Text="*.xlsx"
+                         VerticalContentAlignment="Center"
+                         ToolTip="文件格式如 *.xlsx；目录规则以 / 结尾如 Library/（只用于忽略）" />
+                <Button Grid.Column="1" Content="添加格式/目录" Padding="10,3" Margin="6,0,0,0"
+                        Click="OnAddRuleClick" />
+            </Grid>
+
+            <!-- V2.2.2:选择项目自动加载全格式台账;按钮强制刷新缓存 -->
+            <Border DockPanel.Dock="Top" Background="#F7F7F7" BorderBrush="#DDD" BorderThickness="1"
+                    Padding="6" Margin="0,0,0,6">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" x:Name="CoverageText" Foreground="#555"
+                               Margin="0,0,0,6" TextWrapping="Wrap"
+                               Text="格式覆盖：选择项目后自动读取全部文件格式" />
+                    <WrapPanel>
+                        <Button x:Name="ScanCoverageButton" Content="扫描覆盖" Padding="10,3"
+                                Click="OnScanCoverageClick" />
+                        <Button x:Name="ShowGapsButton" Content="查看未决" Padding="10,3" Margin="6,0,0,0"
+                                Click="OnShowGapsClick" />
+                        <Button x:Name="SuggestButton" Content="规则建议" Padding="10,3" Margin="6,0,0,0"
+                                Click="OnSuggestClick" />
+                        <Button x:Name="SyncBaselineButton" Content="同步模板基线（预览）" Padding="10,3"
+                                Margin="6,0,0,0" Click="OnSyncBaselineClick" />
+                    </WrapPanel>
+                </DockPanel>
+            </Border>
+            <WrapPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
+                <Button x:Name="SaveRuleButton" Content="保存所选" Padding="10,3"
+                        IsEnabled="False" Click="OnSaveRuleClick" />
+                <Button x:Name="DeleteRuleButton" Content="删除规则" Padding="10,3" Margin="6,0,0,0"
+                        IsEnabled="False" Click="OnDeleteRuleClick" />
+                <Button Content="重新读取" Padding="10,3" Margin="6,0,0,0" Click="OnReloadRulesClick" />
+            </WrapPanel>
+
+            <DataGrid x:Name="RuleGrid" AutoGenerateColumns="False" CanUserAddRows="False"
+                      CanUserDeleteRows="False" SelectionMode="Single" SelectionUnit="FullRow"
+                      SelectionChanged="OnRuleSelected" HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal" HorizontalScrollBarVisibility="Auto">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="格式 / Pattern" Width="125" Binding="{Binding Pattern}" IsReadOnly="True" />
+                    <DataGridTextColumn Header="来源" Width="95" Binding="{Binding Source}" IsReadOnly="True" />
+                    <DataGridTextColumn Header="文件" Width="50" Binding="{Binding FileCount}" IsReadOnly="True" />
+                    <DataGridCheckBoxColumn Header="Git" Width="50" IsThreeState="True"
+                                            Binding="{Binding Track, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <DataGridCheckBoxColumn.ElementStyle>
+                            <Style TargetType="CheckBox">
+                                <Setter Property="IsEnabled" Value="{Binding CanEdit}" />
+                            </Style>
+                        </DataGridCheckBoxColumn.ElementStyle>
+                        <DataGridCheckBoxColumn.EditingElementStyle>
+                            <Style TargetType="CheckBox">
+                                <Setter Property="IsEnabled" Value="{Binding CanEdit}" />
+                            </Style>
+                        </DataGridCheckBoxColumn.EditingElementStyle>
+                    </DataGridCheckBoxColumn>
+                    <DataGridCheckBoxColumn Header="LFS 指针" Width="70" IsThreeState="True"
+                                            Binding="{Binding Lfs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <DataGridCheckBoxColumn.ElementStyle>
+                            <Style TargetType="CheckBox">
+                                <Setter Property="IsEnabled" Value="{Binding CanEditAttributes}" />
+                            </Style>
+                        </DataGridCheckBoxColumn.ElementStyle>
+                        <DataGridCheckBoxColumn.EditingElementStyle>
+                            <Style TargetType="CheckBox">
+                                <Setter Property="IsEnabled" Value="{Binding CanEditAttributes}" />
+                            </Style>
+                        </DataGridCheckBoxColumn.EditingElementStyle>
+                    </DataGridCheckBoxColumn>
+                    <DataGridCheckBoxColumn Header="LF 文本" Width="65" IsThreeState="True"
+                                            Binding="{Binding Lf, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <DataGridCheckBoxColumn.ElementStyle>
+                            <Style TargetType="CheckBox">
+                                <Setter Property="IsEnabled" Value="{Binding CanEditAttributes}" />
+                            </Style>
+                        </DataGridCheckBoxColumn.ElementStyle>
+                        <DataGridCheckBoxColumn.EditingElementStyle>
+                            <Style TargetType="CheckBox">
+                                <Setter Property="IsEnabled" Value="{Binding CanEditAttributes}" />
+                            </Style>
+                        </DataGridCheckBoxColumn.EditingElementStyle>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Header="存储结果" Width="220" Binding="{Binding StorageResult}" IsReadOnly="True" />
+                    <DataGridTextColumn Header="当前状态" Width="280" Binding="{Binding Status}" IsReadOnly="True" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+    </DockPanel>
+</UserControl>

@@ -26,11 +26,14 @@ public static class ModulePanelSync
         {
             Directory.CreateDirectory(panelsDir);
 
-            // 1. 现存模块旁面板 → 复制/更新副本
+            // 1. 现存模块旁面板 → 复制/更新副本(根目录 + 一层模块槽,V2.2 MH-04)
             var wanted = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (Directory.Exists(modulesDir))
             {
-                foreach (var source in Directory.EnumerateFiles(modulesDir, "*.panel.json"))
+                var sources = Directory.EnumerateFiles(modulesDir, "*.panel.json")
+                    .Concat(Directory.EnumerateDirectories(modulesDir)
+                        .SelectMany(d => Directory.EnumerateFiles(d, "*.panel.json")));
+                foreach (var source in sources)
                 {
                     var moduleName = Path.GetFileName(source)[..^".panel.json".Length];
                     if (moduleName.Length == 0)

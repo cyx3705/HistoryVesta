@@ -522,7 +522,7 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Administrator\\.nuget\\packages\\": {},
+    "C:\\Users\\CodexSandboxOffline\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
@@ -531,7 +531,7 @@
       "projectUniqueName": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\AppShell.Shell\\AppShell.Shell.csproj",
       "projectName": "AppShell.Shell",
       "projectPath": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\AppShell.Shell\\AppShell.Shell.csproj",
-      "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
+      "packagesPath": "C:\\Users\\CodexSandboxOffline\\.nuget\\packages\\",
       "outputPath": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\AppShell.Shell\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
@@ -568,7 +568,7 @@
         ]
       },
       "restoreAuditProperties": {
-        "enableAudit": "true",
+        "enableAudit": "false",
         "auditLevel": "low",
         "auditMode": "direct"
       },

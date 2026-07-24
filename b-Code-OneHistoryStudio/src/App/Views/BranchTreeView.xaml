@@ -13,7 +13,18 @@
             <TextBlock x:Name="TreeStatus" VerticalAlignment="Center" Margin="12,0,0,0"
                        Foreground="#888" Text="启动时自动加载缓存;树有变化点「重新扫描」" />
         </StackPanel>
-        <TreeView x:Name="BranchTree" BorderThickness="1">
+        <TreeView x:Name="BranchTree" BorderThickness="1"
+                  SelectedItemChanged="OnBranchSelected"
+                  PreviewMouseRightButtonDown="OnTreePreviewMouseRightButtonDown">
+            <TreeView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="查看分支历史" Click="OnViewHistoryClick" />
+                    <MenuItem Header="选择回滚节点..." Click="OnChooseRollbackClick" />
+                    <Separator />
+                    <MenuItem Header="打开项目" Click="OnOpenProjectClick" />
+                    <MenuItem Header="复制分支名" Click="OnCopyBranchClick" />
+                </ContextMenu>
+            </TreeView.ContextMenu>
             <TreeView.ItemContainerStyle>
                 <Style TargetType="TreeViewItem">
                     <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />

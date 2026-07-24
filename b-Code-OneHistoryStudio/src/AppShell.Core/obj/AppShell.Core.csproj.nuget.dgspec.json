@@ -10,7 +10,7 @@
         "projectUniqueName": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\AppShell.Core\\AppShell.Core.csproj",
         "projectName": "AppShell.Core",
         "projectPath": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\AppShell.Core\\AppShell.Core.csproj",
-        "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
+        "packagesPath": "C:\\Users\\CodexSandboxOffline\\.nuget\\packages\\",
         "outputPath": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\AppShell.Core\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
@@ -40,7 +40,7 @@
           ]
         },
         "restoreAuditProperties": {
-          "enableAudit": "true",
+          "enableAudit": "false",
           "auditLevel": "low",
           "auditMode": "direct"
         },

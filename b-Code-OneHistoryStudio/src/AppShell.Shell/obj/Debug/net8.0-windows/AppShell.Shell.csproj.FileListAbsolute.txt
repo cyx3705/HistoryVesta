@@ -25,7 +25,6 @@ C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Debug\net8.0-windows\AppShell.Shell.AssemblyInfoInputs.cache
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Debug\net8.0-windows\AppShell.Shell.AssemblyInfo.cs
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Debug\net8.0-windows\AppShell.Shell.csproj.CoreCompileInputs.cache
-C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Debug\net8.0-windows\AppShell.Shell.sourcelink.json
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Debug\net8.0-windows\AppShell.8067C3EA.Up2Date
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Debug\net8.0-windows\AppShell.Shell.dll
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Debug\net8.0-windows\refint\AppShell.Shell.dll

@@ -431,18 +431,15 @@ public static class BuiltinCommands
     {
         var all = registry.All();
         var sb = new StringBuilder($"共 {all.Count} 条指令,help <指令名> 查看详情:");
-        string? lastDomain = null;
-        foreach (var d in all)
+        foreach (var group in all.GroupBy(d =>
+                 {
+                     var dot = d.Name.IndexOf('.');
+                     return dot > 0 ? d.Name[..dot] : "基础";
+                 }, StringComparer.OrdinalIgnoreCase))
         {
-            var dot = d.Name.IndexOf('.');
-            var domain = dot > 0 ? d.Name[..dot] : "基础";
-            if (domain != lastDomain)
-            {
-                sb.Append($"\n[{domain}]");
-                lastDomain = domain;
-            }
-
-            sb.Append($"\n  {d.Name,-16} {d.Summary}");
+            sb.Append($"\n[{group.Key}] ({group.Count()})");
+            foreach (var d in group)
+                sb.Append($"\n  {d.Name,-24} {d.Summary}");
         }
 
         return CommandResult.Ok(sb.ToString());
@@ -475,6 +472,7 @@ public static class BuiltinCommands
                     attrs.Add(string.Join("/", p.AllowedValues));
                 if (p.Default != null)
                     attrs.Add($"默认{p.Default}");
+                attrs.Add(p.Type.ToString().ToLowerInvariant());
                 var suffix = attrs.Count > 0 ? $"({string.Join(",", attrs)})" : "";
                 sb.Append($"\n  {p.Name + suffix,-28} {p.Description}");
             }
@@ -483,6 +481,10 @@ public static class BuiltinCommands
         sb.Append($"\n{CommandBus.FormatUsage(d)}");
         if (d.Example != null)
             sb.Append($"\n示例: {d.Example}");
+        if (d.ConfirmPrompt != null)
+            sb.Append("\n安全: 执行动作可能要求本地二次确认");
+        if (d.RequiresUiThread)
+            sb.Append("\n线程: UI");
         return CommandResult.Ok(sb.ToString());
     }
 

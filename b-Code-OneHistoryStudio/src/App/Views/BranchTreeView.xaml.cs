@@ -1,4 +1,7 @@
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using AppShell.Core.Commands;
 using OneHistoryStudio.Git;
 
@@ -13,22 +16,15 @@ namespace OneHistoryStudio.Views;
 public partial class BranchTreeView : UserControl
 {
     private readonly Func<CommandBus?> _busAccessor;
-    private bool _initialLoadDone;
+    private readonly ProjectSelectionState _selection;
 
-    public BranchTreeView(Func<CommandBus?> busAccessor)
+    public BranchTreeView(Func<CommandBus?> busAccessor, ProjectSelectionState selection)
     {
         InitializeComponent();
         _busAccessor = busAccessor;
-
-        // Loaded 在停靠重排时会反复触发,首次加载只做一次;
+        _selection = selection;
         // cached=true 保证无缓存时不会在启动期触发一次全量扫描
-        Loaded += async (_, _) =>
-        {
-            if (_initialLoadDone)
-                return;
-            _initialLoadDone = true;
-            await LoadTreeAsync("proj.tree cached=true");
-        };
+        ViewKit.RunOnceOnLoaded(this, () => LoadTreeAsync("proj.tree cached=true"));
     }
 
     private async void OnRescanClick(object sender, System.Windows.RoutedEventArgs e)
@@ -96,5 +92,64 @@ public partial class BranchTreeView : UserControl
         node.IsExpanded = expanded;
         foreach (var child in node.Children)
             ExpandRecursive(child, expanded);
+    }
+
+    private void OnBranchSelected(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        if (e.NewValue is ProjectService.BranchNode node)
+            _selection.CurrentProjectName = node.BranchName;
+    }
+
+    private void OnTreePreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        var item = FindAncestor<TreeViewItem>(e.OriginalSource as DependencyObject);
+        if (item != null)
+        {
+            item.IsSelected = true;
+            item.Focus();
+        }
+    }
+
+    private async void OnViewHistoryClick(object sender, RoutedEventArgs e)
+        => await ShowHistoryAsync("已在分支历史窗口显示所选项目");
+
+    private async void OnChooseRollbackClick(object sender, RoutedEventArgs e)
+        => await ShowHistoryAsync("请在分支历史表选择目标节点，再执行恢复或硬重置");
+
+    private async Task ShowHistoryAsync(string status)
+    {
+        if (BranchTree.SelectedItem is not ProjectService.BranchNode node || _busAccessor() is not { } bus)
+            return;
+        _selection.CurrentProjectName = node.BranchName;
+        var result = await bus.ExecuteAsync("win.show name=history", "UI");
+        TreeStatus.Text = result.Success ? status : ViewKit.ResultSummary(result);
+    }
+
+    private async void OnOpenProjectClick(object sender, RoutedEventArgs e)
+    {
+        if (BranchTree.SelectedItem is not ProjectService.BranchNode node || _busAccessor() is not { } bus)
+            return;
+        var result = await bus.ExecuteAsync(
+            $"proj.open name={CommandParser.QuoteArg(node.BranchName)}", "UI");
+        TreeStatus.Text = ViewKit.ResultSummary(result);
+    }
+
+    private void OnCopyBranchClick(object sender, RoutedEventArgs e)
+    {
+        if (BranchTree.SelectedItem is not ProjectService.BranchNode node)
+            return;
+        Clipboard.SetText(node.BranchName);
+        TreeStatus.Text = $"已复制分支名 {node.BranchName}";
+    }
+
+    private static T? FindAncestor<T>(DependencyObject? source) where T : DependencyObject
+    {
+        while (source != null)
+        {
+            if (source is T match)
+                return match;
+            source = VisualTreeHelper.GetParent(source);
+        }
+        return null;
     }
 }

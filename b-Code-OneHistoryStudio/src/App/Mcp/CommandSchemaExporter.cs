@@ -32,8 +32,8 @@ public sealed partial class CommandSchemaExporter
     public CommandSchemaExporter(CommandRegistry registry) => _registry = registry;
 
     /// <summary>
-    /// 提示词覆盖提供者(V2.1.1,装配点接 HistoryRecorder.AllMcpDescriptions):
-    /// 覆盖在导出读取侧合成——mcp.desc 保存后,客户端下次 tools/list 即见新提示词,无需重启。
+    /// 生效提示词提供者(V2.1.2,装配点接 PromptGovernanceStore.AllEffectiveDescriptions):
+    /// 修订在导出读取侧合成，应用后客户端下次 tools/list 即见新描述，无需重启。
     /// </summary>
     public Func<IReadOnlyDictionary<string, string>>? DescriptionsProvider { get; set; }
 
@@ -43,9 +43,10 @@ public sealed partial class CommandSchemaExporter
     /// mcp.*(防远端自锁与递归启停)。代码内常量,不走配置。
     /// </summary>
     public static bool IsHardExcluded(string commandName)
-        => commandName.Equals("app.exit", StringComparison.OrdinalIgnoreCase)
-           || commandName.StartsWith("debug.", StringComparison.OrdinalIgnoreCase)
-           || commandName.StartsWith("mcp.", StringComparison.OrdinalIgnoreCase);
+        => McpExposurePolicy.HardExclusionReason(commandName) != null;
+
+    public static string? HardExclusionReason(string commandName)
+        => McpExposurePolicy.HardExclusionReason(commandName);
 
     /// <summary>全量导出(MC-01):注册表指令 − 硬排除,含危险标记与提示词覆盖;调用即现算。</summary>
     public IReadOnlyList<McpToolInfo> ExportTools()

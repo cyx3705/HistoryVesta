@@ -5,14 +5,14 @@ namespace AppShell.Core.Commands;
 
 /// <summary>
 /// 指令语法解析(§5.1,Q12 已定稿):
-/// <code>域.动作 [位置参数 ...] [键=值 ...]</code>
+/// <code>域.动作[.子动作 ...] [位置参数 ...] [键=值 ...]</code>
 /// - 指令名大小写不敏感;参数值保留原始大小写
 /// - 含空格的值用双引号包裹,内部引号以 \" 转义(\\ 表示反斜杠本身)
 /// - # 开头整行为注释;空行忽略
 /// </summary>
 public static partial class CommandParser
 {
-    [GeneratedRegex(@"^[A-Za-z_][\w-]*(\.[A-Za-z_][\w-]*)?$")]
+    [GeneratedRegex(@"^[A-Za-z_][\w-]*(\.[A-Za-z_][\w-]*)*$")]
     private static partial Regex NamePattern();
 
     [GeneratedRegex(@"^[A-Za-z_][\w-]*$")]

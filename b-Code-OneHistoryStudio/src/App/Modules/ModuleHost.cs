@@ -11,7 +11,7 @@ namespace OneHistoryStudio.Modules;
 
 public sealed record ModuleMeta(
     string ModuleName, string Description, string Author, string Version,
-    bool Open, string AssemblyFile, int CommandCount);
+    bool Open, string AssemblyFile, int CommandCount, string Slot = "");
 
 /// <summary>
 /// 模块宿主(MD-01~07):进程内移植自 b-Code-MyAPI-Lite 的 ModuleHost/Invoker 机制(D3)。
@@ -74,6 +74,7 @@ public sealed class ModuleHost : IDisposable
         {
             NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName
                            | NotifyFilters.Size | NotifyFilters.CreationTime,
+            IncludeSubdirectories = true, // V2.2 MH-03:模块槽子目录同样触发热重载
         };
         _watcher.Created += (_, e) => OnFileEvent(e.Name);
         _watcher.Changed += (_, e) => OnFileEvent(e.Name);
@@ -127,7 +128,8 @@ public sealed class ModuleHost : IDisposable
 
             var old = _current;
             _current = next;
-            old.Alc?.Unload();
+            foreach (var alc in old.Contexts)
+                alc.Unload();
 
             _log.Info("module",
                 $"模块装载完成: {next.Modules.Count} 个模块,{next.RegisteredNames.Count} 条指令");
@@ -150,7 +152,7 @@ public sealed class ModuleHost : IDisposable
         {
             try
             {
-                _registry.Register(descriptor);
+                _registry.Register(descriptor, $"module:{moduleName}");
                 next.RegisteredNames.Add(descriptor.Name);
                 next.CountCommand(moduleName);
             }
@@ -169,28 +171,42 @@ public sealed class ModuleHost : IDisposable
     private Snapshot Build()
     {
         var snap = new Snapshot();
-        var dlls = Directory.Exists(_dir) ? Directory.GetFiles(_dir, "*.dll") : Array.Empty<string>();
-        if (dlls.Length == 0)
+        if (!Directory.Exists(_dir))
             return snap;
 
-        var alc = new ModuleLoadContext(_dir);
-        snap.Alc = alc;
+        // 根目录平铺 DLL(V2-M3 既有行为):共享一个 ALC
+        LoadGroup(snap, _dir, slot: "");
+
+        // 模块槽(V2.2 MH-01):每个一级子目录一个独立可回收 ALC,
+        // 槽内依赖只在槽内解析(MH-02),槽间同名依赖不同版互不冲突
+        foreach (var slotDir in Directory.GetDirectories(_dir))
+            LoadGroup(snap, slotDir, Path.GetFileName(slotDir));
+
+        return snap;
+    }
+
+    private void LoadGroup(Snapshot snap, string dir, string slot)
+    {
+        var dlls = Directory.GetFiles(dir, "*.dll");
+        if (dlls.Length == 0)
+            return;
+
+        var alc = new ModuleLoadContext(dir);
+        snap.Contexts.Add(alc);
 
         foreach (var dll in dlls)
         {
             try
             {
                 var asm = LoadAssembly(alc, dll);
-                ScanAssembly(snap, asm, dll);
+                ScanAssembly(snap, asm, dll, slot);
             }
             catch (Exception ex)
             {
                 // MD-06:坏 DLL 只自身下线并告警,不影响宿主与其他模块
-                _log.Warn("module", $"跳过 {Path.GetFileName(dll)}: {ex.Message}");
+                _log.Warn("module", $"跳过 {(slot.Length > 0 ? slot + "/" : "")}{Path.GetFileName(dll)}: {ex.Message}");
             }
         }
-
-        return snap;
     }
 
     private static Assembly LoadAssembly(ModuleLoadContext alc, string dll)
@@ -206,7 +222,7 @@ public sealed class ModuleHost : IDisposable
         }
     }
 
-    private void ScanAssembly(Snapshot snap, Assembly asm, string dllPath)
+    private void ScanAssembly(Snapshot snap, Assembly asm, string dllPath, string slot)
     {
         var fileName = Path.GetFileName(dllPath);
 
@@ -249,7 +265,7 @@ public sealed class ModuleHost : IDisposable
                 GetProp(info, "Description") as string ?? "",
                 GetProp(info, "Author") as string ?? "",
                 GetProp(info, "Version") as string ?? "",
-                open, fileName));
+                open, fileName, slot));
 
             if (open)
             {
@@ -264,7 +280,8 @@ public sealed class ModuleHost : IDisposable
             }
 
             _log.Info("module",
-                $"✓ 模块 {moduleName} {GetProp(info, "Version")} ({(open ? "全暴露" : "精准暴露")}) ← {fileName}");
+                $"✓ 模块 {moduleName} {GetProp(info, "Version")} ({(open ? "全暴露" : "精准暴露")}) " +
+                $"← {(slot.Length > 0 ? slot + "/" : "")}{fileName}");
         }
     }
 
@@ -477,12 +494,13 @@ public sealed class ModuleHost : IDisposable
 
     // ---------------------------------------------------------------- 快照与加载上下文
 
-    /// <summary>一次加载的不可变快照:可卸载 ALC + 指令表 + 单例缓存。热重载整体替换。</summary>
+    /// <summary>一次加载的不可变快照:可卸载 ALC 组(根 + 每槽一个) + 指令表 + 单例缓存。热重载整体替换。</summary>
     private sealed class Snapshot
     {
         public static readonly Snapshot Empty = new();
 
-        public AssemblyLoadContext? Alc;
+        /// <summary>本快照持有的全部加载上下文(MH-01:根平铺一个 + 每模块槽一个)。</summary>
+        public List<AssemblyLoadContext> Contexts { get; } = new();
 
         /// <summary>扫描出的待注册指令(注册在 UI 线程完成,冲突者被剔除)。</summary>
         public List<(CommandDescriptor Descriptor, string ModuleName)> PendingCommands { get; } = new();
@@ -491,7 +509,7 @@ public sealed class ModuleHost : IDisposable
         public List<string> RegisteredNames { get; } = new();
 
         /// <summary>模块元信息(module.list);CommandCount 在注册完成后定稿。</summary>
-        public List<(string Name, string Desc, string Author, string Version, bool Open, string File)> Metas { get; } = new();
+        public List<(string Name, string Desc, string Author, string Version, bool Open, string File, string Slot)> Metas { get; } = new();
 
         public List<ModuleMeta> Modules { get; } = new();
 
@@ -506,9 +524,9 @@ public sealed class ModuleHost : IDisposable
         public void FinalizeMetas()
         {
             Modules.Clear();
-            foreach (var (name, desc, author, version, open, file) in Metas)
+            foreach (var (name, desc, author, version, open, file, slot) in Metas)
                 Modules.Add(new ModuleMeta(name, desc, author, version, open, file,
-                    _commandCounts.GetValueOrDefault(name)));
+                    _commandCounts.GetValueOrDefault(name), slot));
         }
     }
 

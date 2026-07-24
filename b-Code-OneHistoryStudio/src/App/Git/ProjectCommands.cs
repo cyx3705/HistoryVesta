@@ -11,23 +11,36 @@ namespace OneHistoryStudio.Git;
 /// </summary>
 public static class ProjectCommands
 {
-    public static void RegisterAll(CommandRegistry registry, ProjectService projects, HistoryRecorder history)
+    /// <summary>proj.commit / proj.commitall 共用的单项目提交留痕(R4:结果映射唯一实现)。</summary>
+    private static void RecordCommit(HistoryRecorder history, string branch, string msg, CommitReport report)
+        => history.Record(branch, "commit", msg,
+            report.Outcome switch
+            {
+                CommitOutcome.Success => "成功",
+                CommitOutcome.Skipped => "跳过",
+                CommitOutcome.Rejected => "拒绝",
+                _ => "失败",
+            },
+            (report.HasSizeWarning ? 1 : 0) + (report.RejectedFiles?.Count ?? 0));
+
+    public static void RegisterAll(
+        CommandRegistry registry, ProjectService projects, HistoryRecorder history, string source = "app")
     {
-        registry.Register(BuildList(projects));
-        registry.Register(BuildCreate(projects, history));
-        registry.Register(BuildDelete(projects, history));
-        registry.Register(BuildTree(projects));
-        registry.Register(BuildCommit(projects, history));
-        registry.Register(BuildPush(projects, history));
-        registry.Register(BuildCommitAll(projects, history));
-        registry.Register(BuildPushAll(projects, history));
-        registry.Register(BuildOpen(projects));
-        registry.Register(BuildScan(projects));
-        registry.Register(BuildRepair(projects, history));
-        registry.Register(BuildConfig(projects));
-        registry.Register(BuildNote(projects, history));
-        registry.Register(BuildMetaList(projects));
-        registry.Register(BuildMetaOpen(projects));
+        registry.Register(BuildList(projects), source);
+        registry.Register(BuildCreate(projects, history), source);
+        registry.Register(BuildDelete(projects, history), source);
+        registry.Register(BuildTree(projects), source);
+        registry.Register(BuildCommit(projects, history), source);
+        registry.Register(BuildPush(projects, history), source);
+        registry.Register(BuildCommitAll(projects, history), source);
+        registry.Register(BuildPushAll(projects, history), source);
+        registry.Register(BuildOpen(projects), source);
+        registry.Register(BuildScan(projects), source);
+        registry.Register(BuildRepair(projects, history), source);
+        registry.Register(BuildConfig(projects), source);
+        registry.Register(BuildNote(projects, history), source);
+        registry.Register(BuildMetaList(projects), source);
+        registry.Register(BuildMetaOpen(projects), source);
     }
 
     // ---------------------------------------------------------------- proj.list(PJ-01)
@@ -207,15 +220,7 @@ public static class ProjectCommands
             var name = ctx.RequireString("name");
             var msg = ctx.RequireString("msg");
             var report = await projects.CommitAsync(name, msg, ctx.Progress);
-            history.Record(name, "commit", msg,
-                report.Outcome switch
-                {
-                    CommitOutcome.Success => "成功",
-                    CommitOutcome.Skipped => "跳过",
-                    CommitOutcome.Rejected => "拒绝",
-                    _ => "失败",
-                },
-                (report.HasSizeWarning ? 1 : 0) + (report.RejectedFiles?.Count ?? 0));
+            RecordCommit(history, name, msg, report);
             return report.Outcome switch
             {
                 CommitOutcome.Success => CommandResult.Ok(
@@ -279,15 +284,7 @@ public static class ProjectCommands
         {
             var msg = ctx.RequireString("msg");
             var (success, message) = await projects.CommitAllAsync(msg, ctx.Progress,
-                (branch, report) => history.Record(branch, "commit", msg,
-                    report.Outcome switch
-                    {
-                        CommitOutcome.Success => "成功",
-                        CommitOutcome.Skipped => "跳过",
-                        CommitOutcome.Rejected => "拒绝",
-                        _ => "失败",
-                    },
-                    (report.HasSizeWarning ? 1 : 0) + (report.RejectedFiles?.Count ?? 0)));
+                (branch, report) => RecordCommit(history, branch, msg, report));
             history.Record("(全部)", "commitall", msg, success ? "成功" : "失败");
             return success ? CommandResult.Ok(message) : CommandResult.Fail(message);
         },

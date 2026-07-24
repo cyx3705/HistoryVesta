@@ -12,19 +12,12 @@ namespace OneHistoryStudio.Views;
 public partial class ModulesView : UserControl
 {
     private readonly Func<CommandBus?> _busAccessor;
-    private bool _initialLoadDone;
 
     public ModulesView(Func<CommandBus?> busAccessor)
     {
         InitializeComponent();
         _busAccessor = busAccessor;
-        Loaded += async (_, _) =>
-        {
-            if (_initialLoadDone)
-                return;
-            _initialLoadDone = true;
-            await RefreshAsync();
-        };
+        ViewKit.RunOnceOnLoaded(this, RefreshAsync);
     }
 
     public sealed record ModuleRow(
@@ -47,6 +40,36 @@ public partial class ModulesView : UserControl
 
     private void OnOpenDirClick(object sender, System.Windows.RoutedEventArgs e)
         => _ = _busAccessor()?.ExecuteAsync("module.open", "UI");
+
+    // ---------------------------------------------------------------- V2.2.1 补做 A220-8:飞轮入口
+
+    private void OnToolScanClick(object sender, System.Windows.RoutedEventArgs e)
+        => _ = _busAccessor()?.ExecuteAsync("tool.scan", "UI");
+
+    private async void OnToolSyncClick(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (_busAccessor() is not { } bus)
+            return;
+        ToolSyncButton.IsEnabled = false;
+        try
+        {
+            await bus.ExecuteAsync("tool.sync all=true", "UI");
+            await RefreshAsync();
+        }
+        finally
+        {
+            ToolSyncButton.IsEnabled = true;
+        }
+    }
+
+    /// <summary>移除所选模块(tool.remove 自带确认闸口;非同步来源的模块不在溯源中会被指令拒绝)。</summary>
+    private async void OnToolRemoveClick(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (_busAccessor() is not { } bus || ModuleList.SelectedItem is not ModuleRow row)
+            return;
+        await bus.ExecuteAsync($"tool.remove name={CommandParser.QuoteArg(row.ModuleName)}", "UI");
+        await RefreshAsync();
+    }
 
     private async Task RefreshAsync()
     {
@@ -90,8 +113,11 @@ public partial class ModulesView : UserControl
         {
             CommandList.ItemsSource = null;
             CommandsTitle.Text = "(选中模块查看其注册的指令)";
+            ToolRemoveButton.IsEnabled = false;
             return;
         }
+
+        ToolRemoveButton.IsEnabled = true;
 
         // 注册表只读展示:该模块域下的全部指令(域名 = 模块名)
         var registry = _busAccessor()?.Registry;

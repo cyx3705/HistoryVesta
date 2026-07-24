@@ -3,58 +3,68 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="White">
     <DockPanel Margin="8">
-        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-            <Button x:Name="RefreshButton" DockPanel.Dock="Right" Content="刷新"
-                    Padding="12,3" Margin="8,0,0,0" Click="OnRefreshClick" />
-            <Button DockPanel.Dock="Right" Content="服务状态"
-                    Padding="12,3" Margin="8,0,0,0" Click="OnStatusClick" />
-            <TextBlock Text="搜索:" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="#666" />
-            <TextBox x:Name="SearchBox" VerticalContentAlignment="Center" TextChanged="OnSearchChanged" />
-        </DockPanel>
-        <TextBlock DockPanel.Dock="Bottom" x:Name="StatusText" Foreground="#888" Margin="0,6,0,0"
-                   Text="提示词保存后,MCP 客户端下次 tools/list 即生效" />
-
-        <Grid>
+        <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="5*" />
-                <ColumnDefinition Width="8" />
-                <ColumnDefinition Width="4*" MinWidth="260" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="150" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="135" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="120" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-
-            <ListView x:Name="ToolList" Grid.Column="0" SelectionChanged="OnToolSelected">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn Header="工具名" Width="180"
-                                        DisplayMemberBinding="{Binding ToolName}" />
-                        <GridViewColumn Header="指令" Width="150"
-                                        DisplayMemberBinding="{Binding CommandName}" />
-                        <GridViewColumn Header="标记" Width="130"
-                                        DisplayMemberBinding="{Binding Tags}" />
-                        <GridViewColumn Header="当前提示词" Width="360"
-                                        DisplayMemberBinding="{Binding FirstLine}" />
-                    </GridView>
-                </ListView.View>
-            </ListView>
-
-            <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Background="#EEE" />
-
-            <DockPanel Grid.Column="2" Margin="4,0,0,0">
-                <TextBlock DockPanel.Dock="Top" x:Name="DetailTitle" FontWeight="SemiBold"
-                           Text="(选中左侧工具查看/编辑提示词)" Margin="0,0,0,6" TextWrapping="Wrap" />
-                <TextBlock DockPanel.Dock="Top" Text="指令自带说明:" Foreground="#888" FontSize="11" />
-                <TextBox DockPanel.Dock="Top" x:Name="DefaultDescBox" IsReadOnly="True"
-                         Foreground="#888" Background="#FAFAFA" TextWrapping="Wrap"
-                         MaxHeight="72" VerticalScrollBarVisibility="Auto" Margin="0,2,0,8" />
-                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
-                    <Button x:Name="SaveButton" Content="保存 (mcp.desc)" Padding="12,3"
-                            IsEnabled="False" Click="OnSaveClick" />
-                    <Button x:Name="ResetButton" Content="恢复默认" Padding="12,3" Margin="8,0,0,0"
-                            IsEnabled="False" Click="OnResetClick" />
-                </StackPanel>
-                <TextBlock DockPanel.Dock="Top" Text="生效提示词(可编辑):" Foreground="#666" FontSize="11" />
-                <TextBox x:Name="DescBox" AcceptsReturn="True" TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Auto" IsEnabled="False" Margin="0,2,0,0" />
-            </DockPanel>
+            <TextBlock Grid.Column="0" Text="搜索:" VerticalAlignment="Center" Margin="0,0,6,0" />
+            <TextBox Grid.Column="1" x:Name="SearchBox" TextChanged="OnFilterChanged"
+                     VerticalContentAlignment="Center" MinWidth="120" />
+            <TextBlock Grid.Column="2" Text="域:" VerticalAlignment="Center" Margin="10,0,6,0" />
+            <ComboBox Grid.Column="3" x:Name="DomainFilterBox" SelectionChanged="OnFilterChanged"
+                      VerticalContentAlignment="Center" />
+            <TextBlock Grid.Column="4" Text="MCP:" VerticalAlignment="Center" Margin="10,0,6,0" />
+            <ComboBox Grid.Column="5" x:Name="McpFilterBox" SelectionChanged="OnFilterChanged" SelectedIndex="0">
+                <ComboBoxItem Content="全部" />
+                <ComboBoxItem Content="当前可见" />
+                <ComboBoxItem Content="当前隐藏" />
+                <ComboBoxItem Content="硬排除" />
+                <ComboBoxItem Content="危险拒绝" />
+            </ComboBox>
+            <TextBlock Grid.Column="6" Text="来源:" VerticalAlignment="Center" Margin="10,0,6,0" />
+            <ComboBox Grid.Column="7" x:Name="SourceFilterBox" SelectionChanged="OnFilterChanged" SelectedIndex="0">
+                <ComboBoxItem Content="全部" />
+                <ComboBoxItem Content="framework" />
+                <ComboBoxItem Content="app" />
+                <ComboBoxItem Content="module" />
+            </ComboBox>
+            <Button Grid.Column="8" Content="服务状态" Padding="10,3" Margin="10,0,0,0" Click="OnStatusClick" />
+            <Button Grid.Column="9" x:Name="RefreshButton" Content="刷新" Padding="10,3" Margin="8,0,0,0"
+                    Click="OnRefreshClick" />
         </Grid>
+
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+            <CheckBox x:Name="CustomizedOnlyCheck" Content="有自定义提示词" Checked="OnFilterChanged"
+                      Unchecked="OnFilterChanged" />
+            <CheckBox x:Name="PendingOnlyCheck" Content="有待审核提案" Margin="14,0,0,0"
+                      Checked="OnFilterChanged" Unchecked="OnFilterChanged" />
+            <CheckBox x:Name="IncidentOnlyCheck" Content="有事故记录" Margin="14,0,0,0"
+                      Checked="OnFilterChanged" Unchecked="OnFilterChanged" />
+        </StackPanel>
+
+        <TextBlock DockPanel.Dock="Bottom" x:Name="StatusText" Foreground="#555" Margin="0,6,0,0"
+                   Text="命令注册表是能力真值；MCP 只是策略投影" TextWrapping="Wrap" />
+
+        <ListView x:Name="ToolList" SelectionChanged="OnToolSelected">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="指令" Width="185" DisplayMemberBinding="{Binding CommandName}" />
+                    <GridViewColumn Header="域" Width="70" DisplayMemberBinding="{Binding Domain}" />
+                    <GridViewColumn Header="来源" Width="85" DisplayMemberBinding="{Binding Source}" />
+                    <GridViewColumn Header="MCP" Width="85" DisplayMemberBinding="{Binding McpState}" />
+                    <GridViewColumn Header="参数" Width="48" DisplayMemberBinding="{Binding ParameterCount}" />
+                    <GridViewColumn Header="说明" Width="340" DisplayMemberBinding="{Binding Summary}" />
+                </GridView>
+            </ListView.View>
+        </ListView>
     </DockPanel>
 </UserControl>

@@ -1,5 +1,6 @@
 using AppShell.Core.Data;
 using AppShell.Core.Logging;
+using OneHistoryStudio.Data;
 
 namespace OneHistoryStudio.Git;
 
@@ -38,14 +39,6 @@ public sealed class HistoryRecorder
                     branch  TEXT PRIMARY KEY,
                     note    TEXT NOT NULL,
                     updated TEXT NOT NULL
-                )
-                """);
-            _data.ExecuteSql(
-                """
-                CREATE TABLE IF NOT EXISTS mcp_descriptions (
-                    command     TEXT PRIMARY KEY,
-                    description TEXT NOT NULL,
-                    updated     TEXT NOT NULL
                 )
                 """);
             _data.ExecuteSql(
@@ -99,43 +92,6 @@ public sealed class HistoryRecorder
         }
     }
 
-    /// <summary>MCP 工具提示词覆盖(V2.1.1,mcp.desc):写/更新。</summary>
-    public void SetMcpDescription(string command, string text)
-        => _data.ExecuteSql(
-            $"INSERT OR REPLACE INTO mcp_descriptions (command, description, updated) VALUES (" +
-            $"'{Esc(command)}','{Esc(text)}','{DateTime.Now:yyyy-MM-dd HH:mm:ss}')");
-
-    /// <summary>MCP 工具提示词覆盖:清除(恢复指令自带 Summary)。</summary>
-    public void DeleteMcpDescription(string command)
-        => _data.ExecuteSql($"DELETE FROM mcp_descriptions WHERE command='{Esc(command)}'");
-
-    /// <summary>全部提示词覆盖(导出层读取侧合成用);失败返回空表。</summary>
-    public IReadOnlyDictionary<string, string> AllMcpDescriptions()
-    {
-        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        try
-        {
-            var (result, _) = _data.ExecuteSql("SELECT command, description FROM mcp_descriptions");
-            if (result == null)
-                return map;
-            var ci = IndexOf(result.Columns, "command");
-            var di = IndexOf(result.Columns, "description");
-            if (ci < 0 || di < 0)
-                return map;
-            foreach (var row in result.Rows)
-            {
-                if (row[ci] is string c && row[di] is string d && c.Length > 0)
-                    map[c] = d;
-            }
-        }
-        catch (Exception ex)
-        {
-            _log.Warn("history", $"读取 MCP 提示词覆盖失败: {ex.Message}");
-        }
-
-        return map;
-    }
-
     /// <summary>写/更新分支描述(proj.note)。</summary>
     public void SetNote(string branch, string note)
         => _data.ExecuteSql(
@@ -180,8 +136,8 @@ public sealed class HistoryRecorder
         return -1;
     }
 
-    private static string Esc(string s) => s.Replace("'", "''");
+    // SQL 文本片段统一取用 SqlText(R1);本表时间戳格式 yyyy-MM-dd HH:mm:ss 保持不变
+    private static string Esc(string s) => SqlText.Escape(s);
 
-    private static string Truncate(string s, int max)
-        => s.Length <= max ? s : s[..max] + "…";
+    private static string Truncate(string s, int max) => SqlText.Truncate(s, max);
 }

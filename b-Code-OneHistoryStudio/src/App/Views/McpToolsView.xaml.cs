@@ -1,70 +1,98 @@
+using System.Windows;
 using System.Windows.Controls;
 using AppShell.Core.Commands;
 using OneHistoryStudio.Mcp;
 
 namespace OneHistoryStudio.Views;
 
-/// <summary>
-/// MCP 工具管理页(V2.1.1):观察全部工具形态,查看/编辑/保存提示词。
-/// 架构不变量 1:数据经 mcp.schema 消费,保存/恢复经 mcp.desc 指令(控制台可见回显);
-/// 提示词覆盖在导出读取侧合成,保存后客户端下次 tools/list 即生效。
-/// </summary>
+/// <summary>全部注册指令及其 MCP 投影的可筛选列表。</summary>
 public partial class McpToolsView : UserControl
 {
     private readonly Func<CommandBus?> _busAccessor;
-    private List<ToolRow> _allRows = new();
+    private readonly CommandSelectionState _selection;
+    private List<CommandCatalogRow> _allRows = [];
     private bool _initialLoadDone;
+    private bool _registryRefreshPending;
+    private CommandRegistry? _observedRegistry;
 
-    public McpToolsView(Func<CommandBus?> busAccessor)
+    public McpToolsView(Func<CommandBus?> busAccessor, CommandSelectionState selection)
     {
         InitializeComponent();
         _busAccessor = busAccessor;
+        _selection = selection;
         Loaded += async (_, _) =>
         {
-            if (_initialLoadDone)
-                return;
-            _initialLoadDone = true;
-            await RefreshAsync();
+            ObserveRegistry();
+            if (!_initialLoadDone)
+            {
+                _initialLoadDone = true;
+                await RefreshAsync();
+            }
         };
+        Unloaded += (_, _) => StopObservingRegistry();
     }
 
-    public sealed record ToolRow(
-        string ToolName, string CommandName, string Tags, string FirstLine,
-        string Description, string DefaultDescription, bool Customized);
+    private async void OnRefreshClick(object sender, RoutedEventArgs e) => await RefreshAsync();
 
-    private async void OnRefreshClick(object sender, System.Windows.RoutedEventArgs e)
-        => await RefreshAsync();
-
-    private void OnStatusClick(object sender, System.Windows.RoutedEventArgs e)
+    private void OnStatusClick(object sender, RoutedEventArgs e)
         => _ = _busAccessor()?.ExecuteAsync("mcp.status", "UI");
+
+    private void ObserveRegistry()
+    {
+        var registry = _busAccessor()?.Registry;
+        if (ReferenceEquals(registry, _observedRegistry))
+            return;
+        StopObservingRegistry();
+        _observedRegistry = registry;
+        if (_observedRegistry != null)
+            _observedRegistry.Changed += OnRegistryChanged;
+    }
+
+    private void StopObservingRegistry()
+    {
+        if (_observedRegistry != null)
+            _observedRegistry.Changed -= OnRegistryChanged;
+        _observedRegistry = null;
+    }
+
+    private void OnRegistryChanged()
+    {
+        if (_registryRefreshPending)
+            return;
+        _registryRefreshPending = true;
+        Dispatcher.BeginInvoke(async () =>
+        {
+            await Task.Delay(200);
+            _registryRefreshPending = false;
+            if (IsLoaded)
+                await RefreshAsync();
+        });
+    }
 
     private async Task RefreshAsync()
     {
-        var bus = _busAccessor();
-        if (bus == null)
+        if (_busAccessor() is not { } bus)
             return;
 
         RefreshButton.IsEnabled = false;
         try
         {
-            var result = await bus.ExecuteAsync("mcp.schema", "UI");
-            if (result.Success && result.Data is IReadOnlyList<McpToolInfo> tools)
+            var result = await bus.ExecuteAsync("command.list", "UI");
+            if (!result.Success || result.Data is not IReadOnlyList<CommandCatalogRow> rows)
             {
-                _allRows = tools.Select(t => new ToolRow(
-                        t.ToolName,
-                        t.CommandName,
-                        (t.Dangerous ? "⚠危险拒绝 " : "") + (t.Customized ? "✎已自定义" : ""),
-                        t.Description.Split('\n')[0],
-                        t.Description,
-                        t.DefaultDescription,
-                        t.Customized))
-                    .ToList();
-                ApplyFilter();
+                StatusText.Text = "命令集加载失败，详见控制台";
+                return;
             }
-            else
+
+            _allRows = rows.ToList();
+            if (_selection.CurrentCommandName is { } current
+                && !_allRows.Any(row => row.CommandName.Equals(current, StringComparison.OrdinalIgnoreCase)))
             {
-                StatusText.Text = "加载失败,详见控制台";
+                _selection.CurrentCommandName = null;
             }
+
+            RefreshDomainFilter();
+            ApplyFilter();
         }
         finally
         {
@@ -72,87 +100,81 @@ public partial class McpToolsView : UserControl
         }
     }
 
-    private void ApplyFilter()
+    private void RefreshDomainFilter()
     {
-        var keyword = SearchBox.Text.Trim();
-        var rows = keyword.Length == 0
-            ? _allRows
-            : _allRows.Where(r => r.ToolName.Contains(keyword, StringComparison.OrdinalIgnoreCase)
-                                  || r.CommandName.Contains(keyword, StringComparison.OrdinalIgnoreCase)
-                                  || r.Description.Contains(keyword, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        ToolList.ItemsSource = rows;
-        StatusText.Text = keyword.Length == 0
-            ? $"共 {_allRows.Count} 个 MCP 工具({_allRows.Count(r => r.Customized)} 个已自定义提示词);保存后客户端下次 tools/list 即生效"
-            : $"匹配 {rows.Count}/{_allRows.Count} 个工具";
+        var selected = DomainFilterBox.SelectedItem?.ToString() ?? "全部";
+        var values = new List<string> { "全部" };
+        values.AddRange(_allRows.Select(row => row.Domain).Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(value => value, StringComparer.Ordinal));
+        DomainFilterBox.ItemsSource = values;
+        DomainFilterBox.SelectedItem = values.Contains(selected, StringComparer.OrdinalIgnoreCase)
+            ? values.First(value => value.Equals(selected, StringComparison.OrdinalIgnoreCase))
+            : "全部";
     }
 
-    private void OnSearchChanged(object sender, TextChangedEventArgs e)
+    private void ApplyFilter()
     {
-        if (_initialLoadDone)
-            ApplyFilter();
+        if (!_initialLoadDone)
+            return;
+        IEnumerable<CommandCatalogRow> rows = _allRows;
+        var keyword = SearchBox.Text.Trim();
+        if (keyword.Length > 0)
+        {
+            rows = rows.Where(row =>
+                row.CommandName.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                || row.Summary.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                || (row.Example?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        var domain = DomainFilterBox.SelectedItem?.ToString();
+        if (!string.IsNullOrWhiteSpace(domain) && domain != "全部")
+            rows = rows.Where(row => row.Domain.Equals(domain, StringComparison.OrdinalIgnoreCase));
+
+        rows = McpFilterBox.SelectedIndex switch
+        {
+            1 => rows.Where(row => row.PolicyVisible),
+            2 => rows.Where(row => !row.PolicyVisible),
+            3 => rows.Where(row => row.McpState == "hidden"),
+            4 => rows.Where(row => row.McpState == "dangerous"),
+            _ => rows,
+        };
+
+        var source = SourceFilterBox.SelectedIndex switch
+        {
+            1 => "framework",
+            2 => "app",
+            3 => "module",
+            _ => null,
+        };
+        if (source != null)
+            rows = rows.Where(row => row.Source.Equals(source, StringComparison.OrdinalIgnoreCase));
+        if (CustomizedOnlyCheck.IsChecked == true)
+            rows = rows.Where(row => row.Customized);
+        if (PendingOnlyCheck.IsChecked == true)
+            rows = rows.Where(row => row.OpenProposals > 0);
+        if (IncidentOnlyCheck.IsChecked == true)
+            rows = rows.Where(row => row.IncidentCount > 0);
+
+        var list = rows.ToList();
+        ToolList.ItemsSource = list;
+        ToolList.SelectedItem = _selection.CurrentCommandName is { } selected
+            ? list.FirstOrDefault(row => row.CommandName.Equals(selected, StringComparison.OrdinalIgnoreCase))
+            : null;
+
+        var hardExcluded = _allRows.Count(row => row.McpState == "hidden");
+        var readonlyCount = _allRows.Count(row => row.McpState == "readonly");
+        var standardCount = _allRows.Count(row => row.McpState == "standard");
+        var dangerous = _allRows.Count(row => row.McpState == "dangerous");
+        var modules = _allRows.Count(row => row.Source == "module");
+        StatusText.Text = $"显示 {list.Count}/{_allRows.Count} 条；硬排除 {hardExcluded}，" +
+                          $"readonly {readonlyCount}，standard {standardCount}，危险拒绝 {dangerous}，模块 {modules}";
     }
+
+    private void OnFilterChanged(object sender, EventArgs e) => ApplyFilter();
 
     private void OnToolSelected(object sender, SelectionChangedEventArgs e)
     {
-        if (ToolList.SelectedItem is not ToolRow row)
-        {
-            DetailTitle.Text = "(选中左侧工具查看/编辑提示词)";
-            DefaultDescBox.Text = "";
-            DescBox.Text = "";
-            DescBox.IsEnabled = SaveButton.IsEnabled = ResetButton.IsEnabled = false;
-            return;
-        }
-
-        DetailTitle.Text = $"{row.ToolName} ← {row.CommandName}{(row.Tags.Length > 0 ? $"  [{row.Tags.Trim()}]" : "")}";
-        DefaultDescBox.Text = row.DefaultDescription;
-        DescBox.Text = row.Description;
-        DescBox.IsEnabled = SaveButton.IsEnabled = true;
-        ResetButton.IsEnabled = row.Customized;
-    }
-
-    private async void OnSaveClick(object sender, System.Windows.RoutedEventArgs e)
-    {
-        if (ToolList.SelectedItem is not ToolRow row)
-            return;
-        var bus = _busAccessor();
-        if (bus == null)
-            return;
-
-        var text = DescBox.Text.Trim();
-        if (text.Length == 0)
-        {
-            StatusText.Text = "提示词不能为空(要恢复默认请点「恢复默认」)";
-            return;
-        }
-
-        var command = $"mcp.desc name={row.CommandName} text={CommandParser.QuoteArg(text)}";
-        var result = await bus.ExecuteAsync(command, "UI");
-        StatusText.Text = result.Success ? $"已保存: {row.CommandName}" : "保存失败,详见控制台";
-        if (result.Success)
-            await ReselectAsync(row.CommandName);
-    }
-
-    private async void OnResetClick(object sender, System.Windows.RoutedEventArgs e)
-    {
-        if (ToolList.SelectedItem is not ToolRow row)
-            return;
-        var bus = _busAccessor();
-        if (bus == null)
-            return;
-
-        var result = await bus.ExecuteAsync($"mcp.desc name={row.CommandName} reset=true", "UI");
-        StatusText.Text = result.Success ? $"已恢复默认: {row.CommandName}" : "恢复失败,详见控制台";
-        if (result.Success)
-            await ReselectAsync(row.CommandName);
-    }
-
-    private async Task ReselectAsync(string commandName)
-    {
-        await RefreshAsync();
-        var again = (ToolList.ItemsSource as IEnumerable<ToolRow>)?
-            .FirstOrDefault(r => r.CommandName.Equals(commandName, StringComparison.OrdinalIgnoreCase));
-        if (again != null)
-            ToolList.SelectedItem = again;
+        if (ToolList.SelectedItem is CommandCatalogRow row)
+            _selection.CurrentCommandName = row.CommandName;
     }
 }

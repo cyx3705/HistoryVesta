@@ -42,7 +42,10 @@ public sealed class CommandBus
     /// 执行一行指令文本。source 为来源标签(C-01):UI / 手动 / 脚本:文件名 / layout。
     /// 返回值在指令(含异步长任务)完成后才落定;方法自身不抛异常。
     /// </summary>
-    public async Task<CommandResult> ExecuteAsync(string text, string source)
+    public async Task<CommandResult> ExecuteAsync(
+        string text,
+        string source,
+        CancellationToken cancellation = default)
     {
         // 1. 回显
         var trimmed = text.Trim();
@@ -51,7 +54,11 @@ public sealed class CommandBus
         CommandResult result;
         try
         {
-            result = await ExecuteCoreAsync(trimmed, source).ConfigureAwait(false);
+            result = await ExecuteCoreAsync(trimmed, source, cancellation).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            result = CommandResult.Fail("指令已取消");
         }
         catch (Exception ex)
         {
@@ -70,7 +77,10 @@ public sealed class CommandBus
         return result;
     }
 
-    private async Task<CommandResult> ExecuteCoreAsync(string text, string source)
+    private async Task<CommandResult> ExecuteCoreAsync(
+        string text,
+        string source,
+        CancellationToken cancellation)
     {
         // 解析
         ParsedCommand parsed;
@@ -100,7 +110,7 @@ public sealed class CommandBus
 
         var progress = new Progress<string>(line =>
             _log.Log(ShellLogLevel.Info, ProgressCategory, line));
-        var context = new CommandContext(descriptor, values, source, progress, CancellationToken.None);
+        var context = new CommandContext(descriptor, values, source, progress, cancellation);
 
         // 拦截:二次确认(§5.2;T-08/R-06 危险操作在“手输指令路径”的统一闸口)
         var prompt = descriptor.ConfirmPrompt?.Invoke(context);
@@ -122,6 +132,10 @@ public sealed class CommandBus
             }
 
             return await descriptor.Handler(context).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            return CommandResult.Fail("指令已取消");
         }
         catch (Exception ex)
         {

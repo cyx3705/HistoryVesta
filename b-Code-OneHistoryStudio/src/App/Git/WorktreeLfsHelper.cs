@@ -40,8 +40,10 @@ public static class WorktreeLfsHelper
             && attrResult.Output.Contains("filter: lfs", StringComparison.OrdinalIgnoreCase))
             return true;
 
-        var lfsResult = await GitRunner.RunAsync(worktreePath, ["lfs", "ls-files", "--", normalized]);
-        if (lfsResult.Success && !string.IsNullOrWhiteSpace(lfsResult.Output))
+        var lfsResult = await GitRunner.RunAsync(worktreePath, ["lfs", "ls-files", "-n"]);
+        if (lfsResult.Success && lfsResult.Output.Replace("\r\n", "\n")
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Any(path => path.Replace('\\', '/').Equals(normalized, StringComparison.OrdinalIgnoreCase)))
             return true;
 
         return false;

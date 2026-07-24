@@ -44,6 +44,7 @@ public sealed class DockingHost : IDockingService
     // “占主程序窗体百分比”由封装层维护:记录目标比例,在首次排布后与
     // 窗体缩放后重新按比例施加像素尺寸。
     private readonly Dictionary<string, double> _ratios = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _preserveDefaultRatioOnSeed = new(StringComparer.OrdinalIgnoreCase);
     private readonly DispatcherTimer _resizeDebounce;
 
     public DockingHost(
@@ -335,6 +336,7 @@ public sealed class DockingHost : IDockingService
 
     private void BuildDefaultLayout()
     {
+        _preserveDefaultRatioOnSeed.Clear();
         var mainDoc = new LayoutDocument
         {
             Title = "主窗口",
@@ -467,6 +469,7 @@ public sealed class DockingHost : IDockingService
 
             var a = CreateAnchorable(d);
             PlaceAtSide(a, d.DefaultSide, d.DefaultRatio, d.DefaultTabTarget);
+            _preserveDefaultRatioOnSeed.Add(d.Id);
             if (!d.DefaultVisible)
                 a.Hide();
         }
@@ -606,8 +609,11 @@ public sealed class DockingHost : IDockingService
         }
 
         SetDockLength(child, horizontal, DockLengthFor(horizontal, ratio));
-        if (a.ContentId != null)
-            _ratios[a.ContentId] = ratio;
+        foreach (var item in child.Descendents().OfType<LayoutAnchorable>())
+        {
+            if (item.ContentId != null && _byId.ContainsKey(item.ContentId))
+                _ratios[item.ContentId] = ratio;
+        }
     }
 
     /// <summary>
@@ -647,10 +653,14 @@ public sealed class DockingHost : IDockingService
             _seedRatiosFromLayout = false;
             foreach (var d in _descriptors)
             {
+                if (_preserveDefaultRatioOnSeed.Contains(d.Id))
+                    continue;
                 var s = ComputeState(d.Id);
                 if (s is { Visible: true, Floating: false, Side: not null and not DockSide.Tab, Ratio: > 0 })
                     _ratios[d.Id] = s.Ratio;
             }
+
+            _preserveDefaultRatioOnSeed.Clear();
 
             return;
         }

@@ -7,11 +7,18 @@ namespace AppShell.Core.Commands;
 public sealed class CommandRegistry
 {
     private readonly Dictionary<string, CommandDescriptor> _commands = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> _sources = new(StringComparer.OrdinalIgnoreCase);
 
-    public void Register(CommandDescriptor descriptor)
+    public event Action? Changed;
+
+    public void Register(CommandDescriptor descriptor, string source = "framework")
     {
+        if (string.IsNullOrWhiteSpace(source))
+            throw new ArgumentException("指令来源不能为空", nameof(source));
         if (!_commands.TryAdd(descriptor.Name, descriptor))
             throw new InvalidOperationException($"指令名冲突: {descriptor.Name} 已注册,禁止覆盖(§5.3)");
+        _sources[descriptor.Name] = source.Trim();
+        Changed?.Invoke();
     }
 
     /// <summary>
@@ -19,10 +26,21 @@ public sealed class CommandRegistry
     /// 调用方须只注销自己注册过的名称;存在则移除并返回 true。
     /// [基线 0.4.2 新增,由派生应用 OneHistoryStudio V2-M3 反哺]
     /// </summary>
-    public bool Unregister(string name) => _commands.Remove(name);
+    public bool Unregister(string name)
+    {
+        _sources.Remove(name);
+        var removed = _commands.Remove(name);
+        if (removed)
+            Changed?.Invoke();
+        return removed;
+    }
 
     public bool TryGet(string name, out CommandDescriptor descriptor)
         => _commands.TryGetValue(name, out descriptor!);
+
+    /// <summary>返回注册来源：framework / app / module:&lt;name&gt;。</summary>
+    public string GetSource(string name)
+        => _sources.GetValueOrDefault(name, "framework");
 
     /// <summary>全部指令,按名称排序(help 列表)。</summary>
     public IReadOnlyList<CommandDescriptor> All()

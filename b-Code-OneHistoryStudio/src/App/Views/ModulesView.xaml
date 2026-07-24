@@ -7,6 +7,15 @@
             <Button x:Name="RefreshButton" Content="刷新" Padding="12,3" Click="OnRefreshClick" />
             <Button Content="重载全部模块" Padding="12,3" Margin="8,0,0,0" Click="OnReloadClick" />
             <Button Content="打开模块目录" Padding="12,3" Margin="8,0,0,0" Click="OnOpenDirClick" />
+            <Separator Margin="10,0" />
+            <!-- V2.2.1 补做 A220-8:项目库工具的发现与同步(飞轮入口) -->
+            <Button Content="扫描项目库工具" Padding="12,3" Click="OnToolScanClick"
+                    ToolTip="tool.scan:发现项目库中声明了 module.manifest.json 的工具" />
+            <Button x:Name="ToolSyncButton" Content="同步全部工具" Padding="12,3" Margin="8,0,0,0"
+                    Click="OnToolSyncClick" ToolTip="tool.sync all=true:把未同步/已过期的工具入库" />
+            <Button x:Name="ToolRemoveButton" Content="移除所选工具" Padding="12,3" Margin="8,0,0,0"
+                    IsEnabled="False" Click="OnToolRemoveClick"
+                    ToolTip="tool.remove:删除所选模块的槽与溯源(需二次确认)" />
             <TextBlock x:Name="DirText" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="#888" />
         </StackPanel>
         <TextBlock DockPanel.Dock="Bottom" x:Name="StatusText" Foreground="#888" Margin="0,6,0,0"

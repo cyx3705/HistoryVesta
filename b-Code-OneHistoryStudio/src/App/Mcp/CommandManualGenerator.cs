@@ -1,0 +1,104 @@
+using System.Security.Cryptography;
+using System.Text;
+using AppShell.Core.Commands;
+
+namespace OneHistoryStudio.Mcp;
+
+public sealed record CommandManualPreview(
+    string Path,
+    int CommandCount,
+    string Sha256,
+    string Markdown,
+    bool Applied);
+
+/// <summary>从运行时注册表和 MCP 投影生成确定性命令手册。</summary>
+public static class CommandManualGenerator
+{
+    public static string Render(
+        CommandRegistry registry,
+        CommandSchemaExporter exporter,
+        string policy)
+    {
+        var commands = registry.All().OrderBy(command => command.Name, StringComparer.Ordinal).ToList();
+        var builder = new StringBuilder();
+        builder.AppendLine("# OneHistoryStudio 命令手册");
+        builder.AppendLine();
+        builder.AppendLine($"> 版本：{AppIdentity.Current.Version}");
+        builder.AppendLine("> 来源：运行时 `CommandRegistry` 与 MCP 投影自动生成；请勿手工维护指令条目。");
+        builder.AppendLine($"> 当前 MCP 策略：`{policy}`");
+        builder.AppendLine($"> 指令总数：{commands.Count}");
+        builder.AppendLine();
+        builder.AppendLine($"<!-- command-count: {commands.Count} -->");
+
+        foreach (var domain in commands.GroupBy(command => DomainOf(command.Name), StringComparer.OrdinalIgnoreCase))
+        {
+            builder.AppendLine();
+            builder.AppendLine($"## {domain.Key} ({domain.Count()})");
+            foreach (var command in domain)
+            {
+                var source = registry.GetSource(command.Name);
+                var tool = exporter.Find(command.Name);
+                var mcpState = McpExposurePolicy.State(command);
+                var visible = McpExposurePolicy.IsVisible(command, policy);
+
+                builder.AppendLine();
+                builder.AppendLine($"### `{command.Name}`");
+                builder.AppendLine();
+                builder.AppendLine(Escape(command.Summary));
+                builder.AppendLine();
+                builder.AppendLine($"- 来源：`{Escape(source)}`");
+                builder.AppendLine($"- 安全：{(command.ConfirmPrompt != null ? "本地二次确认" : "普通")}");
+                builder.AppendLine($"- UI 线程：{(command.RequiresUiThread ? "是" : "否")}");
+                builder.AppendLine($"- MCP：`{mcpState}`，当前策略{(visible ? "可见" : "隐藏")}" +
+                                   (tool != null ? $"，工具名 `{tool.ToolName}`" : string.Empty));
+                if (McpExposurePolicy.HardExclusionReason(command.Name) is { } reason)
+                    builder.AppendLine($"- MCP 排除原因：{Escape(reason)}");
+
+                if (command.Parameters.Count > 0)
+                {
+                    builder.AppendLine();
+                    builder.AppendLine("| 参数 | 类型 | 必填 | 默认值 | 允许值 | 说明 |");
+                    builder.AppendLine("|---|---|---|---|---|---|");
+                    foreach (var parameter in command.Parameters)
+                    {
+                        builder.AppendLine(
+                            $"| `{Escape(parameter.Name)}` | `{parameter.Type.ToString().ToLowerInvariant()}` | " +
+                            $"{(parameter.Required ? "是" : "否")} | {Cell(parameter.Default)} | " +
+                            $"{Cell(parameter.AllowedValues is { Length: > 0 } ? string.Join(" / ", parameter.AllowedValues) : null)} | " +
+                            $"{Cell(parameter.Description)} |");
+                    }
+                }
+                else
+                {
+                    builder.AppendLine();
+                    builder.AppendLine("参数：无。");
+                }
+
+                if (!string.IsNullOrWhiteSpace(command.Example))
+                {
+                    builder.AppendLine();
+                    builder.AppendLine("```text");
+                    builder.AppendLine(command.Example);
+                    builder.AppendLine("```");
+                }
+            }
+        }
+
+        return builder.ToString().Replace("\r\n", "\n");
+    }
+
+    public static string Sha256(string markdown)
+        => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(markdown)));
+
+    private static string DomainOf(string name)
+    {
+        var dot = name.IndexOf('.');
+        return dot > 0 ? name[..dot] : "core";
+    }
+
+    private static string Cell(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "-" : Escape(value);
+
+    private static string Escape(string value)
+        => value.Replace("|", "\\|").Replace("\r", " ").Replace("\n", " ");
+}

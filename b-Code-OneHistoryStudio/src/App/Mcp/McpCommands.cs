@@ -5,8 +5,7 @@ using AppShell.Core.Commands;
 namespace OneHistoryStudio.Mcp;
 
 /// <summary>
-/// mcp.* 指令域。V21-M1 先提供 mcp.schema(MC-05,本地验收/调试入口,零网络);
-/// V21-M2 追加 mcp.start / mcp.stop / mcp.status(MG-05)。
+/// mcp.* 指令域：Schema、网关生命周期与 V2.1.2 本地提示词审核入口。
 /// </summary>
 public static class McpCommands
 {
@@ -19,82 +18,20 @@ public static class McpCommands
     public static void RegisterAll(
         CommandRegistry registry, Func<CommandBus?> busAccessor,
         Func<McpGateway?> gateway, AppShell.Core.Storage.ISettingsService settings,
-        OneHistoryStudio.Git.HistoryRecorder history)
+        PromptGovernanceStore prompts, string source = "app")
     {
         var exporter = new CommandSchemaExporter(registry)
         {
-            DescriptionsProvider = history.AllMcpDescriptions,
+            DescriptionsProvider = prompts.AllEffectiveDescriptions,
         };
-        registry.Register(BuildSchema(exporter, registry));
-        registry.Register(BuildParse(busAccessor));
-        registry.Register(BuildDesc(exporter, history));
-        registry.Register(BuildStart(gateway));
-        registry.Register(BuildStop(gateway));
-        registry.Register(BuildStatus(gateway, settings));
+        registry.Register(BuildSchema(exporter, registry), source);
+        registry.Register(BuildParse(busAccessor), source);
+        PromptGovernanceCommands.RegisterAll(registry, exporter, prompts, source);
+        registry.Register(BuildStart(gateway), source);
+        registry.Register(BuildStop(gateway), source);
+        registry.Register(BuildStatus(gateway, settings), source);
+        CommandCatalogCommands.RegisterAll(registry, exporter, prompts, gateway, source);
     }
-
-    // ---------------------------------------------------------------- mcp.desc(V2.1.1 提示词管理)
-
-    private static CommandDescriptor BuildDesc(CommandSchemaExporter exporter, OneHistoryStudio.Git.HistoryRecorder history) => new()
-    {
-        Name = "mcp.desc",
-        Summary = "查看/修改 MCP 工具提示词(description):text= 保存覆盖,reset=true 恢复指令自带说明",
-        Example = "mcp.desc name=proj.list text=\"列出 OneHistory 项目库全部项目\"",
-        Parameters =
-        [
-            new ParameterSpec
-            {
-                Name = "name",
-                Description = "指令名或工具名(如 proj.list / proj_list)",
-                Required = true,
-                Position = 0,
-            },
-            new ParameterSpec
-            {
-                Name = "text",
-                Description = "新提示词(客户端下次 tools/list 即生效);省略则只查看",
-                Position = 1,
-            },
-            new ParameterSpec
-            {
-                Name = "reset",
-                Description = "true 时清除覆盖,恢复指令自带 Summary",
-                Type = ParamType.Bool,
-                Default = "false",
-            },
-        ],
-        Handler = CommandDescriptor.Sync(ctx =>
-        {
-            var name = ctx.RequireString("name").Trim();
-            var tool = exporter.Find(name);
-            if (tool == null)
-                return CommandResult.Fail($"未找到指令/工具: {name}(硬排除的 mcp.*/debug.*/app.exit 无 MCP 形态)");
-
-            if (ctx.GetBool("reset"))
-            {
-                history.DeleteMcpDescription(tool.CommandName);
-                return CommandResult.Ok($"已恢复默认提示词: {tool.CommandName}\n{tool.DefaultDescription}");
-            }
-
-            var text = ctx.GetString("text");
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                var sb = new StringBuilder();
-                sb.Append($"{tool.ToolName} ← {tool.CommandName}{(tool.Dangerous ? "  ⚠危险(MCP 拒绝执行)" : "")}");
-                sb.Append($"\n当前生效: {tool.Description}");
-                if (tool.Customized)
-                    sb.Append($"\n指令自带: {tool.DefaultDescription}\n(mcp.desc name={tool.CommandName} reset=true 可恢复)");
-                return CommandResult.Ok(sb.ToString(), tool);
-            }
-
-            text = text.Trim();
-            if (text.Length > 2000)
-                return CommandResult.Fail($"提示词过长({text.Length} 字符,上限 2000)");
-
-            history.SetMcpDescription(tool.CommandName, text);
-            return CommandResult.Ok($"已保存提示词覆盖: {tool.CommandName}\n{text}\n(客户端下次 tools/list 即生效)");
-        }),
-    };
 
     // ---------------------------------------------------------------- mcp.start / stop / status(MG-05)
 
@@ -157,6 +94,8 @@ public static class McpCommands
             sb.Append($"\n  暴露   : {g.VisibleTools().Count} 个工具(mcp.schema 看全量形态)");
             sb.Append($"\n  令牌   : {(string.IsNullOrEmpty(settings.Get(McpGateway.KeyToken)) ? "未设置(本机回环可信)" : "已设置(Bearer 必需)")}");
             sb.Append($"\n  自启动 : mcp.autostart = {settings.Get(McpGateway.KeyAutostart) ?? "false"}");
+            sb.Append($"\n  危险指令: mcp.confirm = {g.ConfirmMode}" +
+                      $"{(g.ConfirmMode == "host" ? $"(远程请求宿主弹框确认,{g.ConfirmTimeout}s 超时拒绝)" : "(一律拒绝;host 档开启中继确认)")}");
             sb.Append($"\n  调用   : 累计 {g.CallCount} 次,最近 {g.LastCall}");
             return CommandResult.Ok(sb.ToString());
         }),
