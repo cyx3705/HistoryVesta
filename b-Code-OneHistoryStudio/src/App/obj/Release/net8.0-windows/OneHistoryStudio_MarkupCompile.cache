@@ -1,5 +1,5 @@
 ﻿OneHistoryStudio
-2.3.0.0
+2.3.3.0
 
 winexe
 C#
@@ -10,11 +10,11 @@ none
 false
 TRACE;RELEASE;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App\App.xaml
-101371999812
-674178697
-481782004518
-207-46462147
-Views\BranchHistoryView.xaml;Views\BranchTreeView.xaml;Views\CommandDetailView.xaml;Views\HistoryPreviewDialog.xaml;Views\McpToolsView.xaml;Views\MetaView.xaml;Views\ModulesView.xaml;Views\OverviewView.xaml;Views\ProjectOperationsView.xaml;Views\RollbackMessageDialog.xaml;
+7547047454
+6-265947790
+351784168410
+207-632643446
+Views\BranchHistoryView.xaml;Views\BranchTreeView.xaml;Views\HistoryPreviewDialog.xaml;Views\MetaView.xaml;Views\OverviewView.xaml;Views\ProjectOperationsView.xaml;Views\RollbackMessageDialog.xaml;
 
 False
 

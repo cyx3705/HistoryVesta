@@ -89,7 +89,7 @@ namespace AppShell.Shell {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/AppShell.Shell;component/placeholderpage.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/AppShell.Shell;V1.0.0.0;component/placeholderpage.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\PlaceholderPage.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

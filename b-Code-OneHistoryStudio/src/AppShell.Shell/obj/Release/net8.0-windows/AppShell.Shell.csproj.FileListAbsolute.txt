@@ -11,11 +11,17 @@ C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\ShellWindow.baml
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\Table\TableView.baml
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\Themes\AppShellTheme.baml
+C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\Views\CommandDetailView.baml
+C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\Views\McpToolsView.baml
+C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\Views\ModulesView.baml
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\Console\ConsoleView.g.cs
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\PlaceholderPage.g.cs
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\Resource\ResourceView.g.cs
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\ShellWindow.g.cs
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\Table\TableView.g.cs
+C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\Views\CommandDetailView.g.cs
+C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\Views\McpToolsView.g.cs
+C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\Views\ModulesView.g.cs
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\GeneratedInternalTypeHelper.g.cs
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\AppShell.Shell_MarkupCompile.cache
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\AppShell.Shell_MarkupCompile.lref
@@ -25,6 +31,7 @@ C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\AppShell.Shell.AssemblyInfoInputs.cache
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\AppShell.Shell.AssemblyInfo.cs
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\AppShell.Shell.csproj.CoreCompileInputs.cache
+C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\AppShell.Shell.sourcelink.json
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\AppShell.8067C3EA.Up2Date
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\AppShell.Shell.dll
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Shell\obj\Release\net8.0-windows\refint\AppShell.Shell.dll

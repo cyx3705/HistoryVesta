@@ -97,7 +97,7 @@ namespace AppShell.Shell {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/AppShell.Shell;component/shellwindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/AppShell.Shell;V1.0.0.0;component/shellwindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\ShellWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

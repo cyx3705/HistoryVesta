@@ -5,6 +5,7 @@ C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Core\obj\Debug\net8.0\AppShell.Core.AssemblyInfoInputs.cache
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Core\obj\Debug\net8.0\AppShell.Core.AssemblyInfo.cs
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Core\obj\Debug\net8.0\AppShell.Core.csproj.CoreCompileInputs.cache
+C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Core\obj\Debug\net8.0\AppShell.Core.sourcelink.json
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Core\obj\Debug\net8.0\AppShell.Core.dll
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Core\obj\Debug\net8.0\refint\AppShell.Core.dll
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Core\obj\Debug\net8.0\AppShell.Core.pdb

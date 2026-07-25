@@ -73,7 +73,7 @@ namespace AppShell.Shell.Resource {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/AppShell.Shell;component/resource/resourceview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/AppShell.Shell;V1.0.0.0;component/resource/resourceview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\Resource\ResourceView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

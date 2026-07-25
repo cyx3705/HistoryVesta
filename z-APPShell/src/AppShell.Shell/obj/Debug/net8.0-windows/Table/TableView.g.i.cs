@@ -161,7 +161,7 @@ namespace AppShell.Shell.Table {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/AppShell.Shell;component/table/tableview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/AppShell.Shell;V1.0.0.0;component/table/tableview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\Table\TableView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AppShell.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+16694d57b373937241d7b9d381e98344cd3db2ad")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1438f64c03385441ea2e88ec5269238cfdb9b1b7")]
 [assembly: System.Reflection.AssemblyProductAttribute("AppShell.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AppShell.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

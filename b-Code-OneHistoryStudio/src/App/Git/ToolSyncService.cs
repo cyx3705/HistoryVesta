@@ -1,8 +1,8 @@
+﻿using AppShell.Core;
 using System.IO;
 using System.Security.Cryptography;
 using AppShell.Core.Data;
 using AppShell.Core.Logging;
-using OneHistoryStudio.Data;
 
 namespace OneHistoryStudio.Git;
 

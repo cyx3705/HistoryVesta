@@ -8,6 +8,7 @@ C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\App
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Services\obj\Debug\net8.0\AppShell.Services.AssemblyInfoInputs.cache
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Services\obj\Debug\net8.0\AppShell.Services.AssemblyInfo.cs
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Services\obj\Debug\net8.0\AppShell.Services.csproj.CoreCompileInputs.cache
+C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Services\obj\Debug\net8.0\AppShell.Services.sourcelink.json
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Services\obj\Debug\net8.0\AppShell.132658CC.Up2Date
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Services\obj\Debug\net8.0\AppShell.Services.dll
 C:\OneHistory\OneHistory-Projects\2026-018-MyAPI\b-Code-OneHistoryStudio\src\AppShell.Services\obj\Debug\net8.0\refint\AppShell.Services.dll

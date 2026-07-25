@@ -1,0 +1,55 @@
+<Project>
+
+  <!--
+    V2.3.3 QC-01 / QC-03:解决方案级公共构建属性。
+    作用范围:本目录及其子目录的全部工程(src\* 与 tests\*)。
+  -->
+
+  <PropertyGroup>
+    <!--
+      QC-01 运行时裁剪。
+      Microsoft.Data.Sqlite → SQLitePCLRaw.lib.e_sqlite3 默认携带 20 个 RID 的原生库
+      (browser-wasm / linux-mips64 / linux-s390x / maccatalyst / osx / win 等),
+      每份构建输出中 runtimes\ 独占 25M / 27M。本产品是 net8.0-windows + WPF 的
+      Windows 桌面应用,20 份里 19 份永远不会被加载。
+      钉死 RID 后 runtimes\ 消失,win-x64 原生库以 e_sqlite3.dll 落在输出根,
+      单份输出 27M → 约 4M;全仓 13 份输出合计省约 325M。
+
+      禁止改用 AfterBuild 删除 runtimes\ 的做法:那样 deps.json 仍登记全部 RID,
+      文件删了账没改,运行期探测行为不可预期(见 25 号文档 §2 否决表)。
+
+      SelfContained 显式写 false:.NET 8 起指定 RID 不再隐含自包含,但显式声明可防
+      SDK 升级后默认值变化。
+    -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+
+    <!--
+      指定 RID 后 SDK 默认把输出改到 bin\<配置>\<TFM>\win-x64\,会让既有的回归脚本、
+      发布流程和文档里的全部输出路径引用一次性失效。本版是「对外行为全不变」的整备版,
+      不制造这种连带改动,故把输出路径固定回 bin\<配置>\<TFM>\。
+    -->
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+
+    <!--
+      QC-03 共性项集中。
+      不上提 TargetFramework:AppShell.Core / AppShell.Services 是 net8.0,
+      其余是 net8.0-windows,该差异是真实的,上提会误伤。
+      不上提 Version / AssemblyVersion / FileVersion:版本单一真值只在 src\App\App.csproj
+      (见《发布与升级》)。
+      src\AppShell.Core / Services / Shell 三个框架工程的 csproj 保留各自的
+      Nullable / ImplicitUsings 重复声明,不做去重 —— 这三个目录必须与 z-APPShell 模板
+      逐文件哈希 0 差异(25 号文档 §10 边界 3),改它们等于分叉。本处的同值声明对它们
+      无副作用,去重只作用于自由区(src\App 与 tests\*)。
+      不设 SatelliteResourceLanguages:卫星资源共 136K,其中 zh-Hans / zh-Hant 承载
+      AvalonDock 的中文界面字符串,裁剪会改变停靠菜单等 UI 文本 —— 违反本版
+      「对外行为全不变」铁律,136K 的收益不值这个风险。
+    -->
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- 整备起点即 0 警告 0 错误,此时开启零成本;错过这个时点再开就得先还债。 -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\OneHistory\\OneHistory-Code\\OneHistoryGitTool\\OneHistoryGitTool.csproj": {}
+    "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistory-V1\\OneHistoryGitTool\\OneHistoryGitTool.csproj": {}
   },
   "projects": {
-    "C:\\OneHistory\\OneHistory-Code\\OneHistoryGitTool\\OneHistoryGitTool.csproj": {
+    "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistory-V1\\OneHistoryGitTool\\OneHistoryGitTool.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\OneHistory\\OneHistory-Code\\OneHistoryGitTool\\OneHistoryGitTool.csproj",
+        "projectUniqueName": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistory-V1\\OneHistoryGitTool\\OneHistoryGitTool.csproj",
         "projectName": "OneHistoryGitTool",
-        "projectPath": "C:\\OneHistory\\OneHistory-Code\\OneHistoryGitTool\\OneHistoryGitTool.csproj",
+        "projectPath": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistory-V1\\OneHistoryGitTool\\OneHistoryGitTool.csproj",
         "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-        "outputPath": "C:\\OneHistory\\OneHistory-Code\\OneHistoryGitTool\\obj\\",
+        "outputPath": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistory-V1\\OneHistoryGitTool\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -26,7 +26,8 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "https://api.nuget.org/v3/index.json": {}
+          "https://api.nuget.org/v3/index.json": {},
+          "https://nuget.cdn.azure.cn/v3/index.json": {}
         },
         "frameworks": {
           "net8.0-windows7.0": {

@@ -1,6 +1,7 @@
+﻿using AppShell.Core;
+using AppShell.Core.Mcp;
 using AppShell.Core.Data;
 using AppShell.Core.Logging;
-using OneHistoryStudio.Data;
 
 namespace OneHistoryStudio.Git;
 
@@ -10,7 +11,7 @@ namespace OneHistoryStudio.Git;
 /// branch_notes 表存分支 → 项目描述(proj.note 写入,继承树优先取用)。
 /// 留痕失败只告警不阻断主操作(记录是旁路,不是闸口)。
 /// </summary>
-public sealed class HistoryRecorder
+public sealed class HistoryRecorder : IMcpAuditLog
 {
     private readonly IDataService _data;
     private readonly IShellLog _log;

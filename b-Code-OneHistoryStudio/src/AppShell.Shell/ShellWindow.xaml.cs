@@ -31,6 +31,17 @@ public partial class ShellWindow : Window
     private readonly Table.TableView? _tableView;
     private readonly Resource.ResourceView? _resourceView;
     private readonly Panels.PanelManager _panels;
+
+    // 0.4.4 反哺能力:由 Shell 自行装配,派生应用经下方只读属性取用
+    private readonly Services.Modules.ModuleHost? _modules;
+    private readonly Services.Mcp.McpGateway? _mcp;
+    private readonly Services.Mcp.PromptGovernanceStore? _prompts;
+
+    // 命令集页与指令详情页的选中联动(0.4.4 上抛):优先用派生应用经 ShellConfig 传入的实例,
+    // 未传则自建。由构造函数赋值——工具窗口内容工厂在 DockingHost 构建默认布局时即被调用,
+    // 派生应用那时拿不到 window,故联动实例必须由派生侧创建并传入。
+    private readonly CommandSelectionState _commandSelection;
+
     private int _errorCount;
 
     public ShellWindow(
@@ -45,6 +56,7 @@ public partial class ShellWindow : Window
         _config = config;
         _log = log;
         _dataDirectory = dataDirectory;
+        _commandSelection = config.CommandSelection ?? new CommandSelectionState();
         Title = $"{config.AppName} v{config.AppVersion}";
 
         // 主窗体边界先于停靠布局恢复:布局像素尺寸相对窗体记录,
@@ -85,6 +97,26 @@ public partial class ShellWindow : Window
             TakeOverDescriptor("resource", "资源窗口", DockSide.Left, 0.18, () => _resourceView);
         }
 
+        // 0.4.4:反哺能力自带的管理窗口。窗口内容工厂只依赖总线与选中状态(指令实际执行在 command.list/
+        // mcp.status/module.list),故可在此(DockingHost 构建前)接管;网关/模块宿主的创建与指令注册
+        // 仍在 BuiltinCommands 之后完成。条件与指令注册一致:mcp 窗口还要求已配置数据服务。
+        // 用 TakeOverDescriptor:派生应用若在 config.ToolWindows 声明了同 Id 窗口的停靠位/标签目标,
+        // 一律保留其布局,框架只注入内容——因此派生侧既有布局不变。
+        if (config.EnableMcp && config.DataService != null)
+        {
+            TakeOverDescriptor("mcp", "命令集", DockSide.Right, 0.32,
+                () => new Views.McpToolsView(() => _bus, _commandSelection));
+            // 指令详情窗口:命令集选中项的详情(参数/来源/MCP 映射/提示词状态),与 mcp 窗口共享选中状态
+            TakeOverDescriptor("commanddetail", "指令详情", DockSide.Right, 0.32,
+                () => new Views.CommandDetailView(() => _bus, _commandSelection));
+        }
+
+        if (config.EnableModules)
+        {
+            TakeOverDescriptor("modules", "模块管理", DockSide.Right, 0.32,
+                () => new Views.ModulesView(() => _bus));
+        }
+
         // 控制窗口群(§4.5,M4):JSON + C# 通道合并,每个面板一个可停靠窗口
         _panels = new Panels.PanelManager(
             Path.Combine(dataDirectory, "panels"), config.Panels, _bus, log);
@@ -113,7 +145,60 @@ public partial class ShellWindow : Window
             Workspace = config.Workspace,
             Panels = _panels,
         });
+        // ---- 0.4.4 反哺能力:模块托管与 MCP 服务(默认启用,ShellConfig 可关)
+        //      注册次序在内置指令之后、派生自定义指令之前——派生应用因此可以在
+        //      ConfigureCommands 里看到 module.*/mcp.* 已存在,并按需登记只读白名单。
+        if (config.EnableModules)
+        {
+            _modules = new Services.Modules.ModuleHost(
+                Path.Combine(dataDirectory, "Modules"), log)
+            {
+                // 此刻在 UI 线程,注册表换血据此编组(替代原先的 Application.Current.Dispatcher)
+                UiContext = SynchronizationContext.Current,
+            };
+
+            // MD-08:窗口成型前先做一次文件级面板同步,上一会话遗留的模块旁面板本次即成窗口
+            Services.Modules.ModulePanelSync.SyncFiles(
+                _modules.ModulesDirectory, Path.Combine(dataDirectory, "panels"), log);
+
+            // 全限定:本类的 Modules / Mcp 只读属性会遮蔽同名命名空间
+            AppShell.Shell.Modules.ModuleCommands.RegisterAll(registry, _modules, settings);
+        }
+
+        if (config.EnableMcp)
+        {
+            if (config.DataService == null)
+            {
+                log.Warn("mcp", "EnableMcp=true 但未配置 DataService,MCP 服务已跳过(提示词治理与留痕都需要数据服务)");
+            }
+            else
+            {
+                var identity = config.Identity ?? Core.AppIdentity.Current;
+                _prompts = new Services.Mcp.PromptGovernanceStore(config.DataService, log);
+                var audit = config.McpAuditLog
+                            ?? new Services.Mcp.McpAuditRecorder(config.DataService, log);
+                Func<string, string, int, bool?> remoteConfirm = config.McpRemoteConfirm
+                    ?? ((_, prompt, timeout) =>
+                        AppShell.Shell.Mcp.RemoteConfirmDialog.Ask(this, prompt, timeout));
+                _mcp = new Services.Mcp.McpGateway(
+                    () => _bus, settings, log, audit, _prompts, identity, remoteConfirm);
+
+                // McpCommands.RegisterAll 是聚合入口:内部级联注册 prompt.*(提示词治理)与
+                // command.*(命令目录),不可在此重复调用 CommandCatalogCommands/PromptGovernanceCommands,
+                // 否则 command.list 等会二次注册,CommandRegistry 冲突即抛(§5.3)。
+                // 全限定:本类的 Mcp 只读属性会遮蔽 AppShell.Shell.Mcp 命名空间。
+                AppShell.Shell.Mcp.McpCommands.RegisterAll(registry, () => _bus, () => _mcp, settings, _prompts);
+
+                // CX-03:MCP 中继预批准的执行直接放行,其余仍走 Shell 交互确认
+                _bus.Confirmation = new Core.Mcp.GatewayAwareConfirmation(_bus.Confirmation);
+            }
+        }
+
         config.ConfigureCommands?.Invoke(registry);
+
+        // 模块宿主在全部指令注册完成后接入并首次装载(此刻仍在 UI 线程)
+        _modules?.Attach(registry);
+        _modules?.Start();
 
         // S-03:状态栏左侧显示最近一条指令结果摘要;右侧错误计数
         _bus.Executed += (text, source, result) => Dispatcher.BeginInvoke(() =>
@@ -147,6 +232,21 @@ public partial class ShellWindow : Window
 
     /// <summary>指令总线(派生应用 / 启动参数经此执行指令)。</summary>
     public CommandBus Commands => _bus;
+
+    /// <summary>模块托管宿主(0.4.4);EnableModules=false 时为 null。</summary>
+    public Services.Modules.ModuleHost? Modules => _modules;
+
+    /// <summary>MCP 网关(0.4.4);未启用或缺数据服务时为 null。默认不监听,需 mcp.start。</summary>
+    public Services.Mcp.McpGateway? Mcp => _mcp;
+
+    /// <summary>提示词治理存储(0.4.4);与 <see cref="Mcp"/> 同生命周期。</summary>
+    public Services.Mcp.PromptGovernanceStore? Prompts => _prompts;
+
+    /// <summary>
+    /// 命令集选中状态(0.4.4):框架的命令集窗口写入,派生应用的指令详情窗口读取。
+    /// 派生应用应把自己的详情视图接到本实例,避免各建一个导致联动失效。
+    /// </summary>
+    public CommandSelectionState CommandSelection => _commandSelection;
 
     /// <summary>关于对话框文本(app.about)。</summary>
     public string AboutText =>
@@ -211,6 +311,12 @@ public partial class ShellWindow : Window
         _history.Save();
         SaveWindowBounds();
         _docking.SaveCurrentLayout();
+
+        // 0.4.4:Shell 自建的能力由 Shell 自己收尾——网关握着监听端口,
+        // 模块宿主握着文件监听与防抖定时器,都必须在退出前释放。
+        // 派生应用不再需要(也不应该)重复 Dispose 这两件。
+        _mcp?.Dispose();
+        _modules?.Dispose();
     }
 
     // ---------------------------------------------------------------- 主窗体边界持久化

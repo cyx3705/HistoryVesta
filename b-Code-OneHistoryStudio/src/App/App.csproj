@@ -3,17 +3,15 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <RootNamespace>OneHistoryStudio</RootNamespace>
     <AssemblyName>OneHistoryStudio</AssemblyName>
     <Product>OneHistoryStudio</Product>
     <Title>OneHistoryStudio</Title>
-    <Version>2.3.2</Version>
-    <AssemblyVersion>2.3.2.0</AssemblyVersion>
-    <FileVersion>2.3.2.0</FileVersion>
-    <InformationalVersion>2.3.2</InformationalVersion>
+    <Version>2.3.3</Version>
+    <AssemblyVersion>2.3.3.0</AssemblyVersion>
+    <FileVersion>2.3.3.0</FileVersion>
+    <InformationalVersion>2.3.3</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <!-- N-01:每显示器 DPI 感知(Per-Monitor V2) -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -26,12 +24,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\docs\README.md" Link="docs\README.md" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="..\..\docs\命令手册.md" Link="docs\命令手册.md" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="..\..\docs\MCP接入与安全.md" Link="docs\MCP接入与安全.md" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="..\..\docs\项目库与备份.md" Link="docs\项目库与备份.md" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="..\..\docs\模块开发手册.md" Link="docs\模块开发手册.md" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="..\..\docs\发布与升级.md" Link="docs\发布与升级.md" CopyToPublishDirectory="PreserveNewest" />
+    <!--
+      源文档目录在 V2.3.3 后的文档整理中由 docs\ 拆为 versions\ / meta\ / snapshots\；
+      Include 指向新的源路径，Link 一律保持 docs\ —— 随程序发布的 Help 目录结构
+      (Publish\docs\*.md) 是面向使用者的产品界面，不随源码目录调整而变。
+    -->
+    <Content Include="..\..\meta\README.md" Link="docs\README.md" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\meta\命令手册.md" Link="docs\命令手册.md" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\meta\MCP接入与安全.md" Link="docs\MCP接入与安全.md" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\meta\项目库与备份.md" Link="docs\项目库与备份.md" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\meta\模块开发手册.md" Link="docs\模块开发手册.md" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\meta\发布与升级.md" Link="docs\发布与升级.md" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
 
-6500457815
+91325410173
 
-181278920930
+26-659293133
 206-818701504
-Console\ConsoleView.xaml;PlaceholderPage.xaml;Resource\ResourceView.xaml;ShellWindow.xaml;Table\TableView.xaml;Themes\AppShellTheme.xaml;
+Console\ConsoleView.xaml;PlaceholderPage.xaml;Resource\ResourceView.xaml;ShellWindow.xaml;Table\TableView.xaml;Themes\AppShellTheme.xaml;Views\CommandDetailView.xaml;Views\McpToolsView.xaml;Views\ModulesView.xaml;
 
-True
+False
 

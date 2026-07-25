@@ -48,4 +48,49 @@ public sealed class ShellConfig
     /// C# 通道声明的控制面板(P-01;与数据目录 panels/*.json 合并,JSON 优先加载在后)。
     /// </summary>
     public List<Core.Panels.PanelDefinition> Panels { get; } = new();
+
+    // ---------------------------------------------------------------- 0.4.4 反哺能力(默认启用)
+
+    /// <summary>
+    /// 模块托管(MD-01~08,0.4.4 由 OneHistoryStudio 反哺):
+    /// &lt;数据目录&gt;\Modules 热重载,DLL 即指令域;module.* 指令组随之注册。
+    /// 默认启用——派生应用开箱即有模块注册器,无需自行装配。
+    /// 置 false 则完全不创建宿主、不注册 module.*。
+    /// </summary>
+    public bool EnableModules { get; set; } = true;
+
+    /// <summary>
+    /// MCP 服务(0.4.4 由 OneHistoryStudio 反哺):元数据自描述层、网关、提示词治理,
+    /// 注册 mcp.* / command.* / prompt.* / correction.* / incident.* 指令组。
+    /// 默认启用——但**网关本身仍默认不监听**(MS-01),需 mcp.start 或 mcp.autostart=true。
+    /// 依赖 <see cref="DataService"/>:未配置数据服务时本项自动降级为关闭并告警。
+    /// </summary>
+    public bool EnableMcp { get; set; } = true;
+
+    /// <summary>
+    /// MCP 调用留痕接管点:null 时框架用内置 McpAuditRecorder 写 mcp_history。
+    /// 派生应用若已有自己的留痕器,实现 IMcpAuditLog 接进来即可共用同一张表。
+    /// </summary>
+    public Core.Mcp.IMcpAuditLog? McpAuditLog { get; set; }
+
+    /// <summary>
+    /// 应用身份:null 时取 <c>AppIdentity.Current</c>(入口程序集)。
+    /// 测试宿主等入口程序集不是应用本体的场景应显式提供。
+    /// </summary>
+    public Core.ApplicationIdentity? Identity { get; set; }
+
+    /// <summary>
+    /// MCP 危险调用的宿主确认中继(CX-02,host 档使用):
+    /// null 时框架用内置对话框 <c>RemoteConfirmDialog</c>。
+    /// </summary>
+    public Func<string, string, int, bool?>? McpRemoteConfirm { get; set; }
+
+    /// <summary>
+    /// 命令集选中状态(0.4.4):框架的命令集窗口(McpToolsView)写入选中的指令名。
+    /// 派生应用若有指令详情窗口需与之联动,应在此传入**同一个实例**,并把详情窗口也接到它;
+    /// null 时框架自建一个(此时派生侧无法与之联动)。
+    /// 由派生应用创建并传入(而非框架创建后回取),是因为工具窗口内容工厂在 ShellWindow
+    /// 构造期间(DockingHost 构建默认布局时)即被调用,那时派生应用尚拿不到 window 实例。
+    /// </summary>
+    public Core.Commands.CommandSelectionState? CommandSelection { get; set; }
 }
