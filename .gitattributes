@@ -24,7 +24,7 @@
 *.nupkg filter=lfs diff=lfs merge=lfs -text
 *.snupkg filter=lfs diff=lfs merge=lfs -text
 
-# OneHistoryStudio keeps the current deployable snapshot, but stores its binaries through LFS.
-b-Code-OneHistoryStudio/Publish/**/*.dll filter=lfs diff=lfs merge=lfs -text
-b-Code-OneHistoryStudio/Publish/**/*.exe filter=lfs diff=lfs merge=lfs -text
-b-Code-OneHistoryStudio/Publish/**/*.pdb filter=lfs diff=lfs merge=lfs -text
+# OneHistoryStudio keeps the current deployable snapshot in b-Publish, with binaries stored through LFS.
+b-Publish/**/*.dll filter=lfs diff=lfs merge=lfs -text
+b-Publish/**/*.exe filter=lfs diff=lfs merge=lfs -text
+b-Publish/**/*.pdb filter=lfs diff=lfs merge=lfs -text

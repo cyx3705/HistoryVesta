@@ -15,9 +15,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "App", "b-Code-AppShell\src\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OneHistoryStudio", "OneHistoryStudio", "{63C85506-A399-6BE0-94A2-CD327F53321A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "App", "b-Code-OneHistoryStudio\src\App\App.csproj", "{96FA79BA-025E-4992-9BF0-CCDB1AFE32A2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Studio", "b-Code-Studio\Studio.csproj", "{96FA79BA-025E-4992-9BF0-CCDB1AFE32A2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Smoke", "b-Code-OneHistoryStudio\tests\Smoke\Smoke.csproj", "{DD11093B-C571-4DF0-BE91-C34F13E2932B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Smoke", "b-Code-Studio\tests\Smoke\Smoke.csproj", "{DD11093B-C571-4DF0-BE91-C34F13E2932B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

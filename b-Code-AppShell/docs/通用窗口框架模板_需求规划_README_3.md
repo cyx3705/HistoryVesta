@@ -496,8 +496,11 @@ V2.4.0 起，020 伞形项目使用以下结构：
 │  ├─ src/AppShell.Shell/          # 唯一源码：WPF 外壳
 │  ├─ src/App/                     # 独立演示宿主，不承载 OHS 业务
 │  └─ docs/AppShell版本记录.md
-├─ b-Code-OneHistoryStudio/
-│  └─ src/App/                     # OHS 业务应用，源码引用 AppShell
+├─ b-Code-Studio/
+│  ├─ Studio.csproj                # OHS 业务应用，源码引用 AppShell
+│  └─ tests/Smoke/                 # OHS 自动化冒烟
+├─ b-Code-Samples/                 # 模块开发样例
+├─ b-Publish/                      # OHS 当前发布快照
 └─ z-Package-AppShell/             # 伞外消费的版本包、清单与校验和
 ```
 
