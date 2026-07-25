@@ -11,7 +11,7 @@ using OneHistoryStudio.Git;
 namespace OneHistoryStudio;
 
 /// <summary>
-/// OneHistoryStudio 装配点(派生自 z-APPShell,基线随 meta/TEMPLATE_VERSION.md)。
+/// OneHistoryStudio 装配点；V2.4.0 起直接引用 020 伞形项目中的 AppShell 唯一源码。
 ///
 /// 模板 0.4.4 起,**模块托管与 MCP 网关(含提示词治理)已由框架自带并默认启用**,
 /// 本装配点不再自行创建它们——只组装应用专有的六件:数据服务、操作留痕、项目库、

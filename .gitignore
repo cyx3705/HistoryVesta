@@ -1,0 +1,17 @@
+# IDE state
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# .NET build and test outputs
+**/bin/
+**/obj/
+TestResults/
+
+# Local package and deployment scratch
+*.tmp
+*.log
+
+# Publish is intentionally tracked as the current delivery snapshot.

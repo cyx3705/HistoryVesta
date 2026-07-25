@@ -13,29 +13,29 @@ namespace OneHistoryStudio.Smoke;
 internal static class SmokeKit
 {
     /// <summary>
-    /// 仓库根(含 OneHistoryStudio.sln 的目录)。
+    /// OHS 产品根(b-Code-OneHistoryStudio)。
     /// 合并前各工程用 Environment.CurrentDirectory 拼临时目录,导致 V213/PromptGovernance
     /// 必须在父目录下运行、V230~V232 必须在仓库根下运行,互相冲突。改为从程序集位置向上探测,
     /// 宿主再按每套用例的历史语义显式设置 CurrentDirectory(见 Program.cs),
     /// 单宿主因此可在任意工作目录启动。
     /// </summary>
-    public static string RepoRoot { get; } = DiscoverRepoRoot();
+    public static string RepoRoot { get; } = Path.Combine(DiscoverUmbrellaRoot(), "b-Code-OneHistoryStudio");
 
-    /// <summary>仓库根的父目录(2026-018-MyAPI);V213 与 PromptGovernance 的历史工作目录。</summary>
+    /// <summary>020 伞形根;V213 与 PromptGovernance 的历史相对路径基准。</summary>
     public static string ParentDir { get; } = Directory.GetParent(RepoRoot)!.FullName;
 
-    private static string DiscoverRepoRoot()
+    private static string DiscoverUmbrellaRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir != null)
         {
-            if (File.Exists(Path.Combine(dir.FullName, "OneHistoryStudio.sln")))
+            if (File.Exists(Path.Combine(dir.FullName, "OHS.sln")))
                 return dir.FullName;
             dir = dir.Parent;
         }
 
         throw new InvalidOperationException(
-            $"未能从 {AppContext.BaseDirectory} 向上找到 OneHistoryStudio.sln");
+            $"未能从 {AppContext.BaseDirectory} 向上找到 OHS.sln");
     }
 
     // ---------------------------------------------------------------- 断言

@@ -1,20 +1,30 @@
-*.JPG filter=lfs diff=lfs merge=lfs -text
-*.PNG filter=lfs diff=lfs merge=lfs -text
-*.pdf filter=lfs diff=lfs merge=lfs -text
-*.stp filter=lfs diff=lfs merge=lfs -text
+* text=auto
+
+*.cs text eol=lf
+*.xaml text eol=lf
+*.csproj text eol=lf
+*.sln text eol=crlf
+*.props text eol=lf
+*.targets text eol=lf
+*.json text eol=lf
+*.xml text eol=lf
+*.md text eol=lf
+
+*.png filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
 *.jpeg filter=lfs diff=lfs merge=lfs -text
-*.mkv filter=lfs diff=lfs merge=lfs -text
-*.wmv filter=lfs diff=lfs merge=lfs -text
-*.flv filter=lfs diff=lfs merge=lfs -text
-\# filter=lfs diff=lfs merge=lfs -text
-常见视频格式 filter=lfs diff=lfs merge=lfs -text
+*.pdf filter=lfs diff=lfs merge=lfs -text
 *.mp4 filter=lfs diff=lfs merge=lfs -text
 *.mov filter=lfs diff=lfs merge=lfs -text
 *.avi filter=lfs diff=lfs merge=lfs -text
-Pro filter=lfs diff=lfs merge=lfs -text
-工程文件 filter=lfs diff=lfs merge=lfs -text
-*.prproj filter=lfs diff=lfs merge=lfs -text
-*.prp filter=lfs diff=lfs merge=lfs -text
-*.prtpl filter=lfs diff=lfs merge=lfs -text
-*.pl filter=lfs diff=lfs merge=lfs -text
-Premiere filter=lfs diff=lfs merge=lfs -text
+*.mkv filter=lfs diff=lfs merge=lfs -text
+*.wmv filter=lfs diff=lfs merge=lfs -text
+*.flv filter=lfs diff=lfs merge=lfs -text
+*.stp filter=lfs diff=lfs merge=lfs -text
+*.nupkg filter=lfs diff=lfs merge=lfs -text
+*.snupkg filter=lfs diff=lfs merge=lfs -text
+
+# OneHistoryStudio keeps the current deployable snapshot, but stores its binaries through LFS.
+b-Code-OneHistoryStudio/Publish/**/*.dll filter=lfs diff=lfs merge=lfs -text
+b-Code-OneHistoryStudio/Publish/**/*.exe filter=lfs diff=lfs merge=lfs -text
+b-Code-OneHistoryStudio/Publish/**/*.pdb filter=lfs diff=lfs merge=lfs -text

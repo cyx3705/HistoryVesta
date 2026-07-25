@@ -1,5 +1,7 @@
 <Project>
 
+  <Import Project="..\Directory.Build.props" />
+
   <!--
     V2.3.3 QC-01 / QC-03:解决方案级公共构建属性。
     作用范围:本目录及其子目录的全部工程(src\* 与 tests\*)。
@@ -31,25 +33,7 @@
     -->
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 
-    <!--
-      QC-03 共性项集中。
-      不上提 TargetFramework:AppShell.Core / AppShell.Services 是 net8.0,
-      其余是 net8.0-windows,该差异是真实的,上提会误伤。
-      不上提 Version / AssemblyVersion / FileVersion:版本单一真值只在 src\App\App.csproj
-      (见《发布与升级》)。
-      src\AppShell.Core / Services / Shell 三个框架工程的 csproj 保留各自的
-      Nullable / ImplicitUsings 重复声明,不做去重 —— 这三个目录必须与 z-APPShell 模板
-      逐文件哈希 0 差异(25 号文档 §10 边界 3),改它们等于分叉。本处的同值声明对它们
-      无副作用,去重只作用于自由区(src\App 与 tests\*)。
-      不设 SatelliteResourceLanguages:卫星资源共 136K,其中 zh-Hans / zh-Hant 承载
-      AvalonDock 的中文界面字符串,裁剪会改变停靠菜单等 UI 文本 —— 违反本版
-      「对外行为全不变」铁律,136K 的收益不值这个风险。
-    -->
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-
-    <!-- 整备起点即 0 警告 0 错误,此时开启零成本;错过这个时点再开就得先还债。 -->
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- 公共质量规则由 020 根级 props 提供；本文件只保留 OHS 可执行程序与 Smoke 的平台策略。 -->
   </PropertyGroup>
 
 </Project>
