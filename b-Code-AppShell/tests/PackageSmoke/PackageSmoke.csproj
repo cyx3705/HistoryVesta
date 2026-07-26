@@ -6,6 +6,7 @@
     <UseWPF>true</UseWPF>
     <IsPackable>false</IsPackable>
     <Product>AppShellPackageSmoke</Product>
+    <AssemblyTitle>AppShellPackageSmoke</AssemblyTitle>
     <Title>AppShellPackageSmoke</Title>
     <!-- The release script restores this project from the freshly built local feed. -->
     <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
