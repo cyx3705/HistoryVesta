@@ -109,13 +109,13 @@ public static class McpCommands
     {
         Name = "mcp.schema",
         Summary = "查看指令的 MCP 工具形态(不带参列全部;带 name 输出单条完整 JSON Schema)",
-        Example = "mcp.schema name=proj.create",
+        Example = "mcp.schema name=db.query",
         Parameters =
         [
             new ParameterSpec
             {
                 Name = "name",
-                Description = "指令名或工具名(如 proj.create / proj_create);省略列出全部",
+                Description = "指令名或工具名(如 db.query / db_query);省略列出全部",
                 Position = 0,
             },
         ],
@@ -165,7 +165,7 @@ public static class McpCommands
     {
         Name = "mcp.parse",
         Summary = "调试:模拟 tools/call 反向解析——JSON arguments 组装为指令文本,exec=true 随即经总线执行",
-        Example = "mcp.parse command=proj.list args=\"{\\\"filter\\\":\\\"2026\\\"}\" exec=true",
+        Example = "mcp.parse command=db.query args=\"{\\\"table\\\":\\\"users\\\",\\\"limit\\\":20}\" exec=true",
         Parameters =
         [
             new ParameterSpec

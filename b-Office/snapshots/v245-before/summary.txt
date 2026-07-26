@@ -1,0 +1,7 @@
+﻿tools/list exposed: 83
+captured: 2026-07-26 17:00:23 +08:00
+commands: 113 = core 102 + module 11
+core readonly: 32
+core standard: 40
+core dangerous: 16
+core hidden: 14

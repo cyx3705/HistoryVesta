@@ -1,6 +1,6 @@
 # MCP 接入与安全
 
-> 适用版本：OneHistoryStudio V2.4.3
+> 适用版本：OneHistoryStudio V2.4.5
 > 框架基线：AppShell 0.4.4
 
 ## 当前架构
@@ -11,7 +11,7 @@ V2.4.0 起，MCP 不再由 OneHistoryStudio 自行创建。AppShell 的 `ShellWi
 |---|---|---|
 | 网关和 JSON-RPC | 创建、启动/停止、鉴权、超时、结果编码 | 不重复实现 |
 | 命令来源 | 内置指令、模块指令、MCP/命令/治理指令 | 注册 `proj.*`、`git.*`、`tool.*` 等业务指令 |
-| 只读策略 | 维护框架只读基线和硬排除规则 | 通过 `AppMcpPolicy.RegisterReadonlyCommands()` 追加应用只读项 |
+| 只读策略 | 解释硬排除规则与模块清单档位 | 每条命令在注册处用 `Readonly = true` 自描述 |
 | 数据与审计 | 要求 `DataService`，可使用框架默认审计器 | 提供 SQLite 数据服务并复用 `HistoryRecorder` |
 | 身份 | 从 `ApplicationIdentity` 生成握手信息 | 提供 OneHistoryStudio 的名称和唯一版本 |
 | 管理窗口 | 接管 `mcp`、`commanddetail`、`modules` 的内容 | 只声明窗口在本产品中的默认停靠位置和共享选中状态 |
@@ -86,7 +86,7 @@ app.set key=mcp.confirmtimeout value=60
 
 ## 暴露策略
 
-`readonly` 只暴露框架只读基线、派生应用登记的只读命令，以及清单声明为 `readonly` 的模块命令。`standard` 额外暴露不需要本地确认的普通动作命令。
+`readonly` 只暴露**自描述为只读**的命令（`CommandDescriptor.Readonly = true`），以及清单声明为 `readonly` 的模块命令。`standard` 额外暴露不需要本地确认的普通动作命令。
 
 以下命令始终硬排除：
 
@@ -95,17 +95,38 @@ app.set key=mcp.confirmtimeout value=60
 - `mcp.*`：防止客户端递归管理或关闭自身网关；
 - 清单声明 `mcpExposure=hidden` 的模块命令。
 
-OneHistoryStudio 通过一个单一策略类登记 14 条应用只读命令：
+### 只读性由命令自描述（V2.4.4）
 
-```text
-proj.list             proj.tree             proj.scan
-proj.config           proj.metalist
-proj.history          proj.history.show     proj.history.diff
-git.rule.list         git.rule.scan         git.rule.gaps
-git.rule.suggest      tool.scan             tool.list
+只读性是**命令自身的事实**，与 `ConfirmPrompt`（危险）、`SupportsUndo`、`RequiresUiThread` 同级，
+在注册处一并声明：
+
+```csharp
+registry.Register(new CommandDescriptor
+{
+    Name = "proj.list",
+    Summary = "列出全部项目工作树",
+    Readonly = true,          // ← 只读性在此声明，MCP 档位随即生效
+    Handler = ...,
+});
 ```
 
-框架不硬编码这些 Studio 专有名称。新增应用只读指令时，应在应用装配阶段通过 `RegisterReadonly` 登记，不能把派生应用名单写回 AppShell 基线。
+**新增只读指令只需改注册点一处**，不必再去任何名单登记。当前全仓共 32 条核心只读命令
+（框架 18 + Studio 14），全部以此方式声明。
+
+判定优先级（`McpExposurePolicy.State`）：
+
+```text
+硬排除 → hidden
+ConfirmPrompt != null → dangerous
+Readonly == true → readonly
+其余 → standard
+```
+
+> **历史说明**：0.4.4~V2.4.3 期间曾用按名字匹配的白名单（框架基线 + `RegisterReadonly` 登记）。
+> V2.4.3 完成 32 条自描述迁移后，白名单已 100% 冗余，V2.4.4 予以清空并删除
+> `AppMcpPolicy`。`RegisterReadonly` 方法保留为兜底通道，仅用于**无法修改注册点**的场景
+> （如第三方程序集提供的描述符）；正常开发不要使用它。
+> 模块命令的 `mcpExposure` 走另一条通道（`ModuleExposure` 委托），不受本次收口影响。
 
 ## 危险指令确认
 
@@ -125,8 +146,15 @@ git.rule.suggest      tool.scan             tool.list
 
 每个工具调用最终都被还原为命令文本并经同一个 `CommandBus` 执行。返回结果包含：
 
-1. `CommandResult.Message` 文本；
-2. 成功且存在 `CommandResult.Data` 时追加的 JSON 结构化文本。
+1. `CommandResult.Message` 文本（`content[0]`）；
+2. 成功且存在 `CommandResult.Data` 时追加的 JSON 结构化文本（`content[1]`）；
+3. V2.4.5 起同时提供规范字段 `structuredContent`，形如 `{"data": <载荷>}`——
+   MCP 规范要求该字段为 JSON 对象，而 `Data` 有数组/对象/字符串三态，故统一 `data` 信封。
+   `structuredContent.data` 与 `content[1]` 由同一份序列化文本派生，内容必然一致。
+
+`content[1]` 的 JSON 文本块**按规范保留**（MCP 2025-06-18：返回结构化内容的工具
+SHOULD 同时在 TextContent 返回序列化 JSON，向后兼容），消费者应优先读
+`structuredContent.data`，读不到再回退扫 `content` 文本块。
 
 响应等待超时只切断 MCP 响应，不会强行撕裂正在执行的宿主命令；命令会继续运行并留痕，之后应使用只读命令查询结果。
 

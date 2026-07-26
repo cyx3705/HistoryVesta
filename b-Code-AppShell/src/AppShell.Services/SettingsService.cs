@@ -9,6 +9,8 @@ namespace AppShell.Services;
 /// </summary>
 public sealed class SettingsService : ISettingsService
 {
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+
     private readonly object _gate = new();
     private readonly string _filePath;
     private Dictionary<string, string> _values = new(StringComparer.OrdinalIgnoreCase);
@@ -21,7 +23,7 @@ public sealed class SettingsService : ISettingsService
             if (File.Exists(_filePath))
             {
                 _values = JsonSerializer.Deserialize<Dictionary<string, string>>(
-                              File.ReadAllText(_filePath))
+                              File.ReadAllText(_filePath), JsonOptions)
                           ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 _values = new Dictionary<string, string>(_values, StringComparer.OrdinalIgnoreCase);
             }
@@ -41,7 +43,11 @@ public sealed class SettingsService : ISettingsService
     }
 
     public int GetInt(string key, int fallback)
-        => int.TryParse(Get(key), out var v) ? v : fallback;
+        => int.TryParse(
+            Get(key), System.Globalization.NumberStyles.Integer,
+            System.Globalization.CultureInfo.InvariantCulture, out var v)
+            ? v
+            : fallback;
 
     public void Set(string key, string value)
     {
@@ -67,7 +73,7 @@ public sealed class SettingsService : ISettingsService
         {
             File.WriteAllText(
                 _filePath,
-                JsonSerializer.Serialize(_values, new JsonSerializerOptions { WriteIndented = true }));
+                JsonSerializer.Serialize(_values, JsonOptions));
         }
         catch (IOException)
         {

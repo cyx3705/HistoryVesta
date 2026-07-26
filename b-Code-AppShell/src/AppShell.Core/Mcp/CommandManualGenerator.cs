@@ -21,23 +21,23 @@ public static class CommandManualGenerator
     {
         var commands = registry.All().OrderBy(command => command.Name, StringComparer.Ordinal).ToList();
         var builder = new StringBuilder();
-        builder.AppendLine("# OneHistoryStudio 命令手册");
+        builder.AppendLine($"# {Escape(AppIdentity.Current.Name)} 命令手册");
         builder.AppendLine();
         builder.AppendLine("> [!IMPORTANT]");
         builder.AppendLine("> 本文件由运行时指令注册表自动生成。禁止手工增删或改写下方指令条目；");
-        builder.AppendLine("> 需要更新时，请在程序控制台执行 `command.manual file=b-Office/meta/命令手册.md apply=true`。");
+        builder.AppendLine("> 需要更新时，请在程序控制台执行 `command.manual file=<相对 Markdown 路径> apply=true`。");
         builder.AppendLine();
         builder.AppendLine($"> 版本：{AppIdentity.Current.Version}");
         builder.AppendLine("> 来源：运行时 `CommandRegistry` 与 MCP 投影自动生成；请勿手工维护指令条目。");
         builder.AppendLine($"> 当前 MCP 策略：`{policy}`");
-        builder.AppendLine($"> 指令总数：{commands.Count}");
+        builder.AppendLine($"> 指令总数：{commands.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
         builder.AppendLine();
-        builder.AppendLine($"<!-- command-count: {commands.Count} -->");
+        builder.AppendLine($"<!-- command-count: {commands.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)} -->");
 
         foreach (var domain in commands.GroupBy(command => DomainOf(command.Name), StringComparer.OrdinalIgnoreCase))
         {
             builder.AppendLine();
-            builder.AppendLine($"## {domain.Key} ({domain.Count()})");
+            builder.AppendLine($"## {domain.Key} ({domain.Count().ToString(System.Globalization.CultureInfo.InvariantCulture)})");
             foreach (var command in domain)
             {
                 var source = registry.GetSource(command.Name);

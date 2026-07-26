@@ -129,7 +129,7 @@ public sealed class ShellLog : IShellLog, IDisposable
 
     private void EnsureWriter(DateTime time)
     {
-        var date = time.ToString("yyyyMMdd");
+        var date = time.ToString("yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
         if (_writer != null && date == _writerDate)
         {
             if (_writer.BaseStream.Length < RollSizeBytes)

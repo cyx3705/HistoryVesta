@@ -5,6 +5,12 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>AppShell.Services</RootNamespace>
+    <PackageId>OneHistory.AppShell.Services</PackageId>
+    <Title>OneHistory AppShell Services</Title>
+    <Description>Settings, logging, SQLite, workspace, module hosting, and MCP services for OneHistory AppShell.</Description>
+    <PackageTags>onehistory;appshell;sqlite;modules;mcp</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +19,11 @@
 
   <ItemGroup>
     <!-- D-01:嵌入式 SQLite,零安装零配置 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <!-- 3.x uses the maintained SourceGear SQLite native package family; 2.x is covered by GHSA-2m69-gcr7-jv3q. -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
+    <None Include="..\..\PACKAGE.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
 </Project>

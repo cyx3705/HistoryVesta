@@ -79,7 +79,11 @@ public sealed class McpGateway : IDisposable
     }
 
     public int ConfirmTimeout
-        => int.TryParse(_settings.Get(KeyConfirmTimeout), out var t) ? Math.Clamp(t, 10, 600) : 60;
+        => int.TryParse(
+            _settings.Get(KeyConfirmTimeout), System.Globalization.NumberStyles.Integer,
+            System.Globalization.CultureInfo.InvariantCulture, out var t)
+            ? Math.Clamp(t, 10, 600)
+            : 60;
 
     /// <summary>缺省启用；仅显式配置 false 时关闭宿主启动自动监听。</summary>
     public bool AutostartEnabled
@@ -165,7 +169,11 @@ public sealed class McpGateway : IDisposable
                 return (false, $"MCP 服务已在运行(端口 {Port}),先 mcp.stop");
 
             Port = port
-                   ?? (int.TryParse(_settings.Get(KeyPort), out var p) ? p : DefaultPort);
+                   ?? (int.TryParse(
+                           _settings.Get(KeyPort), System.Globalization.NumberStyles.Integer,
+                           System.Globalization.CultureInfo.InvariantCulture, out var p)
+                       ? p
+                       : DefaultPort);
             if (Port is < 1024 or > 65535)
                 return (false, $"端口无效: {Port}(允许 1024~65535)");
 
@@ -185,7 +193,7 @@ public sealed class McpGateway : IDisposable
             }
 
             if (port.HasValue)
-                _settings.Set(KeyPort, port.Value.ToString());
+                _settings.Set(KeyPort, port.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
             _cts = new CancellationTokenSource();
             _ = AcceptLoopAsync(_listener, _cts.Token);
@@ -477,7 +485,11 @@ public sealed class McpGateway : IDisposable
         JsonNode? id, CommandBus bus, McpToolInfo tool, string commandText, string argsText,
         bool preApproved, string? relayNote)
     {
-        var timeoutSeconds = int.TryParse(_settings.Get(KeyTimeout), out var t) ? Math.Clamp(t, 5, 3600) : 120;
+        var timeoutSeconds = int.TryParse(
+            _settings.Get(KeyTimeout), System.Globalization.NumberStyles.Integer,
+            System.Globalization.CultureInfo.InvariantCulture, out var t)
+            ? Math.Clamp(t, 5, 3600)
+            : 120;
         var sw = System.Diagnostics.Stopwatch.StartNew();
 
         Task<CommandResult> Run() => bus.ExecuteAsync(commandText, $"MCP:{_clientName}");
@@ -506,32 +518,40 @@ public sealed class McpGateway : IDisposable
         _history.RecordMcp(_clientName, tool.ToolName, argsText,
             Note(relayNote, result.Success ? "成功" : "失败"), sw.ElapsedMilliseconds);
 
-        // MG-04:Message → 文本段;Data 非空追加 JSON 结构化段
+        // AppShell 0.5.0:保留既有文本块以兼容旧客户端,并加发 structuredContent.data。
+        // 结构化字段从同一份 legacyJson 派生,确保新旧载荷语义一致。
         var content = new JsonArray
         {
             new JsonObject { ["type"] = "text", ["text"] = result.Message },
         };
+        JsonNode? structuredData = null;
         if (result.Success && result.Data != null)
         {
             try
             {
-                content.Add(new JsonObject
-                {
-                    ["type"] = "text",
-                    ["text"] = JsonSerializer.Serialize(result.Data, DataJson),
-                });
+                var legacyJson = JsonSerializer.Serialize(result.Data, DataJson);
+                content.Add(new JsonObject { ["type"] = "text", ["text"] = legacyJson });
+                structuredData = JsonNode.Parse(legacyJson);
             }
             catch (Exception)
             {
-                // Data 序列化失败不影响文本结果(如含 WPF 类型的对象)
+                // Data 序列化失败不影响文本结果(如含 WPF 类型的对象);结构化字段同时不发
+                structuredData = null;
             }
         }
 
-        return RpcResult(id, new JsonObject
+        var payload = new JsonObject
         {
             ["content"] = content,
             ["isError"] = !result.Success,
-        });
+        };
+        if (structuredData != null)
+        {
+            // 规范要求 structuredContent 为 JSON 对象;Data 有数组/对象/字符串三态,统一 data 信封
+            payload["structuredContent"] = new JsonObject { ["data"] = structuredData };
+        }
+
+        return RpcResult(id, payload);
 
         static string Note(string? note, string outcome)
             => note == null ? outcome : $"{note}·{outcome}";

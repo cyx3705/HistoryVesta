@@ -1,0 +1,1 @@
+{"jsonrpc":"2.0","id":12,"result":{"content":[{"type":"text","text":"\u6700\u8FD1 8 \u6761(\u5171 8 \u6761):\n   1  app.set key=mcp.policy value=readonly\n   2  app.set key=mcp.autostart value=true\n   3  mcp.start port=8737\n   4  mcp.status\n   5  app.set key=mcp.policy value=standard\n   6  mcp.status\n   7  mcp\n   8  mcp.start"}],"isError":false}}

@@ -1,0 +1,119 @@
+﻿app.about	standard	framework	app_about
+app.exit	hidden	framework	
+app.get	readonly	framework	app_get
+app.opendata	standard	framework	app_opendata
+app.set	standard	framework	app_set
+cls	standard	framework	cls
+command.domains	readonly	app	command_domains
+command.list	readonly	app	command_list
+command.manual	dangerous	app	command_manual
+command.show	readonly	app	command_show
+correction.list	readonly	app	correction_list
+correction.propose	standard	app	correction_propose
+db.delete	dangerous	framework	db_delete
+db.export	standard	framework	db_export
+db.insert	standard	framework	db_insert
+db.list	readonly	framework	db_list
+db.query	readonly	framework	db_query
+db.schema	readonly	framework	db_schema
+db.sql	dangerous	framework	db_sql
+db.tables	readonly	framework	db_tables
+db.update	dangerous	framework	db_update
+debug.logflood	hidden	app	
+debug.sleep	hidden	app	
+DemoModule.Add	standard	module	DemoModule_Add
+DemoModule.Now	standard	module	DemoModule_Now
+DemoModule.Reverse	standard	module	DemoModule_Reverse
+DemoModule.SayHello	standard	module	DemoModule_SayHello
+git.rule.gaps	readonly	app	git_rule_gaps
+git.rule.list	readonly	app	git_rule_list
+git.rule.remove	dangerous	app	git_rule_remove
+git.rule.scan	readonly	app	git_rule_scan
+git.rule.set	dangerous	app	git_rule_set
+git.rule.suggest	readonly	app	git_rule_suggest
+git.rule.sync	dangerous	app	git_rule_sync
+HelloWorld.Say	standard	module	HelloWorld_Say
+help	readonly	framework	help
+history	readonly	framework	history
+incident.list	readonly	app	incident_list
+incident.record	standard	app	incident_record
+layout.list	readonly	framework	layout_list
+layout.load	standard	framework	layout_load
+layout.reset	standard	framework	layout_reset
+layout.save	standard	framework	layout_save
+log.level	standard	framework	log_level
+mcp.apply	hidden	app	
+mcp.approve	hidden	app	
+mcp.desc	hidden	app	
+mcp.parse	hidden	app	
+mcp.pending	hidden	app	
+mcp.reject	hidden	app	
+mcp.revert	hidden	app	
+mcp.schema	hidden	app	
+mcp.start	hidden	app	
+mcp.status	hidden	app	
+mcp.stop	hidden	app	
+module.dir	standard	app	module_dir
+module.list	readonly	app	module_list
+module.open	standard	app	module_open
+module.reload	standard	app	module_reload
+panel.list	standard	framework	panel_list
+panel.reload	standard	framework	panel_reload
+panel.set	standard	framework	panel_set
+panel.show	standard	framework	panel_show
+proj.commit	standard	app	proj_commit
+proj.commitall	dangerous	app	proj_commitall
+proj.config	readonly	app	proj_config
+proj.create	standard	app	proj_create
+proj.delete	dangerous	app	proj_delete
+proj.forcepush	dangerous	app	proj_forcepush
+proj.history	readonly	app	proj_history
+proj.history.diff	readonly	app	proj_history_diff
+proj.history.show	readonly	app	proj_history_show
+proj.list	readonly	app	proj_list
+proj.metalist	readonly	app	proj_metalist
+proj.metaopen	standard	app	proj_metaopen
+proj.note	standard	app	proj_note
+proj.open	standard	app	proj_open
+proj.push	standard	app	proj_push
+proj.pushall	dangerous	app	proj_pushall
+proj.repair	dangerous	app	proj_repair
+proj.reset	dangerous	app	proj_reset
+proj.rollback	dangerous	app	proj_rollback
+proj.scan	readonly	app	proj_scan
+proj.tree	readonly	app	proj_tree
+ProjectPulse.Largest	standard	module	ProjectPulse_Largest
+ProjectPulse.Recent	standard	module	ProjectPulse_Recent
+ProjectPulse.Summary	standard	module	ProjectPulse_Summary
+prompt.diff	readonly	app	prompt_diff
+prompt.get	readonly	app	prompt_get
+prompt.history	readonly	app	prompt_history
+prompt.propose	standard	app	prompt_propose
+res.delete	dangerous	framework	res_delete
+res.list	standard	framework	res_list
+res.mkdir	standard	framework	res_mkdir
+res.open	standard	framework	res_open
+res.rename	standard	framework	res_rename
+res.reveal	standard	framework	res_reveal
+res.root	standard	framework	res_root
+run	standard	framework	run
+tool.list	readonly	tool	tool_list
+tool.remove	dangerous	tool	tool_remove
+tool.scan	readonly	tool	tool_scan
+tool.sync	standard	tool	tool_sync
+ToolAlpha.Ver	readonly	module	ToolAlpha_Ver
+ToolBeta.Ver	hidden	module	
+ToolKit.Base64Encode	standard	module	ToolKit_Base64Encode
+ToolKit.NewGuid	standard	module	ToolKit_NewGuid
+ToolKit.Now	standard	module	ToolKit_Now
+ToolKit.Sha256	standard	module	ToolKit_Sha256
+ToolRelay.Call	standard	module	ToolRelay_Call
+ToolRelay.Describe	standard	module	ToolRelay_Describe
+ToolRelay.List	standard	module	ToolRelay_List
+win.dock	standard	framework	win_dock
+win.float	standard	framework	win_float
+win.hide	standard	framework	win_hide
+win.list	readonly	framework	win_list
+win.ratio	standard	framework	win_ratio
+win.reset	standard	framework	win_reset
+win.show	standard	framework	win_show

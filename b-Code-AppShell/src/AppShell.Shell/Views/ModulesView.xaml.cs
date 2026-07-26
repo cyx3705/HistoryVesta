@@ -51,7 +51,7 @@ public partial class ModulesView : UserControl
     private void OnOpenDirClick(object sender, System.Windows.RoutedEventArgs e)
         => _ = _busAccessor()?.ExecuteAsync("module.open", "UI");
 
-    // ---------------------------------------------------------------- V2.2.1 补做 A220-8:飞轮入口
+    // ---------------------------------------------------------------- 可选工具注册表入口
 
     private void OnToolScanClick(object sender, System.Windows.RoutedEventArgs e)
         => _ = _busAccessor()?.ExecuteAsync("tool.scan", "UI");
@@ -87,6 +87,7 @@ public partial class ModulesView : UserControl
         if (bus == null)
             return;
 
+        UpdateToolRegistryActions(bus.Registry);
         RefreshButton.IsEnabled = false;
         try
         {
@@ -115,6 +116,20 @@ public partial class ModulesView : UserControl
         {
             RefreshButton.IsEnabled = true;
         }
+    }
+
+    private void UpdateToolRegistryActions(CommandRegistry registry)
+    {
+        var hasScan = registry.TryGet("tool.scan", out _);
+        var hasSync = registry.TryGet("tool.sync", out _);
+        var hasRemove = registry.TryGet("tool.remove", out _);
+
+        ToolScanButton.Visibility = hasScan ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+        ToolSyncButton.Visibility = hasSync ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+        ToolRemoveButton.Visibility = hasRemove ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+        ToolRegistrySeparator.Visibility = hasScan || hasSync || hasRemove
+            ? System.Windows.Visibility.Visible
+            : System.Windows.Visibility.Collapsed;
     }
 
     private void OnModuleSelected(object sender, SelectionChangedEventArgs e)

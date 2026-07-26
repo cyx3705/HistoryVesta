@@ -14,5 +14,6 @@ TestResults/
 *.tmp
 *.log
 !b-Office/snapshots/**/console-baseline*.log
+z-Package-AppShell/staging/
 
 # b-Publish is intentionally tracked as the current delivery snapshot.

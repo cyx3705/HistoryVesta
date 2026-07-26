@@ -43,7 +43,7 @@ public static class PromptGovernanceCommands
     {
         Name = "mcp.desc",
         Summary = "本地查看/直接修订 MCP 工具描述；远程 AI 请使用 prompt.propose",
-        Example = "mcp.desc name=proj.list text=\"列出全部已登记项目\" reason=人工修订",
+        Example = "mcp.desc name=db.query text=\"查询数据表并返回分页结果\" reason=人工修订",
         Parameters =
         [
             StringParam("name", "指令名或工具名", required: true, position: 0),
@@ -84,7 +84,7 @@ public static class PromptGovernanceCommands
         Name = "prompt.get",
         Summary = "查看 MCP 工具的默认描述、生效描述、当前修订和待审核提案数",
         Readonly = true,
-        Example = "prompt.get name=proj.list",
+        Example = "prompt.get name=db.query",
         Parameters = [StringParam("name", "指令名或工具名", required: true, position: 0)],
         Handler = CommandDescriptor.Sync(ctx =>
         {
@@ -99,7 +99,7 @@ public static class PromptGovernanceCommands
         Name = "prompt.history",
         Summary = "查看某个 MCP 工具的描述修订历史",
         Readonly = true,
-        Example = "prompt.history name=proj.list limit=20",
+        Example = "prompt.history name=db.query limit=20",
         Parameters =
         [
             StringParam("name", "指令名或工具名", required: true, position: 0),
@@ -149,7 +149,7 @@ public static class PromptGovernanceCommands
     {
         Name = "prompt.propose",
         Summary = "提交 MCP 工具描述修改提案；不会直接改变生效描述",
-        Example = "prompt.propose name=proj.list text=\"列出全部已登记项目\" reason=澄清扫描边界",
+        Example = "prompt.propose name=db.query text=\"查询数据表并返回分页结果\" reason=澄清分页语义",
         Parameters =
         [
             StringParam("name", "指令名或工具名", required: true, position: 0),
@@ -178,7 +178,7 @@ public static class PromptGovernanceCommands
         Name = "correction.list",
         Summary = "列出 MCP 工具描述勘误记录",
         Readonly = true,
-        Example = "correction.list name=proj.list limit=20",
+        Example = "correction.list name=db.query limit=20",
         Parameters =
         [
             StringParam("name", "可选指令名"),
@@ -200,7 +200,7 @@ public static class PromptGovernanceCommands
     {
         Name = "correction.propose",
         Summary = "提交工具描述勘误，不直接修改生效描述",
-        Example = "correction.propose name=proj.list claim=\"扫描全部磁盘\" correction=\"只列已登记工作树\"",
+        Example = "correction.propose name=db.query claim=\"返回整张表\" correction=\"按 limit 和 page 分页返回\"",
         Parameters =
         [
             StringParam("name", "指令名或工具名", required: true, position: 0),
@@ -228,7 +228,7 @@ public static class PromptGovernanceCommands
         Name = "incident.list",
         Summary = "列出 MCP 工具调用或描述事故记录",
         Readonly = true,
-        Example = "incident.list name=proj.list limit=20",
+        Example = "incident.list name=db.query limit=20",
         Parameters =
         [
             StringParam("name", "可选指令名"),
@@ -250,7 +250,7 @@ public static class PromptGovernanceCommands
     {
         Name = "incident.record",
         Summary = "记录工具调用或描述事故；保留预期、实际和证据",
-        Example = "incident.record name=proj.list symptom=误解扫描范围 expected=只列登记项目 actual=尝试扫描磁盘",
+        Example = "incident.record name=db.query symptom=误解分页范围 expected=只读当前页 actual=请求整表",
         Parameters =
         [
             StringParam("name", "指令名或工具名", required: true, position: 0),
@@ -278,7 +278,7 @@ public static class PromptGovernanceCommands
     {
         Name = "mcp.pending",
         Summary = "本地列出待审核或已批准未应用的提示词提案",
-        Example = "mcp.pending name=proj.list",
+        Example = "mcp.pending name=db.query",
         Parameters =
         [
             StringParam("name", "可选指令名"),

@@ -1,6 +1,6 @@
 # MCP 接入与安全
 
-> 适用版本：OneHistoryStudio V2.4.4
+> 适用版本：OneHistoryStudio V2.4.5
 > 框架基线：AppShell 0.4.4
 
 ## 当前架构
@@ -146,8 +146,15 @@ Readonly == true → readonly
 
 每个工具调用最终都被还原为命令文本并经同一个 `CommandBus` 执行。返回结果包含：
 
-1. `CommandResult.Message` 文本；
-2. 成功且存在 `CommandResult.Data` 时追加的 JSON 结构化文本。
+1. `CommandResult.Message` 文本（`content[0]`）；
+2. 成功且存在 `CommandResult.Data` 时追加的 JSON 结构化文本（`content[1]`）；
+3. V2.4.5 起同时提供规范字段 `structuredContent`，形如 `{"data": <载荷>}`——
+   MCP 规范要求该字段为 JSON 对象，而 `Data` 有数组/对象/字符串三态，故统一 `data` 信封。
+   `structuredContent.data` 与 `content[1]` 由同一份序列化文本派生，内容必然一致。
+
+`content[1]` 的 JSON 文本块**按规范保留**（MCP 2025-06-18：返回结构化内容的工具
+SHOULD 同时在 TextContent 返回序列化 JSON，向后兼容），消费者应优先读
+`structuredContent.data`，读不到再回退扫 `content` 文本块。
 
 响应等待超时只切断 MCP 响应，不会强行撕裂正在执行的宿主命令；命令会继续运行并留痕，之后应使用只读命令查询结果。
 
