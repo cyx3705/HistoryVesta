@@ -62,7 +62,7 @@ public sealed class ShellConfig
     /// <summary>
     /// MCP 服务(0.4.4 由 OneHistoryStudio 反哺):元数据自描述层、网关、提示词治理,
     /// 注册 mcp.* / command.* / prompt.* / correction.* / incident.* 指令组。
-    /// 默认启用——但**网关本身仍默认不监听**(MS-01),需 mcp.start 或 mcp.autostart=true。
+    /// 默认启用并随宿主自动监听；mcp.autostart=false 可关闭自动监听，之后仍可 mcp.start。
     /// 依赖 <see cref="DataService"/>:未配置数据服务时本项自动降级为关闭并告警。
     /// </summary>
     public bool EnableMcp { get; set; } = true;

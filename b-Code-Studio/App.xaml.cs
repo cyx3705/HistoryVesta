@@ -68,12 +68,12 @@ public partial class App : Application
 
         // 工作区(§9 流程第 6 条 / DT-04):默认根 = 项目库根目录,可经 res.root 更改并持久化
         var workspace = new WorkspaceService(
-            settings.Get("workspace.root") ?? projects.WorktreeRoot);
+            settings.Get(WorkspaceService.KeyRoot) ?? projects.WorktreeRoot);
 
         // 自扩展飞轮(V2.2):清单发现/同步/溯源;槽路径跟随框架模块宿主的 module.dir 现值。
         // 0.4.4:模块宿主由 ShellWindow 自建,故以委托延迟取用——命令执行时窗口必已就绪。
-        var defaultModulesDir = System.IO.Path.Combine(paths.Root, "Modules");
-        var panelsDir = System.IO.Path.Combine(paths.Root, "panels");
+        var defaultModulesDir = paths.ModulesDir;
+        var panelsDir = paths.PanelsDir;
         var tools = new ToolSyncService(projects, dataService, log,
             () => window?.Modules?.ModulesDirectory ?? defaultModulesDir);
 
@@ -109,9 +109,17 @@ public partial class App : Application
             ToolCommands.RegisterAll(registry, tools);
             DebugCommands.RegisterAll(registry, log);
 
+            var unreservedDomains = ToolManifestLoader.FindUnreservedBuiltinDomains(
+                registry.All().Select(command => command.Name));
+            if (unreservedDomains.Count > 0)
+            {
+                log.Warn("tool", "内置指令域未纳入模块名保留清单: " +
+                                 string.Join(", ", unreservedDomains));
+            }
+
             // 0.4.4:module.* / mcp.* / command.* / prompt.* 等已由框架在此之前注册完毕。
-            // 本应用只需登记自己的只读指令(清单见 AppMcpPolicy,与冒烟宿主共用同一真值)。
-            AppMcpPolicy.RegisterReadonlyCommands();
+            // V2.4.4:本应用不再登记只读指令名单——每条命令在自己的注册处用
+            // Readonly = true 自描述,新增只读指令只需改注册点一处。
         };
 
         window = new ShellWindow(config, new FileLayoutStore(paths), log, settings, paths.Root);

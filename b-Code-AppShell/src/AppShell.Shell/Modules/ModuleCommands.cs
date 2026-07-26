@@ -19,6 +19,7 @@ public static class ModuleCommands
         {
             Name = "module.list",
             Summary = "列出已加载模块(名称/版本/描述/指令数)",
+            Readonly = true,
             Example = "module.list",
             Handler = CommandDescriptor.Sync(_ =>
             {

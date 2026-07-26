@@ -11,6 +11,8 @@ namespace AppShell.Services;
 /// </summary>
 public sealed class WorkspaceService : IWorkspaceService, IDisposable
 {
+    public const string KeyRoot = "workspace.root";
+
     private readonly object _gate = new();
     private FileSystemWatcher? _watcher;
     private Timer? _debounce;

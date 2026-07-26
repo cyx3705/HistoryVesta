@@ -162,8 +162,13 @@ internal static class V213Suite
                 "command catalog contains the simplified rule commands and V2.2.1 inventory extensions");
             True(!commandNames.Any(name => name.StartsWith("attr.", StringComparison.OrdinalIgnoreCase)),
                 "old attr commands absent");
-            True(McpExposurePolicy.IsReadonlyAllowed("git.rule.list"), "git.rule.list is readonly MCP projection");
-            True(!McpExposurePolicy.IsReadonlyAllowed("git.rule.set"), "git.rule.set requires standard MCP policy");
+            // V2.4.4:只读性由描述符自描述,不再查名字白名单。判据升级为「真值 + 解释结果」。
+            True(registry.TryGet("git.rule.list", out var ruleList) && ruleList.Readonly
+                 && McpExposurePolicy.State(ruleList) == "readonly",
+                "git.rule.list is readonly MCP projection");
+            True(registry.TryGet("git.rule.set", out var ruleSet) && !ruleSet.Readonly
+                 && McpExposurePolicy.State(ruleSet) != "readonly",
+                "git.rule.set requires standard MCP policy");
             var commandLog = new MemoryLog();
             var commandBus = new CommandBus(registry, commandLog);
             var executed = false;

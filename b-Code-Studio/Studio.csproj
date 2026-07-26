@@ -8,10 +8,7 @@
     <AssemblyName>OneHistoryStudio</AssemblyName>
     <Product>OneHistoryStudio</Product>
     <Title>OneHistoryStudio</Title>
-    <Version>2.4.1</Version>
-    <AssemblyVersion>2.4.1.0</AssemblyVersion>
-    <FileVersion>2.4.1.0</FileVersion>
-    <InformationalVersion>2.4.1</InformationalVersion>
+    <Version>2.4.3</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <!-- Studio.csproj 位于组件根；嵌套测试由 Smoke.csproj 独立编译。 -->
     <DefaultItemExcludes>$(DefaultItemExcludes);tests\**</DefaultItemExcludes>
@@ -30,7 +27,7 @@
       产品文档位于 020 根级 b-Office；Link 一律保持 docs\，随程序发布的 Help 目录结构
       (b-Publish\docs\*.md) 是面向使用者的产品界面，不随源码目录调整而变。
     -->
-    <Content Include="..\b-Office\meta\README.md" Link="docs\README.md" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\b-Office\meta\使用说明.md" Link="docs\README.md" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\b-Office\meta\命令手册.md" Link="docs\命令手册.md" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\b-Office\meta\MCP接入与安全.md" Link="docs\MCP接入与安全.md" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\b-Office\meta\项目库与备份.md" Link="docs\项目库与备份.md" CopyToPublishDirectory="PreserveNewest" />

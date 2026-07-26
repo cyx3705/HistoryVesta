@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using AppShell.Core.Logging;
+using AppShell.Services;
 
 namespace OneHistoryStudio.Git;
 
@@ -77,7 +78,7 @@ public sealed class FormatInventoryService
     {
         _projects = projects;
         _log = log;
-        _cachePath = Path.Combine(dataDir, "data", "format-inventory.json");
+        _cachePath = Path.Combine(AppPaths.GetDataDir(dataDir), "format-inventory.json");
     }
 
     /// <summary>

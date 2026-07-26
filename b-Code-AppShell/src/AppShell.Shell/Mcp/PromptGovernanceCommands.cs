@@ -83,6 +83,7 @@ public static class PromptGovernanceCommands
     {
         Name = "prompt.get",
         Summary = "查看 MCP 工具的默认描述、生效描述、当前修订和待审核提案数",
+        Readonly = true,
         Example = "prompt.get name=proj.list",
         Parameters = [StringParam("name", "指令名或工具名", required: true, position: 0)],
         Handler = CommandDescriptor.Sync(ctx =>
@@ -97,6 +98,7 @@ public static class PromptGovernanceCommands
     {
         Name = "prompt.history",
         Summary = "查看某个 MCP 工具的描述修订历史",
+        Readonly = true,
         Example = "prompt.history name=proj.list limit=20",
         Parameters =
         [
@@ -128,6 +130,7 @@ public static class PromptGovernanceCommands
     {
         Name = "prompt.diff",
         Summary = "查看提示词提案的原文、新文和文本差异",
+        Readonly = true,
         Example = "prompt.diff id=proposal_xxx",
         Parameters = [StringParam("id", "提案 ID", required: true, position: 0)],
         Handler = CommandDescriptor.Sync(ctx =>
@@ -174,6 +177,7 @@ public static class PromptGovernanceCommands
     {
         Name = "correction.list",
         Summary = "列出 MCP 工具描述勘误记录",
+        Readonly = true,
         Example = "correction.list name=proj.list limit=20",
         Parameters =
         [
@@ -223,6 +227,7 @@ public static class PromptGovernanceCommands
     {
         Name = "incident.list",
         Summary = "列出 MCP 工具调用或描述事故记录",
+        Readonly = true,
         Example = "incident.list name=proj.list limit=20",
         Parameters =
         [

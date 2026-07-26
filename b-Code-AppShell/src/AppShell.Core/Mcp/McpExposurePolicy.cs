@@ -2,7 +2,13 @@
 
 namespace AppShell.Core.Mcp;
 
-/// <summary>MCP 暴露规则的单一真值，供网关、command.* 和管理页共同解释。</summary>
+/// <summary>
+/// MCP 暴露规则的解释器，供网关、command.* 和管理页共同使用。
+///
+/// **只读性的单一真值在 <see cref="CommandDescriptor.Readonly"/>**（命令自己声明）；
+/// 模块命令的暴露档来自模块清单的 <c>mcpExposure</c>（经 <see cref="ModuleExposure"/> 查得）。
+/// 本类只负责把这两个来源解释成最终档位，不再持有任何指令名清单（V2.4.4）。
+/// </summary>
 public static class McpExposurePolicy
 {
     /// <summary>V2.2 CX-01:命令名 → 所属模块名(注册来源 "module:&lt;name&gt;");装配点接 Registry.GetSource。</summary>
@@ -18,22 +24,23 @@ public static class McpExposurePolicy
     }
 
     /// <summary>
-    /// 框架自有的只读指令基线(0.4.4)。
-    /// **只登记框架自己注册的指令**——派生应用的只读指令一律由 RegisterReadonly 追加,
-    /// 框架层不得写入任何派生应用专有的指令名(否则每个派生都背着别人的指令表)。
+    /// 按名字补登记的只读指令集合。
+    ///
+    /// **V2.4.4 起默认为空**:只读性的单一真值是 <see cref="CommandDescriptor.Readonly"/>——
+    /// 由命令在注册处自己声明,与 ConfirmPrompt / SupportsUndo 同级。
+    /// 0.4.4 时代的 18 条框架基线与派生应用登记的 14 条已全部迁至各自描述符,
+    /// 保留双份会让「一件事实两处声明」以新形态复活,故本集合清空。
+    ///
+    /// 本集合与 <see cref="RegisterReadonly"/> 继续保留,仅用于**无法修改注册点**的场景
+    /// (例如第三方程序集提供的命令描述符)。正常开发一律用 Readonly = true,不要走这里。
     /// </summary>
-    private static readonly HashSet<string> ReadonlyCommands = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "help", "history",
-        "db.query", "db.tables", "db.schema", "db.list",
-        "module.list", "win.list", "layout.list", "app.get",
-        "prompt.get", "prompt.history", "prompt.diff", "correction.list", "incident.list",
-        "command.list", "command.show", "command.domains",
-    };
+    private static readonly HashSet<string> ReadonlyCommands = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// 派生应用登记自己的只读指令(0.4.4)。幂等、可重复调用;
-    /// 应在指令注册之后、网关启动之前完成(装配点 ConfigureCommands 内或紧随其后)。
+    /// 按名字补登记只读指令(0.4.4 引入,V2.4.4 起退为兜底通道)。幂等、可重复调用。
+    ///
+    /// **优先用 <see cref="CommandDescriptor.Readonly"/> 自描述**;只有在拿不到注册点、
+    /// 无法给描述符加字段时才用本方法。
     /// </summary>
     public static void RegisterReadonly(params string[] commandNames)
     {
@@ -70,6 +77,8 @@ public static class McpExposurePolicy
             return "hidden";
         if (descriptor.ConfirmPrompt != null)
             return "dangerous";
+        if (descriptor.Readonly)
+            return "readonly";
         return IsReadonlyAllowed(descriptor.Name) ? "readonly" : "standard";
     }
 
@@ -77,5 +86,6 @@ public static class McpExposurePolicy
         => HardExclusionReason(descriptor.Name) == null
            && descriptor.ConfirmPrompt == null
            && (policy.Equals("standard", StringComparison.OrdinalIgnoreCase)
+               || descriptor.Readonly
                || IsReadonlyAllowed(descriptor.Name));
 }

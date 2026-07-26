@@ -106,6 +106,7 @@ public static class ProjectCommands
     {
         Name = "proj.list",
         Summary = "列出全部项目工作树(编号/分支/路径/状态)",
+        Readonly = true,
         Example = "proj.list filter=2026",
         Parameters =
         [
@@ -221,6 +222,7 @@ public static class ProjectCommands
     {
         Name = "proj.tree",
         Summary = "输出分支继承树(默认读文件缓存秒开;refresh=true 重新扫描并更新缓存)",
+        Readonly = true,
         Example = "proj.tree refresh=true",
         Parameters =
         [
@@ -467,6 +469,7 @@ public static class ProjectCommands
     {
         Name = "proj.scan",
         Summary = "扫描项目大文件并输出分级报告(不提交)",
+        Readonly = true,
         Example = "proj.scan name=2026-018-MyAPI",
         Parameters =
         [
@@ -546,6 +549,7 @@ public static class ProjectCommands
     {
         Name = "proj.config",
         Summary = "显示 proj.* 当前生效配置(经 app.set 修改)",
+        Readonly = true,
         Example = "proj.config",
         Handler = CommandDescriptor.Sync(_ => CommandResult.Ok(projects.DescribeConfig())),
     };
@@ -556,6 +560,7 @@ public static class ProjectCommands
     {
         Name = "proj.metalist",
         Summary = "列出全部项目根下以 z/Z 开头的一级元文件夹",
+        Readonly = true,
         Example = "proj.metalist filter=AD",
         Parameters =
         [

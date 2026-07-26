@@ -14,6 +14,7 @@ public static class ToolCommands
         {
             Name = "tool.scan",
             Summary = "扫描项目库全部工具清单(z 级元文件夹的 module.manifest.json),标注部署状态",
+            Readonly = true,
             Example = "tool.scan",
             Handler = async _ =>
             {
@@ -82,6 +83,7 @@ public static class ToolCommands
         {
             Name = "tool.list",
             Summary = "列出已同步工具的溯源(来源分支/版本/哈希/时间/槽状态)",
+            Readonly = true,
             Example = "tool.list",
             Handler = CommandDescriptor.Sync(_ =>
             {

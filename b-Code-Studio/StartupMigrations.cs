@@ -35,7 +35,7 @@ public static class StartupMigrations
 
         try
         {
-            var panels = Path.Combine(paths.Root, "panels");
+            var panels = paths.PanelsDir;
             if (done < 1)
             {
                 DeleteIfExists(Path.Combine(panels, "motor.json"), "V2-M0 演示面板", log);
@@ -88,7 +88,7 @@ public static class StartupMigrations
     /// <summary>模板验收遗产 users/bench 演示表回收;先整库备份再动手。</summary>
     private static void DropDemoTables(AppPaths paths, IDataService data, IShellLog log)
     {
-        var db = Path.Combine(paths.Root, "data", "main.db");
+        var db = Path.Combine(paths.DataDir, "main.db");
         if (File.Exists(db))
         {
             var backup = db + ".bak-v216";

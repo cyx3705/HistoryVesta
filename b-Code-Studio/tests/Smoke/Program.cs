@@ -11,11 +11,9 @@ using OneHistoryStudio.Smoke.Suites;
 // 合并前每套用例是独立 Exe,各自 ProjectReference App.csproj,于是把整个应用输出
 // 复制 5 份 × 2 配置(270M)。合并后只剩 1 份 × 2 配置。
 
-// 模板 0.4.4 起,应用身份与 MCP 只读白名单由装配点显式登记。
-// 冒烟宿主不跑 WPF 装配点,故在此完成等价的两步——**与 App.xaml.cs 共用同一真值**,
-// 不在此另写一份清单,避免两处漂移。
+// 应用身份由装配点显式登记;冒烟宿主不跑 WPF 装配点,故在此完成等价动作。
+// V2.4.4:只读指令登记已取消——只读性由各 CommandDescriptor.Readonly 自描述。
 AppIdentity.Use(typeof(OneHistoryStudio.Git.ProjectService).Assembly);
-OneHistoryStudio.AppMcpPolicy.RegisterReadonlyCommands();
 
 var suites = new (string Name, Func<string[], Task> Run)[]
 {

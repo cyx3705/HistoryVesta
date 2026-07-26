@@ -20,6 +20,9 @@ namespace AppShell.Shell.Console;
 /// </summary>
 public partial class ConsoleView : UserControl
 {
+    public const string KeyHistory = "console.history";
+    public const string KeyBuffer = "console.buffer";
+
     private readonly IShellLog _log;
     private readonly CommandBus _bus;
     private readonly CommandHistory _history;

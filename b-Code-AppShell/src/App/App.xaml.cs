@@ -50,7 +50,7 @@ public partial class App : Application
 
         // 工作区(§9 流程第 6 条):根目录可经 res.root 指令更改并持久化
         var workspace = new WorkspaceService(
-            settings.Get("workspace.root") ?? paths.WorkspaceDir);
+            settings.Get(WorkspaceService.KeyRoot) ?? paths.WorkspaceDir);
 
         // 控制面板演示(§9 流程第 4 条):首启把 motor.json 写入 panels/ 目录
         SeedDemoPanel(paths, log);
@@ -210,9 +210,7 @@ public partial class App : Application
     {
         try
         {
-            var panelsDir = System.IO.Path.Combine(paths.Root, "panels");
-            System.IO.Directory.CreateDirectory(panelsDir);
-            var file = System.IO.Path.Combine(panelsDir, "motor.json");
+            var file = System.IO.Path.Combine(paths.PanelsDir, "motor.json");
             if (System.IO.File.Exists(file))
                 return;
 

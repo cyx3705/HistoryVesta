@@ -23,6 +23,10 @@ public static class CommandManualGenerator
         var builder = new StringBuilder();
         builder.AppendLine("# OneHistoryStudio 命令手册");
         builder.AppendLine();
+        builder.AppendLine("> [!IMPORTANT]");
+        builder.AppendLine("> 本文件由运行时指令注册表自动生成。禁止手工增删或改写下方指令条目；");
+        builder.AppendLine("> 需要更新时，请在程序控制台执行 `command.manual file=b-Office/meta/命令手册.md apply=true`。");
+        builder.AppendLine();
         builder.AppendLine($"> 版本：{AppIdentity.Current.Version}");
         builder.AppendLine("> 来源：运行时 `CommandRegistry` 与 MCP 投影自动生成；请勿手工维护指令条目。");
         builder.AppendLine($"> 当前 MCP 策略：`{policy}`");

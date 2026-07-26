@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text;
+using AppShell.Services;
 
 namespace OneHistoryStudio.Git;
 
@@ -297,7 +298,7 @@ public sealed class BranchTreeService
 
     // ---------------------------------------------------------------- 继承树文件缓存
 
-    private string TreeCachePath => Path.Combine(_dataDir, "data", "branch-tree.json");
+    private string TreeCachePath => Path.Combine(AppPaths.GetDataDir(_dataDir), "branch-tree.json");
 
     private sealed record TreeCacheNode(string Name, string Time, string Desc, List<TreeCacheNode> Children);
 

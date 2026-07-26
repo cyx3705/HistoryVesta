@@ -2,6 +2,7 @@
 using AppShell.Core.Mcp;
 using AppShell.Core.Data;
 using AppShell.Core.Logging;
+using AppShell.Services.Mcp;
 
 namespace OneHistoryStudio.Git;
 
@@ -13,6 +14,9 @@ namespace OneHistoryStudio.Git;
 /// </summary>
 public sealed class HistoryRecorder : IMcpAuditLog
 {
+    public const string TablePushHistory = "push_history";
+    public const string TableBranchNotes = "branch_notes";
+
     private readonly IDataService _data;
     private readonly IShellLog _log;
 
@@ -23,8 +27,8 @@ public sealed class HistoryRecorder : IMcpAuditLog
         try
         {
             _data.ExecuteSql(
-                """
-                CREATE TABLE IF NOT EXISTS push_history (
+                $"""
+                CREATE TABLE IF NOT EXISTS {TablePushHistory} (
                     id       INTEGER PRIMARY KEY AUTOINCREMENT,
                     time     TEXT    NOT NULL,
                     branch   TEXT    NOT NULL,
@@ -35,16 +39,16 @@ public sealed class HistoryRecorder : IMcpAuditLog
                 )
                 """);
             _data.ExecuteSql(
-                """
-                CREATE TABLE IF NOT EXISTS branch_notes (
+                $"""
+                CREATE TABLE IF NOT EXISTS {TableBranchNotes} (
                     branch  TEXT PRIMARY KEY,
                     note    TEXT NOT NULL,
                     updated TEXT NOT NULL
                 )
                 """);
             _data.ExecuteSql(
-                """
-                CREATE TABLE IF NOT EXISTS mcp_history (
+                $"""
+                CREATE TABLE IF NOT EXISTS {McpAuditRecorder.TableName} (
                     id         INTEGER PRIMARY KEY AUTOINCREMENT,
                     time       TEXT    NOT NULL,
                     client     TEXT    NOT NULL,
@@ -67,7 +71,7 @@ public sealed class HistoryRecorder : IMcpAuditLog
         try
         {
             _data.ExecuteSql(
-                $"INSERT INTO push_history (time, branch, action, message, result, warnings) VALUES (" +
+                $"INSERT INTO {TablePushHistory} (time, branch, action, message, result, warnings) VALUES (" +
                 $"'{DateTime.Now:yyyy-MM-dd HH:mm:ss}','{Esc(branch)}','{Esc(action)}'," +
                 $"'{Esc(Truncate(message, 500))}','{Esc(result)}',{warnings})");
         }
@@ -83,7 +87,7 @@ public sealed class HistoryRecorder : IMcpAuditLog
         try
         {
             _data.ExecuteSql(
-                $"INSERT INTO mcp_history (time, client, tool, arguments, result, elapsed_ms) VALUES (" +
+                $"INSERT INTO {McpAuditRecorder.TableName} (time, client, tool, arguments, result, elapsed_ms) VALUES (" +
                 $"'{DateTime.Now:yyyy-MM-dd HH:mm:ss}','{Esc(Truncate(client, 100))}','{Esc(tool)}'," +
                 $"'{Esc(Truncate(arguments, 500))}','{Esc(result)}',{elapsedMs})");
         }
@@ -96,7 +100,7 @@ public sealed class HistoryRecorder : IMcpAuditLog
     /// <summary>写/更新分支描述(proj.note)。</summary>
     public void SetNote(string branch, string note)
         => _data.ExecuteSql(
-            $"INSERT OR REPLACE INTO branch_notes (branch, note, updated) VALUES (" +
+            $"INSERT OR REPLACE INTO {TableBranchNotes} (branch, note, updated) VALUES (" +
             $"'{Esc(branch)}','{Esc(note)}','{DateTime.Now:yyyy-MM-dd HH:mm:ss}')");
 
     /// <summary>全部分支描述(继承树覆盖显示用);失败返回空表。</summary>
@@ -105,7 +109,7 @@ public sealed class HistoryRecorder : IMcpAuditLog
         var notes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         try
         {
-            var (result, _) = _data.ExecuteSql("SELECT branch, note FROM branch_notes");
+            var (result, _) = _data.ExecuteSql($"SELECT branch, note FROM {TableBranchNotes}");
             if (result == null)
                 return notes;
             var bi = IndexOf(result.Columns, "branch");

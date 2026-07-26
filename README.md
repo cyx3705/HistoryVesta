@@ -16,8 +16,8 @@ V2.4.1 将产品源码、样例与发布快照拆成平级组件，进一步缩�
 | `b-Office` | OHS 现行手册、版本工程文档与行为快照 | 不构建 |
 | `z-Package-AppShell` | AppShell 对外版本包空壳 | 不参与内部构建 |
 
-文档入口：[OHS 文档中心](./b-Office/meta/README.md) ｜
-[V2.4.1 结构重构与交付记录](./b-Office/versions/27-V2.4.1-骨干削薄与源码上抛.md) ｜
+文档入口：[OHS 文档中心](./b-Office/README.md) ｜
+[V2.4.3 代码卫生与自管理](./b-Office/versions/29-V2.4.3-代码卫生与自管理.md) ｜
 [AppShell 演进手册](./b-Code-AppShell/docs/二次开发演进手册.md)
 
 ## 构建入口

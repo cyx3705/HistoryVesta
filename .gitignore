@@ -13,5 +13,6 @@ TestResults/
 # Local package and deployment scratch
 *.tmp
 *.log
+!b-Office/snapshots/**/console-baseline*.log
 
 # b-Publish is intentionally tracked as the current delivery snapshot.

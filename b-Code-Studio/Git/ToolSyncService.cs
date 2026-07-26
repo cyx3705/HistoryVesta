@@ -25,6 +25,8 @@ public sealed record ToolScanRow(
 /// </summary>
 public sealed class ToolSyncService
 {
+    public const string TableName = "tool_registry";
+
     private readonly ProjectService _projects;
     private readonly IDataService _data;
     private readonly IShellLog _log;
@@ -39,8 +41,8 @@ public sealed class ToolSyncService
         try
         {
             _data.ExecuteSql(
-                """
-                CREATE TABLE IF NOT EXISTS tool_registry (
+                $"""
+                CREATE TABLE IF NOT EXISTS {TableName} (
                     name         TEXT PRIMARY KEY,
                     branch       TEXT NOT NULL,
                     version      TEXT,
@@ -53,13 +55,13 @@ public sealed class ToolSyncService
         }
         catch (Exception ex)
         {
-            _log.Error("tool", $"tool_registry 建表失败: {ex.Message}");
+            _log.Error("tool", $"{TableName} 建表失败: {ex.Message}");
         }
 
         try
         {
             // M2 期建的旧表补列(重复添加抛错即忽略,幂等)
-            _data.ExecuteSql("ALTER TABLE tool_registry ADD COLUMN mcp_exposure TEXT NOT NULL DEFAULT 'standard'");
+            _data.ExecuteSql($"ALTER TABLE {TableName} ADD COLUMN mcp_exposure TEXT NOT NULL DEFAULT 'standard'");
         }
         catch (Exception)
         {
@@ -80,7 +82,7 @@ public sealed class ToolSyncService
             cache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             try
             {
-                var (result, _) = _data.ExecuteSql("SELECT name, mcp_exposure FROM tool_registry");
+                var (result, _) = _data.ExecuteSql($"SELECT name, mcp_exposure FROM {TableName}");
                 if (result != null)
                 {
                     foreach (var row in result.Rows)
@@ -192,7 +194,7 @@ public sealed class ToolSyncService
         try
         {
             var (result, _) = _data.ExecuteSql(
-                $"SELECT sha256 FROM tool_registry WHERE name={SqlText.Quote(name)}");
+                $"SELECT sha256 FROM {TableName} WHERE name={SqlText.Quote(name)}");
             if (result == null || result.Rows.Count == 0)
                 return null;
             var col = result.Columns.ToList().FindIndex(c =>
@@ -309,7 +311,7 @@ public sealed class ToolSyncService
                 return (false, "复制后哈希不一致,已中止(槽内容不可信,请重试)");
 
             _data.ExecuteSql(
-                "INSERT OR REPLACE INTO tool_registry (name, branch, version, sha256, synced_at, source_path, mcp_exposure) VALUES (" +
+                $"INSERT OR REPLACE INTO {TableName} (name, branch, version, sha256, synced_at, source_path, mcp_exposure) VALUES (" +
                 $"{SqlText.Quote(manifest.Name)},{SqlText.Quote(manifest.SourceProject)}," +
                 $"{SqlText.Quote(manifest.Version)},{SqlText.Quote(sourceSha)}," +
                 $"'{DateTime.Now:yyyy-MM-dd HH:mm:ss}',{SqlText.Quote(manifest.ArtifactPath)}," +
@@ -344,7 +346,7 @@ public sealed class ToolSyncService
         try
         {
             (_, removedRows) = _data.ExecuteSql(
-                $"DELETE FROM tool_registry WHERE name={SqlText.Quote(name)}");
+                $"DELETE FROM {TableName} WHERE name={SqlText.Quote(name)}");
         }
         catch (Exception ex)
         {
@@ -366,7 +368,7 @@ public sealed class ToolSyncService
         try
         {
             var (result, _) = _data.ExecuteSql(
-                "SELECT name, branch, version, sha256, synced_at FROM tool_registry ORDER BY name");
+                $"SELECT name, branch, version, sha256, synced_at FROM {TableName} ORDER BY name");
             if (result != null)
             {
                 var modulesRoot = _modulesDir();

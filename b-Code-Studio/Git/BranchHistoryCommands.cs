@@ -23,6 +23,7 @@ public static class BranchHistoryCommands
     {
         Name = "proj.history",
         Summary = "查看分支从父分支分叉点到当前 HEAD 的提交历史",
+        Readonly = true,
         Example = "proj.history name=2026-018-MyAPI limit=200 remote=false",
         Parameters =
         [
@@ -47,6 +48,7 @@ public static class BranchHistoryCommands
     {
         Name = "proj.history.show",
         Summary = "查看分支历史节点的提交详情与文件变更",
+        Readonly = true,
         Example = "proj.history.show name=2026-018-MyAPI sha=abc1234",
         Parameters = TargetParameters(),
         Handler = async ctx =>
@@ -63,6 +65,7 @@ public static class BranchHistoryCommands
     {
         Name = "proj.history.diff",
         Summary = "预览历史节点与当前分支 HEAD 的提交及文件差异",
+        Readonly = true,
         Example = "proj.history.diff name=2026-018-MyAPI sha=abc1234",
         Parameters = TargetParameters(),
         Handler = async ctx =>

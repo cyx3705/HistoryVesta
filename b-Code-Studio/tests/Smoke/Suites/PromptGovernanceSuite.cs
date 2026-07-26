@@ -35,9 +35,7 @@ internal static class PromptGovernanceSuite
             var data = new SqliteDataService(paths);
             data.RegisterConnection("main", "main.db");
 
-            var panelsDirectory = Path.Combine(paths.Root, "panels");
-            var retiredPanel = Path.Combine(panelsDirectory, "projpush.json");
-            Directory.CreateDirectory(panelsDirectory);
+            var retiredPanel = Path.Combine(paths.PanelsDir, "projpush.json");
             await File.WriteAllTextAsync(retiredPanel, "{}");
             settings.Set(StartupMigrations.KeyMigrated, "1");
             StartupMigrations.Run(settings, paths, data, log);
@@ -45,12 +43,14 @@ internal static class PromptGovernanceSuite
             Equal("2", settings.Get(StartupMigrations.KeyMigrated), "V2.1.7 migration version");
 
             data.ExecuteSql(
-                "CREATE TABLE mcp_descriptions (command TEXT PRIMARY KEY,description TEXT NOT NULL,updated TEXT NOT NULL)");
+                $"CREATE TABLE {PromptGovernanceStore.TableDescriptions} " +
+                "(command TEXT PRIMARY KEY,description TEXT NOT NULL,updated TEXT NOT NULL)");
             data.ExecuteSql(
-                "INSERT INTO mcp_descriptions VALUES ('proj.list','legacy description','2026-07-16 00:00:00')");
+                $"INSERT INTO {PromptGovernanceStore.TableDescriptions} " +
+                "VALUES ('proj.list','legacy description','2026-07-16 00:00:00')");
             data.ExecuteSql(
-                """
-                CREATE TABLE mcp_prompt_proposals (
+                $"""
+                CREATE TABLE {PromptGovernanceStore.TableProposals} (
                     id TEXT PRIMARY KEY, command TEXT NOT NULL, base_revision TEXT,
                     old_text TEXT NOT NULL, proposed_text TEXT NOT NULL, reason TEXT NOT NULL,
                     evidence TEXT NOT NULL DEFAULT '', source_client TEXT NOT NULL, created TEXT NOT NULL,
@@ -61,7 +61,7 @@ internal static class PromptGovernanceSuite
             var history = new HistoryRecorder(data, log);
             var store = new PromptGovernanceStore(data, log);
             Equal("legacy description", store.AllEffectiveDescriptions()["proj.list"], "legacy migration");
-            True(data.GetSchema("mcp_prompt_proposals").Any(c => c.Name == "review_note"),
+            True(data.GetSchema(PromptGovernanceStore.TableProposals).Any(c => c.Name == "review_note"),
                 "proposal schema migration");
 
             var registry = new CommandRegistry();
@@ -69,7 +69,15 @@ internal static class PromptGovernanceSuite
             {
                 Name = "proj.list",
                 Summary = "default description",
+                Readonly = true,
                 Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("ok")),
+            });
+            registry.Register(new CommandDescriptor
+            {
+                Name = "self.readonly",
+                Summary = "self-described readonly command",
+                Readonly = true,
+                Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("self readonly ok")),
             });
             var exporter = new CommandSchemaExporter(registry)
             {
@@ -87,7 +95,7 @@ internal static class PromptGovernanceSuite
                     "proj.list", "legacy description", "??? broken", "encoding", "", "MCP:broken-client"),
                 "corrupted proposal rejected at store boundary");
             data.ExecuteSql(
-                "INSERT INTO mcp_prompt_proposals " +
+                $"INSERT INTO {PromptGovernanceStore.TableProposals} " +
                 "(id,command,old_text,proposed_text,reason,evidence,source_client,created,status) VALUES " +
                 "('proposal_corrupt_approval','proj.list','legacy description','????','encoding','','legacy-client','2026-07-17T00:00:00+08:00','pending')");
             Throws<InvalidOperationException>(
@@ -99,7 +107,7 @@ internal static class PromptGovernanceSuite
                 "proj.list", "legacy description", "valid before tampering", "encoding", "", "legacy-client");
             store.ApproveProposal(corruptBeforeApply.Id, "smoke");
             data.ExecuteSql(
-                $"UPDATE mcp_prompt_proposals SET proposed_text='????' WHERE id='{corruptBeforeApply.Id}'");
+                $"UPDATE {PromptGovernanceStore.TableProposals} SET proposed_text='????' WHERE id='{corruptBeforeApply.Id}'");
             Throws<InvalidOperationException>(
                 () => store.ApplyProposal(corruptBeforeApply.Id, "smoke"),
                 "legacy corrupted proposal rejected during apply");
@@ -151,7 +159,17 @@ internal static class PromptGovernanceSuite
                 "local review commands hard excluded");
 
             using var gateway = new McpGateway(() => bus, settings, log, history, store, AppIdentity.Current);
+            True(gateway.AutostartEnabled, "mcp autostart defaults to enabled");
+            settings.Set(McpGateway.KeyAutostart, "false");
+            True(!gateway.AutostartEnabled, "mcp autostart can be disabled");
+            var disabledAutostart = gateway.TryAutostart();
+            True(disabledAutostart.Success && !gateway.IsRunning,
+                "disabled mcp autostart does not listen");
+            settings.Set(McpGateway.KeyAutostart, "true");
+            True(gateway.AutostartEnabled, "mcp autostart can be re-enabled");
             True(gateway.VisibleTools().Any(t => t.CommandName == "prompt.get"), "readonly exposes prompt.get");
+            True(gateway.VisibleTools().Any(t => t.CommandName == "self.readonly"),
+                "readonly exposes a self-described command outside compatibility whitelist");
             True(gateway.VisibleTools().All(t => t.CommandName != "prompt.propose"),
                 "readonly hides prompt.propose");
             settings.Set(McpGateway.KeyPolicy, "standard");
@@ -233,8 +251,9 @@ internal static class PromptGovernanceSuite
                 "command manual rejects boundary escape");
 
             var port = Random.Shared.Next(20000, 50000);
-            var started = gateway.Start(port);
-            True(started.Success, $"gateway start: {started.Message}");
+            settings.Set(McpGateway.KeyPort, port.ToString());
+            var started = gateway.TryAutostart();
+            True(started.Success && gateway.IsRunning, $"gateway autostart: {started.Message}");
             using (var client = new HttpClient())
             {
                 client.DefaultRequestHeaders.Accept.ParseAdd("application/json, text/event-stream");
@@ -287,6 +306,21 @@ internal static class PromptGovernanceSuite
                 var remoteProposal = store.ListProposals("proj.list", openOnly: true)
                     .First(x => x.SourceClient == "MCP:smoke");
                 Equal(remoteDescription, remoteProposal.ProposedText, "MCP UTF-8 Chinese round trip");
+
+                settings.Set(McpGateway.KeyPolicy, "readonly");
+                var readonlyResponse = await client.PostAsJsonAsync(
+                    $"http://127.0.0.1:{port}/mcp",
+                    new
+                    {
+                        jsonrpc = "2.0",
+                        id = 4,
+                        method = "tools/call",
+                        @params = new { name = "self_readonly", arguments = new { } },
+                    });
+                readonlyResponse.EnsureSuccessStatusCode();
+                using var readonlyJson = JsonDocument.Parse(await readonlyResponse.Content.ReadAsStringAsync());
+                True(!readonlyJson.RootElement.GetProperty("result").GetProperty("isError").GetBoolean(),
+                    "readonly gateway executes a self-described command outside compatibility whitelist");
 
                 using var invalidUtf8 = new ByteArrayContent(
                 [

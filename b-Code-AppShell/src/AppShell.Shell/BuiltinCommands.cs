@@ -8,6 +8,7 @@ using AppShell.Core.Docking;
 using AppShell.Core.Files;
 using AppShell.Core.Logging;
 using AppShell.Core.Storage;
+using AppShell.Services;
 using AppShell.Shell.Console;
 using AppShell.Shell.Panels;
 using AppShell.Shell.Table;
@@ -95,7 +96,7 @@ public static class BuiltinCommands
                     return CommandResult.Ok($"工作区根目录: {ws.Root}");
 
                 ws.SetRoot(path);
-                s.Settings.Set("workspace.root", path);
+                s.Settings.Set(WorkspaceService.KeyRoot, path);
                 return CommandResult.Ok($"工作区根目录已切换为 {ws.Root}");
             }),
         });
@@ -305,6 +306,7 @@ public static class BuiltinCommands
         {
             Name = "help",
             Summary = "列出全部指令 / 显示某指令详情与示例",
+            Readonly = true,
             Example = "help win.dock",
             Parameters =
             [
@@ -338,6 +340,7 @@ public static class BuiltinCommands
         {
             Name = "history",
             Summary = "查看指令历史",
+            Readonly = true,
             Example = "history count=10",
             Parameters =
             [
@@ -392,7 +395,7 @@ public static class BuiltinCommands
                 var raw = ctx.RequireString("file");
                 var path = Path.IsPathRooted(raw)
                     ? raw
-                    : Path.Combine(s.DataDirectory, "workspace", raw);
+                    : Path.Combine(AppPaths.GetWorkspaceDir(s.DataDirectory), raw);
                 if (!File.Exists(path))
                     return CommandResult.Fail($"脚本不存在: {path}");
 
@@ -554,6 +557,7 @@ public static class BuiltinCommands
         {
             Name = "app.get",
             Summary = "读应用配置项;不带参数列出全部",
+            Readonly = true,
             Example = "app.get key=console.history",
             Parameters =
             [
@@ -628,6 +632,7 @@ public static class BuiltinCommands
         {
             Name = "win.list",
             Summary = "列出全部窗口及状态",
+            Readonly = true,
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
             {
@@ -817,6 +822,7 @@ public static class BuiltinCommands
         {
             Name = "db.list",
             Summary = "列出全部命名数据库连接",
+            Readonly = true,
             Handler = CommandDescriptor.Sync(_ =>
             {
                 var names = data.ListConnections();
@@ -830,6 +836,7 @@ public static class BuiltinCommands
         {
             Name = "db.tables",
             Summary = "列出连接内全部表",
+            Readonly = true,
             Example = "db.tables",
             Parameters = [new ParameterSpec
             {
@@ -850,6 +857,7 @@ public static class BuiltinCommands
         {
             Name = "db.schema",
             Summary = "查看表结构(字段名 / 类型 / 主键 / 非空)",
+            Readonly = true,
             Example = "db.schema table=users",
             Parameters = [tableParam, connParam],
             Handler = CommandDescriptor.Sync(ctx =>
@@ -873,6 +881,7 @@ public static class BuiltinCommands
         {
             Name = "db.query",
             Summary = "查询表数据(表窗口同步显示结果)",
+            Readonly = true,
             Example = "db.query table=users where=\"age>30 and city='北京'\" limit=100",
             RequiresUiThread = true, // 结果要同步进表窗口
             Parameters =
@@ -1000,7 +1009,7 @@ public static class BuiltinCommands
                 var raw = ctx.RequireString("file");
                 var path = Path.IsPathRooted(raw)
                     ? raw
-                    : Path.Combine(s.DataDirectory, "workspace", raw);
+                    : Path.Combine(AppPaths.GetWorkspaceDir(s.DataDirectory), raw);
                 var n = data.ExportCsv(
                     ctx.RequireString("table"), path, ctx.GetString("where"), ctx.GetString("conn"));
                 return CommandResult.Ok($"已导出 {n} 行到 {path}");
@@ -1085,6 +1094,7 @@ public static class BuiltinCommands
         {
             Name = "layout.list",
             Summary = "列出全部命名布局方案",
+            Readonly = true,
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
             {

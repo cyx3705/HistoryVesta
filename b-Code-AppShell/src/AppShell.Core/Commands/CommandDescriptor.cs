@@ -23,6 +23,12 @@ public sealed class CommandDescriptor
     /// <summary>撤销能力位(§5.4,Q6:首版只预留)。</summary>
     public bool SupportsUndo { get; init; }
 
+    /// <summary>
+    /// 只读声明：命令不改变持久状态（不写库、文件或 Git 状态）。
+    /// MCP 暴露策略优先读取此字段；外部名称白名单仅保留为兼容层。
+    /// </summary>
+    public bool Readonly { get; init; }
+
     /// <summary>true 时总线把执行体编组到 UI 线程(win.*/layout.* 等操作窗口的指令)。</summary>
     public bool RequiresUiThread { get; init; }
 

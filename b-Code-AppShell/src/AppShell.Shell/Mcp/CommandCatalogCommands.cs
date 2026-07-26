@@ -119,6 +119,7 @@ public static class CommandCatalogCommands
     {
         Name = "command.list",
         Summary = "结构化列出全部注册指令及其来源、风险和 MCP 投影",
+        Readonly = true,
         Example = "command.list domain=proj mcp=visible filter=scan",
         Parameters =
         [
@@ -174,6 +175,7 @@ public static class CommandCatalogCommands
     {
         Name = "command.show",
         Summary = "查看单条指令的 Help 参数、来源、风险和 MCP 映射",
+        Readonly = true,
         Example = "command.show name=mcp.apply",
         Parameters = [StringParam("name", "完整指令名", required: true, position: 0)],
         Handler = CommandDescriptor.Sync(ctx =>
@@ -209,6 +211,7 @@ public static class CommandCatalogCommands
     {
         Name = "command.domains",
         Summary = "列出全部指令域及注册数量",
+        Readonly = true,
         Example = "command.domains",
         Handler = CommandDescriptor.Sync(_ =>
         {

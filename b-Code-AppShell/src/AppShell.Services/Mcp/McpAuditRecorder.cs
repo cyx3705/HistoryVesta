@@ -13,6 +13,8 @@ namespace AppShell.Services.Mcp;
 /// </summary>
 public sealed class McpAuditRecorder : IMcpAuditLog
 {
+    public const string TableName = "mcp_history";
+
     private readonly IDataService _data;
     private readonly IShellLog _log;
 
@@ -23,8 +25,8 @@ public sealed class McpAuditRecorder : IMcpAuditLog
         try
         {
             _data.ExecuteSql(
-                """
-                CREATE TABLE IF NOT EXISTS mcp_history (
+                $"""
+                CREATE TABLE IF NOT EXISTS {TableName} (
                     id         INTEGER PRIMARY KEY AUTOINCREMENT,
                     time       TEXT    NOT NULL,
                     client     TEXT    NOT NULL,
@@ -46,7 +48,7 @@ public sealed class McpAuditRecorder : IMcpAuditLog
         try
         {
             _data.ExecuteSql(
-                "INSERT INTO mcp_history (time, client, tool, arguments, result, elapsed_ms) VALUES (" +
+                $"INSERT INTO {TableName} (time, client, tool, arguments, result, elapsed_ms) VALUES (" +
                 $"'{DateTime.Now:yyyy-MM-dd HH:mm:ss}',{SqlText.Quote(SqlText.Truncate(client, 100))}," +
                 $"{SqlText.Quote(tool)},{SqlText.Quote(SqlText.Truncate(arguments, 500))}," +
                 $"{SqlText.Quote(result)},{elapsedMs})");

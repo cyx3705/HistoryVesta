@@ -61,6 +61,9 @@ public sealed record PromptIncident(
 /// </summary>
 public sealed class PromptGovernanceStore
 {
+    public const string TableDescriptions = "mcp_descriptions";
+    public const string TableProposals = "mcp_prompt_proposals";
+
     private readonly IDataService _data;
     private readonly IShellLog _log;
     private readonly object _writeGate = new();
@@ -131,8 +134,8 @@ public sealed class PromptGovernanceStore
                 Now(), createdBy ?? source, true, revertedFrom);
 
             var mirror = description == null
-                ? $"DELETE FROM mcp_descriptions WHERE command={Sql(command)};"
-                : "INSERT OR REPLACE INTO mcp_descriptions (command,description,updated) VALUES " +
+                ? $"DELETE FROM {TableDescriptions} WHERE command={Sql(command)};"
+                : $"INSERT OR REPLACE INTO {TableDescriptions} (command,description,updated) VALUES " +
                   $"({Sql(command)},{Sql(description)},{Sql(revision.Created)});";
 
             Execute(
@@ -155,7 +158,7 @@ public sealed class PromptGovernanceStore
             "pending", null, null, null, null);
 
         Execute(
-            "INSERT INTO mcp_prompt_proposals " +
+            $"INSERT INTO {TableProposals} " +
             "(id,command,base_revision,old_text,proposed_text,reason,evidence,source_client,created,status) VALUES " +
             $"({Sql(proposal.Id)},{Sql(command)},{SqlNullable(proposal.BaseRevision)},{Sql(oldText)}," +
             $"{Sql(proposedText)},{Sql(reason)},{Sql(evidence)},{Sql(sourceClient)},{Sql(proposal.Created)},'pending')");
@@ -185,7 +188,7 @@ public sealed class PromptGovernanceStore
         PromptTextIntegrity.ValidateDescription(proposal.ProposedText);
 
         Execute(
-            "UPDATE mcp_prompt_proposals SET status='approved'," +
+            $"UPDATE {TableProposals} SET status='approved'," +
             $"reviewer={Sql(reviewer)},reviewed={Sql(Now())} WHERE id={Sql(id)} AND status='pending'");
         return RequireProposal(id);
     }
@@ -197,7 +200,7 @@ public sealed class PromptGovernanceStore
             throw new InvalidOperationException($"提案状态为 {proposal.Status}，不能拒绝");
 
         Execute(
-            "UPDATE mcp_prompt_proposals SET status='rejected'," +
+            $"UPDATE {TableProposals} SET status='rejected'," +
             $"reviewer={Sql(reviewer)},reviewed={Sql(Now())},review_note={Sql(reason)} " +
             $"WHERE id={Sql(id)} AND status IN ('pending','approved')");
         return RequireProposal(id);
@@ -224,9 +227,9 @@ public sealed class PromptGovernanceStore
                 "BEGIN IMMEDIATE;" +
                 $"UPDATE mcp_prompt_revisions SET applied=0 WHERE command={Sql(proposal.Command)} AND applied=1;" +
                 InsertRevisionSql(revision) +
-                "INSERT OR REPLACE INTO mcp_descriptions (command,description,updated) VALUES " +
+                $"INSERT OR REPLACE INTO {TableDescriptions} (command,description,updated) VALUES " +
                 $"({Sql(proposal.Command)},{Sql(proposal.ProposedText)},{Sql(revision.Created)});" +
-                "UPDATE mcp_prompt_proposals SET status='applied'," +
+                $"UPDATE {TableProposals} SET status='applied'," +
                 $"reviewer={Sql(reviewer)},reviewed={Sql(Now())},applied_revision={Sql(revision.Id)} " +
                 $"WHERE id={Sql(id)} AND status='approved';" +
                 "COMMIT;");
@@ -301,8 +304,8 @@ public sealed class PromptGovernanceStore
         try
         {
             Execute(
-                """
-                CREATE TABLE IF NOT EXISTS mcp_descriptions (
+                $"""
+                CREATE TABLE IF NOT EXISTS {TableDescriptions} (
                     command TEXT PRIMARY KEY,
                     description TEXT NOT NULL,
                     updated TEXT NOT NULL
@@ -329,8 +332,8 @@ public sealed class PromptGovernanceStore
                 ON mcp_prompt_revisions(command) WHERE applied=1
                 """);
             Execute(
-                """
-                CREATE TABLE IF NOT EXISTS mcp_prompt_proposals (
+                $"""
+                CREATE TABLE IF NOT EXISTS {TableProposals} (
                     id TEXT PRIMARY KEY,
                     command TEXT NOT NULL,
                     base_revision TEXT,
@@ -347,8 +350,8 @@ public sealed class PromptGovernanceStore
                     applied_revision TEXT
                 )
                 """);
-            EnsureColumn("mcp_prompt_proposals", "review_note", "TEXT");
-            Execute("CREATE INDEX IF NOT EXISTS ix_mcp_prompt_proposals_command ON mcp_prompt_proposals(command,created)");
+            EnsureColumn(TableProposals, "review_note", "TEXT");
+            Execute($"CREATE INDEX IF NOT EXISTS ix_mcp_prompt_proposals_command ON {TableProposals}(command,created)");
             Execute(
                 """
                 CREATE TABLE IF NOT EXISTS mcp_corrections (
@@ -380,12 +383,12 @@ public sealed class PromptGovernanceStore
                 """);
 
             Execute(
-                """
+                $"""
                 INSERT INTO mcp_prompt_revisions
                     (id,command,description,parent_revision,source,reason,created,created_by,applied)
                 SELECT 'rev_' || lower(hex(randomblob(16))), d.command, d.description, NULL,
                        'migration', 'V2.1.1 覆盖迁移', d.updated, 'migration', 1
-                FROM mcp_descriptions d
+                FROM {TableDescriptions} d
                 WHERE NOT EXISTS (
                     SELECT 1 FROM mcp_prompt_revisions r WHERE r.command=d.command
                 )
@@ -446,7 +449,7 @@ public sealed class PromptGovernanceStore
 
     private const string ProposalSelect =
         "SELECT id,command,base_revision,old_text,proposed_text,reason,evidence,source_client," +
-        "created,status,reviewer,reviewed,review_note,applied_revision FROM mcp_prompt_proposals";
+        "created,status,reviewer,reviewed,review_note,applied_revision FROM " + TableProposals;
 
     private static string NewId(string prefix) => $"{prefix}_{Guid.NewGuid():N}";
 

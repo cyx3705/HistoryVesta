@@ -44,7 +44,7 @@ internal static class WiringSuite
             // ---- 按 ShellWindow 的真实装配次序,在同一 registry 上注册全部指令域 ----
             // 1) 模块指令域(框架自带)
             var modules = new AppShell.Services.Modules.ModuleHost(
-                System.IO.Path.Combine(paths.Root, "Modules"), log);
+                paths.ModulesDir, log);
             AppShell.Shell.Modules.ModuleCommands.RegisterAll(registry, modules, settings);
 
             // 2) MCP 聚合入口(框架自带):内部级联 prompt.* 与 command.*
@@ -66,11 +66,45 @@ internal static class WiringSuite
             GitRuleCommands.RegisterAll(registry, gitRules, formatInventory, projects);
             ToolCommands.RegisterAll(registry, tools);
             DebugCommands.RegisterAll(registry, log);
-            OneHistoryStudio.AppMcpPolicy.RegisterReadonlyCommands();
+            // V2.4.4:不再调用 AppMcpPolicy.RegisterReadonlyCommands()——
+            // 只读性已由各 CommandDescriptor.Readonly 自描述，无需按名字补登记。
 
             // 走到这里没抛,即证明完整装配路径无重复注册。
             var all = registry.All();
             True(all.Count > 0, "wiring: registry non-empty");
+
+            var expectedReadonly = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "help", "history", "db.query", "db.tables", "db.schema", "db.list",
+                "module.list", "win.list", "layout.list", "app.get",
+                "prompt.get", "prompt.history", "prompt.diff", "correction.list", "incident.list",
+                "command.list", "command.show", "command.domains",
+                "proj.list", "proj.tree", "proj.scan", "proj.config", "proj.metalist",
+                "proj.history", "proj.history.show", "proj.history.diff",
+                "git.rule.list", "git.rule.scan", "git.rule.gaps", "git.rule.suggest",
+                "tool.scan", "tool.list",
+            };
+            var describedReadonly = all.Where(command => command.Readonly)
+                .Select(command => command.Name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var registeredNames = all.Select(command => command.Name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            expectedReadonly.IntersectWith(registeredNames);
+            True(describedReadonly.SetEquals(expectedReadonly),
+                "wiring: every registered readonly command is self-described without drift");
+            True(all.All(command => McpExposurePolicy.State(command) ==
+                                    (McpExposurePolicy.HardExclusionReason(command.Name) != null
+                                        ? "hidden"
+                                        : command.ConfirmPrompt != null ? "dangerous"
+                                        : expectedReadonly.Contains(command.Name) ? "readonly"
+                                        : "standard")),
+                "wiring: readonly migration preserves command catalog state");
+            True(ToolManifestLoader.FindUnreservedBuiltinDomains(
+                    all.Select(command => command.Name)).Count == 0,
+                "wiring: registered builtin domains are covered by module reservations");
+            True(ToolManifestLoader.FindUnreservedBuiltinDomains(["future.list"])
+                    .SequenceEqual(["future"], StringComparer.OrdinalIgnoreCase),
+                "wiring: domain drift self-check detects an unreserved command domain");
 
             // 关键指令都在且唯一(名称唯一由 Register 保证,此处确认存在)
             foreach (var name in new[]
@@ -84,10 +118,20 @@ internal static class WiringSuite
                 True(registry.TryGet(name, out _), $"wiring: {name} registered exactly once");
             }
 
-            // 应用只读指令确已登记进框架策略
-            True(McpExposurePolicy.IsReadonlyAllowed("proj.list")
-                 && McpExposurePolicy.IsReadonlyAllowed("git.rule.list"),
-                "wiring: app readonly commands registered into framework policy");
+            // V2.4.4:只读性来自描述符自描述,不再来自名字白名单。
+            // 本断言由「查外部名单」升级为「查描述符真值 + 解释结果」,判据比原来更强。
+            foreach (var name in new[] { "proj.list", "git.rule.list", "tool.list" })
+            {
+                True(registry.TryGet(name, out var readonlyCommand)
+                     && readonlyCommand.Readonly
+                     && McpExposurePolicy.State(readonlyCommand) == "readonly",
+                    $"wiring: {name} is self-described readonly and resolves to readonly");
+            }
+
+            // 名字白名单必须保持为空:任何往里补登记的行为都会让「一件事实两处声明」复活。
+            // (模块清单的 mcpExposure=readonly 走 ModuleExposure 委托,不进本集合。)
+            True(McpExposurePolicy.ReadonlyCommandNames.Count == 0,
+                "wiring: name-based readonly whitelist stays empty after V2.4.4");
 
             Console.WriteLine("WiringSmoke: PASS");
         }

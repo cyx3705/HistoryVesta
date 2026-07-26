@@ -95,7 +95,7 @@ public static class McpCommands
             sb.Append($"\n  策略   : {g.Policy}(app.set key=mcp.policy value=readonly|standard)");
             sb.Append($"\n  暴露   : {g.VisibleTools().Count} 个工具(mcp.schema 看全量形态)");
             sb.Append($"\n  令牌   : {(string.IsNullOrEmpty(settings.Get(McpGateway.KeyToken)) ? "未设置(本机回环可信)" : "已设置(Bearer 必需)")}");
-            sb.Append($"\n  自启动 : mcp.autostart = {settings.Get(McpGateway.KeyAutostart) ?? "false"}");
+            sb.Append($"\n  自启动 : mcp.autostart = {(g.AutostartEnabled ? "true" : "false")}");
             sb.Append($"\n  危险指令: mcp.confirm = {g.ConfirmMode}" +
                       $"{(g.ConfirmMode == "host" ? $"(远程请求宿主弹框确认,{g.ConfirmTimeout}s 超时拒绝)" : "(一律拒绝;host 档开启中继确认)")}");
             sb.Append($"\n  调用   : 累计 {g.CallCount} 次,最近 {g.LastCall}");

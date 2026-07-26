@@ -161,9 +161,11 @@ internal static class V230Suite
                 "proj.history", "proj.history.show", "proj.history.diff",
                 "proj.rollback", "proj.reset", "proj.forcepush",
             ]), "V2.3 command catalog complete");
-            True(McpExposurePolicy.IsReadonlyAllowed("proj.history") &&
-                 McpExposurePolicy.IsReadonlyAllowed("proj.history.show") &&
-                 McpExposurePolicy.IsReadonlyAllowed("proj.history.diff"), "history reads are readonly MCP tools");
+            // V2.4.4:只读性由描述符自描述,不再查名字白名单。判据升级为「真值 + 解释结果」。
+            True(new[] { "proj.history", "proj.history.show", "proj.history.diff" }
+                    .All(name => commands[name].Readonly
+                                 && McpExposurePolicy.State(commands[name]) == "readonly"),
+                "history reads are readonly MCP tools");
             True(commands["proj.rollback"].ConfirmPrompt != null &&
                  commands["proj.reset"].ConfirmPrompt != null &&
                  commands["proj.forcepush"].ConfirmPrompt != null, "history writes are dangerous commands");

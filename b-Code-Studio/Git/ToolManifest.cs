@@ -55,6 +55,19 @@ public static partial class ToolManifestLoader
         string? Name, string? Version, string? Description, string? Artifact,
         string? Docs, string? Panel, string[]? Deps, string? McpExposure);
 
+    /// <summary>
+    /// 启动期自检：返回注册表已有、但保留清单尚未覆盖的一级指令域。
+    /// 调用方应在模块装载前传入内置注册表快照；根命令不构成点号域，故不参与比较。
+    /// </summary>
+    public static IReadOnlyList<string> FindUnreservedBuiltinDomains(IEnumerable<string> commandNames)
+        => commandNames
+            .Select(name => name.IndexOf('.') is var dot && dot > 0 ? name[..dot] : null)
+            .Where(domain => domain != null && !BuiltinDomains.Contains(domain))
+            .Select(domain => domain!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(domain => domain, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
     public static ToolManifestEntry Load(string manifestPath, string worktreeRoot, string branch)
     {
         ManifestDto? dto;

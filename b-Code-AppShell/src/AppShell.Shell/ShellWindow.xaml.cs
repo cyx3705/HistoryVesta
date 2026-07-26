@@ -75,8 +75,8 @@ public partial class ShellWindow : Window
         };
         _history = new CommandHistory(
             Path.Combine(dataDirectory, "history.txt"),
-            settings.GetInt("console.history", 500));
-        _console = new ConsoleView(log, _bus, _history, settings.GetInt("console.buffer", 50_000));
+            settings.GetInt(ConsoleView.KeyHistory, 500));
+        _console = new ConsoleView(log, _bus, _history, settings.GetInt(ConsoleView.KeyBuffer, 50_000));
 
         // 控制台窗口内容由 Shell 接管(§4.4 标准窗口;描述符位置仍由派生应用决定)
         TakeOverDescriptor("console", "控制台", DockSide.Bottom, 0.25, () => _console);
@@ -93,7 +93,7 @@ public partial class ShellWindow : Window
         {
             _resourceView = new Resource.ResourceView(
                 config.Workspace, _bus, log, config.OnResourceOpen,
-                Path.Combine(dataDirectory, "workspace"));
+                Services.AppPaths.GetWorkspaceDir(dataDirectory));
             TakeOverDescriptor("resource", "资源窗口", DockSide.Left, 0.18, () => _resourceView);
         }
 
@@ -119,7 +119,7 @@ public partial class ShellWindow : Window
 
         // 控制窗口群(§4.5,M4):JSON + C# 通道合并,每个面板一个可停靠窗口
         _panels = new Panels.PanelManager(
-            Path.Combine(dataDirectory, "panels"), config.Panels, _bus, log);
+            Services.AppPaths.GetPanelsDir(dataDirectory), config.Panels, _bus, log);
         _panels.RegisterWindows(config.ToolWindows);
 
         var mainContent = config.MainContent
@@ -151,7 +151,7 @@ public partial class ShellWindow : Window
         if (config.EnableModules)
         {
             _modules = new Services.Modules.ModuleHost(
-                Path.Combine(dataDirectory, "Modules"), log)
+                Services.AppPaths.GetModulesDir(dataDirectory), log)
             {
                 // 此刻在 UI 线程,注册表换血据此编组(替代原先的 Application.Current.Dispatcher)
                 UiContext = SynchronizationContext.Current,
@@ -159,7 +159,7 @@ public partial class ShellWindow : Window
 
             // MD-08:窗口成型前先做一次文件级面板同步,上一会话遗留的模块旁面板本次即成窗口
             Services.Modules.ModulePanelSync.SyncFiles(
-                _modules.ModulesDirectory, Path.Combine(dataDirectory, "panels"), log);
+                _modules.ModulesDirectory, Services.AppPaths.GetPanelsDir(dataDirectory), log);
 
             // 全限定:本类的 Modules / Mcp 只读属性会遮蔽同名命名空间
             AppShell.Shell.Modules.ModuleCommands.RegisterAll(registry, _modules, settings);
@@ -200,6 +200,16 @@ public partial class ShellWindow : Window
         _modules?.Attach(registry);
         _modules?.Start();
 
+        // 指令与模块全部就绪后再启动网关，保证首次 tools/list 即为完整注册表。
+        if (_mcp != null)
+        {
+            var (success, message) = _mcp.TryAutostart();
+            if (success)
+                log.Info("mcp", message);
+            else
+                log.Warn("mcp", message);
+        }
+
         // S-03:状态栏左侧显示最近一条指令结果摘要;右侧错误计数
         _bus.Executed += (text, source, result) => Dispatcher.BeginInvoke(() =>
         {
@@ -236,7 +246,7 @@ public partial class ShellWindow : Window
     /// <summary>模块托管宿主(0.4.4);EnableModules=false 时为 null。</summary>
     public Services.Modules.ModuleHost? Modules => _modules;
 
-    /// <summary>MCP 网关(0.4.4);未启用或缺数据服务时为 null。默认不监听,需 mcp.start。</summary>
+    /// <summary>MCP 网关(0.4.4);未启用或缺数据服务时为 null。默认随宿主启动自动监听。</summary>
     public Services.Mcp.McpGateway? Mcp => _mcp;
 
     /// <summary>提示词治理存储(0.4.4);与 <see cref="Mcp"/> 同生命周期。</summary>
@@ -255,6 +265,8 @@ public partial class ShellWindow : Window
     /// <summary>
     /// 标准窗口内容接管:描述符的停靠位置仍由派生应用声明,内容工厂换成
     /// Shell 实现;未声明时按缺省位置强制注册(控制台是架构不变量 2 的落点)。
+    /// 窗口 ID 是框架与派生应用之间的对接约定：双方各自声明并按 Id 合并，
+    /// 不得仅在一侧改名；新增窗口时须同步核对派生应用的 ToolWindows 表。
     /// </summary>
     private void TakeOverDescriptor(
         string id, string fallbackTitle, DockSide fallbackSide, double fallbackRatio, Func<object> factory)

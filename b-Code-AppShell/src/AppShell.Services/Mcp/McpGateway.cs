@@ -15,7 +15,8 @@ namespace AppShell.Services.Mcp;
 /// MCP 网关(V2.1 §4/§6):HttpListener + JSON-RPC 2.0(Streamable HTTP 无状态子集),
 /// 仅监听 127.0.0.1。铁律 1:唯一上游是指令总线——本类只认识
 /// CommandSchemaExporter / CommandBus,不 import ModuleHost、不反射模块类型。
-/// 默认关闭(MS-01),mcp.start 显式开启;每次调用/拒绝均留痕 mcp_history(铁律 2 / MS-05)。
+/// 宿主启动时默认自动监听;mcp.autostart=false 可关闭,mcp.start 仍可手动恢复。
+/// 每次调用/拒绝均留痕 mcp_history(铁律 2 / MS-05)。
 /// </summary>
 public sealed class McpGateway : IDisposable
 {
@@ -80,6 +81,10 @@ public sealed class McpGateway : IDisposable
     public int ConfirmTimeout
         => int.TryParse(_settings.Get(KeyConfirmTimeout), out var t) ? Math.Clamp(t, 10, 600) : 60;
 
+    /// <summary>缺省启用；仅显式配置 false 时关闭宿主启动自动监听。</summary>
+    public bool AutostartEnabled
+        => !bool.TryParse(_settings.Get(KeyAutostart), out var enabled) || enabled;
+
     public bool IsRunning => _listener is { IsListening: true };
 
     public int Port { get; private set; }
@@ -141,6 +146,16 @@ public sealed class McpGateway : IDisposable
     }
 
     // ---------------------------------------------------------------- 生命周期(MG-05)
+
+    /// <summary>宿主完成全部指令和模块装配后调用；禁用时不监听但仍视为正常配置。</summary>
+    public (bool Success, string Message) TryAutostart()
+    {
+        if (!AutostartEnabled)
+            return (true, "MCP 自动启动已关闭(mcp.autostart=false)");
+
+        var (success, message) = Start(null);
+        return (success, success ? $"自启动: {message}" : $"自启动失败: {message}");
+    }
 
     public (bool Success, string Message) Start(int? port)
     {
@@ -441,8 +456,10 @@ public sealed class McpGateway : IDisposable
                 preApproved: true, relayNote: "远程确认通过").ConfigureAwait(false);
         }
 
-        // §6.2:readonly 档只放行白名单
-        if (Policy == "readonly" && !McpExposurePolicy.IsReadonlyAllowed(tool.CommandName))
+        // §6.2:readonly 档优先读取命令自描述；名称白名单仅为迁移兼容层。
+        if (Policy == "readonly"
+            && (!bus.Registry.TryGet(tool.CommandName, out var descriptor)
+                || (!descriptor.Readonly && !McpExposurePolicy.IsReadonlyAllowed(tool.CommandName))))
         {
             _history.RecordMcp(_clientName, tool.ToolName, argsText, "拒绝", 0);
             _log.Warn("mcp", $"拒绝调用(策略 readonly 未暴露): {tool.ToolName}");

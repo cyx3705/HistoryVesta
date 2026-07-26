@@ -51,6 +51,7 @@ public static class GitRuleCommands
     {
         Name = "git.rule.scan",
         Summary = "扫描项目库全部文件格式,输出台账与覆盖率(省略 name 扫全库)",
+        Readonly = true,
         Example = "git.rule.scan depth=normal",
         Parameters =
         [
@@ -72,6 +73,7 @@ public static class GitRuleCommands
     {
         Name = "git.rule.suggest",
         Summary = "对未决格式给出处置建议(派生件忽略/文本 LF/大二进制 LFS;未知格式留白)",
+        Readonly = true,
         Example = "git.rule.suggest",
         Parameters = [StringParam("name", "项目名;省略则针对全库", position: 0)],
         Handler = async ctx =>
@@ -88,6 +90,7 @@ public static class GitRuleCommands
     {
         Name = "git.rule.gaps",
         Summary = "只列未纳管的格式与目录候选,按影响文件数降序(缺口清单)",
+        Readonly = true,
         Example = "git.rule.gaps",
         Parameters = [StringParam("name", "项目名;省略则查全库", position: 0)],
         Handler = async ctx =>
@@ -102,6 +105,7 @@ public static class GitRuleCommands
     {
         Name = "git.rule.list",
         Summary = "列出项目根文件格式的纳入 Git、LFS、LF 规则和实际索引状态",
+        Readonly = true,
         Example = "git.rule.list name=0000-000-Template",
         Parameters = [ProjectName()],
         Handler = async ctx =>

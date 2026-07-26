@@ -16,14 +16,18 @@ public sealed class AppPaths
             appName);
 
         LayoutDir = Path.Combine(Root, "layout");
-        DataDir = Path.Combine(Root, "data");
-        WorkspaceDir = Path.Combine(Root, "workspace");
+        DataDir = GetDataDir(Root);
+        WorkspaceDir = GetWorkspaceDir(Root);
         LogsDir = Path.Combine(Root, "logs");
+        ModulesDir = GetModulesDir(Root);
+        PanelsDir = GetPanelsDir(Root);
 
         Directory.CreateDirectory(LayoutDir);
         Directory.CreateDirectory(DataDir);
         Directory.CreateDirectory(WorkspaceDir);
         Directory.CreateDirectory(LogsDir);
+        Directory.CreateDirectory(ModulesDir);
+        Directory.CreateDirectory(PanelsDir);
     }
 
     /// <summary>%AppData%/&lt;应用名&gt;/</summary>
@@ -40,4 +44,18 @@ public sealed class AppPaths
 
     /// <summary>滚动日志目录(L-02,M2 正式接管)。</summary>
     public string LogsDir { get; }
+
+    /// <summary>模块 DLL 与模块槽目录。</summary>
+    public string ModulesDir { get; }
+
+    /// <summary>JSON 控制面板目录。</summary>
+    public string PanelsDir { get; }
+
+    public static string GetDataDir(string root) => Path.Combine(root, "data");
+
+    public static string GetWorkspaceDir(string root) => Path.Combine(root, "workspace");
+
+    public static string GetModulesDir(string root) => Path.Combine(root, "Modules");
+
+    public static string GetPanelsDir(string root) => Path.Combine(root, "panels");
 }
