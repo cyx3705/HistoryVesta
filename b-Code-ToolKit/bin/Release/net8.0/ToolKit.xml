@@ -8,6 +8,10 @@
             <summary>计算文本的 SHA-256(十六进制大写)</summary>
             <param name="text">要哈希的文本</param>
         </member>
+        <member name="M:ToolKit.Kit.Base64Encode(System.String)">
+            <summary>把 UTF-8 文本编码为 Base64</summary>
+            <param name="text">要编码的文本</param>
+        </member>
         <member name="M:ToolKit.Kit.NewGuid">
             <summary>生成一个新 GUID</summary>
         </member>

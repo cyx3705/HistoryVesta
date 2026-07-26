@@ -6,7 +6,6 @@ C:\OneHistory\OneHistory-Projects\2026-019-Studio工具箱\b-Code-ToolKit\obj\Re
 C:\OneHistory\OneHistory-Projects\2026-019-Studio工具箱\b-Code-ToolKit\obj\Release\net8.0\ToolKit.AssemblyInfoInputs.cache
 C:\OneHistory\OneHistory-Projects\2026-019-Studio工具箱\b-Code-ToolKit\obj\Release\net8.0\ToolKit.AssemblyInfo.cs
 C:\OneHistory\OneHistory-Projects\2026-019-Studio工具箱\b-Code-ToolKit\obj\Release\net8.0\ToolKit.csproj.CoreCompileInputs.cache
-C:\OneHistory\OneHistory-Projects\2026-019-Studio工具箱\b-Code-ToolKit\obj\Release\net8.0\ToolKit.sourcelink.json
 C:\OneHistory\OneHistory-Projects\2026-019-Studio工具箱\b-Code-ToolKit\obj\Release\net8.0\ToolKit.dll
 C:\OneHistory\OneHistory-Projects\2026-019-Studio工具箱\b-Code-ToolKit\obj\Release\net8.0\refint\ToolKit.dll
 C:\OneHistory\OneHistory-Projects\2026-019-Studio工具箱\b-Code-ToolKit\obj\Release\net8.0\ToolKit.xml

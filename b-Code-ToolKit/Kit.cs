@@ -10,6 +10,11 @@ public class Kit
     public string Sha256(string text)
         => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
 
+    /// <summary>把 UTF-8 文本编码为 Base64</summary>
+    /// <param name="text">要编码的文本</param>
+    public string Base64Encode(string text)
+        => Convert.ToBase64String(Encoding.UTF8.GetBytes(text));
+
     /// <summary>生成一个新 GUID</summary>
     public string NewGuid() => Guid.NewGuid().ToString();
 

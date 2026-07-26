@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ProjectPulse</name>
+    </assembly>
+    <members>
+        <member name="M:ProjectPulse.ProjectPulseCommands.Summary(System.String,System.Boolean,System.Int32)">
+            <summary>汇总一个 OHS 工作树的文件数量、体积、格式和一级目录热点</summary>
+            <param name="name">已登记工作树名称，例如 2026-020-OneHistoryStudio</param>
+            <param name="includeGenerated">是否包含 bin、obj、.vs、node_modules 等生成目录</param>
+            <param name="top">最多返回多少项格式和一级目录统计，范围 1~50</param>
+        </member>
+        <member name="M:ProjectPulse.ProjectPulseCommands.Recent(System.String,System.Int32,System.Int32,System.Boolean)">
+            <summary>列出一个 OHS 工作树最近修改的文件</summary>
+            <param name="name">已登记工作树名称，例如 2026-020-OneHistoryStudio</param>
+            <param name="days">回看天数，范围 1~3650</param>
+            <param name="limit">最多返回文件数，范围 1~200</param>
+            <param name="includeGenerated">是否包含 bin、obj、.vs、node_modules 等生成目录</param>
+        </member>
+        <member name="M:ProjectPulse.ProjectPulseCommands.Largest(System.String,System.Int32,System.Double,System.Boolean)">
+            <summary>列出一个 OHS 工作树中最大的文件</summary>
+            <param name="name">已登记工作树名称，例如 2026-020-OneHistoryStudio</param>
+            <param name="limit">最多返回文件数，范围 1~200</param>
+            <param name="minMb">最小体积 MB，范围 0~1048576</param>
+            <param name="includeGenerated">是否包含 bin、obj、.vs、node_modules 等生成目录</param>
+        </member>
+        <member name="T:BaseVariable.ModuleInfoBase">
+            <summary>
+            模块契约副本。宿主按基类全名 BaseVariable.ModuleInfoBase 做鸭子类型识别。
+            </summary>
+        </member>
+    </members>
+</doc>

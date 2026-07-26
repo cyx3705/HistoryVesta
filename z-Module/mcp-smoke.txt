@@ -1,0 +1,5 @@
+# ToolKit MCP smoke
+ToolKit.Sha256 text=OneHistory
+ToolKit.Base64Encode text="OneHistory 热重载"
+ToolKit.NewGuid
+ToolKit.Now

@@ -1,0 +1,8 @@
+{
+  "name": "ToolRelay",
+  "version": "1.0.1",
+  "description": "Codex 动态 MCP 工具发现与策略内转发",
+  "artifact": "b-Code-ToolRelay/bin/Release/net8.0/ToolRelay.dll",
+  "docs": "b-Code-ToolRelay/bin/Release/net8.0/ToolRelay.xml",
+  "mcpExposure": "readonly"
+}
