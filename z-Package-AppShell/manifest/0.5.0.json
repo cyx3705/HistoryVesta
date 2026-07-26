@@ -1,0 +1,52 @@
+{
+    "schemaVersion":  1,
+    "product":  "AppShell",
+    "version":  "0.5.0",
+    "channel":  "local",
+    "sourceCommit":  "58df7fe28e2ff13b2e16e51006dc8919a342fc34",
+    "sourceDirty":  false,
+    "sdk":  "9.0.315",
+    "targetFrameworks":  [
+                             "net8.0",
+                             "net8.0-windows"
+                         ],
+    "demoRid":  "win-x64",
+    "selfContained":  false,
+    "artifacts":  [
+                      {
+                          "file":  "AppShell-Demo-0.5.0-win-x64-framework-dependent.zip",
+                          "bytes":  1833156,
+                          "sha256":  "ACE89ED65DE935C3768E4F68E113F8B5E8561E8E484E2C28085DA1BE7D8B77FF"
+                      },
+                      {
+                          "file":  "OneHistory.AppShell.Core.0.5.0.nupkg",
+                          "bytes":  50025,
+                          "sha256":  "1AF3606365A07FD35B83675BACFF4061AC2864A412CBE81A2C72672AE53B2CCB"
+                      },
+                      {
+                          "file":  "OneHistory.AppShell.Core.0.5.0.snupkg",
+                          "bytes":  21613,
+                          "sha256":  "B64B8C21C549A944E178B9FE7D4734A341A205EF848EA5554CCEF1896FF6A1A6"
+                      },
+                      {
+                          "file":  "OneHistory.AppShell.Services.0.5.0.nupkg",
+                          "bytes":  58865,
+                          "sha256":  "E00C8D0B56F9AE70845C2B275D280D65051DF4A9A12E34612140BA471D0B0BBA"
+                      },
+                      {
+                          "file":  "OneHistory.AppShell.Services.0.5.0.snupkg",
+                          "bytes":  23891,
+                          "sha256":  "F0D7C9784309F84446BA89826448078B6D843B92AAE6FC3111EBF42FC3293507"
+                      },
+                      {
+                          "file":  "OneHistory.AppShell.Shell.0.5.0.nupkg",
+                          "bytes":  121351,
+                          "sha256":  "6A765B8B8F58F84F2FCC85650C63C1E8DD6FDC19968698B0958687584132184C"
+                      },
+                      {
+                          "file":  "OneHistory.AppShell.Shell.0.5.0.snupkg",
+                          "bytes":  39368,
+                          "sha256":  "26F23DB9CF09C8BF50300C17A7C1D3D85D678EA86C0FFD7D48FE7E86CC6F7009"
+                      }
+                  ]
+}

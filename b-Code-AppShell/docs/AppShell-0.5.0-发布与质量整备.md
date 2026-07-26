@@ -1,7 +1,7 @@
 # AppShell 0.5.0 · 首次版本包发布与质量整备 —— 工程实施文档
 
 > 文档性质：发布工程 + 依赖安全 + 框架边界清理，不新增业务功能  
-> 基线版本：AppShell 0.4.4｜目标版本：AppShell 0.5.0｜日期：2026-07-26｜状态：M0-M4 与 staging 已完成，待发布修复提交后执行 M5
+> 基线版本：AppShell 0.4.4｜目标版本：AppShell 0.5.0｜日期：2026-07-26｜状态：已完成（M0-M5）
 > 发布范围：仓库内本地 NuGet feed；**不推送 NuGet.org，不创建 Git tag，不提交或推送 Git，除非用户另行明确授权**
 
 ---
@@ -443,5 +443,26 @@ nuspec 依赖图与 §2.2 完全一致。
 
 顺序不可倒置：特别是不能先生成正式 0.5.0 文件，再回头修依赖或补测试；同一版本号的正式包
 一旦被消费就应视为不可覆盖。
+
+---
+
+## 9. 最终交付记录
+
+2026-07-26 已完成仓库内本地 feed 正式发布：
+
+- 源码提交：`58df7fe28e2ff13b2e16e51006dc8919a342fc34`；
+- manifest：`channel=local`、`sourceDirty=false`、SDK `9.0.315`；
+- 正式产物：3 个 `.nupkg`、3 个 `.snupkg`、1 个 win-x64 framework-dependent 演示 ZIP；
+- 发布后从正式 feed 重新计算 7 个文件的字节数与 SHA-256，全部匹配 manifest 与 checksum；
+- PackageSmoke 从隔离缓存消费正式候选包并通过，Core/Services/Shell 均为 `0.5.0.0`；
+- Debug/Release 均为 0 warning / 0 error，NuGet 漏洞审计为 0；
+- 演示 EXE ProductVersion=`0.5.0`、FileVersion=`0.5.0.0`。
+
+首次正式试跑在 PackageSmoke 阶段正确阻断：测试宿主设置了 NuGet `Title`，但没有设置 SDK
+生成程序集身份所需的 `AssemblyTitle`，导致 `AppIdentity` 拒绝 Product/Title 不一致的宿主。
+补齐 `AssemblyTitle=AppShellPackageSmoke` 后重跑完整 staging 与正式发布链均通过，失败试跑没有
+向 feed 留下半套文件。
+
+本次未创建 Git tag，未推送远端，也未向 NuGet.org 发布。
 
 —— 文档结束 ——
