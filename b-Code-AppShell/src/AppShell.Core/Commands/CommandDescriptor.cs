@@ -32,6 +32,12 @@ public sealed class CommandDescriptor
     /// <summary>true 时总线把执行体编组到 UI 线程(win.*/layout.* 等操作窗口的指令)。</summary>
     public bool RequiresUiThread { get; init; }
 
+    /// <summary>命令的执行位置；默认在当前宿主执行。</summary>
+    public CommandExecutionSite ExecutionSite { get; init; }
+
+    /// <summary>代理描述符可接受任意参数并原样转发；本地业务命令不应开启。</summary>
+    public bool AllowUnspecifiedParameters { get; init; }
+
     /// <summary>执行体。长任务应内部 await 后台工作并经 Progress 上报(§5.2 约束)。</summary>
     public required Func<CommandContext, Task<CommandResult>> Handler { get; init; }
 

@@ -1,5 +1,5 @@
 param(
-    [string]$Version = "0.5.0",
+    [string]$Version = "0.7.2",
     [switch]$Publish
 )
 
@@ -11,8 +11,8 @@ $RepoRoot = [IO.Path]::GetFullPath((Join-Path $ComponentRoot ".."))
 $DeliveryRoot = Join-Path $RepoRoot "z-Package-AppShell"
 $StageRoot = [IO.Path]::GetFullPath((Join-Path $DeliveryRoot "staging\$Version"))
 
-if ($Version -ne "0.5.0") {
-    throw "This release branch is pinned to AppShell 0.5.0; requested $Version"
+if ($Version -ne "0.7.2") {
+    throw "This release branch is pinned to AppShell 0.7.2; requested $Version"
 }
 if (-not $StageRoot.StartsWith([IO.Path]::GetFullPath($DeliveryRoot), [StringComparison]::OrdinalIgnoreCase)) {
     throw "Staging path escaped the delivery root: $StageRoot"
@@ -100,7 +100,8 @@ try {
     $packProjects = @(
         "src\AppShell.Core\AppShell.Core.csproj",
         "src\AppShell.Services\AppShell.Services.csproj",
-        "src\AppShell.Shell\AppShell.Shell.csproj"
+        "src\AppShell.Shell\AppShell.Shell.csproj",
+        "src\AppShell.ServiceHost\AppShell.ServiceHost.csproj"
     )
     foreach ($project in $packProjects) {
         Invoke-Dotnet @("pack", $project, "-c", "Release", "--no-build", "--no-restore", "-o", $PackagesDir)
@@ -109,7 +110,8 @@ try {
     $packageIds = @(
         "OneHistory.AppShell.Core",
         "OneHistory.AppShell.Services",
-        "OneHistory.AppShell.Shell"
+        "OneHistory.AppShell.Shell",
+        "OneHistory.AppShell.ServiceHost"
     )
     foreach ($id in $packageIds) {
         Assert-File (Join-Path $PackagesDir "$id.$Version.nupkg")
@@ -168,8 +170,8 @@ try {
     $demoExe = Join-Path $DemoDir "AppShell.exe"
     Assert-File $demoExe
     $demoVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($demoExe).FileVersion
-    if ($demoVersion -ne "0.5.0.0") {
-        throw "Demo file version is $demoVersion, expected 0.5.0.0"
+    if ($demoVersion -ne "0.7.2.0") {
+        throw "Demo file version is $demoVersion, expected 0.7.2.0"
     }
 
     $demoZip = Join-Path $PackagesDir "AppShell-Demo-$Version-win-x64-framework-dependent.zip"

@@ -1,0 +1,132 @@
+using System.Diagnostics;
+using System.Windows;
+using System.Windows.Threading;
+using AppShell.Core.Logging;
+using AppShell.Core.Mcp;
+using AppShell.Services.Web;
+
+namespace AppShell.ServiceHost;
+
+/// <summary>无主窗口的用户会话 WPF 服务宿主。</summary>
+public static class ServiceHost
+{
+    public static int Run(ServiceComposition composition, string? executablePath = null)
+    {
+        ArgumentNullException.ThrowIfNull(composition);
+        var mutexName = $"Local\\{Sanitize(composition.ServiceName)}.ServiceHost";
+        using var mutex = new Mutex(initiallyOwned: true, mutexName, out var ownsMutex);
+        if (!ownsMutex)
+            return 2;
+
+        var app = Application.Current ?? new Application();
+        app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(app.Dispatcher));
+        composition.Bus.UiContext = SynchronizationContext.Current;
+        if (composition.Modules != null)
+            composition.Modules.UiContext = SynchronizationContext.Current;
+
+        var servicePath = executablePath
+                          ?? Environment.ProcessPath
+                          ?? Process.GetCurrentProcess().MainModule?.FileName
+                          ?? throw new InvalidOperationException("无法确定服务可执行文件路径");
+
+        var confirmation = new ServiceConfirmation();
+        var gatewayAwareConfirmation = new GatewayAwareConfirmation(confirmation);
+        composition.Bus.Confirmation = gatewayAwareConfirmation;
+        composition.Bus.ConfirmationRouter = (context, prompt) =>
+        {
+            if (!context.Source.StartsWith("Web:", StringComparison.OrdinalIgnoreCase))
+                return gatewayAwareConfirmation.Confirm(prompt);
+            if (!string.Equals(
+                    composition.Settings.Get(WebGateway.KeyConfirm),
+                    "web",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+            return composition.Web?.RequestWebConfirmation(
+                prompt,
+                context.Source,
+                TimeSpan.FromSeconds(60)) == true;
+        };
+        ServiceCommands.RegisterAll(
+            composition.Registry,
+            composition,
+            () => app.Shutdown(),
+            servicePath);
+        if (composition.Web != null)
+        {
+            composition.Bus.FrontendExecutor = composition.Web.RelayFrontendCommandAsync;
+            var (started, message) = composition.Web.Start();
+            LogResult(composition.Log, "web", started, message);
+        }
+
+        if (composition.Mcp != null)
+        {
+            var (started, message) = composition.Mcp.TryAutostart();
+            LogResult(composition.Log, "mcp", started, message);
+        }
+
+        if (composition.RegisterAutostartOnFirstRun && composition.Autostart != null)
+        {
+            try
+            {
+                if (!composition.Autostart.IsEnabled(composition.ServiceName))
+                    composition.Autostart.SetEnabled(composition.ServiceName, servicePath, enabled: true);
+            }
+            catch (Exception ex)
+            {
+                composition.Log.Warn("svc", $"注册登录启动失败: {ex.Message}");
+            }
+        }
+
+        app.Dispatcher.BeginInvoke(() =>
+        {
+            try
+            {
+                composition.Modules?.Attach(composition.Registry);
+                composition.Modules?.Start();
+            }
+            catch (Exception ex)
+            {
+                composition.Log.Warn("module", $"模块异步启动失败: {ex.Message}");
+            }
+
+            foreach (var work in composition.DeferredWork)
+                _ = Task.Run(() => RunDeferredAsync(work, composition.Log));
+        }, DispatcherPriority.ApplicationIdle);
+
+        try
+        {
+            return app.Run();
+        }
+        finally
+        {
+            composition.Dispose();
+            mutex.ReleaseMutex();
+        }
+    }
+
+    private static async Task RunDeferredAsync(AppShell.Core.Modules.IDeferredStartupWork work, IShellLog log)
+    {
+        try
+        {
+            await work.ExecuteAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            log.Warn("startup", $"延迟启动任务 {work.GetType().Name} 失败: {ex.Message}");
+        }
+    }
+
+    private static void LogResult(IShellLog log, string category, bool success, string message)
+    {
+        if (success)
+            log.Info(category, message);
+        else
+            log.Warn(category, message);
+    }
+
+    private static string Sanitize(string value)
+        => string.Concat(value.Select(character => char.IsLetterOrDigit(character) ? character : '_'));
+}

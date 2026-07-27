@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -22,22 +23,26 @@ namespace AppShell.Shell.Docking;
 /// </summary>
 public sealed class DockingHost : IDockingService
 {
-    private const string MainContentId = "__main__";
     private const string LayoutSource = "layout";
     private const double RatioEpsilon = 0.02;
+    private const string PlacementSettingsKey = "layout.placements";
 
     private readonly DockingManager _manager;
     private readonly ILayoutStore _store;
     private readonly IShellLog _log;
+    private readonly ISettingsService? _settings;
     private readonly List<ToolWindowDescriptor> _descriptors = new();
     private readonly Dictionary<string, ToolWindowDescriptor> _byId = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, object> _contents = new(StringComparer.OrdinalIgnoreCase);
-    private readonly object _mainContent;
+    private readonly Dictionary<string, string> _owners = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, OrphanPlacement> _orphanPlacements = new(StringComparer.OrdinalIgnoreCase);
     private readonly DispatcherTimer _debounce;
 
     private Dictionary<string, WinState> _baseline = new(StringComparer.OrdinalIgnoreCase);
     private LayoutRoot? _attachedRoot;
     private int _suppress;
+    private string? _maximizedId;
+    private string? _layoutBeforeMaximize;
 
     // W-05 比例语义:AvalonDock 对与文档区同面板的侧窗格采用像素语义
     // (LayoutPanelControl.OnFixChildrenDockLengths 会把星值固化为像素),
@@ -50,14 +55,14 @@ public sealed class DockingHost : IDockingService
     public DockingHost(
         DockingManager manager,
         IEnumerable<ToolWindowDescriptor> windows,
-        object mainContent,
         ILayoutStore store,
-        IShellLog log)
+        IShellLog log,
+        ISettingsService? settings = null)
     {
         _manager = manager;
         _store = store;
         _log = log;
-        _mainContent = mainContent;
+        _settings = settings;
 
         foreach (var d in windows)
         {
@@ -65,6 +70,7 @@ public sealed class DockingHost : IDockingService
                 throw new InvalidOperationException($"工具窗口 Id 冲突: {d.Id}(禁止静默覆盖,§5.3)");
             _descriptors.Add(d);
             _byId.Add(d.Id, d);
+            _owners[d.Id] = "framework";
             _ratios[d.Id] = d.DefaultRatio;
         }
 
@@ -104,10 +110,14 @@ public sealed class DockingHost : IDockingService
     /// <summary>当前布局方案名(状态栏显示用)。</summary>
     public string CurrentLayoutName { get; private set; } = "默认";
 
+    public string? MaximizedId => _maximizedId;
+
     /// <summary>true 表示下一次比例处理应从已恢复的布局反向采集比例,而非施加记录值。</summary>
     private bool _seedRatiosFromLayout;
 
     public event EventHandler<ShellCommandEventArgs>? CommandGenerated;
+
+    public event EventHandler? WindowsChanged;
 
     /// <summary>已注册窗口(视图菜单构建用)。</summary>
     public IReadOnlyList<ToolWindowDescriptor> Descriptors => _descriptors;
@@ -117,6 +127,7 @@ public sealed class DockingHost : IDockingService
     /// <summary>启动时调用:恢复上次布局,失败或不存在则构建默认布局(W-07 / N-06)。</summary>
     public void Initialize()
     {
+        LoadOrphanPlacements();
         using (Suppress())
         {
             string? xml = null;
@@ -135,8 +146,8 @@ public sealed class DockingHost : IDockingService
                 try
                 {
                     ApplyLayoutXml(xml);
-                    if (!LayoutHasMainContent())
-                        throw new InvalidOperationException("布局中缺少主内容区");
+                    if (!LayoutHasBackground())
+                        throw new InvalidOperationException("布局中缺少中央背景区");
                     EnsureRegisteredWindows();
                     restored = true;
                     _seedRatiosFromLayout = true; // 以文件里的尺寸为准,反向采集比例
@@ -165,7 +176,8 @@ public sealed class DockingHost : IDockingService
     {
         try
         {
-            _store.WriteCurrent(SerializeLayout());
+            _store.WriteCurrent(_layoutBeforeMaximize ?? SerializeLayout());
+            SavePlacements();
             _log.Info(LayoutSource, "退出前已自动保存布局");
         }
         catch (Exception ex)
@@ -181,12 +193,16 @@ public sealed class DockingHost : IDockingService
             .Select(d =>
             {
                 var s = ComputeState(d.Id);
-                return new ToolWindowInfo(d.Id, d.Title, s.Visible, s.Floating, s.Side, s.Visible && !s.Floating ? s.Ratio : null);
+                return new ToolWindowInfo(
+                    d.Id, d.Title, s.Visible, s.Floating, s.Side,
+                    s.Visible && !s.Floating ? s.Ratio : null,
+                    _owners.GetValueOrDefault(d.Id, "framework"));
             })
             .ToList();
 
     public void Show(string id)
     {
+        RestoreLayoutFromMaximized();
         var a = FindRequired(id);
         using (Suppress())
         {
@@ -199,6 +215,7 @@ public sealed class DockingHost : IDockingService
 
     public void Hide(string id)
     {
+        RestoreLayoutFromMaximized();
         var a = FindRequired(id);
         using (Suppress())
         {
@@ -209,6 +226,7 @@ public sealed class DockingHost : IDockingService
 
     public void Float(string id)
     {
+        RestoreLayoutFromMaximized();
         var a = FindRequired(id);
         using (Suppress())
         {
@@ -221,6 +239,7 @@ public sealed class DockingHost : IDockingService
 
     public void Dock(string id, DockSide side, double? ratio = null, string? targetId = null)
     {
+        RestoreLayoutFromMaximized();
         var a = FindRequired(id);
         using (Suppress())
         {
@@ -231,6 +250,7 @@ public sealed class DockingHost : IDockingService
 
     public void SetRatio(string id, double ratio)
     {
+        RestoreLayoutFromMaximized();
         if (ratio is <= 0 or >= 1)
             throw new ArgumentOutOfRangeException(nameof(ratio), "比例须在 (0,1) 之间");
 
@@ -250,6 +270,7 @@ public sealed class DockingHost : IDockingService
 
     public void ResetWindow(string id)
     {
+        RestoreLayoutFromMaximized();
         var d = _byId[id];
         var a = FindRequired(id);
         using (Suppress())
@@ -261,6 +282,7 @@ public sealed class DockingHost : IDockingService
 
     public void ResetLayout()
     {
+        RestoreLayoutFromMaximized();
         using (Suppress())
         {
             BuildDefaultLayout();
@@ -277,13 +299,14 @@ public sealed class DockingHost : IDockingService
 
     public void SaveLayout(string name)
     {
-        _store.WriteNamed(name, SerializeLayout());
+        _store.WriteNamed(name, _layoutBeforeMaximize ?? SerializeLayout());
         CurrentLayoutName = name;
         _log.Info(LayoutSource, $"布局方案已保存: {name}");
     }
 
     public bool LoadLayout(string name)
     {
+        RestoreLayoutFromMaximized();
         string? xml;
         try
         {
@@ -306,6 +329,8 @@ public sealed class DockingHost : IDockingService
             using (Suppress())
             {
                 ApplyLayoutXml(xml);
+                if (!LayoutHasBackground())
+                    throw new InvalidOperationException("布局中缺少中央背景区");
                 EnsureRegisteredWindows();
                 AttachLayout();
                 CurrentLayoutName = name;
@@ -332,22 +357,127 @@ public sealed class DockingHost : IDockingService
 
     public IReadOnlyList<string> ListLayouts() => _store.ListNamed();
 
+    public void RegisterWindow(ToolWindowDescriptor descriptor, string owner)
+    {
+        ArgumentNullException.ThrowIfNull(descriptor);
+        if (_byId.ContainsKey(descriptor.Id))
+        {
+            throw new InvalidOperationException(
+                $"工具窗口 Id 冲突: {descriptor.Id}(禁止静默覆盖,§5.3)");
+        }
+
+        RestoreLayoutFromMaximized();
+        using (Suppress())
+        {
+            _descriptors.Add(descriptor);
+            _byId.Add(descriptor.Id, descriptor);
+            _owners[descriptor.Id] = owner;
+            var anchorable = CreateAnchorable(descriptor);
+            var placement = TakeOrphanPlacement(descriptor.Id);
+            PlaceAtSide(
+                anchorable,
+                placement?.Side ?? descriptor.DefaultSide,
+                placement?.Ratio ?? descriptor.DefaultRatio,
+                placement?.TabTarget ?? descriptor.DefaultTabTarget);
+            if (placement?.Hidden ?? !descriptor.DefaultVisible)
+                anchorable.Hide();
+        }
+
+        ScheduleReapplyRatios();
+        WindowsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void UnregisterWindow(string id)
+    {
+        if (!_byId.TryGetValue(id, out var descriptor))
+            return;
+
+        RestoreLayoutFromMaximized();
+        using (Suppress())
+        {
+            var anchorable = FindAnchorable(id);
+            if (anchorable != null)
+            {
+                Detach(anchorable);
+                anchorable.Content = null;
+            }
+
+            _descriptors.Remove(descriptor);
+            _byId.Remove(id);
+            _ratios.Remove(id);
+            _baseline.Remove(id);
+            _preserveDefaultRatioOnSeed.Remove(id);
+            _owners.Remove(id);
+            if (_contents.Remove(id, out var content))
+                TryDispose(content, id);
+            _manager.Layout.CollectGarbage();
+        }
+
+        WindowsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void UnregisterOwner(string owner)
+    {
+        RestoreLayoutFromMaximized();
+        foreach (var id in _owners
+                     .Where(pair => pair.Value.Equals(owner, StringComparison.OrdinalIgnoreCase))
+                     .Select(pair => pair.Key)
+                     .ToArray())
+        {
+            UnregisterWindow(id);
+        }
+    }
+
+    public void MaximizeWindow(string id)
+    {
+        if (_maximizedId != null && _maximizedId.Equals(id, StringComparison.OrdinalIgnoreCase))
+            return;
+        RestoreLayoutFromMaximized();
+        if (!_byId.ContainsKey(id))
+            throw new ArgumentException($"未注册的工具窗口: {id}", nameof(id));
+
+        using (Suppress())
+        {
+            _layoutBeforeMaximize = SerializeLayout();
+            BuildMaximizedLayout(id);
+            AttachLayout();
+            _maximizedId = id;
+        }
+
+        WindowsChanged?.Invoke(this, EventArgs.Empty);
+        RebaseSoon();
+    }
+
+    public void RestoreLayoutFromMaximized()
+    {
+        if (_maximizedId == null || _layoutBeforeMaximize == null)
+            return;
+
+        using (Suppress())
+        {
+            var xml = _layoutBeforeMaximize;
+            ApplyLayoutXml(xml);
+            if (!LayoutHasBackground())
+                throw new InvalidOperationException("布局中缺少中央背景区");
+            EnsureRegisteredWindows();
+            AttachLayout();
+            _maximizedId = null;
+            _layoutBeforeMaximize = null;
+            _seedRatiosFromLayout = true;
+        }
+
+        WindowsChanged?.Invoke(this, EventArgs.Empty);
+        RebaseSoon();
+    }
+
     // ---------------------------------------------------------------- 布局构建与序列化
 
     private void BuildDefaultLayout()
     {
         _preserveDefaultRatioOnSeed.Clear();
-        var mainDoc = new LayoutDocument
-        {
-            Title = "主窗口",
-            ContentId = MainContentId,
-            Content = _mainContent,
-            CanClose = false,
-            CanFloat = false,
-        };
-        var docPane = new LayoutDocumentPane(mainDoc);
+        var docPane = new LayoutDocumentPane();
 
-        // 中央列:文档区 +(可选)上/下停靠区,垂直排布
+        // 中央列:空背景区 +(可选)上/下停靠区,垂直排布
         var centerColumn = new LayoutPanel(docPane) { Orientation = Orientation.Vertical };
         var rootPanel = new LayoutPanel(centerColumn) { Orientation = Orientation.Horizontal };
         var root = new LayoutRoot { RootPanel = rootPanel };
@@ -440,9 +570,10 @@ public sealed class DockingHost : IDockingService
         serializer.LayoutSerializationCallback += (_, e) =>
         {
             var contentId = e.Model.ContentId;
-            if (contentId == MainContentId)
+            if (e.Model is LayoutDocument)
             {
-                e.Content = _mainContent;
+                // V0.7.2 no longer has documents/work pages. Drop legacy nodes on restore.
+                e.Cancel = true;
             }
             else if (contentId != null && _byId.TryGetValue(contentId, out var d))
             {
@@ -475,8 +606,8 @@ public sealed class DockingHost : IDockingService
         }
     }
 
-    private bool LayoutHasMainContent()
-        => _manager.Layout.Descendents().OfType<LayoutDocument>().Any(x => x.ContentId == MainContentId);
+    private bool LayoutHasBackground()
+        => _manager.Layout.Descendents().OfType<LayoutDocumentPane>().Any();
 
     private LayoutAnchorable CreateAnchorable(ToolWindowDescriptor d) => new()
     {
@@ -502,6 +633,72 @@ public sealed class DockingHost : IDockingService
 
         return content;
     }
+
+    private void BuildMaximizedLayout(string id)
+    {
+        var pane = new LayoutAnchorablePane(CreateAnchorable(_byId[id]));
+        var rootPanel = new LayoutPanel(pane) { Orientation = Orientation.Horizontal };
+        _manager.Layout = new LayoutRoot { RootPanel = rootPanel };
+    }
+
+    private void TryDispose(object content, string id)
+    {
+        if (content is not IDisposable disposable)
+            return;
+        try
+        {
+            disposable.Dispose();
+        }
+        catch (Exception ex)
+        {
+            _log.Warn(LayoutSource, $"释放界面内容 {id} 失败: {ex.Message}");
+        }
+    }
+
+    private void LoadOrphanPlacements()
+    {
+        var json = _settings?.Get(PlacementSettingsKey);
+        if (string.IsNullOrWhiteSpace(json))
+            return;
+        try
+        {
+            _orphanPlacements = JsonSerializer.Deserialize<Dictionary<string, OrphanPlacement>>(json)
+                                ?? new Dictionary<string, OrphanPlacement>(StringComparer.OrdinalIgnoreCase);
+            _orphanPlacements = new Dictionary<string, OrphanPlacement>(
+                _orphanPlacements, StringComparer.OrdinalIgnoreCase);
+        }
+        catch (Exception ex)
+        {
+            _log.Warn(LayoutSource, $"读取延迟窗口位置失败: {ex.Message}");
+            _orphanPlacements.Clear();
+        }
+    }
+
+    private void SavePlacements()
+    {
+        if (_settings == null)
+            return;
+        var placements = new Dictionary<string, OrphanPlacement>(StringComparer.OrdinalIgnoreCase);
+        foreach (var descriptor in _descriptors)
+        {
+            var state = ComputeState(descriptor.Id);
+            placements[descriptor.Id] = new OrphanPlacement(
+                state.Side ?? descriptor.DefaultSide,
+                state.Ratio > 0 ? state.Ratio : _ratios.GetValueOrDefault(descriptor.Id, descriptor.DefaultRatio),
+                !state.Visible,
+                state.TabTarget);
+        }
+        _settings.Set(PlacementSettingsKey, JsonSerializer.Serialize(placements));
+    }
+
+    private OrphanPlacement? TakeOrphanPlacement(string id)
+    {
+        if (!_orphanPlacements.Remove(id, out var placement))
+            return null;
+        return placement;
+    }
+
+    private sealed record OrphanPlacement(DockSide Side, double Ratio, bool Hidden, string? TabTarget);
 
     // ---------------------------------------------------------------- 布局树操作
 
@@ -558,12 +755,12 @@ public sealed class DockingHost : IDockingService
         root.CollectGarbage();
     }
 
-    /// <summary>找到包含文档区的中央列;若中央区不是垂直面板,则就地包一层。</summary>
+    /// <summary>找到包含空背景区的中央列;若中央区不是垂直面板,则就地包一层。</summary>
     private LayoutPanel EnsureCenterColumn()
     {
         var rootPanel = _manager.Layout.RootPanel;
         var center = FindCenterChild(rootPanel)
-                     ?? throw new InvalidOperationException("布局中找不到主内容区");
+                     ?? throw new InvalidOperationException("布局中找不到中央背景区");
 
         if (center is LayoutPanel { Orientation: Orientation.Vertical } column)
             return column;
@@ -645,6 +842,8 @@ public sealed class DockingHost : IDockingService
     /// </summary>
     private void ReapplyRatios()
     {
+        if (_maximizedId != null)
+            return;
         if (_manager.ActualWidth <= 0 || _manager.ActualHeight <= 0)
             return;
 
@@ -760,7 +959,7 @@ public sealed class DockingHost : IDockingService
                 : (i < c ? DockSide.Top : DockSide.Bottom);
         }
 
-        // 与文档区同列:判断在文档区上方还是下方
+        // 与中央背景区同列:判断在背景区上方还是下方
         if (centerChild is LayoutPanel column)
         {
             var inner = ChildContaining(column, a);

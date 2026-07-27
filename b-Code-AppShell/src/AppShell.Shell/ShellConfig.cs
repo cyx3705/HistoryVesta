@@ -11,12 +11,6 @@ public sealed class ShellConfig
 
     public required string AppVersion { get; init; }
 
-    /// <summary>
-    /// 主窗口(中央设计器区)内容组件(M-01 注入点);
-    /// null 时使用模板默认占位页(M-02)。
-    /// </summary>
-    public object? MainContent { get; set; }
-
     /// <summary>要注册的工具窗口清单。</summary>
     public List<ToolWindowDescriptor> ToolWindows { get; } = new();
 
@@ -60,12 +54,27 @@ public sealed class ShellConfig
     public bool EnableModules { get; set; } = true;
 
     /// <summary>
+    /// 在本进程加载声明了 ui=true 的模块界面。默认由 EnableModules 隐式启用;
+    /// 前端/服务分离应用可在 EnableModules=false 时单独置 true。
+    /// </summary>
+    public bool EnableUiModules { get; set; }
+
+    /// <summary>双击工具窗口标题条时切换窗口最大化。</summary>
+    public bool EnableMaximizeOnDoubleClick { get; set; } = true;
+
+    /// <summary>
     /// MCP 服务(0.4.4 由 OneHistoryStudio 反哺):元数据自描述层、网关、提示词治理,
     /// 注册 mcp.* / command.* / prompt.* / correction.* / incident.* 指令组。
     /// 默认启用并随宿主自动监听；mcp.autostart=false 可关闭自动监听，之后仍可 mcp.start。
     /// 依赖 <see cref="DataService"/>:未配置数据服务时本项自动降级为关闭并告警。
     /// </summary>
     public bool EnableMcp { get; set; } = true;
+
+    /// <summary>
+    /// 客户端模式下只创建命令集、指令详情和模块管理视图，不在本进程创建 MCP 或 ModuleHost。
+    /// 视图经 CommandBus.RemoteExecutor 读取服务端结构化结果。
+    /// </summary>
+    public bool EnableRemoteManagementViews { get; set; }
 
     /// <summary>
     /// MCP 调用留痕接管点:null 时框架用内置 McpAuditRecorder 写 mcp_history。

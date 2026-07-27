@@ -6,12 +6,13 @@ using System.Text.Json;
 using System.Xml.Linq;
 using AppShell.Core.Commands;
 using AppShell.Core.Logging;
+using AppShell.Core.Modules;
 
 namespace AppShell.Services.Modules;
 
 public sealed record ModuleMeta(
     string ModuleName, string Description, string Author, string Version,
-    bool Open, string AssemblyFile, int CommandCount, string Slot = "");
+    bool Open, string AssemblyFile, int CommandCount, string Slot = "", bool Ui = false);
 
 /// <summary>
 /// 模块宿主(MD-01~07):进程内移植自 b-Code-MyAPI-Lite 的 ModuleHost/Invoker 机制(D3)。
@@ -46,6 +47,15 @@ public sealed class ModuleHost : IDisposable
     /// 为 null 视为应用退出中,与原来 Dispatcher 为 null 的处置一致。
     /// </summary>
     public SynchronizationContext? UiContext { get; set; }
+
+    /// <summary>是否把模块方法注册到本进程指令表。无窗前端可关闭。</summary>
+    public bool EnableCommands { get; set; } = true;
+
+    /// <summary>是否实例化模块 UI。无窗服务进程必须关闭。</summary>
+    public bool EnableUiModules { get; set; } = true;
+
+    /// <summary>模块内嵌界面的宿主注册器;无窗服务进程保持 null。</summary>
+    public IShellUiRegistrar? ShellUi { get; set; }
 
     public string ModulesDirectory => _dir;
 
@@ -134,7 +144,12 @@ public sealed class ModuleHost : IDisposable
             if (ui == null)
                 return; // 应用退出中
 
-            ui.Send(_ => SwapRegistrations(_current, next), null);
+            ui.Send(_ =>
+            {
+                DestroyUi(_current);
+                SwapRegistrations(_current, next);
+                CreateUi(next);
+            }, null);
 
             var old = _current;
             _current = next;
@@ -152,8 +167,11 @@ public sealed class ModuleHost : IDisposable
 
     private void SwapRegistrations(Snapshot old, Snapshot next)
     {
-        if (_registry == null)
+        if (_registry == null || !EnableCommands)
+        {
+            next.FinalizeMetas();
             return;
+        }
 
         foreach (var name in old.RegisteredNames)
             _registry.Unregister(name);
@@ -185,17 +203,17 @@ public sealed class ModuleHost : IDisposable
             return snap;
 
         // 根目录平铺 DLL(V2-M3 既有行为):共享一个 ALC
-        LoadGroup(snap, _dir, slot: "");
+        LoadGroup(snap, _dir, slot: "", ReadUiFlag(_dir));
 
         // 模块槽(V2.2 MH-01):每个一级子目录一个独立可回收 ALC,
         // 槽内依赖只在槽内解析(MH-02),槽间同名依赖不同版互不冲突
         foreach (var slotDir in Directory.GetDirectories(_dir))
-            LoadGroup(snap, slotDir, Path.GetFileName(slotDir));
+            LoadGroup(snap, slotDir, Path.GetFileName(slotDir), ReadUiFlag(slotDir));
 
         return snap;
     }
 
-    private void LoadGroup(Snapshot snap, string dir, string slot)
+    private void LoadGroup(Snapshot snap, string dir, string slot, bool uiEnabled)
     {
         var dlls = Directory.GetFiles(dir, "*.dll");
         if (dlls.Length == 0)
@@ -209,7 +227,7 @@ public sealed class ModuleHost : IDisposable
             try
             {
                 var asm = LoadAssembly(alc, dll);
-                ScanAssembly(snap, asm, dll, slot);
+                ScanAssembly(snap, asm, dll, slot, uiEnabled);
             }
             catch (Exception ex)
             {
@@ -232,7 +250,7 @@ public sealed class ModuleHost : IDisposable
         }
     }
 
-    private void ScanAssembly(Snapshot snap, Assembly asm, string dllPath, string slot)
+    private void ScanAssembly(Snapshot snap, Assembly asm, string dllPath, string slot, bool uiEnabled)
     {
         var fileName = Path.GetFileName(dllPath);
 
@@ -250,6 +268,26 @@ public sealed class ModuleHost : IDisposable
         var infoTypes = types.Where(t => t.IsPublic && !t.IsAbstract && IsModuleInfo(t)).ToList();
         if (infoTypes.Count == 0)
             return;
+
+        if (uiEnabled && EnableUiModules)
+        {
+            var owner = slot.Length > 0 ? slot : Path.GetFileNameWithoutExtension(dllPath);
+            foreach (var uiType in types.Where(type =>
+                         type.IsPublic && !type.IsAbstract && typeof(IUiModule).IsAssignableFrom(type)))
+            {
+                try
+                {
+                    var instance = (IUiModule)snap.GetInstance(uiType);
+                    if (instance is IShellUiAware aware && ShellUi != null)
+                        aware.ShellUi = ShellUi;
+                    snap.UiModules.Add((instance, owner));
+                }
+                catch (Exception ex)
+                {
+                    _log.Warn("module", $"实例化 UI 模块 {uiType.FullName} 失败: {ex.Message}");
+                }
+            }
+        }
 
         var docs = XmlDocs.TryLoad(dllPath, _log);
 
@@ -275,9 +313,13 @@ public sealed class ModuleHost : IDisposable
                 GetProp(info, "Description") as string ?? "",
                 GetProp(info, "Author") as string ?? "",
                 GetProp(info, "Version") as string ?? "",
-                open, fileName, slot));
+                open, fileName, slot, uiEnabled));
 
-            if (open)
+            if (!EnableCommands)
+            {
+                // UI-only 前端仍保留模块元信息，但不重复注册服务端业务指令。
+            }
+            else if (open)
             {
                 foreach (var t in types.Where(t =>
                              t.IsClass && t.IsPublic && !t.IsAbstract
@@ -320,6 +362,61 @@ public sealed class ModuleHost : IDisposable
 
     private static readonly IReadOnlyDictionary<string, string> EmptyDocs = new Dictionary<string, string>();
 
+    private static bool ReadUiFlag(string directory)
+    {
+        var path = Path.Combine(directory, "module.manifest.json");
+        if (!File.Exists(path))
+            return false;
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(path));
+            return doc.RootElement.TryGetProperty("ui", out var value) && value.ValueKind == JsonValueKind.True;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private void CreateUi(Snapshot snapshot)
+    {
+        foreach (var (module, _) in snapshot.UiModules)
+        {
+            try
+            {
+                module.CreateUi();
+            }
+            catch (Exception ex)
+            {
+                _log.Warn("module", $"创建 UI 模块 {module.GetType().FullName} 失败: {ex.Message}");
+            }
+        }
+    }
+
+    private void DestroyUi(Snapshot snapshot)
+    {
+        foreach (var (module, owner) in snapshot.UiModules)
+        {
+            try
+            {
+                module.DestroyUi();
+            }
+            catch (Exception ex)
+            {
+                _log.Warn("module", $"销毁 UI 模块 {module.GetType().FullName} 失败: {ex.Message}");
+            }
+
+            try
+            {
+                ShellUi?.UnregisterOwner(owner);
+            }
+            catch (Exception ex)
+            {
+                _log.Warn("module", $"回收模块界面失败 ({owner}): {ex.Message}");
+            }
+        }
+    }
+
     private static CommandDescriptor BuildDescriptor(
         Snapshot snap, string commandName, string moduleName, Type type, MethodInfo method,
         string summary, IReadOnlyDictionary<string, string> paramDocs)
@@ -349,6 +446,7 @@ public sealed class ModuleHost : IDisposable
             Summary = summary.Length > 0 ? summary : $"{moduleName} 模块 {type.Name}.{method.Name} 方法",
             Example = example,
             Parameters = parameters,
+            Readonly = method.GetCustomAttribute<ModuleCommandAttribute>()?.Readonly == true,
             Handler = async ctx =>
             {
                 var args = BindArgs(method, ctx);
@@ -500,6 +598,18 @@ public sealed class ModuleHost : IDisposable
     {
         _watcher?.Dispose();
         _debounce?.Dispose();
+        var ui = UiContext;
+        if (ui != null)
+        {
+            try
+            {
+                ui.Send(_ => DestroyUi(_current), null);
+            }
+            catch (Exception ex)
+            {
+                _log.Warn("module", $"退出时销毁 UI 模块失败: {ex.Message}");
+            }
+        }
     }
 
     // ---------------------------------------------------------------- 快照与加载上下文
@@ -518,8 +628,10 @@ public sealed class ModuleHost : IDisposable
         /// <summary>实际注册成功的指令名(热重载时按此注销)。</summary>
         public List<string> RegisteredNames { get; } = new();
 
+        public List<(IUiModule Module, string Owner)> UiModules { get; } = new();
+
         /// <summary>模块元信息(module.list);CommandCount 在注册完成后定稿。</summary>
-        public List<(string Name, string Desc, string Author, string Version, bool Open, string File, string Slot)> Metas { get; } = new();
+        public List<(string Name, string Desc, string Author, string Version, bool Open, string File, string Slot, bool Ui)> Metas { get; } = new();
 
         public List<ModuleMeta> Modules { get; } = new();
 
@@ -534,9 +646,9 @@ public sealed class ModuleHost : IDisposable
         public void FinalizeMetas()
         {
             Modules.Clear();
-            foreach (var (name, desc, author, version, open, file, slot) in Metas)
+            foreach (var (name, desc, author, version, open, file, slot, ui) in Metas)
                 Modules.Add(new ModuleMeta(name, desc, author, version, open, file,
-                    _commandCounts.GetValueOrDefault(name), slot));
+                    _commandCounts.GetValueOrDefault(name), slot, ui));
         }
     }
 

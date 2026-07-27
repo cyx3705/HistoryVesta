@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <PackageReference Include="OneHistory.AppShell.Shell" />
+    <PackageReference Include="OneHistory.AppShell.ServiceHost" />
   </ItemGroup>
 
 </Project>

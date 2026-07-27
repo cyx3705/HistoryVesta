@@ -3,14 +3,16 @@ using AppShell.Core;
 using AppShell.Core.Commands;
 using AppShell.Core.Mcp;
 using AppShell.Services;
+using AppShell.ServiceHost;
 using AppShell.Shell;
 
-var expected = new Version(0, 5, 0, 0);
+var expected = new Version(0, 7, 2, 0);
 var assemblies = new[]
 {
     typeof(CommandBus).Assembly,
     typeof(SettingsService).Assembly,
     typeof(ShellWindow).Assembly,
+    typeof(ServiceComposition).Assembly,
 };
 
 foreach (var assembly in assemblies)
@@ -23,12 +25,12 @@ foreach (var assembly in assemblies)
 var config = new ShellConfig
 {
     AppName = "AppShellPackageSmoke",
-    AppVersion = "0.5.0",
+    AppVersion = "0.7.2",
     EnableModules = false,
     EnableMcp = false,
 };
 
-if (config.AppVersion != "0.5.0" || config.EnableModules || config.EnableMcp)
+if (config.AppVersion != "0.7.2" || config.EnableModules || config.EnableMcp)
     throw new InvalidOperationException("ShellConfig package surface is not usable");
 
 AppIdentity.Use(Assembly.GetExecutingAssembly());

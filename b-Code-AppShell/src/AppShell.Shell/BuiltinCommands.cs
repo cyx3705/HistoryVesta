@@ -10,6 +10,7 @@ using AppShell.Core.Logging;
 using AppShell.Core.Storage;
 using AppShell.Services;
 using AppShell.Shell.Console;
+using AppShell.Shell.Docking;
 using AppShell.Shell.Panels;
 using AppShell.Shell.Table;
 
@@ -651,7 +652,9 @@ public static class BuiltinCommands
                             _ => "停靠",
                         };
                     var ratio = w.Ratio is { } v and > 0 ? $" {v:P0}" : "";
-                    sb.Append($"\n  {w.Id,-12} {state}{ratio}  {w.Title}");
+                    var maximized = s.Docking.MaximizedId?.Equals(
+                        w.Id, StringComparison.OrdinalIgnoreCase) == true ? " [最大化]" : "";
+                    sb.Append($"\n  {w.Id,-12} {state}{ratio}{maximized}  {w.Title}  owner={w.Owner}");
                 }
 
                 return CommandResult.Ok(sb.ToString());
@@ -666,6 +669,37 @@ public static class BuiltinCommands
             (d, id) => { d.Float(id); return $"{id} 已浮动"; });
         RegisterWindowVerb(r, s, "win.reset", "把窗口复位到注册时的默认位置",
             (d, id) => { d.ResetWindow(id); return $"{id} 已复位到默认位置"; });
+
+        r.Register(new CommandDescriptor
+        {
+            Name = "win.max",
+            Summary = "最大化指定工具窗口",
+            Example = "win.max name=se2sw",
+            RequiresUiThread = true,
+            Parameters = [nameParam],
+            Handler = CommandDescriptor.Sync(ctx =>
+            {
+                var id = ctx.RequireString("name");
+                var exists = s.Docking.ListWindows().Any(w =>
+                    w.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+                if (!exists)
+                    return CommandResult.Fail($"没有名为 {id} 的窗口");
+                s.Docking.MaximizeWindow(id);
+                return CommandResult.Ok($"{id} 已最大化");
+            }),
+        });
+
+        r.Register(new CommandDescriptor
+        {
+            Name = "win.restore",
+            Summary = "退出窗口最大化并恢复原布局",
+            RequiresUiThread = true,
+            Handler = CommandDescriptor.Sync(_ =>
+            {
+                s.Docking.RestoreLayoutFromMaximized();
+                return CommandResult.Ok("已恢复原布局");
+            }),
+        });
 
         r.Register(new CommandDescriptor
         {

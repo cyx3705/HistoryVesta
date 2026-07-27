@@ -8,14 +8,16 @@ WPF shell and docking UI, local services, module hosting, and an MCP gateway.
 - `OneHistory.AppShell.Core`: framework contracts and command/MCP metadata.
 - `OneHistory.AppShell.Services`: settings, logging, SQLite, workspace, modules, and MCP services.
 - `OneHistory.AppShell.Shell`: the WPF application shell. Referencing this package brings in Core and Services.
+- `OneHistory.AppShell.ServiceHost`: headless WPF service lifecycle, confirmation, and `svc.*` hosting.
 
 ## Install
 
 ```xml
-<PackageReference Include="OneHistory.AppShell.Shell" Version="0.5.0" />
+<PackageReference Include="OneHistory.AppShell.Shell" Version="0.7.2" />
+<PackageReference Include="OneHistory.AppShell.ServiceHost" Version="0.7.2" />
 ```
 
-AppShell 0.5.0 targets .NET 8. The Shell package requires Windows and WPF. Packages in this
+AppShell 0.7.2 targets .NET 8. The Shell and ServiceHost packages require Windows and WPF. Packages in this
 repository-local feed are for OneHistory-owned projects; no public distribution license is granted
 by the package itself.
 

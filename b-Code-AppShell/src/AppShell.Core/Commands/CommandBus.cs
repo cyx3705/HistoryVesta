@@ -32,8 +32,25 @@ public sealed class CommandBus
     /// <summary>二次确认通道;未注入时带确认位的指令一律拒绝执行(安全缺省)。</summary>
     public IConfirmationService? Confirmation { get; set; }
 
+    /// <summary>需要按客户端来源选择确认通道时使用；设置后优先于 Confirmation。</summary>
+    public Func<CommandContext, string, bool>? ConfirmationRouter { get; set; }
+
     /// <summary>UI 线程上下文;RequiresUiThread 的指令经此编组。</summary>
     public SynchronizationContext? UiContext { get; set; }
+
+    /// <summary>
+    /// 前端命令中继。服务宿主为其注入传输实现；未连接前端时保持 null，
+    /// 总线返回明确失败结果，不等待网络超时。
+    /// </summary>
+    public Func<string, string, CancellationToken, Task<CommandResult>>? FrontendExecutor { get; set; }
+
+    /// <summary>
+    /// 客户端模式下的远程总线。ShouldUseRemote 返回 true 时整条命令交给服务，
+    /// 服务经前端中继发回的 UI 命令可用来源标签绕过此路由并在本地执行。
+    /// </summary>
+    public Func<string, string, CancellationToken, Task<CommandResult>>? RemoteExecutor { get; set; }
+
+    public Func<string, bool>? ShouldUseRemote { get; set; }
 
     /// <summary>每条指令执行完毕后触发(状态栏摘要,S-03);在执行线程上引发。</summary>
     public event Action<string, string, CommandResult>? Executed;
@@ -82,6 +99,10 @@ public sealed class CommandBus
         string source,
         CancellationToken cancellation)
     {
+        var remote = RemoteExecutor;
+        if (remote != null && (ShouldUseRemote?.Invoke(source) ?? true))
+            return await remote(text, source, cancellation).ConfigureAwait(false);
+
         // 解析
         ParsedCommand parsed;
         try
@@ -116,15 +137,28 @@ public sealed class CommandBus
         var prompt = descriptor.ConfirmPrompt?.Invoke(context);
         if (prompt != null)
         {
-            if (Confirmation == null)
+            if (ConfirmationRouter != null)
+            {
+                if (!ConfirmationRouter(context, prompt))
+                    return CommandResult.Fail("已取消(未获确认)");
+            }
+            else if (Confirmation == null)
                 return CommandResult.Fail("该指令需要二次确认,但当前环境没有确认通道,已拒绝执行");
-            if (!Confirmation.Confirm(prompt))
+            else if (!Confirmation.Confirm(prompt))
                 return CommandResult.Fail("已取消(用户未确认)");
         }
 
         // 执行(必要时编组 UI 线程)
         try
         {
+            if (descriptor.ExecutionSite == CommandExecutionSite.Frontend)
+            {
+                var frontend = FrontendExecutor;
+                return frontend == null
+                    ? CommandResult.Fail("前端未连接,请启动应用前端")
+                    : await frontend(text, source, cancellation).ConfigureAwait(false);
+            }
+
             if (descriptor.RequiresUiThread && UiContext != null
                 && SynchronizationContext.Current != UiContext)
             {
@@ -170,6 +204,15 @@ public sealed class CommandBus
         ParsedCommand parsed,
         out IReadOnlyDictionary<string, string> values)
     {
+        if (descriptor.AllowUnspecifiedParameters)
+        {
+            values = parsed.Named.ToDictionary(
+                pair => pair.Key,
+                pair => pair.Value,
+                StringComparer.OrdinalIgnoreCase);
+            return null;
+        }
+
         var bound = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         values = bound;
 

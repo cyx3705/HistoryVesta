@@ -16,4 +16,8 @@ public interface IMcpAuditLog
     /// <param name="result">结果：成功 / 拒绝 / 远程拒绝 / 确认超时 等。</param>
     /// <param name="elapsedMs">耗时毫秒；未执行记 0。</param>
     void RecordMcp(string client, string tool, string arguments, string result, long elapsedMs);
+
+    /// <summary>记录带稳定会话身份的 MCP 调用；旧实现自动转发到兼容签名。</summary>
+    void RecordMcp(ClientSession session, string tool, string arguments, string result, long elapsedMs)
+        => RecordMcp(session.Name, tool, arguments, result, elapsedMs);
 }

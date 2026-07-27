@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Net;
+using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -20,6 +21,8 @@ namespace AppShell.Services.Mcp;
 /// </summary>
 public sealed class McpGateway : IDisposable
 {
+    public static readonly IReadOnlyList<string> SupportedProtocols = ["2025-06-18", "2025-03-26"];
+
     public const string KeyPort = "mcp.port";
     public const string KeyPolicy = "mcp.policy";
     public const string KeyToken = "mcp.token";
@@ -50,7 +53,7 @@ public sealed class McpGateway : IDisposable
     private CommandSchemaExporter? _exporter;
     private HttpListener? _listener;
     private CancellationTokenSource? _cts;
-    private string _clientName = "client";
+    private readonly ConcurrentDictionary<string, ClientSession> _sessions = new(StringComparer.Ordinal);
     private long _callCount;
     private string _lastCall = "(无)";
 
@@ -264,6 +267,7 @@ public sealed class McpGateway : IDisposable
     {
         var request = context.Request;
         var path = request.Url?.AbsolutePath.TrimEnd('/') ?? "";
+        var session = ResolveSession(request);
 
         if (!path.Equals("/mcp", StringComparison.OrdinalIgnoreCase))
         {
@@ -284,7 +288,7 @@ public sealed class McpGateway : IDisposable
             var auth = request.Headers["Authorization"];
             if (auth != $"Bearer {token}")
             {
-                _history.RecordMcp(_clientName, "(auth)", "", "拒绝", 0);
+                _history.RecordMcp(session, "(auth)", "", "拒绝", 0);
                 _log.Warn("mcp", "拒绝一次请求: Authorization 缺失或 token 不匹配(MS-02)");
                 TryClose(context, 401);
                 return;
@@ -331,6 +335,25 @@ public sealed class McpGateway : IDisposable
                 : null;
             var hasParams = root.TryGetProperty("params", out var prms);
 
+            if (!method.Equals("initialize", StringComparison.Ordinal))
+            {
+                var requestedProtocol = request.Headers["MCP-Protocol-Version"];
+                var effectiveProtocol = string.IsNullOrWhiteSpace(requestedProtocol)
+                    ? "2025-03-26"
+                    : requestedProtocol;
+                if (!SupportedProtocols.Contains(effectiveProtocol, StringComparer.Ordinal))
+                {
+                    await WriteJsonAsync(
+                        context,
+                        RpcError(id, -32600, $"不支持的 MCP-Protocol-Version: {effectiveProtocol}"),
+                        400).ConfigureAwait(false);
+                    return;
+                }
+
+                session = session with { ProtocolVersion = effectiveProtocol };
+                _sessions[session.Id] = session;
+            }
+
             // 通知(无 id)只确认收到,不回 JSON-RPC 响应体
             if (id == null && method.StartsWith("notifications/", StringComparison.Ordinal))
             {
@@ -340,10 +363,10 @@ public sealed class McpGateway : IDisposable
 
             var response = method switch
             {
-                "initialize" => HandleInitialize(id, hasParams ? prms : null),
+                "initialize" => HandleInitialize(context.Response, session, id, hasParams ? prms : null),
                 "ping" => RpcResult(id, new JsonObject()),
                 "tools/list" => HandleToolsList(id),
-                "tools/call" => await HandleToolsCallAsync(id, hasParams ? prms : null).ConfigureAwait(false),
+                "tools/call" => await HandleToolsCallAsync(session, id, hasParams ? prms : null).ConfigureAwait(false),
                 _ => RpcError(id, -32601, $"method not found: {method}"),
             };
 
@@ -353,21 +376,34 @@ public sealed class McpGateway : IDisposable
 
     // ---------------------------------------------------------------- JSON-RPC 方法
 
-    private JsonObject HandleInitialize(JsonNode? id, JsonElement? prms)
+    private JsonObject HandleInitialize(
+        HttpListenerResponse response,
+        ClientSession session,
+        JsonNode? id,
+        JsonElement? prms)
     {
+        var clientName = session.Name;
         if (prms is { } p
             && p.TryGetProperty("clientInfo", out var ci)
             && ci.TryGetProperty("name", out var cn)
             && cn.GetString() is { Length: > 0 } name)
         {
-            _clientName = name;
+            clientName = name;
         }
 
-        var protocolVersion = prms is { } pv && pv.TryGetProperty("protocolVersion", out var ver)
+        var requestedProtocol = prms is { } pv && pv.TryGetProperty("protocolVersion", out var ver)
             ? ver.GetString() ?? "2025-03-26"
             : "2025-03-26";
+        var protocolVersion = SupportedProtocols.Contains(requestedProtocol, StringComparer.Ordinal)
+            ? requestedProtocol
+            : SupportedProtocols[0];
+        if (!requestedProtocol.Equals(protocolVersion, StringComparison.Ordinal))
+            _log.Warn("mcp", $"客户端请求未知协议 {requestedProtocol},已协商为 {protocolVersion}");
 
-        _log.Info("mcp", $"客户端握手: {_clientName}");
+        session = session with { Name = clientName, ProtocolVersion = protocolVersion };
+        _sessions[session.Id] = session;
+        response.Headers["Mcp-Session-Id"] = session.Id;
+        _log.Info("mcp", $"客户端握手: {session.Name}({session.Id}) 协议 {protocolVersion}");
         return RpcResult(id, new JsonObject
         {
             ["protocolVersion"] = protocolVersion,
@@ -399,7 +435,10 @@ public sealed class McpGateway : IDisposable
         return RpcResult(id, new JsonObject { ["tools"] = tools });
     }
 
-    private async Task<JsonObject> HandleToolsCallAsync(JsonNode? id, JsonElement? prms)
+    private async Task<JsonObject> HandleToolsCallAsync(
+        ClientSession session,
+        JsonNode? id,
+        JsonElement? prms)
     {
         if (prms is not { } p || !p.TryGetProperty("name", out var nameEl)
                               || nameEl.GetString() is not { Length: > 0 } toolName)
@@ -426,7 +465,7 @@ public sealed class McpGateway : IDisposable
         {
             if (ConfirmMode != "host")
             {
-                _history.RecordMcp(_clientName, tool.ToolName, argsText, "拒绝", 0);
+                _history.RecordMcp(session, tool.ToolName, argsText, "拒绝", 0);
                 _log.Warn("mcp", $"拒绝危险工具调用: {tool.ToolName}(mcp.confirm=deny)");
                 return RpcResult(id, ToolText(
                     $"已拒绝: {tool.CommandName} 是需二次确认的危险指令。当前 mcp.confirm=deny;" +
@@ -436,31 +475,31 @@ public sealed class McpGateway : IDisposable
 
             if (Policy == "readonly")
             {
-                _history.RecordMcp(_clientName, tool.ToolName, argsText, "拒绝", 0);
+                _history.RecordMcp(session, tool.ToolName, argsText, "拒绝", 0);
                 return RpcResult(id, ToolText(
                     $"已拒绝: 当前策略为 readonly,不受理危险指令;宿主切 standard 后方可经中继确认执行。",
                     isError: true));
             }
 
-            var decision = await RelayConfirmAsync(bus, tool.CommandName, arguments, commandText)
+            var decision = await RelayConfirmAsync(session, bus, tool.CommandName, arguments, commandText)
                 .ConfigureAwait(false);
             if (decision == false)
             {
-                _history.RecordMcp(_clientName, tool.ToolName, argsText, "远程拒绝", 0);
+                _history.RecordMcp(session, tool.ToolName, argsText, "远程拒绝", 0);
                 _log.Warn("mcp", $"中继确认:宿主拒绝 {tool.ToolName}");
                 return RpcResult(id, ToolText("宿主已拒绝该远程请求(人工点否)。", isError: true));
             }
 
             if (decision == null)
             {
-                _history.RecordMcp(_clientName, tool.ToolName, argsText, "确认超时", 0);
+                _history.RecordMcp(session, tool.ToolName, argsText, "确认超时", 0);
                 _log.Warn("mcp", $"中继确认:超时拒绝 {tool.ToolName}");
                 return RpcResult(id, ToolText(
                     $"确认超时({ConfirmTimeout}s 内无人操作),已按拒绝处理。", isError: true));
             }
 
             _log.Info("mcp", $"中继确认:宿主批准 {tool.ToolName},执行中");
-            return await ExecuteToolAsync(id, bus, tool, commandText, argsText,
+            return await ExecuteToolAsync(session, id, bus, tool, commandText, argsText,
                 preApproved: true, relayNote: "远程确认通过").ConfigureAwait(false);
         }
 
@@ -469,20 +508,20 @@ public sealed class McpGateway : IDisposable
             && (!bus.Registry.TryGet(tool.CommandName, out var descriptor)
                 || (!descriptor.Readonly && !McpExposurePolicy.IsReadonlyAllowed(tool.CommandName))))
         {
-            _history.RecordMcp(_clientName, tool.ToolName, argsText, "拒绝", 0);
+            _history.RecordMcp(session, tool.ToolName, argsText, "拒绝", 0);
             _log.Warn("mcp", $"拒绝调用(策略 readonly 未暴露): {tool.ToolName}");
             return RpcResult(id, ToolText(
                 $"已拒绝: 当前暴露策略为 readonly,{tool.CommandName} 未开放;宿主执行 app.set key=mcp.policy value=standard 可放开动作类指令",
                 isError: true));
         }
 
-        return await ExecuteToolAsync(id, bus, tool, commandText, argsText,
+        return await ExecuteToolAsync(session, id, bus, tool, commandText, argsText,
             preApproved: false, relayNote: null).ConfigureAwait(false);
     }
 
     /// <summary>组装指令经总线执行并映射为 MCP 结果;preApproved=true 时置确认预批准域(CX-03)。</summary>
     private async Task<JsonObject> ExecuteToolAsync(
-        JsonNode? id, CommandBus bus, McpToolInfo tool, string commandText, string argsText,
+        ClientSession session, JsonNode? id, CommandBus bus, McpToolInfo tool, string commandText, string argsText,
         bool preApproved, string? relayNote)
     {
         var timeoutSeconds = int.TryParse(
@@ -492,7 +531,7 @@ public sealed class McpGateway : IDisposable
             : 120;
         var sw = System.Diagnostics.Stopwatch.StartNew();
 
-        Task<CommandResult> Run() => bus.ExecuteAsync(commandText, $"MCP:{_clientName}");
+        Task<CommandResult> Run() => bus.ExecuteAsync(commandText, $"MCP:{session.Name}");
         var execTask = preApproved
             ? McpConfirmationScope.RunPreApprovedAsync(Run)
             : Run();
@@ -506,7 +545,7 @@ public sealed class McpGateway : IDisposable
         {
             // MG-07:超时只切断响应,不撕裂总线执行——指令继续跑完并留痕
             _lastCall = $"{tool.ToolName}(超时 {timeoutSeconds}s)";
-            _history.RecordMcp(_clientName, tool.ToolName, argsText, Note(relayNote, "超时"), sw.ElapsedMilliseconds);
+            _history.RecordMcp(session, tool.ToolName, argsText, Note(relayNote, "超时"), sw.ElapsedMilliseconds);
             return RpcResult(id, ToolText(
                 $"执行超时({timeoutSeconds}s): 指令仍在宿主内继续执行并留痕,可稍后经只读指令查询结果",
                 isError: true));
@@ -515,7 +554,7 @@ public sealed class McpGateway : IDisposable
         var result = await execTask.ConfigureAwait(false);
         sw.Stop();
         _lastCall = $"{tool.ToolName} → {(result.Success ? "成功" : "失败")}({sw.ElapsedMilliseconds}ms)";
-        _history.RecordMcp(_clientName, tool.ToolName, argsText,
+        _history.RecordMcp(session, tool.ToolName, argsText,
             Note(relayNote, result.Success ? "成功" : "失败"), sw.ElapsedMilliseconds);
 
         // AppShell 0.5.0:保留既有文本块以兼容旧客户端,并加发 structuredContent.data。
@@ -563,20 +602,20 @@ public sealed class McpGateway : IDisposable
     /// (如受保护分支)时直接放行,交由指令处理器按业务规则拒绝。
     /// </summary>
     private async Task<bool?> RelayConfirmAsync(
-        CommandBus bus, string commandName, JsonElement? arguments, string commandText)
+        ClientSession session, CommandBus bus, string commandName, JsonElement? arguments, string commandText)
     {
         if (_remoteConfirm == null)
             return false; // 无对话通道 → 安全缺省拒绝
 
-        var prompt = BuildConfirmPrompt(bus, commandName, arguments);
+        var prompt = BuildConfirmPrompt(session, bus, commandName, arguments);
         if (prompt == null)
             return true; // 本次输入无需人工确认(处理器自行判定)
 
-        var full = $"【MCP 客户端 “{_clientName}” 的远程请求】\n\n{prompt}\n\n等价指令: {commandText}";
+        var full = $"【MCP 客户端 “{session.Name}” 的远程请求】\n\n{prompt}\n\n等价指令: {commandText}";
         await _confirmGate.WaitAsync().ConfigureAwait(false);
         try
         {
-            return _remoteConfirm(_clientName, full, ConfirmTimeout);
+            return _remoteConfirm(session.Name, full, ConfirmTimeout);
         }
         finally
         {
@@ -584,7 +623,11 @@ public sealed class McpGateway : IDisposable
         }
     }
 
-    private string? BuildConfirmPrompt(CommandBus bus, string commandName, JsonElement? arguments)
+    private string? BuildConfirmPrompt(
+        ClientSession session,
+        CommandBus bus,
+        string commandName,
+        JsonElement? arguments)
     {
         if (!bus.Registry.TryGet(commandName, out var descriptor) || descriptor.ConfirmPrompt == null)
             return null;
@@ -606,7 +649,7 @@ public sealed class McpGateway : IDisposable
 
         try
         {
-            var ctx = new CommandContext(descriptor, values, $"MCP:{_clientName}", null, CancellationToken.None);
+            var ctx = new CommandContext(descriptor, values, $"MCP:{session.Name}", null, CancellationToken.None);
             return descriptor.ConfirmPrompt(ctx);
         }
         catch (Exception)
@@ -614,6 +657,19 @@ public sealed class McpGateway : IDisposable
             // 文案构建失败不影响中继:回落到通用提示,人工仍能裁决
             return $"远程请求执行危险指令: {commandName}\n(参数: {(arguments?.GetRawText() ?? "{}")})";
         }
+    }
+
+    private ClientSession ResolveSession(HttpListenerRequest request)
+    {
+        var id = request.Headers["Mcp-Session-Id"];
+        if (string.IsNullOrWhiteSpace(id))
+            id = $"connection:{request.RemoteEndPoint}";
+        if (id.Length > 128)
+            return ClientSession.Create(ClientKind.Mcp, "client");
+
+        return _sessions.GetOrAdd(
+            id,
+            static key => ClientSession.Create(ClientKind.Mcp, "client", id: key));
     }
 
     private static readonly JsonSerializerOptions DataJson = new()

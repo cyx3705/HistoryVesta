@@ -68,6 +68,6 @@
             </StatusBarItem>
         </StatusBar>
 
-        <ad:DockingManager x:Name="DockManager" />
+        <ad:DockingManager x:Name="DockManager" Background="#F3F4F6" />
     </DockPanel>
 </Window>

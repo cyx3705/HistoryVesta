@@ -7,7 +7,8 @@ public sealed record ToolWindowInfo(
     bool IsVisible,
     bool IsFloating,
     DockSide? Side,
-    double? Ratio);
+    double? Ratio,
+    string Owner = "framework");
 
 /// <summary>
 /// 停靠系统对外唯一门面(§14.2 封装原则):
@@ -16,6 +17,9 @@ public sealed record ToolWindowInfo(
 /// </summary>
 public interface IDockingService
 {
+    /// <summary>当前最大化的工具窗口 Id;未最大化时为 null。</summary>
+    string? MaximizedId { get; }
+
     /// <summary>列出全部已注册窗口及状态(win.list)。</summary>
     IReadOnlyList<ToolWindowInfo> ListWindows();
 
@@ -49,6 +53,21 @@ public interface IDockingService
     /// <summary>列出全部命名布局方案(layout.list)。</summary>
     IReadOnlyList<string> ListLayouts();
 
+    /// <summary>运行期注册工具窗口。owner 是模块热重载时的回收键。</summary>
+    void RegisterWindow(ToolWindowDescriptor descriptor, string owner);
+
+    /// <summary>运行期注销工具窗口;未注册时静默忽略。</summary>
+    void UnregisterWindow(string id);
+
+    /// <summary>回收 owner 名下全部工具窗口。</summary>
+    void UnregisterOwner(string owner);
+
+    /// <summary>最大化指定工具窗口。</summary>
+    void MaximizeWindow(string id);
+
+    /// <summary>退出临时最大化状态并恢复进入前的完整布局。</summary>
+    void RestoreLayoutFromMaximized();
+
     /// <summary>
     /// 布局侧产生的等价指令(W-10):用户拖拽等手势结束后,
     /// 封装层生成 win.* / layout.* 指令文本并经此事件上报。
@@ -56,4 +75,7 @@ public interface IDockingService
     /// 由指令/API 引发的布局变更不会再回声成新事件(§14.2 防再入)。
     /// </summary>
     event EventHandler<ShellCommandEventArgs>? CommandGenerated;
+
+    /// <summary>窗口集合或最大化状态变化时触发。</summary>
+    event EventHandler? WindowsChanged;
 }

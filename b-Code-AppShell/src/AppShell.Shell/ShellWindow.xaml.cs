@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using AppShell.Core.Commands;
 using AppShell.Core.Docking;
 using AppShell.Core.Logging;
@@ -11,6 +12,8 @@ using AppShell.Core.Storage;
 using AppShell.Shell.Console;
 using AppShell.Shell.Docking;
 using AppShell.Shell.Themes;
+using AvalonDock.Controls;
+using AvalonDock.Layout;
 
 namespace AppShell.Shell;
 
@@ -34,6 +37,7 @@ public partial class ShellWindow : Window
 
     // 0.4.4 反哺能力:由 Shell 自行装配,派生应用经下方只读属性取用
     private readonly Services.Modules.ModuleHost? _modules;
+    private readonly Modules.ShellUiRegistrar _shellUi;
     private readonly Services.Mcp.McpGateway? _mcp;
     private readonly Services.Mcp.PromptGovernanceStore? _prompts;
 
@@ -102,7 +106,7 @@ public partial class ShellWindow : Window
         // 仍在 BuiltinCommands 之后完成。条件与指令注册一致:mcp 窗口还要求已配置数据服务。
         // 用 TakeOverDescriptor:派生应用若在 config.ToolWindows 声明了同 Id 窗口的停靠位/标签目标,
         // 一律保留其布局,框架只注入内容——因此派生侧既有布局不变。
-        if (config.EnableMcp && config.DataService != null)
+        if ((config.EnableMcp && config.DataService != null) || config.EnableRemoteManagementViews)
         {
             TakeOverDescriptor("mcp", "命令集", DockSide.Right, 0.32,
                 () => new Views.McpToolsView(() => _bus, _commandSelection));
@@ -111,7 +115,7 @@ public partial class ShellWindow : Window
                 () => new Views.CommandDetailView(() => _bus, _commandSelection));
         }
 
-        if (config.EnableModules)
+        if (config.EnableModules || config.EnableRemoteManagementViews)
         {
             TakeOverDescriptor("modules", "模块管理", DockSide.Right, 0.32,
                 () => new Views.ModulesView(() => _bus));
@@ -122,12 +126,16 @@ public partial class ShellWindow : Window
             Services.AppPaths.GetPanelsDir(dataDirectory), config.Panels, _bus, log);
         _panels.RegisterWindows(config.ToolWindows);
 
-        var mainContent = config.MainContent
-                          ?? new PlaceholderPage(config.AppName, config.AppVersion, log);
-        _docking = new DockingHost(DockManager, config.ToolWindows, mainContent, layoutStore, log);
+        _docking = new DockingHost(DockManager, config.ToolWindows, layoutStore, log, settings);
         _docking.CommandGenerated += (_, e) =>
             Dispatcher.BeginInvoke(() => StatusLeft.Text = $"[{e.Source}] {e.CommandText}");
         _docking.Initialize();
+        _shellUi = new Modules.ShellUiRegistrar(_docking, Dispatcher, log);
+        _docking.WindowsChanged += (_, _) => Dispatcher.BeginInvoke(() =>
+        {
+            BuildMenus();
+            UpdateStatusRight();
+        });
 
         // ---- 内置指令组 + 派生应用自定义指令(冲突此时报错,§5.3)
         BuiltinCommands.Register(registry, new ShellCommandServices
@@ -148,13 +156,16 @@ public partial class ShellWindow : Window
         // ---- 0.4.4 反哺能力:模块托管与 MCP 服务(默认启用,ShellConfig 可关)
         //      注册次序在内置指令之后、派生自定义指令之前——派生应用因此可以在
         //      ConfigureCommands 里看到 module.*/mcp.* 已存在,并按需登记只读白名单。
-        if (config.EnableModules)
+        if (config.EnableModules || config.EnableUiModules)
         {
             _modules = new Services.Modules.ModuleHost(
                 Services.AppPaths.GetModulesDir(dataDirectory), log)
             {
                 // 此刻在 UI 线程,注册表换血据此编组(替代原先的 Application.Current.Dispatcher)
                 UiContext = SynchronizationContext.Current,
+                ShellUi = _shellUi,
+                EnableCommands = config.EnableModules,
+                EnableUiModules = config.EnableModules || config.EnableUiModules,
             };
 
             // MD-08:窗口成型前先做一次文件级面板同步,上一会话遗留的模块旁面板本次即成窗口
@@ -162,7 +173,8 @@ public partial class ShellWindow : Window
                 _modules.ModulesDirectory, Services.AppPaths.GetPanelsDir(dataDirectory), log);
 
             // 全限定:本类的 Modules / Mcp 只读属性会遮蔽同名命名空间
-            AppShell.Shell.Modules.ModuleCommands.RegisterAll(registry, _modules, settings);
+            if (config.EnableModules)
+                AppShell.Shell.Modules.ModuleCommands.RegisterAll(registry, _modules, settings);
         }
 
         if (config.EnableMcp)
@@ -215,6 +227,7 @@ public partial class ShellWindow : Window
         {
             var summary = result.Message.Split('\n')[0];
             StatusLeft.Text = $"{(result.Success ? "✓" : "✗")} [{source}] {text} —— {summary}";
+            SyncRemoteTableResult(text, result);
             UpdateStatusRight();
         });
         log.EntryAdded += (_, entry) =>
@@ -230,6 +243,14 @@ public partial class ShellWindow : Window
         var focusConsole = new RoutedCommand();
         CommandBindings.Add(new CommandBinding(focusConsole, (_, _) => FocusConsole()));
         InputBindings.Add(new KeyBinding(focusConsole, Key.Oem3, ModifierKeys.Control));
+
+        if (config.EnableMaximizeOnDoubleClick)
+        {
+            DockManager.AddHandler(
+                Control.MouseDoubleClickEvent,
+                new MouseButtonEventHandler(OnDockDoubleClick),
+                handledEventsToo: true);
+        }
 
         BuildMenus();
         UpdateStatusRight();
@@ -304,6 +325,76 @@ public partial class ShellWindow : Window
     {
         _docking.Show("console");
         _console.FocusInput();
+    }
+
+    private void OnDockDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        string? id = null;
+        for (DependencyObject? current = e.OriginalSource as DependencyObject;
+             current != null;
+             current = VisualTreeHelper.GetParent(current))
+        {
+            if (current is AnchorablePaneTitle { Model: LayoutAnchorable anchorable })
+            {
+                id = anchorable.ContentId;
+                break;
+            }
+        }
+
+        if (id == null)
+            return;
+        if (_docking.MaximizedId?.Equals(id, StringComparison.OrdinalIgnoreCase) == true)
+            _docking.RestoreLayoutFromMaximized();
+        else
+            _docking.MaximizeWindow(id);
+        e.Handled = true;
+    }
+
+    private void SyncRemoteTableResult(string text, CommandResult result)
+    {
+        if (_tableView == null || !result.Success)
+            return;
+        ParsedCommand parsed;
+        try
+        {
+            parsed = CommandParser.Parse(text);
+        }
+        catch (CommandSyntaxException)
+        {
+            return;
+        }
+
+        if (parsed.Name is "db.insert" or "db.update" or "db.delete" or "db.sql"
+            && _config.DataService is Services.Web.RemoteDataService remoteData)
+        {
+            remoteData.NotifyDataChanged(
+                parsed.Named.GetValueOrDefault("conn"),
+                parsed.Name == "db.sql"
+                    ? null
+                    : parsed.Named.GetValueOrDefault("table") ?? parsed.Positionals.FirstOrDefault());
+        }
+
+        if (result.Data is not Core.Data.QueryResult query)
+            return;
+
+        if (parsed.Name.Equals("db.query", StringComparison.OrdinalIgnoreCase))
+        {
+            var table = parsed.Named.GetValueOrDefault("table")
+                        ?? parsed.Positionals.FirstOrDefault();
+            if (table == null)
+                return;
+            _tableView.ShowResult(
+                parsed.Named.GetValueOrDefault("conn") ?? Core.Data.IDataService.DefaultConnection,
+                table,
+                parsed.Named.GetValueOrDefault("where"),
+                query);
+            _docking.Show("table");
+        }
+        else if (parsed.Name.Equals("db.sql", StringComparison.OrdinalIgnoreCase))
+        {
+            _tableView.ShowAdhoc(query);
+            _docking.Show("table");
+        }
     }
 
     private void UpdateErrorBadge()
@@ -463,6 +554,9 @@ public partial class ShellWindow : Window
         }
 
         view.Items.Add(new Separator());
+        var restore = Item("退出窗口最大化", "win.restore");
+        restore.IsEnabled = _docking.MaximizedId != null;
+        view.Items.Add(restore);
         view.Items.Add(Item("重置默认布局", "layout.reset"));
         MainMenu.Items.Add(view);
 
@@ -493,5 +587,7 @@ public partial class ShellWindow : Window
     }
 
     private void UpdateStatusRight()
-        => StatusRight.Text = $"布局: {_docking.CurrentLayoutName}";
+        => StatusRight.Text = _docking.MaximizedId == null
+            ? $"布局: {_docking.CurrentLayoutName}"
+            : $"布局: {_docking.CurrentLayoutName} · 最大化: {_docking.MaximizedId}";
 }
