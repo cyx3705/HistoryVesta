@@ -9,13 +9,13 @@
 - `changelog`：逐版本变更和兼容性说明。
 - `staging`：发布脚本的可覆盖验收区，不进入 Git。
 
-当前正式版本为 **0.5.0**。完整消费者只需引用：
+当前正式版本为 **0.7.2**。完整桌面消费者只需引用：
 
 ```xml
-<PackageReference Include="OneHistory.AppShell.Shell" Version="0.5.0" />
+<PackageReference Include="OneHistory.AppShell.Shell" Version="0.7.2" />
 ```
 
-使用本地 feed 时，把 `feed` 的绝对路径加入消费项目的 `NuGet.Config`。0.5.0 仅供
+服务宿主消费者额外引用 `OneHistory.AppShell.ServiceHost`。使用本地 feed 时，把 `feed` 的绝对路径加入消费项目的 `NuGet.Config`。0.7.2 仅供
 OneHistory 自有项目使用；仓库尚未确定公共许可证，因此没有推送 NuGet.org。
 
 发布入口为 `b-Code-AppShell/eng/Publish-AppShell.ps1`。脚本负责构建、漏洞审计、隔离包消费、

@@ -2,7 +2,7 @@
 
 > 日期：2026-07-27
 > 基线：AppShell 0.7.1
-> 状态：代码已实施，自动化验收通过，尚未发布或正式部署
+> 状态：代码已实施，自动化验收与正式本地 feed 发布通过，尚未部署 OHS
 
 ## 1. 决策
 
@@ -105,10 +105,12 @@ win.restore
 | 模块 | SE2SW 主工程及 Smoke/UiSmoke 工程 Debug 构建 | PASS |
 | 自动测试 | OHS 八套 Smoke Debug/Release；SE2SW Release Smoke | PASS |
 | staging | 四包、漏洞审计、PackageSmoke、演示宿主 | PASS |
-| 发布部署 | 正式 feed、正式目录部署、GUI 人工验收 | 待执行 |
+| 正式 feed | 9 个不可覆盖产物、manifest、checksum | PASS |
+| OHS 部署 | 正式目录部署、GUI 人工验收 | 待执行 |
 
 ## 7. 发布边界
 
-0.7.2 staging 已完成，四个主包、四个符号包、漏洞审计、隔离 PackageSmoke 和演示宿主均通过。
-正式交付仍需执行不可覆盖的正式 feed 发布；OHS 产品侧需重新生成命令手册、完成成套部署，并在真实
-主程序中验证拖动、浮动、双击最大化/恢复和转换流程。
+0.7.2 staging 与不可覆盖的正式本地 feed 发布均已完成。正式 manifest 指向源码提交 `52694de2`，
+记录 `sourceDirty=false`，四个主包、四个符号包和演示 ZIP 均有 SHA-256。
+OHS 产品侧仍需重新生成命令手册、完成成套部署，并在真实主程序中验证拖动、浮动、双击最大化/恢复
+和转换流程。

@@ -5,7 +5,7 @@
 PowerShell 核验示例：
 
 ```powershell
-Get-FileHash ..\feed\OneHistory.AppShell.Shell.0.5.0.nupkg -Algorithm SHA256
+Get-FileHash ..\feed\OneHistory.AppShell.Shell.0.7.2.nupkg -Algorithm SHA256
 ```
 
 结果必须同时匹配 checksum 文件与 manifest；任一不一致都视为产物损坏。

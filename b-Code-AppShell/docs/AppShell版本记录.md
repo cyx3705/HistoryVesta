@@ -6,7 +6,7 @@
 
 | 版本 | 日期 | 里程碑 | 说明 |
 |---|---|---|---|
-| 0.7.2 | 2026-07-27 | 统一工具窗口模型 | 删除 `WorkPageDescriptor`、工作页注册接口、`page.*`、固定主内容和文档标题壳；中央区仅保留无标签空背景，模块 UI 全部通过 `RegisterToolWindow` 注册普通窗口。最大化、拖动、浮动、停靠、隐藏和 owner 回收统一走工具窗口链；旧布局中的文档节点被丢弃，已注册工具窗尽量恢复。SE2SW 2.2.0 完成真实迁移。该版本为源码及二进制破坏性修订，旧 UI 模块必须重新编译。OHS Debug/Release 构建与八套 Smoke、SE2SW Release Smoke 通过；四包 staging、漏洞审计、隔离 PackageSmoke 与演示发布全绿，尚未执行正式 feed 发布或 OHS 部署 |
+| 0.7.2 | 2026-07-27 | 统一工具窗口模型 | 删除 `WorkPageDescriptor`、工作页注册接口、`page.*`、固定主内容和文档标题壳；中央区仅保留无标签空背景，模块 UI 全部通过 `RegisterToolWindow` 注册普通窗口。最大化、拖动、浮动、停靠、隐藏和 owner 回收统一走工具窗口链；旧布局中的文档节点被丢弃，已注册工具窗尽量恢复。SE2SW 2.2.0 完成真实迁移。该版本为源码及二进制破坏性修订，旧 UI 模块必须重新编译。OHS Debug/Release 构建与八套 Smoke、SE2SW Release Smoke 通过；四包 staging、漏洞审计、隔离 PackageSmoke、演示发布及正式本地 feed 全绿，正式 manifest 指向洁净源码提交 `52694de2`；尚未执行 OHS 部署 |
 | 0.7.1 | 2026-07-27 | 页面最大化与布局载入补强 | 工作页和工具窗支持双击蓝色标题拖动条最大化/恢复，并新增 `win.max`、`win.restore`；最大化期间标题条保留，恢复入口不会随标签消失。主内容与模块工作页统一显示标题条，模块工作页默认 `CanFloat=true`，可拖出、浮动并重新停靠；标题条在 `Loaded` 和可视父级变化时重绑 AvalonDock `LayoutItem`，保证首次装载、最大化重建与重新停靠后的拖动链。补齐工作页布局反序列化分支，载入布局时不再丢失已注册页面。Debug/Release 0 警告 0 错误；四包隔离 staging、漏洞审计、PackageSmoke 与演示发布全绿 |
 | 0.7.0 | 2026-07-27 | 模块内嵌窗口与中央工作页 | 新增 `IShellUiRegistrar` / `IShellUiAware` 与 `WorkPageDescriptor`；`DockingHost` 支持运行期工具窗和工作页注册、owner 兜底回收、迟到模块近似布局恢复及 `page.list/open/close/activate`。模块热重载连续 10 次无页面重影，坏模块未主动注销时旧 ALC 仍可回收且 DLL 可删除；OHS 2.7.0 以 SE2SW 2.2.0 中央工作页完成真实集成 |
 | 0.6.1 | 2026-07-26 | 会话与 Web 硬化 | `ClientSession` 按 MCP/Shell/Web 隔离客户端身份，`Mcp-Session-Id` 显式会话与连接降级并存，清偿实例级 `_clientName` 串话；协议清单严格限定 `2025-06-18`/`2025-03-26`，未知 initialize 版本回落最新版、无效请求头 400、缺头按旧版兼容。正式 WebGateway 提供 command/health/commands/events/confirm，落实 token、绑定、CORS、限流和远程确认安全缺省。四包 0.6.1 staging、漏洞审计、隔离 PackageSmoke 全绿 |
