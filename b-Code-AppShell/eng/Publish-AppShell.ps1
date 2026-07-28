@@ -126,8 +126,16 @@ try {
         "--no-build", "--no-restore", $artifactsProperty)
 
     $auditPath = Join-Path $StageRoot "vulnerability-audit.json"
-    $auditOutput = & dotnet list AppShell.sln package --vulnerable --include-transitive --format json
-    if ($LASTEXITCODE -ne 0) {
+    $previousAuditArtifactsPath = $env:ArtifactsPath
+    try {
+        $env:ArtifactsPath = $BuildArtifacts
+        $auditOutput = & dotnet list AppShell.sln package --vulnerable --include-transitive --format json
+        $auditExitCode = $LASTEXITCODE
+    }
+    finally {
+        $env:ArtifactsPath = $previousAuditArtifactsPath
+    }
+    if ($auditExitCode -ne 0) {
         throw "NuGet vulnerability audit failed"
     }
     $auditText = $auditOutput -join "`n"

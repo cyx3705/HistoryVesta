@@ -188,7 +188,8 @@ internal static class VersionProjectionSuite
         Contains(publish, "Threading.Mutex", "version projection: publish serializes staging writers");
         Contains(publish, "dotnet restore AppShell.sln --locked-mode --force-evaluate",
             "version projection: isolated publish repairs the workspace asset graph");
-        Contains(publish, "ArtifactsPath=", "version projection: AppShell builds use isolated artifacts");
+        Contains(publish, "$env:ArtifactsPath = $BuildArtifacts",
+            "version projection: AppShell audit uses isolated artifacts");
         Contains(publish, "$smokeLimit = 10MB", "version projection: PackageSmoke has a 10 MB ceiling");
         Contains(publish, "non-target runtime assets",
             "version projection: PackageSmoke rejects foreign RID assets");
