@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\b-Code-Studio\StudioVersion.props" />
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>OneHistoryStudio.ServiceHostApp</RootNamespace>
+    <AssemblyName>OneHistoryStudio.LegacyServiceHost</AssemblyName>
+    <Product>OneHistoryStudio Legacy ServiceHost Test Library</Product>
+    <Title>OneHistoryStudio Legacy ServiceHost Test Library</Title>
+    <Version>$(OneHistoryStudioVersion)</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\b-Code-Studio\Studio.csproj" />
+    <ProjectReference Include="..\b-Code-AppShell\src\AppShell.ServiceHost\AppShell.ServiceHost.csproj" />
+  </ItemGroup>
+</Project>

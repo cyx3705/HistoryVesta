@@ -290,6 +290,10 @@ public sealed class ToolSyncService
 
             var artifactTarget = Path.Combine(slot, Path.GetFileName(manifest.ArtifactPath));
             File.Copy(manifest.ArtifactPath, artifactTarget);
+            File.Copy(
+                manifest.ManifestPath,
+                Path.Combine(slot, ToolManifestLoader.FileName),
+                overwrite: true);
 
             if (manifest.DocsPath != null && File.Exists(manifest.DocsPath))
                 File.Copy(manifest.DocsPath, Path.ChangeExtension(artifactTarget, ".xml"), overwrite: true);

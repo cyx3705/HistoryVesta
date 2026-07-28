@@ -1,0 +1,151 @@
+<UserControl x:Class="OneHistoryStudio.Views.GitHubAccountView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             MinWidth="560" MinHeight="420">
+    <UserControl.Resources>
+        <Style TargetType="TextBlock" x:Key="FieldLabel">
+            <Setter Property="Foreground" Value="#555B63" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="Padding" Value="10,3" />
+        </Style>
+    </UserControl.Resources>
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="服务器 GitHub 账号" FontSize="18" FontWeight="SemiBold" />
+                <TextBlock Text="此处显示和管理当前所连接服务器的凭据、提交身份与仓库远端。"
+                           Foreground="#555B63" Margin="0,3,0,0" />
+                <TextBlock x:Name="ConnectionText" Foreground="#555B63" Margin="0,3,0,0" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="检测" Click="OnTestClick" ToolTip="只读检测当前 origin 连接" />
+                <Button Content="刷新" Margin="8,0,0,0" Click="OnRefreshClick" />
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="0,12,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="origin" Style="{StaticResource FieldLabel}" />
+            <TextBlock x:Name="OriginText" Grid.Column="1" Margin="8,0,20,0" TextTrimming="CharacterEllipsis" />
+            <TextBlock Grid.Column="2" Text="最后检测" Style="{StaticResource FieldLabel}" />
+            <TextBlock x:Name="CheckedText" Grid.Column="3" Margin="8,0,0,0" />
+        </Grid>
+
+        <TabControl Grid.Row="2">
+            <TabItem Header="凭据与 SSH">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="130" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="GitHub HTTPS 凭据账号" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <Button Content="登录" Margin="12,0,0,0" Click="OnLoginClick" />
+                        <Button Content="注销所选" Margin="8,0,0,0" Click="OnLogoutClick" />
+                    </StackPanel>
+                    <DataGrid x:Name="AccountsGrid" Grid.Row="1" Margin="0,6,0,10"
+                              AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="GCM 账号" Binding="{Binding Account}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock Grid.Row="2" Text="SSH 公钥（只显示公钥文件与指纹）" FontWeight="SemiBold" />
+                    <DataGrid x:Name="KeysGrid" Grid.Row="3" Margin="0,6,0,0"
+                              AutoGenerateColumns="False" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="文件" Binding="{Binding FileName}" Width="2*" />
+                            <DataGridTextColumn Header="算法" Binding="{Binding Algorithm}" Width="*" />
+                            <DataGridTextColumn Header="SHA-256 指纹" Binding="{Binding Fingerprint}" Width="3*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="提交身份">
+                <Grid Margin="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="90" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="user.name" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="IdentityName" Grid.Column="1" Margin="0,0,0,8" />
+                    <TextBlock Grid.Row="1" Text="user.email" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="IdentityEmail" Grid.Row="1" Grid.Column="1" Margin="0,0,0,8" />
+                    <TextBlock Grid.Row="2" Text="作用域" Style="{StaticResource FieldLabel}" />
+                    <ComboBox x:Name="IdentityScope" Grid.Row="2" Grid.Column="1" SelectedIndex="0" Margin="0,0,0,12">
+                        <ComboBoxItem Content="repository" />
+                        <ComboBoxItem Content="global" />
+                    </ComboBox>
+                    <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal">
+                        <Button Content="预览" Click="OnIdentityPreviewClick" />
+                        <Button Content="应用" Margin="8,0,0,0" Click="OnIdentityApplyClick" />
+                        <TextBlock x:Name="IdentitySourceText" Margin="14,0,0,0" VerticalAlignment="Center" Foreground="#555B63" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="仓库远端">
+                <Grid Margin="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="90" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Fetch URL" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="FetchUrl" Grid.Column="1" Margin="0,0,0,8" />
+                    <TextBlock Grid.Row="1" Text="Push URL" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="PushUrl" Grid.Row="1" Grid.Column="1" Margin="0,0,0,12" />
+                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
+                        <Button Content="预览" Click="OnRemotePreviewClick" />
+                        <Button Content="应用" Margin="8,0,0,0" Click="OnRemoteApplyClick" />
+                        <TextBlock x:Name="RepositoryText" Margin="14,0,0,0" VerticalAlignment="Center" Foreground="#555B63" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="诊断">
+                <DataGrid x:Name="DiagnosticsGrid" Margin="8" AutoGenerateColumns="False" IsReadOnly="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="步骤" Binding="{Binding Step}" Width="*" />
+                        <DataGridTextColumn Header="状态" Binding="{Binding State}" Width="*" />
+                        <DataGridTextColumn Header="耗时(ms)" Binding="{Binding DurationMs}" Width="*" />
+                        <DataGridTextColumn Header="脱敏信息" Binding="{Binding Detail}" Width="4*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+        </TabControl>
+
+        <TextBlock x:Name="StatusText" Grid.Row="3" Margin="0,8,0,0" TextWrapping="Wrap" Foreground="#4B5563" />
+    </Grid>
+</UserControl>

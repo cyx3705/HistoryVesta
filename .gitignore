@@ -13,7 +13,10 @@ TestResults/
 # Local package and deployment scratch
 *.tmp
 *.log
-!b-Office/snapshots/**/console-baseline*.log
 z-Package-AppShell/staging/
+
+# Deployment databases and rollback archives are machine-local recovery assets.
+b-Office/evidence/**/*.db
+b-Office/evidence/**/*.zip
 
 # b-Publish is intentionally tracked as the current delivery snapshot.

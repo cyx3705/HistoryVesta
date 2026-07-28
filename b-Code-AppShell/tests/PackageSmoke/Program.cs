@@ -6,7 +6,7 @@ using AppShell.Services;
 using AppShell.ServiceHost;
 using AppShell.Shell;
 
-var expected = new Version(0, 7, 2, 0);
+var expected = new Version(2, 7, 3, 0);
 var assemblies = new[]
 {
     typeof(CommandBus).Assembly,
@@ -25,12 +25,12 @@ foreach (var assembly in assemblies)
 var config = new ShellConfig
 {
     AppName = "AppShellPackageSmoke",
-    AppVersion = "0.7.2",
+    AppVersion = "2.7.3",
     EnableModules = false,
     EnableMcp = false,
 };
 
-if (config.AppVersion != "0.7.2" || config.EnableModules || config.EnableMcp)
+if (config.AppVersion != "2.7.3" || config.EnableModules || config.EnableMcp)
     throw new InvalidOperationException("ShellConfig package surface is not usable");
 
 AppIdentity.Use(Assembly.GetExecutingAssembly());

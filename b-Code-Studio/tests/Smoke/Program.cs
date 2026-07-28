@@ -23,6 +23,10 @@ var suites = new (string Name, Func<string[], Task> Run)[]
     ("V230", V230Suite.RunAsync),
     ("V231", V231Suite.RunAsync),
     ("V232", V232Suite.RunAsync),
+    ("ServiceWeb", ServiceWebSuite.RunAsync),
+    ("Docking", DockingSuite.RunAsync),
+    ("GitHubAccount", GitHubAccountSuite.RunAsync),
+    ("LanSingleExe", LanSingleExeSuite.RunAsync),
 };
 
 var selected = ReadSuiteName(args);

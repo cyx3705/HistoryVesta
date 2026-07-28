@@ -10,6 +10,7 @@ V2.4.1 将产品源码、样例与发布快照拆成平级组件，进一步缩�
 |---|---|---|
 | `b-Code-AppShell` | AppShell 唯一框架源码与独立演示宿主 | 纳入 `OHS.sln` |
 | `b-Code-Studio` | OHS 产品源码与 Smoke | 纳入 `OHS.sln` |
+| `b-Code-Studio.Service` | OHS 常驻后台服务入口 | 纳入 `OHS.sln` |
 | `b-Code-Samples` | 模块开发样例 | 独立构建 |
 | `b-Publish` | 当前正式发布快照 | 不参与解决方案构建 |
 | `b-Code-OneHistory-V1` | OneHistory V1 历史组件 | 只读，不构建 |
@@ -17,8 +18,8 @@ V2.4.1 将产品源码、样例与发布快照拆成平级组件，进一步缩�
 | `z-Package-AppShell` | AppShell 对外版本包空壳 | 不参与内部构建 |
 
 文档入口：[OHS 文档中心](./b-Office/README.md) ｜
-[V2.4.3 代码卫生与自管理](./b-Office/versions/29-V2.4.3-代码卫生与自管理.md) ｜
-[AppShell 演进手册](./b-Code-AppShell/docs/二次开发演进手册.md)
+[发布与升级](./b-Office/meta/发布与升级.md) ｜
+[AppShell 演进手册](./b-Office/appshell/二次开发演进手册.md)
 
 ## 构建入口
 
@@ -32,7 +33,8 @@ AppShell 也可在 `b-Code-AppShell` 中使用 `AppShell.sln` 独立构建。OHS
 
 ## 演进规则
 
-- 020 长期承载 OHS V2.x，小版本通过提交、标签和 `b-Office/versions` 管理。
+- 020 长期承载 OHS V2.x；当前开发基线只来自源码、运行时和 `b-Office/meta`。`b-Office/versions`
+  只暂存当前版本增量，交付时抽入 `meta` 后删除，已交付历史不得成为开发依赖。
 - 只有架构代际变化才从 020 创建新项目，例如未来的 OHS V3。
 - AppShell 公共契约变更必须通过框架演示宿主、OHS Smoke 和 GUI 实跑。
 - `bin/obj/.vs` 不入库；正式 Publish 作为当前交付快照保留。

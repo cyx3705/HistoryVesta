@@ -22,6 +22,6 @@ dotnet build .\OHS.sln -c Release -p:NuGetAudit=false
 
 本目录不再包含 `AppShell.Core/Services/Shell` 副本。
 
-V2.4.1 完成源码上抛后，产品行为、106 条命令、MCP 工具形态和页面布局保持不变；完整构建、
-Smoke、GUI、发布与部署证据见
-[V2.4.1 骨干削薄与源码上抛](../b-Office/versions/27-V2.4.1-骨干削薄与源码上抛.md)。
+产品行为、命令、MCP 工具形态和页面布局以当前源码、运行时和
+[现行手册](../b-Office/README.md) 为准；构建、Smoke、GUI、发布与部署门见
+[发布与升级](../b-Office/meta/发布与升级.md)。已交付版本文档不得作为开发前置资料。

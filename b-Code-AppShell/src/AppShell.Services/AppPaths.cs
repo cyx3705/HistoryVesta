@@ -6,7 +6,7 @@ namespace AppShell.Services;
 /// </summary>
 public sealed class AppPaths
 {
-    public AppPaths(string appName)
+    public AppPaths(string appName, bool createBusinessDirectories = true)
     {
         if (string.IsNullOrWhiteSpace(appName))
             throw new ArgumentException("应用名不能为空", nameof(appName));
@@ -23,11 +23,14 @@ public sealed class AppPaths
         PanelsDir = GetPanelsDir(Root);
 
         Directory.CreateDirectory(LayoutDir);
-        Directory.CreateDirectory(DataDir);
-        Directory.CreateDirectory(WorkspaceDir);
         Directory.CreateDirectory(LogsDir);
-        Directory.CreateDirectory(ModulesDir);
         Directory.CreateDirectory(PanelsDir);
+        if (createBusinessDirectories)
+        {
+            Directory.CreateDirectory(DataDir);
+            Directory.CreateDirectory(WorkspaceDir);
+            Directory.CreateDirectory(ModulesDir);
+        }
     }
 
     /// <summary>%AppData%/&lt;应用名&gt;/</summary>

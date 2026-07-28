@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using AppShell.Core.Logging;
 
 namespace AppShell.Core.Commands;
@@ -52,6 +53,9 @@ public sealed class CommandBus
 
     public Func<string, bool>? ShouldUseRemote { get; set; }
 
+    /// <summary>按命令文本和来源决定是否走远端；设置后优先于仅按来源的兼容委托。</summary>
+    public Func<string, string, bool>? ShouldUseRemoteCommand { get; set; }
+
     /// <summary>每条指令执行完毕后触发(状态栏摘要,S-03);在执行线程上引发。</summary>
     public event Action<string, string, CommandResult>? Executed;
 
@@ -66,7 +70,8 @@ public sealed class CommandBus
     {
         // 1. 回显
         var trimmed = text.Trim();
-        _log.Log(ShellLogLevel.Info, EchoCategoryPrefix + source, trimmed);
+        var displayText = RedactSensitiveArguments(trimmed);
+        _log.Log(ShellLogLevel.Info, EchoCategoryPrefix + source, displayText);
 
         CommandResult result;
         try
@@ -90,9 +95,17 @@ public sealed class CommandBus
             ResultCategory,
             (result.Success ? "✓ " : "✗ ") + result.Message);
 
-        Executed?.Invoke(trimmed, source, result);
+        Executed?.Invoke(displayText, source, result);
         return result;
     }
+
+    private static string RedactSensitiveArguments(string text)
+        => Regex.Replace(
+            text,
+            "(?i)(\\b(?:code|token|password|passwd|secret)\\s*=\\s*)(?:\"[^\"]*\"|'[^']*'|[^\\s]+)",
+            "$1[REDACTED]",
+            RegexOptions.CultureInvariant,
+            TimeSpan.FromMilliseconds(100));
 
     private async Task<CommandResult> ExecuteCoreAsync(
         string text,
@@ -100,7 +113,10 @@ public sealed class CommandBus
         CancellationToken cancellation)
     {
         var remote = RemoteExecutor;
-        if (remote != null && (ShouldUseRemote?.Invoke(source) ?? true))
+        if (remote != null
+            && (ShouldUseRemoteCommand?.Invoke(text, source)
+                ?? ShouldUseRemote?.Invoke(source)
+                ?? true))
             return await remote(text, source, cancellation).ConfigureAwait(false);
 
         // 解析

@@ -126,9 +126,22 @@ internal static class SmokeKit
 
     public static void DeleteTree(string path)
     {
-        foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
-            File.SetAttributes(file, FileAttributes.Normal);
-        Directory.Delete(path, recursive: true);
+        for (var attempt = 1; attempt <= 5; attempt++)
+        {
+            try
+            {
+                if (!Directory.Exists(path))
+                    return;
+                foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+                    File.SetAttributes(file, FileAttributes.Normal);
+                Directory.Delete(path, recursive: true);
+                return;
+            }
+            catch (IOException) when (attempt < 5)
+            {
+                Thread.Sleep(TimeSpan.FromMilliseconds(100 * attempt));
+            }
+        }
     }
 }
 

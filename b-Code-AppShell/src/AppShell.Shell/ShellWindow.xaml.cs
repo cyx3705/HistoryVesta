@@ -563,6 +563,10 @@ public partial class ShellWindow : Window
         // 工具
         var tools = new MenuItem { Header = "工具(_T)" };
         tools.Items.Add(Item("打开数据目录", "app.opendata"));
+        if (_config.ToolMenuActions.Count > 0)
+            tools.Items.Add(new Separator());
+        foreach (var action in _config.ToolMenuActions)
+            tools.Items.Add(Item(action.Header, action.CommandText));
         MainMenu.Items.Add(tools);
 
         // 帮助:指令手册 = help 的图形化版本(S-01)

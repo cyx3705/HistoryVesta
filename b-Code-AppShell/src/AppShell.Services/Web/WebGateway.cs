@@ -1,9 +1,11 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.WebSockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using AppShell.Core;
 using AppShell.Core.Commands;
 using AppShell.Core.Logging;
 using AppShell.Core.Mcp;
@@ -34,8 +36,8 @@ public sealed class WebGateway : IDisposable
     private readonly IShellLog _log;
     private readonly object _lifecycleLock = new();
     private readonly ConcurrentDictionary<string, EventClient> _clients = new(StringComparer.Ordinal);
-    private readonly ConcurrentDictionary<string, TaskCompletionSource<CommandResult>> _pending = new(StringComparer.Ordinal);
-    private readonly ConcurrentDictionary<string, TaskCompletionSource<bool>> _pendingConfirmations = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, PendingCommand> _pending = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, PendingConfirmation> _pendingConfirmations = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, RateWindow> _rateWindows = new(StringComparer.Ordinal);
 
     private HttpListener? _listener;
@@ -51,13 +53,51 @@ public sealed class WebGateway : IDisposable
 
     public bool IsRunning => _listener is { IsListening: true };
 
+    public IDeviceAuthenticationProvider? DeviceAuthentication { get; set; }
+
+    public IDevicePairingProvider? DevicePairing { get; set; }
+
+    public string ServerId { get; set; } = AppIdentity.Current.Name;
+
     public int Port { get; private set; }
 
     public string BindAddress => NormalizeBind(_settings.Get(KeyBind));
 
+    public string ActiveBindAddress { get; private set; } = "";
+
     public int ConnectedClients => _clients.Count;
 
     public int ConnectedShells => _clients.Values.Count(client => client.Session.Kind == ClientKind.Shell);
+
+    public int DisconnectDevice(string deviceId)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId))
+            return 0;
+        var disconnected = 0;
+        foreach (var item in _clients.Where(item =>
+                     item.Value.Session.DeviceId?.Equals(
+                         deviceId, StringComparison.Ordinal) == true).ToList())
+        {
+            if (!_clients.TryRemove(item.Key, out var client))
+                continue;
+            CompletePendingForSession(client.Session.Id);
+            client.Dispose();
+            disconnected++;
+        }
+        return disconnected;
+    }
+
+    public bool TryGetSession(string source, out ClientSession session)
+    {
+        var id = SessionIdFromSource(source);
+        if (id != null && _clients.TryGetValue(id, out var client))
+        {
+            session = client.Session;
+            return true;
+        }
+        session = null!;
+        return false;
+    }
 
     public (bool Success, string Message) Start(int? port = null)
     {
@@ -72,16 +112,19 @@ public sealed class WebGateway : IDisposable
 
             var bind = BindAddress;
             var token = _settings.Get(KeyToken);
-            if (!IsLoopback(bind) && string.IsNullOrWhiteSpace(token))
-                return (false, "非 localhost 绑定必须先配置非空 web.token");
+            if (!IsLoopback(bind) && string.IsNullOrWhiteSpace(token)
+                                  && DeviceAuthentication == null)
+                return (false, "非 localhost 绑定必须配置设备鉴权或非空 web.token");
 
             try
             {
                 _listener = new HttpListener();
-                _listener.Prefixes.Add($"http://{bind}:{Port}/");
+                var scheme = IsLoopback(bind) ? "http" : "https";
+                _listener.Prefixes.Add($"{scheme}://{bind}:{Port}/");
                 if (!IsLoopback(bind))
                     _listener.Prefixes.Add($"http://127.0.0.1:{Port}/");
                 _listener.Start();
+                ActiveBindAddress = bind;
             }
             catch (Exception ex)
             {
@@ -95,8 +138,9 @@ public sealed class WebGateway : IDisposable
 
             _cts = new CancellationTokenSource();
             _ = AcceptLoopAsync(_listener, _cts.Token);
-            _log.Info("web", $"Web 服务已启动: http://{bind}:{Port}/");
-            return (true, $"Web 服务已启动: http://{bind}:{Port}/");
+            var publicScheme = IsLoopback(bind) ? "http" : "https";
+            _log.Info("web", $"Web 服务已启动: {publicScheme}://{bind}:{Port}/");
+            return (true, $"Web 服务已启动: {publicScheme}://{bind}:{Port}/");
         }
     }
 
@@ -110,14 +154,15 @@ public sealed class WebGateway : IDisposable
             _cts?.Cancel();
             _listener?.Close();
             _listener = null;
+            ActiveBindAddress = "";
             foreach (var client in _clients.Values)
                 client.Dispose();
             _clients.Clear();
             foreach (var pending in _pending.Values)
-                pending.TrySetResult(CommandResult.Fail("前端连接已断开"));
+                pending.Completion.TrySetResult(CommandResult.Fail("前端连接已断开"));
             _pending.Clear();
             foreach (var confirmation in _pendingConfirmations.Values)
-                confirmation.TrySetResult(false);
+                confirmation.Completion.TrySetResult(false);
             _pendingConfirmations.Clear();
             _log.Info("web", "Web 服务已停止");
             return (true, $"Web 服务已停止(端口 {Port} 已释放)");
@@ -129,14 +174,19 @@ public sealed class WebGateway : IDisposable
         string source,
         CancellationToken cancellationToken)
     {
-        var frontend = _clients.Values.FirstOrDefault(client =>
-            client.Session.Kind == ClientKind.Shell && client.Socket.State == WebSocketState.Open);
+        var originSessionId = SessionIdFromSource(source);
+        var frontend = originSessionId != null
+                       && _clients.TryGetValue(originSessionId, out var origin)
+                       && origin.Session.Kind == ClientKind.Shell
+                       && origin.Socket.State == WebSocketState.Open
+            ? origin
+            : null;
         if (frontend == null)
-            return CommandResult.Fail("前端未连接,请启动应用前端");
+            return CommandResult.Fail("发起会话没有可用前端");
 
         var id = Guid.NewGuid().ToString("N");
         var completion = new TaskCompletionSource<CommandResult>(TaskCreationOptions.RunContinuationsAsynchronously);
-        if (!_pending.TryAdd(id, completion))
+        if (!_pending.TryAdd(id, new PendingCommand(frontend.Session.Id, completion)))
             return CommandResult.Fail("无法创建前端命令关联 ID");
 
         try
@@ -175,14 +225,14 @@ public sealed class WebGateway : IDisposable
 
     public bool RequestWebConfirmation(string prompt, string source, TimeSpan timeout)
     {
-        var webClients = _clients.Values.Where(client =>
-            client.Session.Kind == ClientKind.Web && client.Socket.State == WebSocketState.Open).ToList();
-        if (webClients.Count == 0)
+        var sessionId = SessionIdFromSource(source);
+        if (sessionId == null || !_clients.TryGetValue(sessionId, out var client)
+            || client.Socket.State != WebSocketState.Open)
             return false;
 
         var id = Guid.NewGuid().ToString("N");
         var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        if (!_pendingConfirmations.TryAdd(id, completion))
+        if (!_pendingConfirmations.TryAdd(id, new PendingConfirmation(sessionId, completion)))
             return false;
         try
         {
@@ -193,8 +243,7 @@ public sealed class WebGateway : IDisposable
                 ["prompt"] = prompt,
                 ["source"] = source,
             };
-            foreach (var client in webClients)
-                _ = SendIgnoringErrorsAsync(client, payload);
+            _ = SendIgnoringErrorsAsync(client, payload);
             return completion.Task.Wait(timeout) && completion.Task.Result;
         }
         finally
@@ -240,8 +289,17 @@ public sealed class WebGateway : IDisposable
                 return;
             }
 
-            var session = CreateSession(context.Request);
-            if (!Authorize(context.Request, session))
+            var path = context.Request.Url?.AbsolutePath.TrimEnd('/') ?? "";
+            if (path.Equals("/api/pair", StringComparison.OrdinalIgnoreCase)
+                && context.Request.HttpMethod == "POST")
+            {
+                await HandlePairingAsync(context).ConfigureAwait(false);
+                return;
+            }
+
+            var requestedSession = CreateSession(context.Request);
+            var session = Authenticate(context.Request, requestedSession);
+            if (session == null)
             {
                 await WriteJsonAsync(context, new { error = "unauthorized" }, 401).ConfigureAwait(false);
                 return;
@@ -253,7 +311,6 @@ public sealed class WebGateway : IDisposable
                 return;
             }
 
-            var path = context.Request.Url?.AbsolutePath.TrimEnd('/') ?? "";
             if (path.Equals("/api/events", StringComparison.OrdinalIgnoreCase)
                 && context.Request.IsWebSocketRequest)
             {
@@ -271,6 +328,11 @@ public sealed class WebGateway : IDisposable
                     bind = BindAddress,
                     clients = ConnectedClients,
                     shells = ConnectedShells,
+                    serverId = ServerId,
+                    productVersion = AppIdentity.Current.Version,
+                    appShellProtocolVersion = "2.7.3",
+                    minClientVersion = "2.7.3",
+                    capabilities = new[] { "device-auth", "session-affine-ui", "single-exe" },
                 }, 200).ConfigureAwait(false);
                 return;
             }
@@ -320,9 +382,15 @@ public sealed class WebGateway : IDisposable
                     return;
                 }
 
+                if (!CanExecute(session, bus.Registry, request.Text, out var denial))
+                {
+                    await WriteJsonAsync(context, CommandResult.Fail(denial), 403).ConfigureAwait(false);
+                    return;
+                }
+
                 var result = await bus.ExecuteAsync(
                     request.Text,
-                    $"{session.Kind}:{session.Name}",
+                    SessionSource(session),
                     cancellationToken).ConfigureAwait(false);
                 await WriteJsonAsync(context, result, 200).ConfigureAwait(false);
                 return;
@@ -338,12 +406,13 @@ public sealed class WebGateway : IDisposable
                 }
                 var answer = await ReadJsonAsync<ConfirmRequest>(context.Request).ConfigureAwait(false);
                 if (answer == null || string.IsNullOrWhiteSpace(answer.Id)
-                    || !_pendingConfirmations.TryGetValue(answer.Id, out var pending))
+                    || !_pendingConfirmations.TryGetValue(answer.Id, out var pending)
+                    || !pending.SessionId.Equals(session.Id, StringComparison.Ordinal))
                 {
                     await WriteJsonAsync(context, new { error = "confirmation not found" }, 404).ConfigureAwait(false);
                     return;
                 }
-                pending.TrySetResult(answer.Approved);
+                pending.Completion.TrySetResult(answer.Approved);
                 await WriteJsonAsync(context, new { accepted = true }, 200).ConfigureAwait(false);
                 return;
             }
@@ -388,23 +457,57 @@ public sealed class WebGateway : IDisposable
                 if (root.TryGetProperty("type", out var type)
                     && type.GetString() == "commandResult"
                     && root.TryGetProperty("id", out var id)
-                    && _pending.TryGetValue(id.GetString() ?? "", out var pending))
+                    && _pending.TryGetValue(id.GetString() ?? "", out var pending)
+                    && pending.SessionId.Equals(session.Id, StringComparison.Ordinal))
                 {
                     var success = root.TryGetProperty("success", out var ok) && ok.GetBoolean();
                     var message = root.TryGetProperty("message", out var msg) ? msg.GetString() ?? "" : "";
                     object? data = root.TryGetProperty("data", out var payload)
                         ? JsonSerializer.Deserialize<object>(payload.GetRawText(), JsonOptions)
                         : null;
-                    pending.TrySetResult(success
+                    pending.Completion.TrySetResult(success
                         ? CommandResult.Ok(message, data)
                         : CommandResult.Fail(message));
                 }
+                else if (root.TryGetProperty("type", out type)
+                         && type.GetString() == "confirmationResult"
+                         && root.TryGetProperty("id", out var confirmationId)
+                         && _pendingConfirmations.TryGetValue(
+                             confirmationId.GetString() ?? "", out var confirmation)
+                         && confirmation.SessionId.Equals(session.Id, StringComparison.Ordinal))
+                {
+                    confirmation.Completion.TrySetResult(
+                        root.TryGetProperty("approved", out var approved) && approved.GetBoolean());
+                }
             }
+        }
+        catch (WebSocketException)
+        {
+        }
+        catch (ObjectDisposedException)
+        {
         }
         finally
         {
             _clients.TryRemove(session.Id, out _);
+            CompletePendingForSession(session.Id);
             client.Dispose();
+        }
+    }
+
+    private void CompletePendingForSession(string sessionId)
+    {
+        foreach (var item in _pending.Where(item =>
+                     item.Value.SessionId.Equals(sessionId, StringComparison.Ordinal)).ToList())
+        {
+            if (_pending.TryRemove(item.Key, out var pending))
+                pending.Completion.TrySetResult(CommandResult.Fail("发起前端已断开"));
+        }
+        foreach (var item in _pendingConfirmations.Where(item =>
+                     item.Value.SessionId.Equals(sessionId, StringComparison.Ordinal)).ToList())
+        {
+            if (_pendingConfirmations.TryRemove(item.Key, out var pending))
+                pending.Completion.TrySetResult(false);
         }
     }
 
@@ -416,20 +519,155 @@ public sealed class WebGateway : IDisposable
         var name = request.Headers["X-Client-Name"];
         var id = request.Headers["X-Session-Id"];
         id ??= $"{kind}:{request.RemoteEndPoint?.Address}:{name ?? kind.ToString()}";
-        return ClientSession.Create(kind, name ?? kind.ToString(), id: id);
+        var address = request.RemoteEndPoint?.Address;
+        return ClientSession.Create(
+            kind,
+            name ?? kind.ToString(),
+            id: id,
+            remoteAddress: address?.ToString(),
+            deviceId: request.Headers["X-Device-Id"],
+            isLoopback: address != null && IPAddress.IsLoopback(address));
     }
 
-    private bool Authorize(HttpListenerRequest request, ClientSession session)
+    private ClientSession? Authenticate(HttpListenerRequest request, ClientSession requested)
     {
-        if (session.Kind == ClientKind.Shell && request.RemoteEndPoint != null
-            && IPAddress.IsLoopback(request.RemoteEndPoint.Address))
+        if (!requested.IsLoopback && !request.IsSecureConnection)
+            return null;
+
+        if (requested.Kind == ClientKind.Shell && requested.IsLoopback)
         {
-            return true;
+            return requested with
+            {
+                AuthSubject = "loopback-shell",
+                Scopes = new HashSet<string>(
+                    ["read", "operate", "admin"], StringComparer.OrdinalIgnoreCase),
+            };
+        }
+
+        var bearer = ReadBearer(request);
+        var deviceId = request.Headers["X-Device-Id"];
+        if (!string.IsNullOrWhiteSpace(bearer)
+            && !string.IsNullOrWhiteSpace(deviceId)
+            && DeviceAuthentication != null)
+        {
+            var authenticated = DeviceAuthentication.Authenticate(
+                deviceId, bearer, requested.RemoteAddress);
+            if (authenticated.Success)
+            {
+                return requested with
+                {
+                    DeviceId = authenticated.DeviceId,
+                    AuthSubject = authenticated.Subject,
+                    Scopes = authenticated.Scopes,
+                };
+            }
         }
 
         var token = _settings.Get(KeyToken);
-        return !string.IsNullOrWhiteSpace(token)
-               && request.Headers["Authorization"] == $"Bearer {token}";
+        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(bearer)
+            || !FixedEquals(token, bearer))
+            return null;
+
+        return requested with
+        {
+            Kind = ClientKind.Web,
+            AuthSubject = "legacy-web-token",
+            Scopes = new HashSet<string>(["read", "operate"], StringComparer.OrdinalIgnoreCase),
+        };
+    }
+
+    private async Task HandlePairingAsync(HttpListenerContext context)
+    {
+        var remoteAddress = context.Request.RemoteEndPoint?.Address;
+        if (remoteAddress == null
+            || (!IPAddress.IsLoopback(remoteAddress) && !context.Request.IsSecureConnection))
+        {
+            await WriteJsonAsync(context, new { error = "TLS required" }, 403).ConfigureAwait(false);
+            return;
+        }
+        if (DevicePairing == null)
+        {
+            await WriteJsonAsync(context, new { error = "pairing unavailable" }, 503).ConfigureAwait(false);
+            return;
+        }
+
+        var request = await ReadJsonAsync<PairRequest>(context.Request).ConfigureAwait(false);
+        if (request == null || string.IsNullOrWhiteSpace(request.Code)
+            || string.IsNullOrWhiteSpace(request.DeviceId)
+            || string.IsNullOrWhiteSpace(request.DeviceName))
+        {
+            await WriteJsonAsync(context, new { error = "code, deviceId and deviceName are required" }, 400)
+                .ConfigureAwait(false);
+            return;
+        }
+
+        var result = DevicePairing.Pair(
+            request.Code,
+            request.DeviceId,
+            request.DeviceName,
+            remoteAddress.ToString());
+        await WriteJsonAsync(context, result, result.Success ? 200 : 401).ConfigureAwait(false);
+    }
+
+    private static bool CanExecute(
+        ClientSession session,
+        CommandRegistry registry,
+        string text,
+        out string denial)
+    {
+        denial = "";
+        if (session.AuthSubject == "loopback-shell" || session.Scopes.Contains("admin")
+            || session.Scopes.Contains("operate"))
+            return true;
+        if (!session.Scopes.Contains("read"))
+        {
+            denial = "设备没有命令权限";
+            return false;
+        }
+        try
+        {
+            var parsed = CommandParser.Parse(text);
+            if (!registry.TryGet(parsed.Name, out var descriptor))
+                return true;
+            if (descriptor.Readonly)
+                return true;
+            denial = $"设备 scope=read 不允许执行 {descriptor.Name}";
+            return false;
+        }
+        catch (CommandSyntaxException)
+        {
+            return true;
+        }
+    }
+
+    private static string SessionSource(ClientSession session)
+        => $"{(session.IsLoopback ? session.Kind.ToString() : "Lan" + session.Kind)}:{session.Id}:{session.Name}";
+
+    private static string? SessionIdFromSource(string source)
+    {
+        var parts = source.Split(':', 3);
+        return parts.Length == 3 && parts[1].Length > 0 ? parts[1] : null;
+    }
+
+    private static string? ReadBearer(HttpListenerRequest request)
+    {
+        const string prefix = "Bearer ";
+        var header = request.Headers["Authorization"];
+        return header?.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) == true
+            ? header[prefix.Length..].Trim()
+            : null;
+    }
+
+    private static bool FixedEquals(string left, string right)
+    {
+        var leftBytes = Encoding.UTF8.GetBytes(left);
+        var rightBytes = Encoding.UTF8.GetBytes(right);
+        try { return CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes); }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(leftBytes);
+            CryptographicOperations.ZeroMemory(rightBytes);
+        }
     }
 
     private bool AllowRequest(string sessionId)
@@ -459,7 +697,7 @@ public sealed class WebGateway : IDisposable
         context.Response.Headers["Access-Control-Allow-Origin"] = origin;
         context.Response.Headers["Vary"] = "Origin";
         context.Response.Headers["Access-Control-Allow-Headers"] =
-            "Authorization, Content-Type, X-Client-Name, X-Session-Id";
+            "Authorization, Content-Type, X-Client-Name, X-Session-Id, X-Device-Id";
         context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
     }
 
@@ -572,5 +810,15 @@ public sealed class WebGateway : IDisposable
 
     private sealed record ConfirmRequest(string Id, bool Approved);
 
+    private sealed record PairRequest(string Code, string DeviceId, string DeviceName);
+
     private sealed record RateWindow(DateTimeOffset Start, int Count);
+
+    private sealed record PendingCommand(
+        string SessionId,
+        TaskCompletionSource<CommandResult> Completion);
+
+    private sealed record PendingConfirmation(
+        string SessionId,
+        TaskCompletionSource<bool> Completion);
 }

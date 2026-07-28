@@ -13,7 +13,7 @@
         <!-- 工具条(R-02) -->
         <Border DockPanel.Dock="Top" BorderBrush="#DDD" BorderThickness="0,0,0,1" Background="#F7F7F7">
             <StackPanel Orientation="Horizontal" Height="28">
-                <Button Content="打开文件夹…" Style="{StaticResource ToolButton}" Click="OnOpenFolderClick" />
+                <Button x:Name="OpenFolderButton" Content="打开文件夹…" Style="{StaticResource ToolButton}" Click="OnOpenFolderClick" />
                 <Button Content="新建文件夹" Style="{StaticResource ToolButton}" Click="OnMkdirClick" />
                 <Button Content="重命名" Style="{StaticResource ToolButton}" Click="OnRenameClick" />
                 <Button Content="删除" Style="{StaticResource ToolButton}" Foreground="#C42525" Click="OnDeleteClick" />
@@ -44,8 +44,8 @@
                     <MenuItem Header="复制完整路径" Click="OnCopyPathClick" />
                     <MenuItem Header="刷新" Click="OnRefreshClick" />
                     <Separator />
-                    <MenuItem Header="打开其他文件夹…" Click="OnOpenFolderClick" />
-                    <MenuItem Header="恢复默认工作区" Click="OnResetRootClick" />
+                    <MenuItem x:Name="OpenFolderMenuItem" Header="打开其他文件夹…" Click="OnOpenFolderClick" />
+                    <MenuItem x:Name="ResetRootMenuItem" Header="恢复默认工作区" Click="OnResetRootClick" />
                 </ContextMenu>
             </TreeView.ContextMenu>
         </TreeView>

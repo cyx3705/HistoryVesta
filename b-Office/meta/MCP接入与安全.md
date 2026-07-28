@@ -1,11 +1,13 @@
 # MCP 接入与安全
 
-> 适用版本：OneHistoryStudio V2.4.5
-> 框架基线：AppShell 0.4.4
+> 适用版本：OneHistoryStudio V2.7.3
+> 框架基线：AppShell 2.7.3
 
 ## 当前架构
 
-V2.4.0 起，MCP 不再由 OneHistoryStudio 自行创建。AppShell 的 `ShellWindow` 负责装配网关、提示词治理、命令目录和三个管理窗口；OneHistoryStudio 只提供应用数据与自己的指令策略。
+V2.7.3 起，MCP 由常驻的 `OneHistoryStudio.exe --service-host` 承载，不再依赖 WPF 前端存活；
+发布目录不再包含 `OneHistoryStudio.Service.exe`。
+AppShell `ServiceHost` 装配网关、提示词治理、命令目录与模块宿主；前端通过 8738 命令 API 接入同一总线。
 
 | 责任 | AppShell 框架 | OneHistoryStudio |
 |---|---|---|
@@ -95,6 +97,16 @@ app.set key=mcp.confirmtimeout value=60
 - `mcp.*`：防止客户端递归管理或关闭自身网关；
 - 清单声明 `mcpExposure=hidden` 的模块命令。
 
+### GitHub 账号命令边界（V2.7.2）
+
+`github.status`、`github.accounts` 和 `github.test` 是服务器端只读事实，可按当前 MCP 策略返回已经脱敏的
+提交身份、凭据账号名、origin 和连接诊断。`github.login`、`github.logout`、`github.identity` 和
+`github.remote` 只允许服务器本机 Shell；即使远程调用方持有 Web/MCP token，也不能启动 GCM、修改
+Git 配置或改写远端。
+
+OHS 不接受 PAT/密码参数，不读取 SSH 私钥正文。外部工具输出先经过 token、Bearer、URL userinfo、
+password/secret 赋值和私钥块脱敏，再进入命令结果、日志或 HTTP/MCP 响应。
+
 ### 只读性由命令自描述（V2.4.4）
 
 只读性是**命令自身的事实**，与 `ConfirmPrompt`（危险）、`SupportsUndo`、`RequiresUiThread` 同级，
@@ -143,6 +155,20 @@ Readonly == true → readonly
 ## 协议与结果
 
 网关实现 JSON-RPC 2.0 的 Streamable HTTP 无状态子集，支持 `initialize`、`ping`、`tools/list` 和 `tools/call`。请求体必须是 UTF-8 JSON，最大 1 MiB。
+
+协议清单仅含 `2025-06-18` 与 `2025-03-26`。`initialize` 请求清单外版本时回落到
+`2025-06-18`；后续请求的无效 `MCP-Protocol-Version` 头返回 HTTP 400，缺失头按
+`2025-03-26` 兼容。客户端身份存入 `Mcp-Session-Id` 会话；不回送会话头的旧客户端按
+底层连接降级，审计名称不会再在并发客户端之间串用。
+
+## Web API 默认安全
+
+- Web 档空 token 或错 token均返回 401；本机 Shell 使用独立可信客户端档。
+- `web.bind` 缺省 `127.0.0.1`；非回环绑定必须先设置非空 `web.token`。
+- CORS 缺省关闭，`web.cors` 只接受显式来源白名单。
+- `web.confirm` 缺省 `local`，Web 危险命令直接拒绝；设为 `web` 后才通过事件流请求并由
+  `/api/confirm` 应答，60 秒无应答按拒绝。
+- 每会话有分钟级限流，默认 120 次；配置键为 `web.ratelimit`，通过本机 `app.get/app.set` 调整。
 
 每个工具调用最终都被还原为命令文本并经同一个 `CommandBus` 执行。返回结果包含：
 

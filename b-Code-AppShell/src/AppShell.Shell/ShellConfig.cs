@@ -2,6 +2,8 @@ using AppShell.Core.Docking;
 
 namespace AppShell.Shell;
 
+public sealed record ShellMenuAction(string Header, string CommandText);
+
 /// <summary>
 /// 派生应用向 Shell 提交的装配清单(§9 开发流程第 2/7 条的入口)。
 /// </summary>
@@ -13,6 +15,9 @@ public sealed class ShellConfig
 
     /// <summary>要注册的工具窗口清单。</summary>
     public List<ToolWindowDescriptor> ToolWindows { get; } = new();
+
+    /// <summary>派生应用放入“工具”菜单的命令入口。</summary>
+    public List<ShellMenuAction> ToolMenuActions { get; } = new();
 
     /// <summary>
     /// 派生应用注册自定义指令的挂点(§5.3,§9 流程第 3 条):

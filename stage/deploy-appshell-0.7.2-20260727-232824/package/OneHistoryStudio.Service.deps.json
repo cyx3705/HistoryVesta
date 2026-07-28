@@ -1,0 +1,378 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0/win-x64",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {},
+    ".NETCoreApp,Version=v8.0/win-x64": {
+      "OneHistoryStudio.Service/2.7.0": {
+        "dependencies": {
+          "OneHistory.AppShell.ServiceHost": "0.7.2",
+          "OneHistoryStudio": "2.7.0",
+          "AppShell.Core": "0.7.2.0",
+          "AppShell.ServiceHost": "0.7.2.0",
+          "AppShell.Services": "0.7.2.0",
+          "AppShell.Shell": "0.7.2.0",
+          "OneHistoryStudio.Reference": "2.7.0.0"
+        },
+        "runtime": {
+          "OneHistoryStudio.Service.dll": {}
+        }
+      },
+      "Dirkster.AvalonDock/4.72.1": {
+        "runtime": {
+          "lib/net5.0-windows7.0/AvalonDock.dll": {
+            "assemblyVersion": "4.72.1.0",
+            "fileVersion": "4.72.1.0"
+          }
+        },
+        "resources": {
+          "lib/net5.0-windows7.0/ca-ES/AvalonDock.resources.dll": {
+            "locale": "ca-ES"
+          },
+          "lib/net5.0-windows7.0/cs-CZ/AvalonDock.resources.dll": {
+            "locale": "cs-CZ"
+          },
+          "lib/net5.0-windows7.0/de/AvalonDock.resources.dll": {
+            "locale": "de"
+          },
+          "lib/net5.0-windows7.0/es/AvalonDock.resources.dll": {
+            "locale": "es"
+          },
+          "lib/net5.0-windows7.0/fr/AvalonDock.resources.dll": {
+            "locale": "fr"
+          },
+          "lib/net5.0-windows7.0/hu/AvalonDock.resources.dll": {
+            "locale": "hu"
+          },
+          "lib/net5.0-windows7.0/it/AvalonDock.resources.dll": {
+            "locale": "it"
+          },
+          "lib/net5.0-windows7.0/ja/AvalonDock.resources.dll": {
+            "locale": "ja"
+          },
+          "lib/net5.0-windows7.0/ko/AvalonDock.resources.dll": {
+            "locale": "ko"
+          },
+          "lib/net5.0-windows7.0/nl-BE/AvalonDock.resources.dll": {
+            "locale": "nl-BE"
+          },
+          "lib/net5.0-windows7.0/pl/AvalonDock.resources.dll": {
+            "locale": "pl"
+          },
+          "lib/net5.0-windows7.0/pt/AvalonDock.resources.dll": {
+            "locale": "pt"
+          },
+          "lib/net5.0-windows7.0/ro/AvalonDock.resources.dll": {
+            "locale": "ro"
+          },
+          "lib/net5.0-windows7.0/ru/AvalonDock.resources.dll": {
+            "locale": "ru"
+          },
+          "lib/net5.0-windows7.0/sv/AvalonDock.resources.dll": {
+            "locale": "sv"
+          },
+          "lib/net5.0-windows7.0/zh-Hans/AvalonDock.resources.dll": {
+            "locale": "zh-Hans"
+          },
+          "lib/net5.0-windows7.0/zh-Hant/AvalonDock.resources.dll": {
+            "locale": "zh-Hant"
+          }
+        }
+      },
+      "Dirkster.AvalonDock.Themes.VS2013/4.72.1": {
+        "dependencies": {
+          "Dirkster.AvalonDock": "4.72.1"
+        },
+        "runtime": {
+          "lib/net5.0-windows7.0/AvalonDock.Themes.VS2013.dll": {
+            "assemblyVersion": "4.72.1.0",
+            "fileVersion": "4.72.1.0"
+          }
+        }
+      },
+      "Microsoft.Data.Sqlite/8.0.29": {
+        "dependencies": {
+          "Microsoft.Data.Sqlite.Core": "8.0.29",
+          "SQLitePCLRaw.bundle_e_sqlite3": "3.0.4"
+        }
+      },
+      "Microsoft.Data.Sqlite.Core/8.0.29": {
+        "dependencies": {
+          "SQLitePCLRaw.core": "3.0.4"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.Data.Sqlite.dll": {
+            "assemblyVersion": "8.0.29.0",
+            "fileVersion": "8.0.2926.32502"
+          }
+        }
+      },
+      "SourceGear.sqlite3/3.53.3": {
+        "native": {
+          "runtimes/win-x64/native/e_sqlite3.dll": {
+            "fileVersion": "3.53.3.0"
+          }
+        }
+      },
+      "SQLitePCLRaw.bundle_e_sqlite3/3.0.4": {
+        "dependencies": {
+          "SQLitePCLRaw.config.e_sqlite3": "3.0.4",
+          "SourceGear.sqlite3": "3.53.3"
+        }
+      },
+      "SQLitePCLRaw.config.e_sqlite3/3.0.4": {
+        "dependencies": {
+          "SQLitePCLRaw.provider.e_sqlite3": "3.0.4"
+        },
+        "runtime": {
+          "lib/net8.0/SQLitePCLRaw.batteries_v2.dll": {
+            "assemblyVersion": "3.0.4.3120",
+            "fileVersion": "3.0.4.3120"
+          }
+        }
+      },
+      "SQLitePCLRaw.core/3.0.4": {
+        "runtime": {
+          "lib/net8.0/SQLitePCLRaw.core.dll": {
+            "assemblyVersion": "3.0.4.3120",
+            "fileVersion": "3.0.4.3120"
+          }
+        }
+      },
+      "SQLitePCLRaw.provider.e_sqlite3/3.0.4": {
+        "dependencies": {
+          "SQLitePCLRaw.core": "3.0.4"
+        },
+        "runtime": {
+          "lib/net8.0-windows7.0/SQLitePCLRaw.provider.e_sqlite3.dll": {
+            "assemblyVersion": "3.0.4.3120",
+            "fileVersion": "3.0.4.3120"
+          }
+        }
+      },
+      "OneHistory.AppShell.Core/0.7.2": {
+        "runtime": {
+          "AppShell.Core.dll": {
+            "assemblyVersion": "0.7.2.0",
+            "fileVersion": "0.7.2.0"
+          }
+        }
+      },
+      "OneHistory.AppShell.ServiceHost/0.7.2": {
+        "dependencies": {
+          "OneHistory.AppShell.Core": "0.7.2",
+          "OneHistory.AppShell.Services": "0.7.2"
+        },
+        "runtime": {
+          "AppShell.ServiceHost.dll": {
+            "assemblyVersion": "0.7.2.0",
+            "fileVersion": "0.7.2.0"
+          }
+        }
+      },
+      "OneHistory.AppShell.Services/0.7.2": {
+        "dependencies": {
+          "Microsoft.Data.Sqlite": "8.0.29",
+          "OneHistory.AppShell.Core": "0.7.2",
+          "SQLitePCLRaw.bundle_e_sqlite3": "3.0.4"
+        },
+        "runtime": {
+          "AppShell.Services.dll": {
+            "assemblyVersion": "0.7.2.0",
+            "fileVersion": "0.7.2.0"
+          }
+        }
+      },
+      "OneHistory.AppShell.Shell/0.7.2": {
+        "dependencies": {
+          "Dirkster.AvalonDock": "4.72.1",
+          "Dirkster.AvalonDock.Themes.VS2013": "4.72.1",
+          "OneHistory.AppShell.Core": "0.7.2",
+          "OneHistory.AppShell.Services": "0.7.2"
+        },
+        "runtime": {
+          "AppShell.Shell.dll": {
+            "assemblyVersion": "0.7.2.0",
+            "fileVersion": "0.7.2.0"
+          }
+        }
+      },
+      "OneHistoryStudio/2.7.0": {
+        "dependencies": {
+          "OneHistory.AppShell.Core": "0.7.2",
+          "OneHistory.AppShell.ServiceHost": "0.7.2",
+          "OneHistory.AppShell.Services": "0.7.2",
+          "OneHistory.AppShell.Shell": "0.7.2"
+        },
+        "runtime": {
+          "OneHistoryStudio.dll": {
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "AppShell.Core/0.7.2.0": {
+        "runtime": {
+          "AppShell.Core.dll": {
+            "assemblyVersion": "0.7.2.0",
+            "fileVersion": "0.7.2.0"
+          }
+        }
+      },
+      "AppShell.ServiceHost/0.7.2.0": {
+        "runtime": {
+          "AppShell.ServiceHost.dll": {
+            "assemblyVersion": "0.7.2.0",
+            "fileVersion": "0.7.2.0"
+          }
+        }
+      },
+      "AppShell.Services/0.7.2.0": {
+        "runtime": {
+          "AppShell.Services.dll": {
+            "assemblyVersion": "0.7.2.0",
+            "fileVersion": "0.7.2.0"
+          }
+        }
+      },
+      "AppShell.Shell/0.7.2.0": {
+        "runtime": {
+          "AppShell.Shell.dll": {
+            "assemblyVersion": "0.7.2.0",
+            "fileVersion": "0.7.2.0"
+          }
+        }
+      },
+      "OneHistoryStudio.Reference/2.7.0.0": {
+        "runtime": {
+          "OneHistoryStudio.dll": {
+            "assemblyVersion": "2.7.0.0",
+            "fileVersion": "2.7.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "OneHistoryStudio.Service/2.7.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Dirkster.AvalonDock/4.72.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-m5J03HVntDM3eu7GyzLWlNdr2c2TTBAoD33Pq1yCID7vEtk13VVngtlmegp67WUvpL5JUC8G2xU8n+ThZKKz0Q==",
+      "path": "dirkster.avalondock/4.72.1",
+      "hashPath": "dirkster.avalondock.4.72.1.nupkg.sha512"
+    },
+    "Dirkster.AvalonDock.Themes.VS2013/4.72.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-g+hcHokgRFSvznqsVWxHxPCrUMxe18MTJjXMRVQJTVNo/Kwx8krdNiRnCSUDkuVtr2z29EtC4QofZhwUB7FS+w==",
+      "path": "dirkster.avalondock.themes.vs2013/4.72.1",
+      "hashPath": "dirkster.avalondock.themes.vs2013.4.72.1.nupkg.sha512"
+    },
+    "Microsoft.Data.Sqlite/8.0.29": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-UT01MJBITsT5CFLK9bhYWjz847BHlC2em7nhBNCCSYsI72mIzrXHfrQT8R+huQKJGZo94/a9GWGzKPn7mmlMyw==",
+      "path": "microsoft.data.sqlite/8.0.29",
+      "hashPath": "microsoft.data.sqlite.8.0.29.nupkg.sha512"
+    },
+    "Microsoft.Data.Sqlite.Core/8.0.29": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-B/7Z0la03kNVdmZtgSN/PocA2nsPiVUq56iCh25oW8W31Yzg1ofrMWy79i0DcDOXuHjy7+jlsUlSNytwe9Et5A==",
+      "path": "microsoft.data.sqlite.core/8.0.29",
+      "hashPath": "microsoft.data.sqlite.core.8.0.29.nupkg.sha512"
+    },
+    "SourceGear.sqlite3/3.53.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-PaDT7JwQ00HmXZT1xSGSC0c24A5lVpJYHMrXBuJATdpB2t0nf4Kq9HyPaZhxVW0elPq4XI1s5BLh7qLuObmzFA==",
+      "path": "sourcegear.sqlite3/3.53.3",
+      "hashPath": "sourcegear.sqlite3.3.53.3.nupkg.sha512"
+    },
+    "SQLitePCLRaw.bundle_e_sqlite3/3.0.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-gg8vENKV/o0pWLI0eJxnTA4X9e63rOvzkCDMAOePDGLieNSHPCGUiJ4CQDqDyNqIf6IPVzD4TOjqY5ACygZkkA==",
+      "path": "sqlitepclraw.bundle_e_sqlite3/3.0.4",
+      "hashPath": "sqlitepclraw.bundle_e_sqlite3.3.0.4.nupkg.sha512"
+    },
+    "SQLitePCLRaw.config.e_sqlite3/3.0.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-W2HMmjAZ1v27fbyzZtONCdC8Ma/tTr5wLAIr4Iq7T4oKrYaI4occJ5TBhSdK4pltwBJLQBG5DcQMz+/w9X4bbg==",
+      "path": "sqlitepclraw.config.e_sqlite3/3.0.4",
+      "hashPath": "sqlitepclraw.config.e_sqlite3.3.0.4.nupkg.sha512"
+    },
+    "SQLitePCLRaw.core/3.0.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-cOjxfdjE4zQDvDVDUBfucKGXEaYos4l4l+TVwePJEHp/nl9fkgBz/lIVgfMH5dOyKRmNi6RsptUGtZsvsD7iYQ==",
+      "path": "sqlitepclraw.core/3.0.4",
+      "hashPath": "sqlitepclraw.core.3.0.4.nupkg.sha512"
+    },
+    "SQLitePCLRaw.provider.e_sqlite3/3.0.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-L4uiEKeRSXxppkGE4iSpgBgC5lNvw2zEN/hAaxTecUS1+DhC6UEFhHaakSYYvnFq7x16B7DQcaXgXy0SkhSwnw==",
+      "path": "sqlitepclraw.provider.e_sqlite3/3.0.4",
+      "hashPath": "sqlitepclraw.provider.e_sqlite3.3.0.4.nupkg.sha512"
+    },
+    "OneHistory.AppShell.Core/0.7.2": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "OneHistory.AppShell.ServiceHost/0.7.2": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "OneHistory.AppShell.Services/0.7.2": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "OneHistory.AppShell.Shell/0.7.2": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "OneHistoryStudio/2.7.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "AppShell.Core/0.7.2.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "AppShell.ServiceHost/0.7.2.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "AppShell.Services/0.7.2.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "AppShell.Shell/0.7.2.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "OneHistoryStudio.Reference/2.7.0.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

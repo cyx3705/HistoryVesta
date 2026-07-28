@@ -1,5 +1,5 @@
 param(
-    [string]$Version = "0.7.2",
+    [string]$Version = "2.7.3",
     [switch]$Publish
 )
 
@@ -11,8 +11,8 @@ $RepoRoot = [IO.Path]::GetFullPath((Join-Path $ComponentRoot ".."))
 $DeliveryRoot = Join-Path $RepoRoot "z-Package-AppShell"
 $StageRoot = [IO.Path]::GetFullPath((Join-Path $DeliveryRoot "staging\$Version"))
 
-if ($Version -ne "0.7.2") {
-    throw "This release branch is pinned to AppShell 0.7.2; requested $Version"
+if ($Version -ne "2.7.3") {
+    throw "This release branch is pinned to AppShell 2.7.3; requested $Version"
 }
 if (-not $StageRoot.StartsWith([IO.Path]::GetFullPath($DeliveryRoot), [StringComparison]::OrdinalIgnoreCase)) {
     throw "Staging path escaped the delivery root: $StageRoot"
@@ -170,8 +170,8 @@ try {
     $demoExe = Join-Path $DemoDir "AppShell.exe"
     Assert-File $demoExe
     $demoVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($demoExe).FileVersion
-    if ($demoVersion -ne "0.7.2.0") {
-        throw "Demo file version is $demoVersion, expected 0.7.2.0"
+    if ($demoVersion -ne "2.7.3.0") {
+        throw "Demo file version is $demoVersion, expected 2.7.3.0"
     }
 
     $demoZip = Join-Path $PackagesDir "AppShell-Demo-$Version-win-x64-framework-dependent.zip"

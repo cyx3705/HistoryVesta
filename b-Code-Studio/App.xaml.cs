@@ -1,11 +1,16 @@
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using AppShell.Core;
 using AppShell.Core.Commands;
 using AppShell.Core.Docking;
+using AppShell.Core.Files;
 using AppShell.Core.Logging;
 using AppShell.Core.Mcp;
 using AppShell.Services;
+using AppShell.Services.Web;
 using AppShell.Shell;
+using OneHistoryStudio.Connection;
 using OneHistoryStudio.Git;
 
 namespace OneHistoryStudio;
@@ -21,147 +26,137 @@ namespace OneHistoryStudio;
 public partial class App : Application
 {
     private ShellLog? _log;
+    private ShellServiceClient? _serviceClient;
+    private CancellationTokenSource? _serviceEvents;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-
-        // 身份取本程序集而非入口程序集:冒烟宿主(Smoke.exe)加载本程序集时,
-        // 应用身份仍须是 OneHistoryStudio 本身。
         AppIdentity.Use(typeof(App).Assembly);
         var identity = AppIdentity.Current;
-        var paths = new AppPaths(identity.Name);
+        var bootstrapStore = new BootstrapProfileStore(identity.Name);
+        var bootstrap = bootstrapStore.Load();
+        var isServer = bootstrap.Role == NodeRole.Server;
+        var paths = new AppPaths(identity.Name, createBusinessDirectories: isServer);
         var log = new ShellLog(paths);
         var settings = new SettingsService(paths);
         _log = log;
-
         RegisterGlobalExceptionHandlers(log, identity.Name);
 
-        // 数据服务(§9 流程第 5 条)
-        var dataService = new SqliteDataService(paths);
-        dataService.RegisterConnection("main", "main.db");
+        var webPort = settings.GetInt(WebGateway.KeyPort, 8738);
+        var endpoint = BootstrapProfileStore.ResolveEndpoint(bootstrap, webPort);
+        var secrets = new DpapiSecretStore(paths.Root);
+        _serviceClient = new ShellServiceClient(new ShellEndpointProfile(
+            endpoint,
+            bootstrap.DeviceId,
+            () =>
+            {
+                var current = bootstrapStore.Load();
+                return current.ServerId == null ? null : secrets.Read(current.ServerId);
+            },
+            bootstrap.CertificateFingerprint,
+            TimeSpan.FromSeconds(5),
+            bootstrap.ServerId), identity.Name);
+        _serviceClient.DataDeserializer = Service.StudioCommandDataDeserializer.Deserialize;
+        var connectionProfiles = new ConnectionProfileService(
+            bootstrapStore, secrets, _serviceClient);
+        var serviceReady = EnsureServiceAsync(_serviceClient, log, isServer).GetAwaiter().GetResult();
 
-        // 一次性迁移(QC-03):须在留痕/提示词存储接触 main 库之前执行
-        StartupMigrations.Run(settings, paths, dataService, log);
-
-        // 操作留痕(提示词治理存储自 0.4.4 起由框架自带)
-        var history = new HistoryRecorder(dataService, log);
-
-        // proj.* 指令域(V2-M1):Git 项目库管理。
-        // 执行中途的确认(LFS 询问)复用总线确认通道,保持危险操作单闸口(N-04);
-        // window 在下方创建,指令实际执行时必已就绪。
         ShellWindow? window = null;
-        var projects = new ProjectService(settings, prompt =>
+        ProjectService? projects = null;
+        IWorkspaceService workspace;
+        if (isServer)
         {
-            var confirmation = window?.Commands.Confirmation;
-            if (confirmation == null)
-                return false; // 无确认通道一律拒绝(与总线安全缺省一致)
-            return Current.Dispatcher.Invoke(() => confirmation.Confirm(prompt));
-        }, paths.Root);
-        projects.EnsureDefaultSettings();
-        projects.NotesProvider = history.AllNotes;
-        var gitRules = new GitFileRuleService(projects);
-        var branchHistory = new BranchHistoryService(projects);
-
-        // V2.2.1:文件格式全覆盖台账(按格式聚合 + 缓存增量,详见 versions\20)
-        var formatInventory = new FormatInventoryService(projects, log, paths.Root);
-
-        // 工作区(§9 流程第 6 条 / DT-04):默认根 = 项目库根目录,可经 res.root 更改并持久化
-        var workspace = new WorkspaceService(
-            settings.Get(WorkspaceService.KeyRoot) ?? projects.WorktreeRoot);
-
-        // 自扩展飞轮(V2.2):清单发现/同步/溯源;槽路径跟随框架模块宿主的 module.dir 现值。
-        // 0.4.4:模块宿主由 ShellWindow 自建,故以委托延迟取用——命令执行时窗口必已就绪。
-        var defaultModulesDir = paths.ModulesDir;
-        var panelsDir = paths.PanelsDir;
-        var tools = new ToolSyncService(projects, dataService, log,
-            () => window?.Modules?.ModulesDirectory ?? defaultModulesDir);
-
+            projects = new ProjectService(settings, prompt =>
+            {
+                var confirmation = window?.Commands.Confirmation;
+                if (confirmation == null)
+                    return false;
+                return Current.Dispatcher.Invoke(() => confirmation.Confirm(prompt));
+            }, paths.Root);
+            workspace = new WorkspaceService(
+                settings.Get(WorkspaceService.KeyRoot) ?? projects.WorktreeRoot);
+        }
+        else
+        {
+            workspace = new RemoteWorkspaceService(_serviceClient);
+        }
         var projectSelection = new Views.ProjectSelectionState();
-        // 命令集选中状态由本应用创建:框架的命令集窗口(mcp)与本应用的指令详情窗口(commanddetail)
-        // 共享同一实例;窗口工厂在 DockingHost 构建布局时即被调用,不能延迟到 window 就绪再取。
         var commandSelection = new CommandSelectionState();
-
+        var remoteData = new RemoteDataService(_serviceClient);
         var config = new ShellConfig
         {
             AppName = identity.Name,
             AppVersion = identity.Version,
-            DataService = dataService,
+            DataService = remoteData,
             Workspace = workspace,
-            // 身份显式提供:冒烟宿主下入口程序集不是本应用
             Identity = identity,
-            // 本应用已有留痕器(同时承载 push_history / branch_notes),
-            // 接进框架复用同一张 mcp_history,避免框架再建一个并行的记录器
-            McpAuditLog = history,
-            // 命令集窗口与指令详情窗口的联动实例,交框架的 McpToolsView 使用
             CommandSelection = commandSelection,
-            // 中央区不注入内容,保留模板占位页(总览/继承树改为独立工具窗口)
+            EnableMcp = false,
+            EnableModules = false,
+            EnableUiModules = isServer,
+            EnableRemoteManagementViews = true,
+            ConfigureCommands = registry =>
+                ConnectionCommands.RegisterAll(registry, connectionProfiles),
         };
-
-        RegisterToolWindows(config, () => window?.Commands, projectSelection, projects);
-
-        // 派生应用自定义指令示范(§5.3):与内置指令同表、help 自动收录
-        config.ConfigureCommands = registry =>
-        {
-            ProjectCommands.RegisterAll(registry, projects, history);
-            BranchHistoryCommands.RegisterAll(registry, branchHistory, history);
-            GitRuleCommands.RegisterAll(registry, gitRules, formatInventory, projects);
-            ToolCommands.RegisterAll(registry, tools);
-            DebugCommands.RegisterAll(registry, log);
-
-            var unreservedDomains = ToolManifestLoader.FindUnreservedBuiltinDomains(
-                registry.All().Select(command => command.Name));
-            if (unreservedDomains.Count > 0)
-            {
-                log.Warn("tool", "内置指令域未纳入模块名保留清单: " +
-                                 string.Join(", ", unreservedDomains));
-            }
-
-            // 0.4.4:module.* / mcp.* / command.* / prompt.* 等已由框架在此之前注册完毕。
-            // V2.4.4:本应用不再登记只读指令名单——每条命令在自己的注册处用
-            // Readonly = true 自描述,新增只读指令只需改注册点一处。
-        };
-
+        RegisterToolWindows(config, () => window?.Commands, projectSelection,
+            branch => projects?.IsProtected(branch) == true,
+            connectionProfiles);
+        config.ToolMenuActions.Add(new ShellMenuAction(
+            "连接与端口(_C)", "win.show name=connection.settings"));
+        config.ToolMenuActions.Add(new ShellMenuAction(
+            "GitHub 账号(_G)", "win.show name=github.account"));
         window = new ShellWindow(config, new FileLayoutStore(paths), log, settings, paths.Root);
         MainWindow = window;
-
-        StartupMigrations.InitCommandDetailLayoutOnce(window, settings, log);
-
-        // MD-08:模块热重载后同步模块旁面板;有变化时经总线 panel.reload
-        // (既有面板原地刷新即时生效;全新面板按框架 P-08 约定重启后出现,提示见控制台)
-        var capturedWindow = () => window;
-        if (window.Modules is { } moduleHost)
-        {
-            moduleHost.ReloadCompleted += () =>
-            {
-                if (AppShell.Services.Modules.ModulePanelSync.SyncFiles(
-                        moduleHost.ModulesDirectory, panelsDir, log))
-                    _ = capturedWindow()?.Commands.ExecuteAsync("panel.reload", "模块面板");
-            };
-        }
-
-        WireMcpExposurePolicy(capturedWindow, tools);
-
-        // 0.4.4:模块宿主的 Attach/Start、确认服务包装(CX-03)、MCP 网关创建与自启动
-        // 均已由 ShellWindow 完成,本装配点不再重复。
-
+        window.Commands.RemoteExecutor = _serviceClient.ExecuteAsync;
+        window.Commands.ShouldUseRemote = source =>
+            !source.StartsWith("Service:", StringComparison.OrdinalIgnoreCase);
+        window.Commands.ShouldUseRemoteCommand = (text, source) =>
+            !source.StartsWith("Service:", StringComparison.OrdinalIgnoreCase)
+            && !IsConnectionCommand(text);
+        _serviceEvents = new CancellationTokenSource();
+        _ = _serviceClient.RunEventLoopAsync(window.Commands, _serviceEvents.Token);
         window.Show();
-
-        // --yes:确认通道自动通过(自动化回归/脚本用,IConfirmationService 注释预留的场景)。
-        // 仅限 --exec 自测流程使用,日常交互禁止带此参数。
-        if (e.Args.Contains("--yes"))
-        {
-            // 仍经 GatewayAwareConfirmation 包装:自动确认只对 UI/手动/脚本生效,MCP 危险调用不受其影响
-            window.Commands.Confirmation = new GatewayAwareConfirmation(new AutoConfirmation());
-            log.Warn("app", "--yes 已启用:UI/手动/脚本二次确认自动通过(MCP 危险调用仍走中继/拒绝)");
-        }
-
-        log.Info("app", $"{identity.Name} {identity.Version} 启动完成,数据目录: {paths.Root}");
-
-        // --exec "指令":启动后顺序执行(自动化/自测入口)
+        if (serviceReady)
+            log.Info("app", $"{identity.Name} {identity.Version} [{bootstrap.Role}] 已连接服务: {endpoint}");
+        else
+            log.Warn("app", $"{identity.Name} {identity.Version} [{bootstrap.Role}] 服务未连接: {endpoint}");
         var startupCommands = CollectExecCommands(e.Args);
         if (startupCommands.Count > 0)
             _ = RunStartupCommandsAsync(window, startupCommands);
+    }
+
+    private static async Task<bool> EnsureServiceAsync(
+        ShellServiceClient client,
+        IShellLog log,
+        bool allowLocalStart)
+    {
+        if (await client.WaitForReadyAsync(TimeSpan.FromMilliseconds(250)).ConfigureAwait(false))
+            return true;
+
+        if (!allowLocalStart)
+            return false;
+
+        var servicePath = Environment.ProcessPath;
+        if (string.IsNullOrWhiteSpace(servicePath))
+        {
+            log.Error("app", "无法确定 OneHistoryStudio.exe 路径");
+            return false;
+        }
+
+        try
+        {
+            var start = new ProcessStartInfo(servicePath) { UseShellExecute = true };
+            start.ArgumentList.Add("--service-host");
+            Process.Start(start);
+        }
+        catch (Exception ex)
+        {
+            log.Error("app", $"启动后台服务失败: {ex.Message}");
+            return false;
+        }
+
+        return await client.WaitForReadyAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -175,7 +170,8 @@ public partial class App : Application
         ShellConfig config,
         Func<CommandBus?> busAccessor,
         Views.ProjectSelectionState projectSelection,
-        ProjectService projects)
+        Func<string, bool> isProtected,
+        ConnectionProfileService connectionProfiles)
     {
         // mcp / commanddetail / modules 三窗口内容由框架接管(工厂 null),故本表不再需要 commandSelection。
         // 联动实例经 ShellConfig.CommandSelection 传给框架(见上方 config 初始化)。
@@ -190,10 +186,15 @@ public partial class App : Application
             ("modules", "模块管理", DockSide.Tab, "overview", 0.55, null),
             ("meta", "Meta文件", DockSide.Tab, "overview", 0.55, () => new Views.MetaView(busAccessor)),
             ("projops", "项目操作", DockSide.Right, null, 0.28, () => new Views.ProjectOperationsView(busAccessor, projectSelection)),
-            ("history", "分支历史", DockSide.Left, null, 0.26, () => new Views.BranchHistoryView(busAccessor, projectSelection, projects)),
+            ("history", "分支历史", DockSide.Left, null, 0.26,
+                () => new Views.BranchHistoryView(busAccessor, projectSelection, isProtected)),
             ("resource", "资源窗口", DockSide.Left, null, 0.18, null),
             ("table", "表窗口", DockSide.Bottom, null, 0.28, null),
             ("console", "控制台", DockSide.Tab, "table", 0.28, null),
+            ("github.account", "GitHub 账号", DockSide.Right, null, 0.38,
+                () => new Views.GitHubAccountView(busAccessor)),
+            ("connection.settings", "连接与端口", DockSide.Right, null, 0.38,
+                () => new Views.ConnectionSettingsView(connectionProfiles, busAccessor)),
         ];
         foreach (var w in toolWindows)
         {
@@ -239,6 +240,19 @@ public partial class App : Application
             log.Log(ShellLogLevel.Fatal, "app", $"未处理异常(非 UI 线程): {args.ExceptionObject}");
     }
 
+    private static bool IsConnectionCommand(string text)
+    {
+        try
+        {
+            return CommandParser.Parse(text).Name.StartsWith(
+                "conn.", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (CommandSyntaxException)
+        {
+            return false;
+        }
+    }
+
     private static List<string> CollectExecCommands(string[] args)
     {
         var commands = new List<string>();
@@ -265,8 +279,9 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        // 0.4.4:MCP 网关与模块宿主由 ShellWindow 自建、并在 Closing 时自行释放,
-        // 此处只收尾本应用自己创建的东西。
+        _serviceEvents?.Cancel();
+        _serviceEvents?.Dispose();
+        _serviceClient?.Dispose();
         _log?.Dispose(); // 冲刷文件写入队列
         base.OnExit(e);
     }

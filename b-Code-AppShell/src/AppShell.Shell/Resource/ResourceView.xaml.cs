@@ -37,6 +37,9 @@ public partial class ResourceView : UserControl
         _bus = bus;
         _log = log;
         _openHandler = openHandler;
+        OpenFolderButton.IsEnabled = workspace.CanSelectLocalRoot;
+        OpenFolderMenuItem.IsEnabled = workspace.CanSelectLocalRoot;
+        ResetRootMenuItem.IsEnabled = workspace.CanSelectLocalRoot;
 
         // R-04:外部变更(或 res.* 指令改动)→ 去抖后整树刷新
         _refreshDebounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
@@ -61,8 +64,6 @@ public partial class ResourceView : UserControl
     /// <summary>res.root 切换根目录后的刷新入口。</summary>
     public void ReloadTree()
     {
-        RootText.Text = _workspace.Root;
-
         // 记住已展开的目录,刷新后尽量还原
         var expanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         CollectExpanded(Tree.Items, expanded);
@@ -72,6 +73,7 @@ public partial class ResourceView : UserControl
         {
             foreach (var entry in _workspace.List())
                 Tree.Items.Add(CreateNode(entry));
+            RootText.Text = _workspace.Root;
         }
         catch (Exception ex)
         {
@@ -151,7 +153,14 @@ public partial class ResourceView : UserControl
 
     // ---------------------------------------------------------------- 操作 → res.* 指令(R-05)
 
-    private void Send(string command) => _ = _bus.ExecuteAsync(command, "UI");
+    private void Send(string command, bool reload = false) => _ = SendAsync(command, reload);
+
+    private async Task SendAsync(string command, bool reload)
+    {
+        var result = await _bus.ExecuteAsync(command, "UI");
+        if (reload && result.Success)
+            ReloadTree();
+    }
 
     private void OnRefreshClick(object sender, RoutedEventArgs e) => ReloadTree();
 
@@ -166,14 +175,14 @@ public partial class ResourceView : UserControl
         if (dialog.ShowDialog(Window.GetWindow(this)) != true)
             return;
 
-        Send($"res.root path={CommandParser.QuoteArg(dialog.FolderName)}");
+        Send($"res.root path={CommandParser.QuoteArg(dialog.FolderName)}", reload: true);
     }
 
     private void OnResetRootClick(object sender, RoutedEventArgs e)
     {
         if (_defaultRoot == null)
             return;
-        Send($"res.root path={CommandParser.QuoteArg(_defaultRoot)}");
+        Send($"res.root path={CommandParser.QuoteArg(_defaultRoot)}", reload: true);
     }
 
     private void OnMkdirClick(object sender, RoutedEventArgs e)
@@ -182,7 +191,7 @@ public partial class ResourceView : UserControl
         if (string.IsNullOrEmpty(name))
             return;
         var path = System.IO.Path.Combine(SelectedDirectory, name);
-        Send($"res.mkdir path={CommandParser.QuoteArg(path)}");
+        Send($"res.mkdir path={CommandParser.QuoteArg(path)}", reload: true);
     }
 
     private void OnRenameClick(object sender, RoutedEventArgs e)
@@ -193,7 +202,7 @@ public partial class ResourceView : UserControl
         var name = InputDialog.Show(Window.GetWindow(this)!, "重命名", $"把 {entry.Name} 改名为:", entry.Name);
         if (string.IsNullOrEmpty(name) || name == entry.Name)
             return;
-        Send($"res.rename path={CommandParser.QuoteArg(entry.RelativePath)} to={CommandParser.QuoteArg(name)}");
+        Send($"res.rename path={CommandParser.QuoteArg(entry.RelativePath)} to={CommandParser.QuoteArg(name)}", reload: true);
     }
 
     private void OnDeleteClick(object sender, RoutedEventArgs e)
@@ -202,7 +211,7 @@ public partial class ResourceView : UserControl
         if (entry == null)
             return;
         // res.delete 自带总线二次确认(R-06);此处直接发指令,确认框由拦截器弹出
-        Send($"res.delete path={CommandParser.QuoteArg(entry.RelativePath)}");
+        Send($"res.delete path={CommandParser.QuoteArg(entry.RelativePath)}", reload: true);
     }
 
     private void OnOpenClick(object sender, RoutedEventArgs e)

@@ -11,8 +11,10 @@ public static class ServiceCommands
         ServiceComposition composition,
         Action requestStop,
         string executablePath,
-        string source = "framework:service")
+        string source = "framework:service",
+        IReadOnlyList<string>? serviceArguments = null)
     {
+        serviceArguments ??= [];
         registry.Register(new CommandDescriptor
         {
             Name = "svc.status",
@@ -47,7 +49,10 @@ public static class ServiceCommands
             ConfirmPrompt = _ => "确认重启后台服务？客户端会短暂断开。",
             Handler = CommandDescriptor.Sync(_ =>
             {
-                Process.Start(new ProcessStartInfo(executablePath) { UseShellExecute = true });
+                var start = new ProcessStartInfo(executablePath) { UseShellExecute = true };
+                foreach (var argument in serviceArguments)
+                    start.ArgumentList.Add(argument);
+                Process.Start(start);
                 Application.Current.Dispatcher.BeginInvoke(requestStop);
                 return CommandResult.Ok("服务正在重启");
             }),
@@ -81,6 +86,7 @@ public static class ServiceCommands
                 manager.SetEnabled(
                     composition.ServiceName,
                     executablePath,
+                    serviceArguments,
                     mode.Equals("on", StringComparison.OrdinalIgnoreCase));
                 return CommandResult.Ok($"服务登录启动已{(mode == "on" ? "开启" : "关闭")}");
             }),

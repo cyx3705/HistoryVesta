@@ -15,7 +15,7 @@ public partial class BranchHistoryView : UserControl
 
     private readonly Func<CommandBus?> _busAccessor;
     private readonly ProjectSelectionState _selection;
-    private readonly ProjectService _projects;
+    private readonly Func<string, bool> _isProtected;
     private CancellationTokenSource? _loadCancellation;
     private BranchHistoryReport? _report;
     private int _loadedOwnCommits;
@@ -24,12 +24,12 @@ public partial class BranchHistoryView : UserControl
     public BranchHistoryView(
         Func<CommandBus?> busAccessor,
         ProjectSelectionState selection,
-        ProjectService projects)
+        Func<string, bool> isProtected)
     {
         InitializeComponent();
         _busAccessor = busAccessor;
         _selection = selection;
-        _projects = projects;
+        _isProtected = isProtected;
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }
@@ -175,7 +175,7 @@ public partial class BranchHistoryView : UserControl
             e.Handled = true;
             return;
         }
-        HardResetItem.IsEnabled = !_projects.IsProtected(_report.Branch);
+        HardResetItem.IsEnabled = !_isProtected(_report.Branch);
     }
 
     private void OnHistoryPreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
@@ -264,7 +264,7 @@ public partial class BranchHistoryView : UserControl
 
     private async void OnHardResetClick(object sender, RoutedEventArgs e)
     {
-        if (!TrySelection(out var branch, out var entry) || _projects.IsProtected(branch) ||
+        if (!TrySelection(out var branch, out var entry) || _isProtected(branch) ||
             _busAccessor() is not { } bus)
             return;
         var result = await bus.ExecuteAsync(

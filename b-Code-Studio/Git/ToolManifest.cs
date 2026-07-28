@@ -18,6 +18,8 @@ public sealed class ToolManifest
     public string? PanelPath { get; init; }
     public IReadOnlyList<string> DepPaths { get; init; } = [];
 
+    public bool Ui { get; init; }
+
     /// <summary>standard / readonly / hidden(Q211-2,V22-M3 生效)。</summary>
     public string McpExposure { get; init; } = "standard";
 
@@ -41,6 +43,7 @@ public static partial class ToolManifestLoader
     {
         "app", "win", "db", "res", "panel", "layout", "log", "proj", "module", "mcp",
         "tool", "command", "prompt", "correction", "incident", "git", "debug",
+        "svc", "web",
         "help", "history", "cls",
     };
 
@@ -53,7 +56,7 @@ public static partial class ToolManifestLoader
 
     private sealed record ManifestDto(
         string? Name, string? Version, string? Description, string? Artifact,
-        string? Docs, string? Panel, string[]? Deps, string? McpExposure);
+        string? Docs, string? Panel, string[]? Deps, string? McpExposure, bool Ui = false);
 
     /// <summary>
     /// 启动期自检：返回注册表已有、但保留清单尚未覆盖的一级指令域。
@@ -139,6 +142,7 @@ public static partial class ToolManifestLoader
             DocsPath = docs,
             PanelPath = panel,
             DepPaths = deps,
+            Ui = dto.Ui,
             McpExposure = exposure,
             SourceProject = branch,
             ManifestPath = manifestPath,

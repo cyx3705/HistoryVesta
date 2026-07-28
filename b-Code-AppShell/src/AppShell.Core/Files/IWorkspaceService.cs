@@ -8,6 +8,11 @@ public sealed record WorkspaceEntry(
     long Size,
     DateTime Modified);
 
+/// <summary>工作区目录的一次结构化快照；远程 Shell 同时取得服务器根目录和条目。</summary>
+public sealed record WorkspaceListing(
+    string Root,
+    IReadOnlyList<WorkspaceEntry> Entries);
+
 /// <summary>
 /// 工作区文件服务(§6.4):资源窗口与 res.* 指令的公共实现层。
 /// 安全边界(R-06)在实现层统一保证——一切路径限定在根目录以内,
@@ -15,6 +20,9 @@ public sealed record WorkspaceEntry(
 /// </summary>
 public interface IWorkspaceService
 {
+    /// <summary>是否允许当前 UI 用本机文件夹选择器切换根目录。</summary>
+    bool CanSelectLocalRoot => true;
+
     /// <summary>工作区根目录(R-08,默认 &lt;应用数据目录&gt;/workspace)。</summary>
     string Root { get; }
 

@@ -10,7 +10,10 @@ namespace AppShell.ServiceHost;
 /// <summary>无主窗口的用户会话 WPF 服务宿主。</summary>
 public static class ServiceHost
 {
-    public static int Run(ServiceComposition composition, string? executablePath = null)
+    public static int Run(
+        ServiceComposition composition,
+        string? executablePath = null,
+        IReadOnlyList<string>? serviceArguments = null)
     {
         ArgumentNullException.ThrowIfNull(composition);
         var mutexName = $"Local\\{Sanitize(composition.ServiceName)}.ServiceHost";
@@ -29,12 +32,28 @@ public static class ServiceHost
                           ?? Environment.ProcessPath
                           ?? Process.GetCurrentProcess().MainModule?.FileName
                           ?? throw new InvalidOperationException("无法确定服务可执行文件路径");
+        serviceArguments ??= [];
 
         var confirmation = new ServiceConfirmation();
         var gatewayAwareConfirmation = new GatewayAwareConfirmation(confirmation);
         composition.Bus.Confirmation = gatewayAwareConfirmation;
         composition.Bus.ConfirmationRouter = (context, prompt) =>
         {
+            if (composition.Web?.TryGetSession(context.Source, out var session) == true
+                && !session.IsLoopback)
+            {
+                if (!session.Scopes.Contains("operate") && !session.Scopes.Contains("admin"))
+                    return false;
+                if (!string.Equals(
+                        composition.Settings.Get("lan.confirm"),
+                        "client",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+                return composition.Web.RequestWebConfirmation(
+                    prompt, context.Source, TimeSpan.FromSeconds(60));
+            }
             if (!context.Source.StartsWith("Web:", StringComparison.OrdinalIgnoreCase))
                 return gatewayAwareConfirmation.Confirm(prompt);
             if (!string.Equals(
@@ -53,7 +72,8 @@ public static class ServiceHost
             composition.Registry,
             composition,
             () => app.Shutdown(),
-            servicePath);
+            servicePath,
+            serviceArguments: serviceArguments);
         if (composition.Web != null)
         {
             composition.Bus.FrontendExecutor = composition.Web.RelayFrontendCommandAsync;
@@ -71,8 +91,12 @@ public static class ServiceHost
         {
             try
             {
-                if (!composition.Autostart.IsEnabled(composition.ServiceName))
-                    composition.Autostart.SetEnabled(composition.ServiceName, servicePath, enabled: true);
+                if (!composition.Autostart.IsEnabled(
+                        composition.ServiceName, servicePath, serviceArguments))
+                {
+                    composition.Autostart.SetEnabled(
+                        composition.ServiceName, servicePath, serviceArguments, enabled: true);
+                }
             }
             catch (Exception ex)
             {

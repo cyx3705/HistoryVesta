@@ -78,7 +78,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Data.Sqlite": "[8.0.29, )",
-          "OneHistory.AppShell.Core": "[0.7.2, )",
+          "OneHistory.AppShell.Core": "[2.7.3, )",
           "SQLitePCLRaw.bundle_e_sqlite3": "[3.0.4, )"
         }
       },

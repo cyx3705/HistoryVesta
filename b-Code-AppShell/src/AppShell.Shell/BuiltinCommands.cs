@@ -107,6 +107,7 @@ public static class BuiltinCommands
             Name = "res.list",
             Summary = "列出目录内容",
             Example = "res.list path=配方",
+            Readonly = true,
             Parameters =
             [
                 new ParameterSpec { Name = "path", Description = "目录(相对根);省略为根目录", Position = 0 },
@@ -115,7 +116,7 @@ public static class BuiltinCommands
             {
                 var entries = ws.List(ctx.GetString("path"));
                 if (entries.Count == 0)
-                    return CommandResult.Ok("(空目录)");
+                    return CommandResult.Ok("(空目录)", new WorkspaceListing(ws.Root, entries));
 
                 var sb = new StringBuilder($"共 {entries.Count} 项:");
                 foreach (var e in entries)
@@ -125,7 +126,7 @@ public static class BuiltinCommands
                         : $"\n  {e.Name}  ({e.Size} B, {e.Modified:yyyy-MM-dd HH:mm})");
                 }
 
-                return CommandResult.Ok(sb.ToString());
+                return CommandResult.Ok(sb.ToString(), new WorkspaceListing(ws.Root, entries));
             }),
         });
 
