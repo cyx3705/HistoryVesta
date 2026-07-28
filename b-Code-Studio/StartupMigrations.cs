@@ -28,7 +28,7 @@ public static class StartupMigrations
     private const string CommandDetailLayoutKey = "layout.commanddetail.v215.tab32";
 
     /// <summary>窗口创建前执行(文件与数据库侧;需在表窗口/留痕器接触 main 库之前)。</summary>
-    public static void Run(ISettingsService settings, AppPaths paths, IDataService data, IShellLog log)
+    public static void Run(ISettingsService settings, AppPaths paths, IShellLog log)
     {
         if (int.TryParse(settings.Get(KeyMigrated), out var done) && done >= CurrentVersion)
             return;
@@ -41,7 +41,7 @@ public static class StartupMigrations
                 DeleteIfExists(Path.Combine(panels, "motor.json"), "V2-M0 演示面板", log);
                 DeleteIfExists(Path.Combine(panels, "projmod.json"), "V2.1.1 已并入模块管理页", log);
                 DeleteIfExists(Path.Combine(panels, "projops.json"), "V2.1.4 已升级为项目操作页", log);
-                DropDemoTables(paths, data, log);
+                DropLegacyDemoFiles(paths, log);
             }
 
             if (done < 2)
@@ -85,22 +85,18 @@ public static class StartupMigrations
         log.Info("app", $"迁移回收 {Path.GetFileName(file)}({reason})");
     }
 
-    /// <summary>模板验收遗产 users/bench 演示表回收;先整库备份再动手。</summary>
-    private static void DropDemoTables(AppPaths paths, IDataService data, IShellLog log)
+    /// <summary>数据库退出后仅保留旧 main.db，不再打开或改写。</summary>
+    private static void DropLegacyDemoFiles(AppPaths paths, IShellLog log)
     {
         var db = Path.Combine(paths.DataDir, "main.db");
         if (File.Exists(db))
         {
-            var backup = db + ".bak-v216";
+            var backup = db + ".retired-backup";
             if (!File.Exists(backup))
             {
                 File.Copy(db, backup);
-                log.Info("app", $"迁移前已备份数据库: data/{Path.GetFileName(backup)}");
+                log.Info("app", $"旧 SQLite 已保留只读备份: data/{Path.GetFileName(backup)}");
             }
         }
-
-        data.ExecuteSql("DROP TABLE IF EXISTS users");
-        data.ExecuteSql("DROP TABLE IF EXISTS bench");
-        log.Info("app", "演示表 users / bench 已回收(模板验收遗产)");
     }
 }

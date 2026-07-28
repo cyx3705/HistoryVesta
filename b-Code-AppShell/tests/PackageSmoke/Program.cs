@@ -6,7 +6,10 @@ using AppShell.Services;
 using AppShell.ServiceHost;
 using AppShell.Shell;
 
-var expected = new Version(2, 7, 3, 0);
+var smokeAssembly = Assembly.GetExecutingAssembly();
+var smokeIdentity = AppIdentity.From(smokeAssembly);
+var expected = smokeAssembly.GetName().Version
+               ?? throw new InvalidOperationException("PackageSmoke assembly version is missing");
 var assemblies = new[]
 {
     typeof(CommandBus).Assembly,
@@ -25,15 +28,15 @@ foreach (var assembly in assemblies)
 var config = new ShellConfig
 {
     AppName = "AppShellPackageSmoke",
-    AppVersion = "2.7.3",
+    AppVersion = smokeIdentity.Version,
     EnableModules = false,
     EnableMcp = false,
 };
 
-if (config.AppVersion != "2.7.3" || config.EnableModules || config.EnableMcp)
+if (config.AppVersion != smokeIdentity.Version || config.EnableModules || config.EnableMcp)
     throw new InvalidOperationException("ShellConfig package surface is not usable");
 
-AppIdentity.Use(Assembly.GetExecutingAssembly());
+AppIdentity.Use(smokeAssembly);
 var registry = new CommandRegistry();
 registry.Register(new CommandDescriptor
 {

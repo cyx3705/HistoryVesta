@@ -1,7 +1,6 @@
 using System.IO;
 using AppShell.ServiceHost;
 using AppShell.Core.Mcp;
-using Microsoft.Data.Sqlite;
 using OneHistoryStudio.Service;
 
 namespace OneHistoryStudio.LegacyServiceHost;
@@ -51,7 +50,6 @@ internal static class LegacyServiceProgram
         finally
         {
             composition.Dispose();
-            SqliteConnection.ClearAllPools();
             if (Directory.Exists(temporaryRoot))
                 Directory.Delete(temporaryRoot, recursive: true);
         }

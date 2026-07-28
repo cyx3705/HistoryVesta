@@ -2,12 +2,13 @@
 using AppShell.Core.Mcp;
 using AppShell.Services.Mcp;
 using AppShell.Shell.Mcp;
+using System.Net;
 using System.Net.Http.Json;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Text.Json;
 using AppShell.Core.Commands;
 using AppShell.Services;
-using Microsoft.Data.Sqlite;
 using OneHistoryStudio.Git;
 using OneHistoryStudio.Views;
 using static OneHistoryStudio.Smoke.SmokeKit;
@@ -16,7 +17,7 @@ namespace OneHistoryStudio.Smoke.Suites;
 
 /// <summary>
 /// MCP 提示词治理、命令目录、网关与迁移。断言逐条搬自原 tests\PromptGovernanceSmoke\Program.cs。
-/// 本套用例同时是 SQLite 通路的回归(建表 / 插入 / 查询 / 架构迁移)。
+/// 本套用例同时覆盖文件存储的原子治理状态。
 /// </summary>
 internal static class PromptGovernanceSuite
 {
@@ -32,37 +33,17 @@ internal static class PromptGovernanceSuite
         {
             log = new ShellLog(paths);
             var settings = new SettingsService(paths);
-            var data = new SqliteDataService(paths);
-            data.RegisterConnection("main", "main.db");
-
             var retiredPanel = Path.Combine(paths.PanelsDir, "projpush.json");
             await File.WriteAllTextAsync(retiredPanel, "{}");
             settings.Set(StartupMigrations.KeyMigrated, "1");
-            StartupMigrations.Run(settings, paths, data, log);
+            StartupMigrations.Run(settings, paths, log);
             True(!File.Exists(retiredPanel), "V2.1.7 migration removes projpush panel");
             Equal("2", settings.Get(StartupMigrations.KeyMigrated), "V2.1.7 migration version");
 
-            data.ExecuteSql(
-                $"CREATE TABLE {PromptGovernanceStore.TableDescriptions} " +
-                "(command TEXT PRIMARY KEY,description TEXT NOT NULL,updated TEXT NOT NULL)");
-            data.ExecuteSql(
-                $"INSERT INTO {PromptGovernanceStore.TableDescriptions} " +
-                "VALUES ('proj.list','legacy description','2026-07-16 00:00:00')");
-            data.ExecuteSql(
-                $"""
-                CREATE TABLE {PromptGovernanceStore.TableProposals} (
-                    id TEXT PRIMARY KEY, command TEXT NOT NULL, base_revision TEXT,
-                    old_text TEXT NOT NULL, proposed_text TEXT NOT NULL, reason TEXT NOT NULL,
-                    evidence TEXT NOT NULL DEFAULT '', source_client TEXT NOT NULL, created TEXT NOT NULL,
-                    status TEXT NOT NULL, reviewer TEXT, reviewed TEXT, applied_revision TEXT
-                )
-                """);
-
-            var history = new HistoryRecorder(data, log);
-            var store = new PromptGovernanceStore(data, log);
-            Equal("legacy description", store.AllEffectiveDescriptions()["proj.list"], "legacy migration");
-            True(data.GetSchema(PromptGovernanceStore.TableProposals).Any(c => c.Name == "review_note"),
-                "proposal schema migration");
+            var history = new HistoryRecorder(paths.Root, log);
+            var store = new PromptGovernanceStore(paths.Root, log);
+            store.ApplyDirect("proj.list", "legacy description", "smoke", "seed");
+            Equal("legacy description", store.AllEffectiveDescriptions()["proj.list"], "file state seed");
 
             var registry = new CommandRegistry();
             registry.Register(new CommandDescriptor
@@ -94,25 +75,6 @@ internal static class PromptGovernanceSuite
                 () => store.CreateProposal(
                     "proj.list", "legacy description", "??? broken", "encoding", "", "MCP:broken-client"),
                 "corrupted proposal rejected at store boundary");
-            data.ExecuteSql(
-                $"INSERT INTO {PromptGovernanceStore.TableProposals} " +
-                "(id,command,old_text,proposed_text,reason,evidence,source_client,created,status) VALUES " +
-                "('proposal_corrupt_approval','proj.list','legacy description','????','encoding','','legacy-client','2026-07-17T00:00:00+08:00','pending')");
-            Throws<InvalidOperationException>(
-                () => store.ApproveProposal("proposal_corrupt_approval", "smoke"),
-                "legacy corrupted proposal rejected during approval");
-            store.RejectProposal("proposal_corrupt_approval", "smoke", "encoding damage");
-
-            var corruptBeforeApply = store.CreateProposal(
-                "proj.list", "legacy description", "valid before tampering", "encoding", "", "legacy-client");
-            store.ApproveProposal(corruptBeforeApply.Id, "smoke");
-            data.ExecuteSql(
-                $"UPDATE {PromptGovernanceStore.TableProposals} SET proposed_text='????' WHERE id='{corruptBeforeApply.Id}'");
-            Throws<InvalidOperationException>(
-                () => store.ApplyProposal(corruptBeforeApply.Id, "smoke"),
-                "legacy corrupted proposal rejected during apply");
-            store.RejectProposal(corruptBeforeApply.Id, "smoke", "encoding damage");
-
             var proposed = await bus.ExecuteAsync(
                 "prompt.propose name=proj.list text=\"reviewed description\" reason=smoke", "MCP:smoke");
             True(proposed.Success && proposed.Data is PromptProposal, "proposal created");
@@ -250,7 +212,7 @@ internal static class PromptGovernanceSuite
             True(!(await bus.ExecuteAsync("command.manual file=../outside.md apply=false", "UI")).Success,
                 "command manual rejects boundary escape");
 
-            var port = Random.Shared.Next(20000, 50000);
+            var port = FreePort();
             settings.Set(McpGateway.KeyPort, port.ToString());
             var started = gateway.TryAutostart();
             True(started.Success && gateway.IsRunning, $"gateway autostart: {started.Message}");
@@ -432,9 +394,17 @@ internal static class PromptGovernanceSuite
         finally
         {
             log?.Dispose();
-            SqliteConnection.ClearAllPools();
             if (Directory.Exists(paths.Root))
                 Directory.Delete(paths.Root, recursive: true);
         }
+    }
+
+    private static int FreePort()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+        return port;
     }
 }

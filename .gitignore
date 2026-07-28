@@ -14,6 +14,9 @@ TestResults/
 *.tmp
 *.log
 z-Package-AppShell/staging/
+stage/ohs-*/
+stage/b-Publish-pre-*/
+b-Publish.__new-*/
 
 # Deployment databases and rollback archives are machine-local recovery assets.
 b-Office/evidence/**/*.db

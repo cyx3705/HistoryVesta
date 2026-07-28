@@ -1,79 +1,65 @@
-﻿using AppShell.Core;
-using AppShell.Core.Mcp;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Text.Json;
 using AppShell.Core.Data;
 using AppShell.Core.Logging;
+using AppShell.Core.Mcp;
 using AppShell.Services.Mcp;
 
 namespace OneHistoryStudio.Git;
 
 /// <summary>
-/// 操作留痕(DT-01)与分支描述(DT-02):
-/// push_history 表记录每次 proj.* 变更类操作(时间/分支/动作/消息/结果/警告数),
-/// branch_notes 表存分支 → 项目描述(proj.note 写入,继承树优先取用)。
-/// 留痕失败只告警不阻断主操作(记录是旁路,不是闸口)。
+/// 操作留痕与分支描述的文件存储：操作和 MCP 留痕使用 JSONL 追加，
+/// 分支描述使用原子替换 JSON。记录失败仍只告警，不阻断主操作。
 /// </summary>
 public sealed class HistoryRecorder : IMcpAuditLog
 {
     public const string TablePushHistory = "push_history";
     public const string TableBranchNotes = "branch_notes";
 
-    private readonly IDataService _data;
-    private readonly IShellLog _log;
-
-    public HistoryRecorder(IDataService data, IShellLog log)
+    private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        _data = data;
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
+    private readonly string _pushPath;
+    private readonly string _notesPath;
+    private readonly IShellLog _log;
+    private readonly McpAuditRecorder _mcp;
+    private readonly object _pushGate = new();
+    private readonly object _notesGate = new();
+
+    public HistoryRecorder(string dataDirectory, IShellLog log)
+    {
+        var state = Path.Combine(dataDirectory, "state");
+        _pushPath = Path.Combine(state, "push-history.jsonl");
+        _notesPath = Path.Combine(state, "branch-notes.json");
         _log = log;
-        try
-        {
-            _data.ExecuteSql(
-                $"""
-                CREATE TABLE IF NOT EXISTS {TablePushHistory} (
-                    id       INTEGER PRIMARY KEY AUTOINCREMENT,
-                    time     TEXT    NOT NULL,
-                    branch   TEXT    NOT NULL,
-                    action   TEXT    NOT NULL,
-                    message  TEXT,
-                    result   TEXT    NOT NULL,
-                    warnings INTEGER NOT NULL DEFAULT 0
-                )
-                """);
-            _data.ExecuteSql(
-                $"""
-                CREATE TABLE IF NOT EXISTS {TableBranchNotes} (
-                    branch  TEXT PRIMARY KEY,
-                    note    TEXT NOT NULL,
-                    updated TEXT NOT NULL
-                )
-                """);
-            _data.ExecuteSql(
-                $"""
-                CREATE TABLE IF NOT EXISTS {McpAuditRecorder.TableName} (
-                    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                    time       TEXT    NOT NULL,
-                    client     TEXT    NOT NULL,
-                    tool       TEXT    NOT NULL,
-                    arguments  TEXT,
-                    result     TEXT    NOT NULL,
-                    elapsed_ms INTEGER NOT NULL DEFAULT 0
-                )
-                """);
-        }
-        catch (Exception ex)
-        {
-            _log.Error("history", $"留痕表初始化失败: {ex.Message}");
-        }
+        _mcp = new McpAuditRecorder(dataDirectory, log);
     }
 
-    /// <summary>写一条操作记录;action ∈ create/delete/commit/push/commitall/pushall/repair。</summary>
+    [Obsolete("Use HistoryRecorder(string dataDirectory, IShellLog log).")]
+    public HistoryRecorder(IDataService data, IShellLog log)
+        : this(Path.Combine(Path.GetTempPath(), "OneHistoryStudio.History",
+            RuntimeHelpers.GetHashCode(data).ToString("x")), log)
+    {
+    }
+
     public void Record(string branch, string action, string message, string result, int warnings = 0)
     {
         try
         {
-            _data.ExecuteSql(
-                $"INSERT INTO {TablePushHistory} (time, branch, action, message, result, warnings) VALUES (" +
-                $"'{DateTime.Now:yyyy-MM-dd HH:mm:ss}','{Esc(branch)}','{Esc(action)}'," +
-                $"'{Esc(Truncate(message, 500))}','{Esc(result)}',{warnings})");
+            var row = new PushRow(
+                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), branch, action,
+                SqlText.Truncate(message, 500), result, warnings);
+            var line = JsonSerializer.Serialize(row) + Environment.NewLine;
+            lock (_pushGate)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_pushPath)!);
+                File.AppendAllText(_pushPath, line, new UTF8Encoding(false));
+            }
         }
         catch (Exception ex)
         {
@@ -81,68 +67,56 @@ public sealed class HistoryRecorder : IMcpAuditLog
         }
     }
 
-    /// <summary>MCP 调用留痕(MO-01/MS-05);result ∈ 成功/失败/拒绝/超时。失败只告警不阻断。</summary>
     public void RecordMcp(string client, string tool, string arguments, string result, long elapsedMs)
+        => _mcp.RecordMcp(client, tool, arguments, result, elapsedMs);
+
+    public void SetNote(string branch, string note)
     {
-        try
+        lock (_notesGate)
         {
-            _data.ExecuteSql(
-                $"INSERT INTO {McpAuditRecorder.TableName} (time, client, tool, arguments, result, elapsed_ms) VALUES (" +
-                $"'{DateTime.Now:yyyy-MM-dd HH:mm:ss}','{Esc(Truncate(client, 100))}','{Esc(tool)}'," +
-                $"'{Esc(Truncate(arguments, 500))}','{Esc(result)}',{elapsedMs})");
-        }
-        catch (Exception ex)
-        {
-            _log.Warn("history", $"MCP 留痕写入失败(不影响调用本身): {ex.Message}");
+            var notes = LoadNotes();
+            notes[branch] = new NoteRow(note, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            SaveNotes(notes);
         }
     }
 
-    /// <summary>写/更新分支描述(proj.note)。</summary>
-    public void SetNote(string branch, string note)
-        => _data.ExecuteSql(
-            $"INSERT OR REPLACE INTO {TableBranchNotes} (branch, note, updated) VALUES (" +
-            $"'{Esc(branch)}','{Esc(note)}','{DateTime.Now:yyyy-MM-dd HH:mm:ss}')");
-
-    /// <summary>全部分支描述(继承树覆盖显示用);失败返回空表。</summary>
     public IReadOnlyDictionary<string, string> AllNotes()
     {
-        var notes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        try
+        lock (_notesGate)
         {
-            var (result, _) = _data.ExecuteSql($"SELECT branch, note FROM {TableBranchNotes}");
-            if (result == null)
-                return notes;
-            var bi = IndexOf(result.Columns, "branch");
-            var ni = IndexOf(result.Columns, "note");
-            if (bi < 0 || ni < 0)
-                return notes;
-            foreach (var row in result.Rows)
+            try
             {
-                if (row[bi] is string b && row[ni] is string n && b.Length > 0)
-                    notes[b] = n;
+                return LoadNotes().ToDictionary(item => item.Key, item => item.Value.Note,
+                    StringComparer.OrdinalIgnoreCase);
+            }
+            catch (Exception ex)
+            {
+                _log.Warn("history", $"读取分支描述失败: {ex.Message}");
+                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             }
         }
-        catch (Exception ex)
-        {
-            _log.Warn("history", $"读取分支描述失败: {ex.Message}");
-        }
-
-        return notes;
     }
 
-    private static int IndexOf(IReadOnlyList<string> columns, string name)
+    private Dictionary<string, NoteRow> LoadNotes()
     {
-        for (var i = 0; i < columns.Count; i++)
-        {
-            if (columns[i].Equals(name, StringComparison.OrdinalIgnoreCase))
-                return i;
-        }
-
-        return -1;
+        if (!File.Exists(_notesPath))
+            return new Dictionary<string, NoteRow>(StringComparer.OrdinalIgnoreCase);
+        var stored = JsonSerializer.Deserialize<Dictionary<string, NoteRow>>(
+                         File.ReadAllText(_notesPath), JsonOptions)
+                     ?? new Dictionary<string, NoteRow>();
+        return new Dictionary<string, NoteRow>(stored, StringComparer.OrdinalIgnoreCase);
     }
 
-    // SQL 文本片段统一取用 SqlText(R1);本表时间戳格式 yyyy-MM-dd HH:mm:ss 保持不变
-    private static string Esc(string s) => SqlText.Escape(s);
+    private void SaveNotes(Dictionary<string, NoteRow> notes)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(_notesPath)!);
+        var temp = _notesPath + ".tmp";
+        File.WriteAllText(temp, JsonSerializer.Serialize(notes, JsonOptions), new UTF8Encoding(false));
+        File.Move(temp, _notesPath, overwrite: true);
+    }
 
-    private static string Truncate(string s, int max) => SqlText.Truncate(s, max);
+    private sealed record PushRow(
+        string Time, string Branch, string Action, string Message, string Result, int Warnings);
+
+    private sealed record NoteRow(string Note, string Updated);
 }

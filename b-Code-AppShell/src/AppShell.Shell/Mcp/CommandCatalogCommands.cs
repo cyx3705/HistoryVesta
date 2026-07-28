@@ -98,7 +98,7 @@ public static class CommandCatalogCommands
                 descriptor.Parameters.Count,
                 sourceName,
                 sourceDetail,
-                descriptor.ConfirmPrompt != null,
+                descriptor.IsDangerous,
                 descriptor.RequiresUiThread,
                 tool?.ToolName,
                 McpExposurePolicy.State(descriptor),

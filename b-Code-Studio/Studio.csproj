@@ -10,8 +10,6 @@
     <AssemblyName>OneHistoryStudio</AssemblyName>
     <Product>OneHistoryStudio</Product>
     <Title>OneHistoryStudio</Title>
-    <Version>$(OneHistoryStudioVersion)</Version>
-    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <!-- Studio.csproj 位于组件根；嵌套测试由 Smoke.csproj 独立编译。 -->
     <DefaultItemExcludes>$(DefaultItemExcludes);tests\**</DefaultItemExcludes>
     <!-- N-01:每显示器 DPI 感知(Per-Monitor V2) -->

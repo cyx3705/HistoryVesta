@@ -30,6 +30,28 @@ public sealed class CommandBus
 
     public CommandRegistry Registry => _registry;
 
+    /// <summary>
+    /// Validates a command text against the current registry without routing, logging, confirmation, or execution.
+    /// UI surfaces use this to reject stale menu references at construction time.
+    /// </summary>
+    public string? Validate(string text)
+    {
+        ParsedCommand parsed;
+        try
+        {
+            parsed = CommandParser.Parse(text);
+        }
+        catch (CommandSyntaxException ex)
+        {
+            return $"语法错误: {ex.Message}";
+        }
+
+        if (!_registry.TryGet(parsed.Name, out var descriptor))
+            return $"未知指令: {parsed.Name}";
+
+        return BindArguments(descriptor, parsed, out _);
+    }
+
     /// <summary>二次确认通道;未注入时带确认位的指令一律拒绝执行(安全缺省)。</summary>
     public IConfirmationService? Confirmation { get; set; }
 

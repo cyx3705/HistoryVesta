@@ -71,7 +71,7 @@ public sealed class DockingHost : IDockingService
             _descriptors.Add(d);
             _byId.Add(d.Id, d);
             _owners[d.Id] = "framework";
-            _ratios[d.Id] = d.DefaultRatio;
+            _ratios[d.Id] = NormalizeRatio(d.DefaultRatio, 0.25);
         }
 
         // W-10:拖拽类连续手势在动作结束时才生成指令 —— 用去抖合并布局事件
@@ -290,7 +290,7 @@ public sealed class DockingHost : IDockingService
             CurrentLayoutName = "默认";
             _seedRatiosFromLayout = false;
             foreach (var d in _descriptors)
-                _ratios[d.Id] = d.DefaultRatio;
+                _ratios[d.Id] = NormalizeRatio(d.DefaultRatio, 0.25);
         }
 
         ScheduleReapplyRatios();
@@ -500,7 +500,7 @@ public sealed class DockingHost : IDockingService
 
         if (bySide.TryGetValue(DockSide.Left, out var lefts))
         {
-            leftRatio = lefts.Max(d => d.DefaultRatio);
+            leftRatio = lefts.Max(d => NormalizeRatio(d.DefaultRatio, 0.25));
             var pane = MakeSidePane(lefts);
             pane.DockWidth = Star(leftRatio);
             rootPanel.Children.Insert(0, pane);
@@ -508,7 +508,7 @@ public sealed class DockingHost : IDockingService
 
         if (bySide.TryGetValue(DockSide.Right, out var rights))
         {
-            rightRatio = rights.Max(d => d.DefaultRatio);
+            rightRatio = rights.Max(d => NormalizeRatio(d.DefaultRatio, 0.25));
             var pane = MakeSidePane(rights);
             pane.DockWidth = Star(rightRatio);
             rootPanel.Children.Add(pane);
@@ -516,7 +516,7 @@ public sealed class DockingHost : IDockingService
 
         if (bySide.TryGetValue(DockSide.Top, out var tops))
         {
-            topRatio = tops.Max(d => d.DefaultRatio);
+            topRatio = tops.Max(d => NormalizeRatio(d.DefaultRatio, 0.25));
             var pane = MakeSidePane(tops);
             pane.DockHeight = Star(topRatio);
             centerColumn.Children.Insert(0, pane);
@@ -524,14 +524,14 @@ public sealed class DockingHost : IDockingService
 
         if (bySide.TryGetValue(DockSide.Bottom, out var bottoms))
         {
-            bottomRatio = bottoms.Max(d => d.DefaultRatio);
+            bottomRatio = bottoms.Max(d => NormalizeRatio(d.DefaultRatio, 0.25));
             var pane = MakeSidePane(bottoms);
             pane.DockHeight = Star(bottomRatio);
             centerColumn.Children.Add(pane);
         }
 
-        centerColumn.DockWidth = Star(1 - leftRatio - rightRatio);
-        docPane.DockHeight = Star(1 - topRatio - bottomRatio);
+        centerColumn.DockWidth = Star(Math.Max(1 - leftRatio - rightRatio, 0.1));
+        docPane.DockHeight = Star(Math.Max(1 - topRatio - bottomRatio, 0.1));
 
         // 第二遍:并入标签组的窗口(DefaultSide = Tab)
         foreach (var d in _descriptors.Where(d => d.DefaultSide == DockSide.Tab))
@@ -545,7 +545,10 @@ public sealed class DockingHost : IDockingService
             else
             {
                 _log.Warn(LayoutSource, $"窗口 {d.Id} 的默认标签组目标 {d.DefaultTabTarget ?? "(空)"} 不存在,改为右侧停靠");
-                var pane = new LayoutAnchorablePane(a) { DockWidth = Star(d.DefaultRatio) };
+                var pane = new LayoutAnchorablePane(a)
+                {
+                    DockWidth = Star(NormalizeRatio(d.DefaultRatio, 0.25)),
+                };
                 rootPanel.Children.Add(pane);
             }
         }
@@ -559,6 +562,12 @@ public sealed class DockingHost : IDockingService
 
     private string SerializeLayout()
     {
+        // A close/save can race the 500 ms gesture debounce. Enforce the central-background
+        // invariant synchronously so an illegal document drop is never persisted.
+        RepairDocumentPaneDocking();
+        if (!LayoutHasBackground())
+            throw new InvalidOperationException("布局中必须且只能存在一个空中央背景区");
+
         using var writer = new StringWriter();
         new XmlLayoutSerializer(_manager).Serialize(writer);
         return writer.ToString();
@@ -575,8 +584,12 @@ public sealed class DockingHost : IDockingService
                 // V0.7.2 no longer has documents/work pages. Drop legacy nodes on restore.
                 e.Cancel = true;
             }
-            else if (contentId != null && _byId.TryGetValue(contentId, out var d))
+            else if (e.Model is LayoutAnchorable anchorable &&
+                     contentId != null && _byId.TryGetValue(contentId, out var d))
             {
+                // AvalonDock defaults this to true. The unified tool-window model keeps the
+                // central document pane empty, including when an older XML layout is restored.
+                anchorable.CanDockAsTabbedDocument = false;
                 e.Content = GetOrCreateContent(d);
             }
             else
@@ -588,6 +601,7 @@ public sealed class DockingHost : IDockingService
 
         using var reader = new StringReader(xml);
         serializer.Deserialize(reader);
+        RepairDocumentPaneDocking();
     }
 
     /// <summary>布局加载后补齐缺失的已注册窗口(旧布局文件兼容)。</summary>
@@ -607,7 +621,10 @@ public sealed class DockingHost : IDockingService
     }
 
     private bool LayoutHasBackground()
-        => _manager.Layout.Descendents().OfType<LayoutDocumentPane>().Any();
+    {
+        var panes = _manager.Layout.Descendents().OfType<LayoutDocumentPane>().ToList();
+        return panes.Count == 1 && panes[0].ChildrenCount == 0;
+    }
 
     private LayoutAnchorable CreateAnchorable(ToolWindowDescriptor d) => new()
     {
@@ -619,6 +636,7 @@ public sealed class DockingHost : IDockingService
         CanHide = true,
         CanAutoHide = true,
         CanFloat = true,
+        CanDockAsTabbedDocument = false,
     };
 
     private object GetOrCreateContent(ToolWindowDescriptor d)
@@ -705,6 +723,10 @@ public sealed class DockingHost : IDockingService
     private void PlaceAtSide(LayoutAnchorable a, DockSide side, double ratio, string? targetId)
     {
         var root = _manager.Layout;
+        var fallbackRatio = a.ContentId != null && _byId.TryGetValue(a.ContentId, out var descriptor)
+            ? descriptor.DefaultRatio
+            : 0.25;
+        ratio = NormalizeRatio(ratio, fallbackRatio);
         Detach(a);
 
         if (side == DockSide.Tab)
@@ -778,6 +800,113 @@ public sealed class DockingHost : IDockingService
         => rootPanel.Children.FirstOrDefault(c =>
             c is LayoutDocumentPane ||
             c.Descendents().OfType<LayoutDocumentPane>().Any());
+
+    /// <summary>
+    /// Defect-era layouts may contain tool windows inside the central document pane. Move them
+    /// back to their pre-gesture positions (or descriptor defaults during startup recovery) so
+    /// the bad tree cannot survive another session without discarding the user's custom layout.
+    /// </summary>
+    private int RepairDocumentPaneDocking()
+    {
+        var misplaced = _descriptors
+            .Select(descriptor => (
+                Descriptor: descriptor,
+                Anchorable: FindAnchorable(descriptor.Id),
+                Recovery: ResolveDocumentRecoveryPlacement(descriptor)))
+            .Where(item => item.Anchorable != null && IsHostedInDocumentPane(item.Anchorable))
+            // Restore standalone panes before tab members so custom tab targets exist again.
+            .OrderBy(item => item.Recovery.Side == DockSide.Tab)
+            .ToList();
+        if (misplaced.Count == 0)
+            return 0;
+
+        using (Suppress())
+        {
+            foreach (var (_, anchorable, recovery) in misplaced)
+            {
+                if (recovery.Floating)
+                    anchorable!.Float();
+                else
+                    PlaceAtSide(anchorable!, recovery.Side, recovery.Ratio, recovery.TabTarget);
+            }
+
+            var rootPanel = _manager.Layout.RootPanel;
+            var center = FindCenterChild(rootPanel);
+            if (center != null)
+            {
+                SetDockLength(center, rootPanel.Orientation == Orientation.Horizontal, Star(1));
+                if (center is LayoutPanel column)
+                {
+                    var background = column.Children.FirstOrDefault(child =>
+                        child is LayoutDocumentPane ||
+                        child.Descendents().OfType<LayoutDocumentPane>().Any());
+                    if (background != null)
+                        SetDockLength(background, column.Orientation == Orientation.Horizontal, Star(1));
+                }
+            }
+
+            _manager.Layout.CollectGarbage();
+        }
+
+        _log.Warn(
+            LayoutSource,
+            $"检测到 {misplaced.Count} 个工具窗口误入中央背景区，已按拖放前布局或当前默认布局自动迁回");
+        return misplaced.Count;
+    }
+
+    private DocumentRecoveryPlacement ResolveDocumentRecoveryPlacement(ToolWindowDescriptor descriptor)
+    {
+        if (_baseline.TryGetValue(descriptor.Id, out var previous) && previous.Visible)
+        {
+            if (previous.Floating)
+            {
+                return new DocumentRecoveryPlacement(
+                    true,
+                    descriptor.DefaultSide,
+                    NormalizeRatio(descriptor.DefaultRatio, 0.25),
+                    descriptor.DefaultTabTarget);
+            }
+
+            if (previous.Side is { } previousSide)
+            {
+                var ratio = previous.Ratio > 0
+                    ? previous.Ratio
+                    : _ratios.GetValueOrDefault(
+                        descriptor.Id,
+                        NormalizeRatio(descriptor.DefaultRatio, 0.25));
+                return new DocumentRecoveryPlacement(
+                    false,
+                    previous.TabTarget != null ? DockSide.Tab : previousSide,
+                    ratio,
+                    previous.TabTarget);
+            }
+        }
+
+        return new DocumentRecoveryPlacement(
+            false,
+            descriptor.DefaultSide,
+            NormalizeRatio(descriptor.DefaultRatio, 0.25),
+            descriptor.DefaultTabTarget);
+    }
+
+    private sealed record DocumentRecoveryPlacement(
+        bool Floating,
+        DockSide Side,
+        double Ratio,
+        string? TabTarget);
+
+    private static bool IsHostedInDocumentPane(LayoutAnchorable anchorable)
+    {
+        for (ILayoutContainer? parent = anchorable.Parent;
+             parent != null;
+             parent = (parent as ILayoutElement)?.Parent)
+        {
+            if (parent is LayoutDocumentPane)
+                return true;
+        }
+
+        return false;
+    }
 
     private void Detach(LayoutAnchorable a)
     {
@@ -918,11 +1047,16 @@ public sealed class DockingHost : IDockingService
             return new WinState(true, true, null, null, 0);
 
         var side = DetectSide(a);
-        var tabTarget = side == null
+        var tabLeader = side == null
             ? null
             : (a.Parent as LayoutAnchorablePane)?.Children
-                .FirstOrDefault(c => !ReferenceEquals(c, a) && c.ContentId != null && _byId.ContainsKey(c.ContentId))
-                ?.ContentId;
+                .FirstOrDefault(c => c.ContentId != null && _byId.ContainsKey(c.ContentId));
+        // Normalize a tab group as one leader plus followers. Returning an arbitrary sibling for
+        // every member creates circular targets (A -> B and B -> A), which cannot be replayed or
+        // used as a stable pre-gesture recovery snapshot.
+        var tabTarget = tabLeader == null || ReferenceEquals(tabLeader, a)
+            ? null
+            : tabLeader.ContentId;
 
         return new WinState(true, false, side, tabTarget, DetectRatio(a, side));
     }
@@ -967,6 +1101,8 @@ public sealed class DockingHost : IDockingService
                 c is LayoutDocumentPane || c.Descendents().OfType<LayoutDocumentPane>().Any());
             if (inner == null || innerDoc == null)
                 return null;
+            if (ReferenceEquals(inner, innerDoc))
+                return null;
 
             var i = column.Children.IndexOf(inner);
             var c = column.Children.IndexOf(innerDoc);
@@ -994,7 +1130,8 @@ public sealed class DockingHost : IDockingService
         var ratio = side is DockSide.Left or DockSide.Right
             ? fe.ActualWidth / _manager.ActualWidth
             : fe.ActualHeight / _manager.ActualHeight;
-        return Math.Round(ratio, 2);
+        ratio = Math.Round(ratio, 2);
+        return double.IsFinite(ratio) && ratio is > 0 and < 1 ? ratio : 0;
     }
 
     private static ILayoutPanelElement? ChildContaining(LayoutPanel panel, ILayoutElement element)
@@ -1061,6 +1198,14 @@ public sealed class DockingHost : IDockingService
     {
         if (_suppress > 0)
             return;
+
+        // This should be prevented by CanDockAsTabbedDocument=false. Keep runtime self-healing
+        // for layout API callers and future docking-library behavior changes.
+        if (RepairDocumentPaneDocking() > 0)
+        {
+            RebaseSoon();
+            return;
+        }
 
         var now = ComputeAllStates();
         foreach (var d in _descriptors)
@@ -1190,6 +1335,13 @@ public sealed class DockingHost : IDockingService
         DockSide.Bottom => "bottom",
         _ => "tab",
     };
+
+    private static double NormalizeRatio(double ratio, double fallback)
+    {
+        if (double.IsFinite(ratio) && ratio is > 0 and < 1)
+            return ratio;
+        return double.IsFinite(fallback) && fallback is > 0 and < 1 ? fallback : 0.25;
+    }
 
     private static string FormatRatio(double value)
         => value.ToString("0.##", CultureInfo.InvariantCulture);

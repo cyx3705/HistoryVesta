@@ -1,5 +1,5 @@
 param(
-    [string]$Version = "2.7.3",
+    [string]$Version,
     [switch]$Publish
 )
 
@@ -9,11 +9,38 @@ Set-StrictMode -Version Latest
 $ComponentRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $RepoRoot = [IO.Path]::GetFullPath((Join-Path $ComponentRoot ".."))
 $DeliveryRoot = Join-Path $RepoRoot "z-Package-AppShell"
-$StageRoot = [IO.Path]::GetFullPath((Join-Path $DeliveryRoot "staging\$Version"))
 
-if ($Version -ne "2.7.3") {
-    throw "This release branch is pinned to AppShell 2.7.3; requested $Version"
+function Get-AppShellVersionProperties {
+    $project = Join-Path $ComponentRoot "src\App\App.csproj"
+    $output = & dotnet msbuild $project -nologo `
+        -getProperty:AppShellVersion -getProperty:FileVersion
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to evaluate the AppShell version source"
+    }
+
+    try {
+        return (($output -join "`n") | ConvertFrom-Json).Properties
+    }
+    catch {
+        throw "AppShell version evaluation returned invalid JSON: $($output -join ' ')"
+    }
 }
+
+$VersionProperties = Get-AppShellVersionProperties
+$SourceVersion = [string]$VersionProperties.AppShellVersion
+$ExpectedFileVersion = [string]$VersionProperties.FileVersion
+if ([string]::IsNullOrWhiteSpace($SourceVersion) -or
+    [string]::IsNullOrWhiteSpace($ExpectedFileVersion)) {
+    throw "AppShellVersion or FileVersion evaluated to an empty value"
+}
+if ([string]::IsNullOrWhiteSpace($Version)) {
+    $Version = $SourceVersion
+}
+elseif ($Version -ne $SourceVersion) {
+    throw "AppShellVersion.props declares $SourceVersion; requested $Version"
+}
+
+$StageRoot = [IO.Path]::GetFullPath((Join-Path $DeliveryRoot "staging\$Version"))
 if (-not $StageRoot.StartsWith([IO.Path]::GetFullPath($DeliveryRoot), [StringComparison]::OrdinalIgnoreCase)) {
     throw "Staging path escaped the delivery root: $StageRoot"
 }
@@ -45,9 +72,31 @@ function Publish-ImmutableFile {
     Move-Item -LiteralPath $temporary -Destination $Destination
 }
 
+$mutexInput = [Text.Encoding]::UTF8.GetBytes($ComponentRoot.ToUpperInvariant())
+$sha256 = [Security.Cryptography.SHA256]::Create()
+try {
+    $mutexHash = (($sha256.ComputeHash($mutexInput) | ForEach-Object { $_.ToString("X2") }) -join "").Substring(0, 16)
+}
+finally {
+    $sha256.Dispose()
+}
+$publishMutex = [Threading.Mutex]::new($false, "Local\OneHistory.AppShell.Publish.$mutexHash")
+$mutexAcquired = $false
+try {
+    $mutexAcquired = $publishMutex.WaitOne(0)
+}
+catch [Threading.AbandonedMutexException] {
+    $mutexAcquired = $true
+}
+if (-not $mutexAcquired) {
+    $publishMutex.Dispose()
+    throw "Another AppShell publish is already running for $ComponentRoot"
+}
+
 Push-Location $ComponentRoot
 $PreviousNugetPackages = $env:NUGET_PACKAGES
 $NugetCache = Join-Path ([IO.Path]::GetTempPath()) ("appshell-release-cache-" + [Guid]::NewGuid().ToString("N"))
+$PipelineSucceeded = $false
 try {
     if (Test-Path -LiteralPath $StageRoot) {
         & dotnet build-server shutdown | Out-Null
@@ -170,8 +219,8 @@ try {
     $demoExe = Join-Path $DemoDir "AppShell.exe"
     Assert-File $demoExe
     $demoVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($demoExe).FileVersion
-    if ($demoVersion -ne "2.7.3.0") {
-        throw "Demo file version is $demoVersion, expected 2.7.3.0"
+    if ($demoVersion -ne $ExpectedFileVersion) {
+        throw "Demo file version is $demoVersion, expected $ExpectedFileVersion"
     }
 
     $demoZip = Join-Path $PackagesDir "AppShell-Demo-$Version-win-x64-framework-dependent.zip"
@@ -221,12 +270,27 @@ try {
     else {
         Write-Host "Staged AppShell $Version at $StageRoot"
     }
+    $PipelineSucceeded = $true
 }
 finally {
     & dotnet build-server shutdown | Out-Null
     $env:NUGET_PACKAGES = $PreviousNugetPackages
+    $workspaceRestoreOutput = & dotnet restore AppShell.sln --locked-mode --force-evaluate 2>&1
+    $workspaceRestoreExitCode = $LASTEXITCODE
     if (Test-Path -LiteralPath $NugetCache) {
         Remove-Item -LiteralPath $NugetCache -Recurse -Force -ErrorAction SilentlyContinue
     }
     Pop-Location
+    if ($mutexAcquired) {
+        $publishMutex.ReleaseMutex()
+    }
+    $publishMutex.Dispose()
+    if ($workspaceRestoreExitCode -ne 0) {
+        $message = "Failed to restore the workspace NuGet asset graph after isolated packaging: " +
+            ($workspaceRestoreOutput -join " ")
+        if ($PipelineSucceeded) {
+            throw $message
+        }
+        Write-Warning $message
+    }
 }

@@ -2,49 +2,13 @@
   "version": 2,
   "dependencies": {
     "net8.0-windows7.0": {
-      "Microsoft.Data.Sqlite.Core": {
-        "type": "Transitive",
-        "resolved": "8.0.29",
-        "contentHash": "B/7Z0la03kNVdmZtgSN/PocA2nsPiVUq56iCh25oW8W31Yzg1ofrMWy79i0DcDOXuHjy7+jlsUlSNytwe9Et5A==",
-        "dependencies": {
-          "SQLitePCLRaw.core": "2.1.6"
-        }
-      },
-      "SourceGear.sqlite3": {
-        "type": "Transitive",
-        "resolved": "3.53.3",
-        "contentHash": "PaDT7JwQ00HmXZT1xSGSC0c24A5lVpJYHMrXBuJATdpB2t0nf4Kq9HyPaZhxVW0elPq4XI1s5BLh7qLuObmzFA=="
-      },
-      "SQLitePCLRaw.config.e_sqlite3": {
-        "type": "Transitive",
-        "resolved": "3.0.4",
-        "contentHash": "W2HMmjAZ1v27fbyzZtONCdC8Ma/tTr5wLAIr4Iq7T4oKrYaI4occJ5TBhSdK4pltwBJLQBG5DcQMz+/w9X4bbg==",
-        "dependencies": {
-          "SQLitePCLRaw.provider.e_sqlite3": "3.0.4"
-        }
-      },
-      "SQLitePCLRaw.core": {
-        "type": "Transitive",
-        "resolved": "3.0.4",
-        "contentHash": "cOjxfdjE4zQDvDVDUBfucKGXEaYos4l4l+TVwePJEHp/nl9fkgBz/lIVgfMH5dOyKRmNi6RsptUGtZsvsD7iYQ=="
-      },
-      "SQLitePCLRaw.provider.e_sqlite3": {
-        "type": "Transitive",
-        "resolved": "3.0.4",
-        "contentHash": "L4uiEKeRSXxppkGE4iSpgBgC5lNvw2zEN/hAaxTecUS1+DhC6UEFhHaakSYYvnFq7x16B7DQcaXgXy0SkhSwnw==",
-        "dependencies": {
-          "SQLitePCLRaw.core": "3.0.4"
-        }
-      },
       "OneHistory.AppShell.Core": {
         "type": "Project"
       },
       "OneHistory.AppShell.Services": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Data.Sqlite": "[8.0.29, )",
-          "OneHistory.AppShell.Core": "[2.7.3, )",
-          "SQLitePCLRaw.bundle_e_sqlite3": "[3.0.4, )"
+          "OneHistory.AppShell.Core": "[2.7.5, )"
         }
       },
       "OneHistory.AppShell.Shell": {
@@ -52,8 +16,8 @@
         "dependencies": {
           "Dirkster.AvalonDock": "[4.72.1, )",
           "Dirkster.AvalonDock.Themes.VS2013": "[4.72.1, )",
-          "OneHistory.AppShell.Core": "[2.7.3, )",
-          "OneHistory.AppShell.Services": "[2.7.3, )"
+          "OneHistory.AppShell.Core": "[2.7.5, )",
+          "OneHistory.AppShell.Services": "[2.7.5, )"
         }
       },
       "Dirkster.AvalonDock": {
@@ -70,34 +34,8 @@
         "dependencies": {
           "Dirkster.AvalonDock": "4.72.1"
         }
-      },
-      "Microsoft.Data.Sqlite": {
-        "type": "CentralTransitive",
-        "requested": "[8.0.29, )",
-        "resolved": "8.0.29",
-        "contentHash": "UT01MJBITsT5CFLK9bhYWjz847BHlC2em7nhBNCCSYsI72mIzrXHfrQT8R+huQKJGZo94/a9GWGzKPn7mmlMyw==",
-        "dependencies": {
-          "Microsoft.Data.Sqlite.Core": "8.0.29",
-          "SQLitePCLRaw.bundle_e_sqlite3": "2.1.6"
-        }
-      },
-      "SQLitePCLRaw.bundle_e_sqlite3": {
-        "type": "CentralTransitive",
-        "requested": "[3.0.4, )",
-        "resolved": "3.0.4",
-        "contentHash": "gg8vENKV/o0pWLI0eJxnTA4X9e63rOvzkCDMAOePDGLieNSHPCGUiJ4CQDqDyNqIf6IPVzD4TOjqY5ACygZkkA==",
-        "dependencies": {
-          "SQLitePCLRaw.config.e_sqlite3": "3.0.4",
-          "SourceGear.sqlite3": "3.53.3"
-        }
       }
     },
-    "net8.0-windows7.0/win-x64": {
-      "SourceGear.sqlite3": {
-        "type": "Transitive",
-        "resolved": "3.53.3",
-        "contentHash": "PaDT7JwQ00HmXZT1xSGSC0c24A5lVpJYHMrXBuJATdpB2t0nf4Kq9HyPaZhxVW0elPq4XI1s5BLh7qLuObmzFA=="
-      }
-    }
+    "net8.0-windows7.0/win-x64": {}
   }
 }

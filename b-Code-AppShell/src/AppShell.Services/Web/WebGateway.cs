@@ -16,6 +16,7 @@ namespace AppShell.Services.Web;
 /// <summary>命令总线的 HTTP/WS 接入点，供本机 Shell 与受鉴权 Web 客户端共用。</summary>
 public sealed class WebGateway : IDisposable
 {
+    private const string LanProtocolVersion = "2.7.3";
     public const string KeyPort = "web.port";
     public const string KeyBind = "web.bind";
     public const string KeyToken = "web.token";
@@ -330,8 +331,8 @@ public sealed class WebGateway : IDisposable
                     shells = ConnectedShells,
                     serverId = ServerId,
                     productVersion = AppIdentity.Current.Version,
-                    appShellProtocolVersion = "2.7.3",
-                    minClientVersion = "2.7.3",
+                    appShellProtocolVersion = LanProtocolVersion,
+                    minClientVersion = LanProtocolVersion,
                     capabilities = new[] { "device-auth", "session-affine-ui", "single-exe" },
                 }, 200).ConfigureAwait(false);
                 return;
@@ -356,7 +357,7 @@ public sealed class WebGateway : IDisposable
                     descriptor.Example,
                     source = bus.Registry.GetSource(descriptor.Name),
                     descriptor.Readonly,
-                    dangerous = descriptor.ConfirmPrompt != null,
+                    dangerous = descriptor.IsDangerous,
                     executionSite = descriptor.ExecutionSite.ToString(),
                     mcpState = McpExposurePolicy.State(descriptor),
                     inputSchema = schemas.GetValueOrDefault(descriptor.Name)?.InputSchema,

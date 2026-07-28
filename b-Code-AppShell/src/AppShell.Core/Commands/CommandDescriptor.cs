@@ -24,6 +24,15 @@ public sealed class CommandDescriptor
     public bool SupportsUndo { get; init; }
 
     /// <summary>
+    /// 代理描述符无法序列化原始确认函数时保留危险性元数据。
+    /// 本地执行仍只由 <see cref="ConfirmPrompt"/> 触发确认；目录、MCP 与文档读取本合成属性。
+    /// </summary>
+    public bool Dangerous { get; init; }
+
+    /// <summary>命令是否具有危险性元数据或本地确认闸口。</summary>
+    public bool IsDangerous => Dangerous || ConfirmPrompt != null;
+
+    /// <summary>
     /// 只读声明：命令不改变持久状态（不写库、文件或 Git 状态）。
     /// MCP 暴露策略优先读取此字段；外部名称白名单仅保留为兼容层。
     /// </summary>

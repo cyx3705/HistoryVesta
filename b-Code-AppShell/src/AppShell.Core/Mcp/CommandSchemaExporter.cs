@@ -75,7 +75,7 @@ public sealed partial class CommandSchemaExporter
                 descriptor.Name,
                 customized ? custom! : defaultDescription,
                 BuildInputSchema(descriptor),
-                Dangerous: descriptor.ConfirmPrompt != null,
+                Dangerous: descriptor.IsDangerous,
                 DefaultDescription: defaultDescription,
                 Customized: customized));
         }

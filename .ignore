@@ -1,0 +1,4 @@
+# V-version records stay in the repository but are excluded from default rg searches.
+# Positive rg --glob rules override ignore files; AGENTS.md requires an explicit negative glob.
+b-Office/versions/**
+!b-Office/versions/README.md

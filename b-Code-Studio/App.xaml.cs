@@ -83,12 +83,10 @@ public partial class App : Application
         }
         var projectSelection = new Views.ProjectSelectionState();
         var commandSelection = new CommandSelectionState();
-        var remoteData = new RemoteDataService(_serviceClient);
         var config = new ShellConfig
         {
             AppName = identity.Name,
             AppVersion = identity.Version,
-            DataService = remoteData,
             Workspace = workspace,
             Identity = identity,
             CommandSelection = commandSelection,
@@ -181,16 +179,15 @@ public partial class App : Application
             ("tree", "继承树", DockSide.Tab, "overview", 0.55, () => new Views.BranchTreeView(busAccessor, projectSelection)),
             // mcp / commanddetail / modules 窗口内容自 0.4.4 起由框架 TakeOverDescriptor 注入(工厂 null);
             // 这里仅声明它们在本应用的停靠位,框架保留该布局。
-            ("mcp", "命令集", DockSide.Tab, "overview", 0.55, null),
-            ("commanddetail", "指令详情", DockSide.Right, null, 0.32, null),
-            ("modules", "模块管理", DockSide.Tab, "overview", 0.55, null),
+            (StandardWindowIds.Mcp, "命令集", DockSide.Tab, "overview", 0.55, null),
+            (StandardWindowIds.CommandDetail, "指令详情", DockSide.Right, null, 0.32, null),
+            (StandardWindowIds.Modules, "模块管理", DockSide.Tab, "overview", 0.55, null),
             ("meta", "Meta文件", DockSide.Tab, "overview", 0.55, () => new Views.MetaView(busAccessor)),
             ("projops", "项目操作", DockSide.Right, null, 0.28, () => new Views.ProjectOperationsView(busAccessor, projectSelection)),
             ("history", "分支历史", DockSide.Left, null, 0.26,
                 () => new Views.BranchHistoryView(busAccessor, projectSelection, isProtected)),
-            ("resource", "资源窗口", DockSide.Left, null, 0.18, null),
-            ("table", "表窗口", DockSide.Bottom, null, 0.28, null),
-            ("console", "控制台", DockSide.Tab, "table", 0.28, null),
+            (StandardWindowIds.Resource, "资源窗口", DockSide.Left, null, 0.18, null),
+            (StandardWindowIds.Console, "控制台", DockSide.Bottom, null, 0.28, null),
             ("github.account", "GitHub 账号", DockSide.Right, null, 0.38,
                 () => new Views.GitHubAccountView(busAccessor)),
             ("connection.settings", "连接与端口", DockSide.Right, null, 0.38,

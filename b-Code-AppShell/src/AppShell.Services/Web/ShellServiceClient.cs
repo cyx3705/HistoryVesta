@@ -18,12 +18,14 @@ public sealed class ShellServiceClient : IDisposable
     };
 
     private readonly HttpClient _http;
+    private readonly HttpClientHandler _httpHandler;
     private readonly Uri _baseUri;
     private readonly ShellEndpointProfile _profile;
     private readonly string _name;
     private readonly string _sessionId = Guid.NewGuid().ToString("N");
     private readonly CancellationTokenSource _lifetime = new();
     private ClientWebSocket? _events;
+    private int _disposed;
 
     public Func<string, JsonElement, object?>? DataDeserializer { get; set; }
 
@@ -41,19 +43,8 @@ public sealed class ShellServiceClient : IDisposable
         _profile = profile;
         _baseUri = profile.BaseUri;
         _name = name;
-        var handler = new HttpClientHandler();
-        if (_baseUri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
-        {
-            handler.ServerCertificateCustomValidationCallback = (_, certificate, _, errors) =>
-            {
-                var hasPin = ShellEndpointProfile.NormalizeFingerprint(
-                    profile.CertificateFingerprint).Length > 0;
-                return hasPin
-                    ? profile.ValidateCertificate(certificate == null ? null : new(certificate))
-                    : errors == System.Net.Security.SslPolicyErrors.None && profile.BaseUri.IsLoopback;
-            };
-        }
-        _http = new HttpClient(handler)
+        _httpHandler = CreateHttpHandler(profile);
+        _http = new HttpClient(_httpHandler, disposeHandler: false)
         {
             BaseAddress = _baseUri,
             Timeout = TimeSpan.FromSeconds(30),
@@ -62,6 +53,23 @@ public sealed class ShellServiceClient : IDisposable
         _http.DefaultRequestHeaders.Add("X-Client-Name", name);
         _http.DefaultRequestHeaders.Add("X-Session-Id", _sessionId);
         _http.DefaultRequestHeaders.Add("X-Device-Id", profile.DeviceId);
+    }
+
+    private static HttpClientHandler CreateHttpHandler(ShellEndpointProfile profile)
+    {
+        var handler = new HttpClientHandler();
+        if (!profile.BaseUri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            return handler;
+
+        handler.ServerCertificateCustomValidationCallback = (_, certificate, _, errors) =>
+        {
+            var hasPin = ShellEndpointProfile.NormalizeFingerprint(
+                profile.CertificateFingerprint).Length > 0;
+            return hasPin
+                ? profile.ValidateCertificate(certificate == null ? null : new(certificate))
+                : errors == System.Net.Security.SslPolicyErrors.None && profile.BaseUri.IsLoopback;
+        };
+        return handler;
     }
 
     public async Task<bool> WaitForReadyAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
@@ -202,9 +210,14 @@ public sealed class ShellServiceClient : IDisposable
             .ConfigureAwait(false);
     }
 
-    public Task RunEventLoopAsync(CommandBus localBus, CancellationToken cancellationToken = default)
-        => RunEventLoopCoreAsync(localBus, CancellationTokenSource
-            .CreateLinkedTokenSource(_lifetime.Token, cancellationToken).Token);
+    public async Task RunEventLoopAsync(
+        CommandBus localBus,
+        CancellationToken cancellationToken = default)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+            _lifetime.Token, cancellationToken);
+        await RunEventLoopCoreAsync(localBus, linked.Token).ConfigureAwait(false);
+    }
 
     private async Task RunEventLoopCoreAsync(CommandBus localBus, CancellationToken cancellationToken)
     {
@@ -337,9 +350,13 @@ public sealed class ShellServiceClient : IDisposable
 
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            return;
+
         _lifetime.Cancel();
         _events?.Dispose();
         _http.Dispose();
+        _httpHandler.Dispose();
         _lifetime.Dispose();
     }
 

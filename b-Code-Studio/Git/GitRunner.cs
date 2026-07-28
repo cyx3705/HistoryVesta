@@ -58,8 +58,10 @@ public static class GitRunner
 
             using var process = Process.Start(psi)
                 ?? throw new InvalidOperationException("无法启动 git 进程");
-            var outputTask = process.StandardOutput.ReadToEndAsync();
-            var errorTask = process.StandardError.ReadToEndAsync();
+            // Cancellation is enforced by WaitForExitAsync below, followed by an entire-tree kill.
+            // Keep draining both pipes until the child exits so a full pipe cannot deadlock git.
+            var outputTask = process.StandardOutput.ReadToEndAsync(CancellationToken.None);
+            var errorTask = process.StandardError.ReadToEndAsync(CancellationToken.None);
 
             using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(

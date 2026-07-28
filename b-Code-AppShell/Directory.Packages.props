@@ -1,5 +1,7 @@
 <Project>
 
+  <Import Project="AppShellVersion.props" Condition="'$(AppShellVersion)' == ''" />
+
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
@@ -9,8 +11,8 @@
     <PackageVersion Include="Dirkster.AvalonDock.Themes.VS2013" Version="4.72.1" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="8.0.29" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
-    <PackageVersion Include="OneHistory.AppShell.Shell" Version="2.7.3" />
-    <PackageVersion Include="OneHistory.AppShell.ServiceHost" Version="2.7.3" />
+    <PackageVersion Include="OneHistory.AppShell.Shell" Version="$(AppShellVersion)" />
+    <PackageVersion Include="OneHistory.AppShell.ServiceHost" Version="$(AppShellVersion)" />
     <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.4" />
   </ItemGroup>
 

@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using AppShell.Core.Commands;
 
 namespace OneHistoryStudio.Git;
 
@@ -38,14 +39,12 @@ public static partial class ToolManifestLoader
 {
     public const string FileName = "module.manifest.json";
 
-    /// <summary>内置指令域清单:工具模块名不得与其冲突(冲突在清单层即拒,不等注册期)。</summary>
-    private static readonly HashSet<string> BuiltinDomains = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "app", "win", "db", "res", "panel", "layout", "log", "proj", "module", "mcp",
-        "tool", "command", "prompt", "correction", "incident", "git", "debug",
-        "svc", "web",
-        "help", "history", "cls",
-    };
+    /// <summary>
+    /// 尚未装配注册表时仍需保留的根命令。带点号的内置域必须来自运行时注册表，
+    /// 不再在清单解析器中复制一份域名单。
+    /// </summary>
+    private static readonly IReadOnlySet<string> PermanentBuiltinDomains =
+        new HashSet<string>(["help", "history", "cls"], StringComparer.OrdinalIgnoreCase);
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -62,16 +61,27 @@ public static partial class ToolManifestLoader
     /// 启动期自检：返回注册表已有、但保留清单尚未覆盖的一级指令域。
     /// 调用方应在模块装载前传入内置注册表快照；根命令不构成点号域，故不参与比较。
     /// </summary>
-    public static IReadOnlyList<string> FindUnreservedBuiltinDomains(IEnumerable<string> commandNames)
-        => commandNames
-            .Select(name => name.IndexOf('.') is var dot && dot > 0 ? name[..dot] : null)
-            .Where(domain => domain != null && !BuiltinDomains.Contains(domain))
-            .Select(domain => domain!)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+    public static IReadOnlyList<string> FindUnreservedBuiltinDomains(
+        IEnumerable<string> commandNames,
+        IEnumerable<string>? reservedCommandNames = null)
+    {
+        var reserved = reservedCommandNames == null
+            ? new HashSet<string>(PermanentBuiltinDomains, StringComparer.OrdinalIgnoreCase)
+            : CommandRegistry.DomainsOf(reservedCommandNames)
+                .Union(PermanentBuiltinDomains, StringComparer.OrdinalIgnoreCase)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return CommandRegistry.DomainsOf(commandNames)
+            .Where(domain => !reserved.Contains(domain))
             .OrderBy(domain => domain, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
 
-    public static ToolManifestEntry Load(string manifestPath, string worktreeRoot, string branch)
+    public static ToolManifestEntry Load(
+        string manifestPath,
+        string worktreeRoot,
+        string branch,
+        IEnumerable<string>? reservedCommandNames = null)
     {
         ManifestDto? dto;
         try
@@ -90,7 +100,10 @@ public static partial class ToolManifestLoader
         if (!NamePattern().IsMatch(name))
             return new ToolManifestEntry(null, branch, manifestPath,
                 $"模块名不合法(须 ^[A-Za-z_][A-Za-z0-9_-]{{0,63}}$): {name}");
-        if (BuiltinDomains.Contains(name))
+        var reservedDomains = CommandRegistry.DomainsOf(reservedCommandNames ?? [])
+            .Union(PermanentBuiltinDomains, StringComparer.OrdinalIgnoreCase)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (reservedDomains.Contains(name))
             return new ToolManifestEntry(null, branch, manifestPath, $"模块名与内置指令域冲突: {name}");
 
         if (string.IsNullOrWhiteSpace(dto.Artifact))

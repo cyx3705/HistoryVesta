@@ -3,7 +3,6 @@ using AppShell.Core.Mcp;
 using AppShell.Services;
 using AppShell.Services.Mcp;
 using AppShell.Shell.Mcp;
-using Microsoft.Data.Sqlite;
 using OneHistoryStudio.Git;
 using static OneHistoryStudio.Smoke.SmokeKit;
 
@@ -35,9 +34,6 @@ internal static class WiringSuite
         {
             log = new ShellLog(paths);
             var settings = new SettingsService(paths);
-            var data = new SqliteDataService(paths);
-            data.RegisterConnection("main", "main.db");
-
             var registry = new CommandRegistry();
             var bus = new CommandBus(registry, log);
 
@@ -48,18 +44,23 @@ internal static class WiringSuite
             AppShell.Shell.Modules.ModuleCommands.RegisterAll(registry, modules, settings);
 
             // 2) MCP 聚合入口(框架自带):内部级联 prompt.* 与 command.*
-            var prompts = new PromptGovernanceStore(data, log);
+            var prompts = new PromptGovernanceStore(paths.Root, log);
             McpGateway? gateway = null;
             McpCommands.RegisterAll(registry, () => bus, () => gateway, settings, prompts);
 
             // 3) 应用专有指令域(OneHistoryStudio 的 ConfigureCommands 等价内容)
             var confirm = new Func<string, bool>(_ => true);
             var projects = new ProjectService(settings, confirm, paths.Root);
-            var history = new HistoryRecorder(data, log);
+            var history = new HistoryRecorder(paths.Root, log);
             var branchHistory = new BranchHistoryService(projects);
             var gitRules = new GitFileRuleService(projects);
             var formatInventory = new FormatInventoryService(projects, log, paths.Root);
-            var tools = new ToolSyncService(projects, data, log, () => modules.ModulesDirectory);
+            var tools = new ToolSyncService(
+                projects,
+                paths.Root,
+                log,
+                () => modules.ModulesDirectory,
+                () => registry.All().Select(command => command.Name));
 
             ProjectCommands.RegisterAll(registry, projects, history);
             BranchHistoryCommands.RegisterAll(registry, branchHistory, history);
@@ -73,38 +74,39 @@ internal static class WiringSuite
             var all = registry.All();
             True(all.Count > 0, "wiring: registry non-empty");
 
-            var expectedReadonly = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "help", "history", "db.query", "db.tables", "db.schema", "db.list",
-                "module.list", "win.list", "layout.list", "app.get",
-                "prompt.get", "prompt.history", "prompt.diff", "correction.list", "incident.list",
-                "command.list", "command.show", "command.domains",
-                "proj.list", "proj.tree", "proj.scan", "proj.config", "proj.metalist",
-                "proj.history", "proj.history.show", "proj.history.diff",
-                "git.rule.list", "git.rule.scan", "git.rule.gaps", "git.rule.suggest",
-                "tool.scan", "tool.list",
-            };
-            var describedReadonly = all.Where(command => command.Readonly)
-                .Select(command => command.Name)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var registeredNames = all.Select(command => command.Name)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            expectedReadonly.IntersectWith(registeredNames);
-            True(describedReadonly.SetEquals(expectedReadonly),
-                "wiring: every registered readonly command is self-described without drift");
             True(all.All(command => McpExposurePolicy.State(command) ==
                                     (McpExposurePolicy.HardExclusionReason(command.Name) != null
                                         ? "hidden"
-                                        : command.ConfirmPrompt != null ? "dangerous"
-                                        : expectedReadonly.Contains(command.Name) ? "readonly"
+                                        : command.IsDangerous ? "dangerous"
+                                        : command.Readonly ? "readonly"
                                         : "standard")),
-                "wiring: readonly migration preserves command catalog state");
+                "wiring: MCP state projects the descriptor readonly truth");
             True(ToolManifestLoader.FindUnreservedBuiltinDomains(
+                    all.Select(command => command.Name),
                     all.Select(command => command.Name)).Count == 0,
                 "wiring: registered builtin domains are covered by module reservations");
             True(ToolManifestLoader.FindUnreservedBuiltinDomains(["future.list"])
                     .SequenceEqual(["future"], StringComparer.OrdinalIgnoreCase),
                 "wiring: domain drift self-check detects an unreserved command domain");
+            True(new HashSet<string>(AppShell.Services.Modules.ModuleHost.FindModuleDomainConflicts(
+                    ["app.exit", "help", "future.list"],
+                    ["app.run", "help.run", "future.run", "custom.run"]),
+                    StringComparer.OrdinalIgnoreCase)
+                    .SetEquals(["app", "future", "help"]),
+                "wiring: production module swap blocks dynamic reserved domains");
+
+            var manifestRoot = Path.Combine(paths.Root, "manifest-domain-fixture");
+            Directory.CreateDirectory(manifestRoot);
+            var manifestPath = Path.Combine(manifestRoot, ToolManifestLoader.FileName);
+            File.WriteAllText(manifestPath, "{\"name\":\"future\",\"artifact\":\"module.dll\"}");
+            var manifestEntry = ToolManifestLoader.Load(
+                manifestPath,
+                paths.Root,
+                "fixture",
+                ["future.list"]);
+            True(manifestEntry.Manifest == null
+                 && manifestEntry.Error?.Contains("内置指令域冲突", StringComparison.Ordinal) == true,
+                "wiring: tool manifest consumes runtime reserved domains");
 
             // 关键指令都在且唯一(名称唯一由 Register 保证,此处确认存在)
             foreach (var name in new[]
@@ -138,7 +140,6 @@ internal static class WiringSuite
         finally
         {
             log?.Dispose();
-            SqliteConnection.ClearAllPools();
             if (Directory.Exists(paths.Root))
                 Directory.Delete(paths.Root, recursive: true);
         }

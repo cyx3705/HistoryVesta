@@ -173,11 +173,28 @@ public sealed class ModuleHost : IDisposable
             return;
         }
 
+        // 模块只能占用自己的一级域。先从当前注册表排除旧模块，再用真实命令
+        // 元数据推导宿主保留域，避免维护一份会随功能漂移的名称名单。
+        var reservedCommandNames = _registry.All()
+            .Where(command => !_registry.GetSource(command.Name)
+                .StartsWith("module:", StringComparison.OrdinalIgnoreCase))
+            .Select(command => command.Name);
+        var blockedDomains = FindModuleDomainConflicts(
+            reservedCommandNames,
+            next.PendingCommands.Select(item => item.Descriptor.Name));
+
         foreach (var name in old.RegisteredNames)
             _registry.Unregister(name);
 
         foreach (var (descriptor, moduleName) in next.PendingCommands)
         {
+            var domain = DomainOf(descriptor.Name);
+            if (blockedDomains.Contains(domain))
+            {
+                _log.Warn("module", $"模块 {moduleName} 的指令域 {domain} 与宿主保留域冲突,已拒绝装载");
+                continue;
+            }
+
             try
             {
                 _registry.Register(descriptor, $"module:{moduleName}");
@@ -192,6 +209,31 @@ public sealed class ModuleHost : IDisposable
         }
 
         next.FinalizeMetas();
+    }
+
+    /// <summary>
+    /// 返回候选模块命令中与宿主已有命令域冲突的一级域。
+    /// 该纯函数同时供生产换血路径和 Smoke 回归使用。
+    /// </summary>
+    public static IReadOnlySet<string> FindModuleDomainConflicts(
+        IEnumerable<string> reservedCommandNames,
+        IEnumerable<string> moduleCommandNames)
+    {
+        ArgumentNullException.ThrowIfNull(reservedCommandNames);
+        ArgumentNullException.ThrowIfNull(moduleCommandNames);
+
+        var reserved = CommandRegistry.DomainsOf(reservedCommandNames);
+        var moduleDomains = new HashSet<string>(
+            CommandRegistry.DomainsOf(moduleCommandNames),
+            StringComparer.OrdinalIgnoreCase);
+        moduleDomains.IntersectWith(reserved);
+        return moduleDomains;
+    }
+
+    private static string DomainOf(string commandName)
+    {
+        var dot = commandName.IndexOf('.');
+        return dot > 0 ? commandName[..dot] : commandName;
     }
 
     // ---------------------------------------------------------------- 快照构建

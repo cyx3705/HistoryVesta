@@ -34,7 +34,7 @@ AppShell 也可在 `b-Code-AppShell` 中使用 `AppShell.sln` 独立构建。OHS
 ## 演进规则
 
 - 020 长期承载 OHS V2.x；当前开发基线只来自源码、运行时和 `b-Office/meta`。`b-Office/versions`
-  只暂存当前版本增量，交付时抽入 `meta` 后删除，已交付历史不得成为开发依赖。
+  中的原文可以留存，但由 `AGENTS.md` 和 `.ignore` 排除在 AI 默认读取与检索之外，任何 V 版本历史都不得成为开发依赖。
 - 只有架构代际变化才从 020 创建新项目，例如未来的 OHS V3。
 - AppShell 公共契约变更必须通过框架演示宿主、OHS Smoke 和 GUI 实跑。
 - `bin/obj/.vs` 不入库；正式 Publish 作为当前交付快照保留。

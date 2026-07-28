@@ -71,7 +71,7 @@ public sealed class ShellConfig
     /// MCP 服务(0.4.4 由 OneHistoryStudio 反哺):元数据自描述层、网关、提示词治理,
     /// 注册 mcp.* / command.* / prompt.* / correction.* / incident.* 指令组。
     /// 默认启用并随宿主自动监听；mcp.autostart=false 可关闭自动监听，之后仍可 mcp.start。
-    /// 依赖 <see cref="DataService"/>:未配置数据服务时本项自动降级为关闭并告警。
+    /// 提示词治理与留痕写入数据目录中的 JSON/JSONL 文件，不依赖数据服务。
     /// </summary>
     public bool EnableMcp { get; set; } = true;
 
@@ -82,8 +82,8 @@ public sealed class ShellConfig
     public bool EnableRemoteManagementViews { get; set; }
 
     /// <summary>
-    /// MCP 调用留痕接管点:null 时框架用内置 McpAuditRecorder 写 mcp_history。
-    /// 派生应用若已有自己的留痕器,实现 IMcpAuditLog 接进来即可共用同一张表。
+    /// MCP 调用留痕接管点:null 时框架用内置 McpAuditRecorder 写 state/mcp-history.jsonl。
+    /// 派生应用若已有自己的留痕器,实现 IMcpAuditLog 接进来即可。
     /// </summary>
     public Core.Mcp.IMcpAuditLog? McpAuditLog { get; set; }
 

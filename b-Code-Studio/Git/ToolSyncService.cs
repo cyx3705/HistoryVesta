@@ -1,6 +1,8 @@
 ﻿using AppShell.Core;
 using System.IO;
 using System.Security.Cryptography;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
 using AppShell.Core.Data;
 using AppShell.Core.Logging;
 
@@ -20,53 +22,44 @@ public sealed record ToolScanRow(
 /// <summary>
 /// 项目库自扩展飞轮的业务层(V2.2 §3/§4):
 /// M1 = 清单发现与部署状态判定(tool.scan,只读);M2 追加 sync/remove 与模块槽写入。
-/// 溯源表 tool_registry 常驻 main 库(建表幂等,沿 HistoryRecorder 先例在构造期确保,
-/// 不占用 StartupMigrations 版号——迁移器只管一次性清理,17 号文档 §9-7 按此修正)。
+/// 工具溯源写入 state/tool-registry.json，模块槽仍是部署产物真值。
 /// </summary>
 public sealed class ToolSyncService
 {
     public const string TableName = "tool_registry";
 
     private readonly ProjectService _projects;
-    private readonly IDataService _data;
+    private readonly string _registryPath;
     private readonly IShellLog _log;
     private readonly Func<string> _modulesDir;
+    private readonly Func<IEnumerable<string>>? _commandNames;
 
-    public ToolSyncService(ProjectService projects, IDataService data, IShellLog log, Func<string> modulesDir)
+    public ToolSyncService(
+        ProjectService projects,
+        string dataDirectory,
+        IShellLog log,
+        Func<string> modulesDir,
+        Func<IEnumerable<string>>? commandNames = null)
     {
         _projects = projects;
-        _data = data;
+        _registryPath = Path.Combine(dataDirectory, "state", "tool-registry.json");
         _log = log;
         _modulesDir = modulesDir;
-        try
-        {
-            _data.ExecuteSql(
-                $"""
-                CREATE TABLE IF NOT EXISTS {TableName} (
-                    name         TEXT PRIMARY KEY,
-                    branch       TEXT NOT NULL,
-                    version      TEXT,
-                    sha256       TEXT NOT NULL,
-                    synced_at    TEXT NOT NULL,
-                    source_path  TEXT NOT NULL,
-                    mcp_exposure TEXT NOT NULL DEFAULT 'standard'
-                )
-                """);
-        }
-        catch (Exception ex)
-        {
-            _log.Error("tool", $"{TableName} 建表失败: {ex.Message}");
-        }
+        _commandNames = commandNames;
+    }
 
-        try
-        {
-            // M2 期建的旧表补列(重复添加抛错即忽略,幂等)
-            _data.ExecuteSql($"ALTER TABLE {TableName} ADD COLUMN mcp_exposure TEXT NOT NULL DEFAULT 'standard'");
-        }
-        catch (Exception)
-        {
-            // 列已存在
-        }
+    [Obsolete("Use ToolSyncService(ProjectService, string dataDirectory, ...).")]
+    public ToolSyncService(
+        ProjectService projects,
+        IDataService data,
+        IShellLog log,
+        Func<string> modulesDir,
+        Func<IEnumerable<string>>? commandNames = null)
+        : this(projects,
+            Path.Combine(Path.GetTempPath(), "OneHistoryStudio.Tools",
+                RuntimeHelpers.GetHashCode(data).ToString("x")),
+            log, modulesDir, commandNames)
+    {
     }
 
     // ---------------------------------------------------------------- mcpExposure(CX-01 / Q211-2)
@@ -82,15 +75,8 @@ public sealed class ToolSyncService
             cache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             try
             {
-                var (result, _) = _data.ExecuteSql($"SELECT name, mcp_exposure FROM {TableName}");
-                if (result != null)
-                {
-                    foreach (var row in result.Rows)
-                    {
-                        if (row[0]?.ToString() is { Length: > 0 } n)
-                            cache[n] = row[1]?.ToString() ?? "standard";
-                    }
-                }
+                foreach (var row in LoadRegistry().Values)
+                    cache[row.Name] = row.McpExposure;
             }
             catch (Exception ex)
             {
@@ -125,7 +111,8 @@ public sealed class ToolSyncService
                 continue;
 
             var worktreeRoot = Path.GetDirectoryName(meta.FullPath)!;
-            var entry = ToolManifestLoader.Load(manifestPath, worktreeRoot, meta.ProjectName);
+            var entry = ToolManifestLoader.Load(
+                manifestPath, worktreeRoot, meta.ProjectName, _commandNames?.Invoke());
 
             if (entry.Manifest == null)
             {
@@ -193,13 +180,7 @@ public sealed class ToolSyncService
     {
         try
         {
-            var (result, _) = _data.ExecuteSql(
-                $"SELECT sha256 FROM {TableName} WHERE name={SqlText.Quote(name)}");
-            if (result == null || result.Rows.Count == 0)
-                return null;
-            var col = result.Columns.ToList().FindIndex(c =>
-                c.Equals("sha256", StringComparison.OrdinalIgnoreCase));
-            return col >= 0 ? result.Rows[0][col]?.ToString() : null;
+            return LoadRegistry().GetValueOrDefault(name)?.Sha256;
         }
         catch (Exception ex)
         {
@@ -272,7 +253,8 @@ public sealed class ToolSyncService
         {
             // 找回完整清单(路径已校验);name 经正则约束,槽路径必在 Modules 内(TS-05)
             var worktreeRoot = Path.GetDirectoryName(Path.GetDirectoryName(row.ManifestPath)!)!;
-            var entry = ToolManifestLoader.Load(row.ManifestPath, worktreeRoot, row.SourceProject);
+            var entry = ToolManifestLoader.Load(
+                row.ManifestPath, worktreeRoot, row.SourceProject, _commandNames?.Invoke());
             if (entry.Manifest is not { } manifest)
                 return (false, $"清单重读失败: {entry.Error}");
 
@@ -314,12 +296,12 @@ public sealed class ToolSyncService
             if (!copiedSha.Equals(sourceSha, StringComparison.OrdinalIgnoreCase))
                 return (false, "复制后哈希不一致,已中止(槽内容不可信,请重试)");
 
-            _data.ExecuteSql(
-                $"INSERT OR REPLACE INTO {TableName} (name, branch, version, sha256, synced_at, source_path, mcp_exposure) VALUES (" +
-                $"{SqlText.Quote(manifest.Name)},{SqlText.Quote(manifest.SourceProject)}," +
-                $"{SqlText.Quote(manifest.Version)},{SqlText.Quote(sourceSha)}," +
-                $"'{DateTime.Now:yyyy-MM-dd HH:mm:ss}',{SqlText.Quote(manifest.ArtifactPath)}," +
-                $"{SqlText.Quote(manifest.McpExposure)})");
+            var registry = LoadRegistry();
+            registry[manifest.Name] = new RegistryRow(
+                manifest.Name, manifest.SourceProject, manifest.Version, sourceSha,
+                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                manifest.ArtifactPath, manifest.McpExposure);
+            SaveRegistry(registry);
             InvalidateExposureCache();
 
             _log.Info("tool", $"工具已入槽: {manifest.Name} ← {manifest.SourceProject}(sha {sourceSha[..12]}…)");
@@ -349,8 +331,10 @@ public sealed class ToolSyncService
         int removedRows;
         try
         {
-            (_, removedRows) = _data.ExecuteSql(
-                $"DELETE FROM {TableName} WHERE name={SqlText.Quote(name)}");
+            var registry = LoadRegistry();
+            removedRows = registry.Remove(name) ? 1 : 0;
+            if (removedRows > 0)
+                SaveRegistry(registry);
         }
         catch (Exception ex)
         {
@@ -371,22 +355,12 @@ public sealed class ToolSyncService
         var rows = new List<ToolRegistryRow>();
         try
         {
-            var (result, _) = _data.ExecuteSql(
-                $"SELECT name, branch, version, sha256, synced_at FROM {TableName} ORDER BY name");
-            if (result != null)
+            var modulesRoot = _modulesDir();
+            foreach (var r in LoadRegistry().Values.OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase))
             {
-                var modulesRoot = _modulesDir();
-                foreach (var r in result.Rows)
-                {
-                    var name = r[0]?.ToString() ?? "";
-                    rows.Add(new ToolRegistryRow(
-                        name,
-                        r[1]?.ToString() ?? "",
-                        r[2]?.ToString() ?? "",
-                        r[3]?.ToString() ?? "",
-                        r[4]?.ToString() ?? "",
-                        Directory.Exists(Path.Combine(modulesRoot, name)) ? "在位" : "槽缺失"));
-                }
+                rows.Add(new ToolRegistryRow(
+                    r.Name, r.Branch, r.Version, r.Sha256, r.SyncedAt,
+                    Directory.Exists(Path.Combine(modulesRoot, r.Name)) ? "在位" : "槽缺失"));
             }
         }
         catch (Exception ex)
@@ -406,6 +380,34 @@ public sealed class ToolSyncService
 
         return (true, sb.ToString(), rows);
     }
+
+    private Dictionary<string, RegistryRow> LoadRegistry()
+    {
+        if (!File.Exists(_registryPath))
+            return new Dictionary<string, RegistryRow>(StringComparer.OrdinalIgnoreCase);
+        var stored = JsonSerializer.Deserialize<Dictionary<string, RegistryRow>>(
+                         File.ReadAllText(_registryPath))
+                     ?? new Dictionary<string, RegistryRow>();
+        return new Dictionary<string, RegistryRow>(stored, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private void SaveRegistry(Dictionary<string, RegistryRow> registry)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(_registryPath)!);
+        var temp = _registryPath + ".tmp";
+        File.WriteAllText(temp, JsonSerializer.Serialize(registry,
+            new JsonSerializerOptions { WriteIndented = true }));
+        File.Move(temp, _registryPath, overwrite: true);
+    }
+
+    private sealed record RegistryRow(
+        string Name,
+        string Branch,
+        string Version,
+        string Sha256,
+        string SyncedAt,
+        string SourcePath,
+        string McpExposure);
 }
 
 /// <summary>tool.list 的一行(溯源视角)。</summary>

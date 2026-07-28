@@ -1,7 +1,7 @@
 # MCP 接入与安全
 
-> 适用版本：OneHistoryStudio V2.7.3
-> 框架基线：AppShell 2.7.3
+> 适用版本：OneHistoryStudio V2.7.5
+> 框架基线：AppShell 2.7.5
 
 ## 当前架构
 
@@ -122,8 +122,9 @@ registry.Register(new CommandDescriptor
 });
 ```
 
-**新增只读指令只需改注册点一处**，不必再去任何名单登记。当前全仓共 32 条核心只读命令
-（框架 18 + Studio 14），全部以此方式声明。
+**新增只读指令只需改命令定义/注册点一处**，不必再去任何名单登记。跨桌面与 Service 的内置命令先在
+共享定义声明，再由各宿主绑定 handler；只读性仍只取最终 `CommandDescriptor.Readonly`。当前具体集合和
+数量只从运行时 `command.list` 或自动生成的命令手册读取，现行手册不维护命令名单或总数副本。
 
 判定优先级（`McpExposurePolicy.State`）：
 

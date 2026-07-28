@@ -10,7 +10,7 @@ AppShell 是 OHS 伞形项目中的通用桌面应用框架组件，也是框架
 - `src/AppShell.Shell`：WPF 主壳、停靠窗口和内置命令。
 - `src/App`：框架演示宿主，用于独立构建和 GUI 验收。
 - `../b-Office/appshell`：框架需求、演进纪律和版本记录。
-- `../b-Office/versions`：当前版本临时施工增量，交付后抽干删除。
+- `../b-Office/versions`：V 版本留存记录，默认不进入 AI 检索与开发基线。
 
 ## 构建
 
@@ -22,24 +22,24 @@ dotnet build .\AppShell.sln -c Release --no-restore
 
 V2.4.0 起，OHS 直接通过 `ProjectReference` 使用本目录源码，不再维护框架副本或执行哈希回灌。
 
-## 2.7.3 本地包
+## 2.7.5 本地包
 
-0.5.0 是首个固定版本包基线；从 2.7.2 起 AppShell 与 OHS 使用同一版本列车。2.7.3 增加 LAN Shell 会话、端点配置和单入口 ServiceHost，继续保留统一工具窗口、拖动、浮动、停靠和最大化。桌面消费者引用 Shell，
+0.5.0 是首个固定版本包基线；从 2.7.2 起 AppShell 与 OHS 使用同一版本列车。2.7.5 收口版本投影、命令管道和停靠布局自愈，继续保留统一工具窗口、拖动、浮动、停靠和最大化。桌面消费者引用 Shell，
 服务化消费者额外引用 ServiceHost：
 
 ```xml
-<PackageReference Include="OneHistory.AppShell.Shell" Version="2.7.3" />
-<PackageReference Include="OneHistory.AppShell.ServiceHost" Version="2.7.3" />
+<PackageReference Include="OneHistory.AppShell.Shell" Version="2.7.5" />
+<PackageReference Include="OneHistory.AppShell.ServiceHost" Version="2.7.5" />
 ```
 
 包发布到仓库内 `z-Package-AppShell/feed`，OHS 自身仍使用 `ProjectReference`。打包与验收入口：
 
 ```powershell
 # 可覆盖 staging：构建、审计、隔离消费和演示发布
-.\eng\Publish-AppShell.ps1 -Version 2.7.3
+.\eng\Publish-AppShell.ps1 -Version 2.7.5
 
 # 不可覆盖的正式本地 feed；要求 b-Code-AppShell 已提交且路径干净
-.\eng\Publish-AppShell.ps1 -Version 2.7.3 -Publish
+.\eng\Publish-AppShell.ps1 -Version 2.7.5 -Publish
 ```
 
 脚本不会执行 Git commit/tag/push，也不会推送 NuGet.org。包结构、许可边界和消费说明见

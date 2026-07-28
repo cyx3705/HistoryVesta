@@ -83,13 +83,13 @@ public partial class ShellWindow : Window
         _console = new ConsoleView(log, _bus, _history, settings.GetInt(ConsoleView.KeyBuffer, 50_000));
 
         // 控制台窗口内容由 Shell 接管(§4.4 标准窗口;描述符位置仍由派生应用决定)
-        TakeOverDescriptor("console", "控制台", DockSide.Bottom, 0.25, () => _console);
+        TakeOverDescriptor(StandardWindowIds.Console, "控制台", DockSide.Bottom, 0.25, () => _console);
 
         // 数据服务已配置时,表窗口(§4.3)同样由 Shell 提供(M3)
         if (config.DataService != null)
         {
             _tableView = new Table.TableView(config.DataService, _bus, log);
-            TakeOverDescriptor("table", "表窗口", DockSide.Bottom, 0.28, () => _tableView);
+            TakeOverDescriptor(StandardWindowIds.Table, "表窗口", DockSide.Bottom, 0.28, () => _tableView);
         }
 
         // 工作区已配置时,资源窗口(§4.6)由 Shell 提供(M4)
@@ -98,7 +98,7 @@ public partial class ShellWindow : Window
             _resourceView = new Resource.ResourceView(
                 config.Workspace, _bus, log, config.OnResourceOpen,
                 Services.AppPaths.GetWorkspaceDir(dataDirectory));
-            TakeOverDescriptor("resource", "资源窗口", DockSide.Left, 0.18, () => _resourceView);
+            TakeOverDescriptor(StandardWindowIds.Resource, "资源窗口", DockSide.Left, 0.18, () => _resourceView);
         }
 
         // 0.4.4:反哺能力自带的管理窗口。窗口内容工厂只依赖总线与选中状态(指令实际执行在 command.list/
@@ -108,16 +108,16 @@ public partial class ShellWindow : Window
         // 一律保留其布局,框架只注入内容——因此派生侧既有布局不变。
         if ((config.EnableMcp && config.DataService != null) || config.EnableRemoteManagementViews)
         {
-            TakeOverDescriptor("mcp", "命令集", DockSide.Right, 0.32,
+            TakeOverDescriptor(StandardWindowIds.Mcp, "命令集", DockSide.Right, 0.32,
                 () => new Views.McpToolsView(() => _bus, _commandSelection));
             // 指令详情窗口:命令集选中项的详情(参数/来源/MCP 映射/提示词状态),与 mcp 窗口共享选中状态
-            TakeOverDescriptor("commanddetail", "指令详情", DockSide.Right, 0.32,
+            TakeOverDescriptor(StandardWindowIds.CommandDetail, "指令详情", DockSide.Right, 0.32,
                 () => new Views.CommandDetailView(() => _bus, _commandSelection));
         }
 
         if (config.EnableModules || config.EnableRemoteManagementViews)
         {
-            TakeOverDescriptor("modules", "模块管理", DockSide.Right, 0.32,
+            TakeOverDescriptor(StandardWindowIds.Modules, "模块管理", DockSide.Right, 0.32,
                 () => new Views.ModulesView(() => _bus));
         }
 
@@ -179,16 +179,10 @@ public partial class ShellWindow : Window
 
         if (config.EnableMcp)
         {
-            if (config.DataService == null)
-            {
-                log.Warn("mcp", "EnableMcp=true 但未配置 DataService,MCP 服务已跳过(提示词治理与留痕都需要数据服务)");
-            }
-            else
-            {
-                var identity = config.Identity ?? Core.AppIdentity.Current;
-                _prompts = new Services.Mcp.PromptGovernanceStore(config.DataService, log);
-                var audit = config.McpAuditLog
-                            ?? new Services.Mcp.McpAuditRecorder(config.DataService, log);
+            var identity = config.Identity ?? Core.AppIdentity.Current;
+            _prompts = new Services.Mcp.PromptGovernanceStore(dataDirectory, log);
+            var audit = config.McpAuditLog
+                        ?? new Services.Mcp.McpAuditRecorder(dataDirectory, log);
                 Func<string, string, int, bool?> remoteConfirm = config.McpRemoteConfirm
                     ?? ((_, prompt, timeout) =>
                         AppShell.Shell.Mcp.RemoteConfirmDialog.Ask(this, prompt, timeout));
@@ -203,7 +197,6 @@ public partial class ShellWindow : Window
 
                 // CX-03:MCP 中继预批准的执行直接放行,其余仍走 Shell 交互确认
                 _bus.Confirmation = new Core.Mcp.GatewayAwareConfirmation(_bus.Confirmation);
-            }
         }
 
         config.ConfigureCommands?.Invoke(registry);
@@ -323,7 +316,7 @@ public partial class ShellWindow : Window
 
     private void FocusConsole()
     {
-        _docking.Show("console");
+        _docking.Show(StandardWindowIds.Console);
         _console.FocusInput();
     }
 
@@ -388,12 +381,12 @@ public partial class ShellWindow : Window
                 table,
                 parsed.Named.GetValueOrDefault("where"),
                 query);
-            _docking.Show("table");
+            _docking.Show(StandardWindowIds.Table);
         }
         else if (parsed.Name.Equals("db.sql", StringComparison.OrdinalIgnoreCase))
         {
             _tableView.ShowAdhoc(query);
-            _docking.Show("table");
+            _docking.Show(StandardWindowIds.Table);
         }
     }
 
@@ -572,6 +565,7 @@ public partial class ShellWindow : Window
         // 帮助:指令手册 = help 的图形化版本(S-01)
         var help = new MenuItem { Header = "帮助(_H)" };
         var manual = new MenuItem { Header = "指令手册(_M)" };
+        EnsureMenuCommandValid("help");
         manual.Click += async (_, _) =>
         {
             FocusConsole();
@@ -585,9 +579,18 @@ public partial class ShellWindow : Window
     /// <summary>菜单项点击同样是发指令(S-02):统一经总线分发、回显、留痕。</summary>
     private MenuItem Item(string header, string commandText)
     {
+        EnsureMenuCommandValid(commandText);
+
         var mi = new MenuItem { Header = header };
         mi.Click += (_, _) => _ = _bus.ExecuteAsync(commandText, "UI");
         return mi;
+    }
+
+    private void EnsureMenuCommandValid(string commandText)
+    {
+        var validationError = _bus.Validate(commandText);
+        if (validationError != null)
+            throw new InvalidOperationException($"菜单引用了无效指令 [{commandText}]: {validationError}");
     }
 
     private void UpdateStatusRight()

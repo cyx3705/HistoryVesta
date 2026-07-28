@@ -75,7 +75,7 @@ public static class McpExposurePolicy
     {
         if (HardExclusionReason(descriptor.Name) != null)
             return "hidden";
-        if (descriptor.ConfirmPrompt != null)
+        if (descriptor.IsDangerous)
             return "dangerous";
         if (descriptor.Readonly)
             return "readonly";
@@ -84,7 +84,7 @@ public static class McpExposurePolicy
 
     public static bool IsVisible(CommandDescriptor descriptor, string policy)
         => HardExclusionReason(descriptor.Name) == null
-           && descriptor.ConfirmPrompt == null
+           && !descriptor.IsDangerous
            && (policy.Equals("standard", StringComparison.OrdinalIgnoreCase)
                || descriptor.Readonly
                || IsReadonlyAllowed(descriptor.Name));

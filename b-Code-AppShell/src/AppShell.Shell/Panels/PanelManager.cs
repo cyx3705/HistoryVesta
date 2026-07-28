@@ -29,6 +29,14 @@ public sealed class PanelManager
     private readonly Dictionary<string, PanelView> _views = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<PanelDefinition> _definitions = new();
 
+    /// <summary>仅供框架命令目录生成；不读取文件，也不得执行面板处理器。</summary>
+    internal PanelManager()
+    {
+        _panelsDir = "";
+        _bus = null!;
+        _log = null!;
+    }
+
     public PanelManager(string panelsDir, IEnumerable<PanelDefinition>? configured, CommandBus bus, IShellLog log)
     {
         _panelsDir = panelsDir;

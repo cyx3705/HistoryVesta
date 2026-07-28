@@ -8,8 +8,6 @@
     <AssemblyName>OneHistoryStudio.LegacyServiceHost</AssemblyName>
     <Product>OneHistoryStudio Legacy ServiceHost Test Library</Product>
     <Title>OneHistoryStudio Legacy ServiceHost Test Library</Title>
-    <Version>$(OneHistoryStudioVersion)</Version>
-    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>

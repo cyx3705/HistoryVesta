@@ -51,7 +51,7 @@ public static class CommandManualGenerator
                 builder.AppendLine(Escape(command.Summary));
                 builder.AppendLine();
                 builder.AppendLine($"- 来源：`{Escape(source)}`");
-                builder.AppendLine($"- 安全：{(command.ConfirmPrompt != null ? "本地二次确认" : "普通")}");
+                builder.AppendLine($"- 安全：{(command.IsDangerous ? "本地二次确认" : "普通")}");
                 builder.AppendLine($"- UI 线程：{(command.RequiresUiThread ? "是" : "否")}");
                 builder.AppendLine($"- MCP：`{mcpState}`，当前策略{(visible ? "可见" : "隐藏")}" +
                                    (tool != null ? $"，工具名 `{tool.ToolName}`" : string.Empty));

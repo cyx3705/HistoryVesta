@@ -3,7 +3,6 @@ using System.Windows;
 using AppShell.Core;
 using AppShell.Core.Mcp;
 using AppShell.ServiceHost;
-using Microsoft.Data.Sqlite;
 using OneHistoryStudio.Connection;
 using OneHistoryStudio.Service;
 
@@ -78,7 +77,6 @@ internal static class Program
         finally
         {
             composition.Dispose();
-            SqliteConnection.ClearAllPools();
             if (Directory.Exists(temporaryRoot))
                 Directory.Delete(temporaryRoot, recursive: true);
         }

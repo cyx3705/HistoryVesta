@@ -31,6 +31,7 @@ public partial class TableView : UserControl
     private string? _where;
     private int _page = 1;
     private QueryResult? _current;
+    private DataTable? _displayTable;
     private bool _hasRowId;
 
     private bool _loading;   // 填充网格期间抑制编辑事件
@@ -156,19 +157,10 @@ public partial class TableView : UserControl
             _current = result;
             _hasRowId = result.Columns.Count > 0 && result.Columns[0] == "__rowid__";
 
-            var table = new DataTable();
-            foreach (var col in result.Columns)
-            {
-                var type = result.Rows
-                    .Select(r => r[table.Columns.Count])
-                    .FirstOrDefault(v => v != null)?.GetType() ?? typeof(object);
-                table.Columns.Add(col, type);
-            }
-
-            foreach (var row in result.Rows)
-                table.Rows.Add(row.Select(v => v ?? DBNull.Value).ToArray());
-
-            Grid.ItemsSource = table.DefaultView;
+            var previousTable = _displayTable;
+            _displayTable = BuildDisplayTable(result);
+            Grid.ItemsSource = _displayTable.DefaultView;
+            previousTable?.Dispose();
             Grid.IsReadOnly = !_hasRowId;
 
             PageText.Text = $"第 {result.Page} / {result.TotalPages} 页";
@@ -186,6 +178,22 @@ public partial class TableView : UserControl
         {
             _loading = false;
         }
+    }
+
+    private static DataTable BuildDisplayTable(QueryResult result)
+    {
+        var table = new DataTable();
+        foreach (var col in result.Columns)
+        {
+            var type = result.Rows
+                .Select(row => row[table.Columns.Count])
+                .FirstOrDefault(value => value != null)?.GetType() ?? typeof(object);
+            table.Columns.Add(col, type);
+        }
+
+        foreach (var row in result.Rows)
+            table.Rows.Add(row.Select(value => value ?? DBNull.Value).ToArray());
+        return table;
     }
 
     private void SyncSelectors()

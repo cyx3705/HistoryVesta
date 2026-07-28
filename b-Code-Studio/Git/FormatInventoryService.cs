@@ -540,7 +540,7 @@ public sealed class FormatInventoryService
             if (!File.Exists(path))
                 return "none";
             using var stream = File.OpenRead(path);
-            return Convert.ToHexString(MD5.HashData(stream))[..8];
+            return Convert.ToHexString(SHA256.HashData(stream))[..8];
         }
         catch (Exception)
         {

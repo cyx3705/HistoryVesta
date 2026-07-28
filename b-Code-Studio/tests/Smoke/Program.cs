@@ -7,6 +7,7 @@ using OneHistoryStudio.Smoke.Suites;
 //   Smoke.exe                      依次跑全部用例,任一失败则退出码非零
 //   Smoke.exe --suite V232         只跑指定用例
 //   Smoke.exe --suite V213 --real-template   透传其余参数给用例
+//   Smoke.exe --suite Docking --real-mouse   隔离窗口内执行真实鼠标拖出/拖回
 //
 // 合并前每套用例是独立 Exe,各自 ProjectReference App.csproj,于是把整个应用输出
 // 复制 5 份 × 2 配置(270M)。合并后只剩 1 份 × 2 配置。
@@ -18,6 +19,7 @@ AppIdentity.Use(typeof(OneHistoryStudio.Git.ProjectService).Assembly);
 var suites = new (string Name, Func<string[], Task> Run)[]
 {
     ("Wiring", WiringSuite.RunAsync),
+    ("VersionProjection", VersionProjectionSuite.RunAsync),
     ("V213", V213Suite.RunAsync),
     ("PromptGovernance", PromptGovernanceSuite.RunAsync),
     ("V230", V230Suite.RunAsync),

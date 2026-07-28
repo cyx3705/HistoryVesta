@@ -23,13 +23,11 @@ public static class StudioServiceCompositionFactory
         var paths = new AppPaths(dataApplicationName ?? identity.Name);
         var log = new ShellLog(paths);
         var settings = new SettingsService(paths);
-        var data = new SqliteDataService(paths);
-        data.RegisterConnection("main", "main.db");
-        StartupMigrations.Run(settings, paths, data, log);
+        StartupMigrations.Run(settings, paths, log);
 
         var registry = new CommandRegistry();
         var bus = new CommandBus(registry, log);
-        var history = new HistoryRecorder(data, log);
+        var history = new HistoryRecorder(paths.Root, log);
         var projects = new ProjectService(
             settings,
             prompt => bus.Confirmation?.Confirm(prompt) == true,
@@ -43,13 +41,18 @@ public static class StudioServiceCompositionFactory
         {
             EnableUiModules = false,
         };
-        var tools = new ToolSyncService(projects, data, log, () => modules.ModulesDirectory);
+        var tools = new ToolSyncService(
+            projects,
+            paths.Root,
+            log,
+            () => modules.ModulesDirectory,
+            () => registry.All().Select(command => command.Name));
         var githubAccounts = new GitHubAccountService(() => projects.BareRepo);
 
-        ServiceBuiltinCommands.RegisterAll(registry, data, settings, paths.Root);
+        ServiceBuiltinCommands.RegisterAll(registry, settings, paths.Root);
         ModuleCommands.RegisterAll(registry, modules, settings);
 
-        var prompts = new PromptGovernanceStore(data, log);
+        var prompts = new PromptGovernanceStore(paths.Root, log);
         var confirmation = new ServiceConfirmation();
         var mcp = new McpGateway(
             () => bus,

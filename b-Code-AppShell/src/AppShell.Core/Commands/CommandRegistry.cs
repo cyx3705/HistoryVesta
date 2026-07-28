@@ -47,6 +47,27 @@ public sealed class CommandRegistry
         => _commands.Values.OrderBy(c => c.Name, StringComparer.Ordinal).ToList();
 
     /// <summary>
+    /// 从完整命令名提取一级域。无点号命令本身也是保留域，避免模块以
+    /// <c>help.foo</c> 或 <c>future.list</c> 的形式绕过根命令/现有域冲突检查。
+    /// </summary>
+    public static IReadOnlySet<string> DomainsOf(IEnumerable<string> commandNames)
+    {
+        ArgumentNullException.ThrowIfNull(commandNames);
+        var domains = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in commandNames)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                continue;
+
+            var trimmed = name.Trim();
+            var dot = trimmed.IndexOf('.');
+            domains.Add(dot > 0 ? trimmed[..dot] : trimmed);
+        }
+
+        return domains;
+    }
+
+    /// <summary>
     /// 未知指令时给出最接近的候选(§5.2 P1:“你是不是想输入…”)。
     /// 规则:编辑距离 ≤ 2,或同域(点号前缀相同)的全部动作。
     /// </summary>

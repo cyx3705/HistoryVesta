@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using AppShell.Core;
 using AppShell.Core.Commands;
 using AppShell.Core.Files;
 using AppShell.Services.Web;
@@ -163,7 +164,8 @@ internal static class LanSingleExeSuite
         var root = Temporary("helper-payload");
         try
         {
-            var payloads = new LanMachinePayloadStore(root, "2.7.3");
+            var productVersion = AppIdentity.Current.Version;
+            var payloads = new LanMachinePayloadStore(root, productVersion);
             var now = DateTimeOffset.UtcNow;
             var operation = new LanMachineOperation(
                 "install",
@@ -172,7 +174,7 @@ internal static class LanSingleExeSuite
                 Convert.ToHexString(RandomNumberGenerator.GetBytes(24)),
                 now,
                 now.AddMinutes(3),
-                "2.7.3",
+                productVersion,
                 null,
                 null,
                 null,
@@ -214,7 +216,7 @@ internal static class LanSingleExeSuite
         using var web = new WebGateway(() => bus, settings, new MemoryLog());
         var machine = new FakeLanMachineManager();
         var configuration = new LanConfigurationService(
-            settings, web, machine, "2.7.3");
+            settings, web, machine, AppIdentity.Current.Version);
         var preview = await configuration.ConfigureAsync(
             true, "192.168.10.20", 8738, apply: false);
         SmokeKit.True(preview.Success && machine.Calls.Count == 0,

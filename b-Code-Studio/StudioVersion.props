@@ -1,5 +1,11 @@
 <Project>
   <PropertyGroup>
-    <OneHistoryStudioVersion>2.7.3</OneHistoryStudioVersion>
+    <OneHistoryStudioVersion>2.7.5</OneHistoryStudioVersion>
+    <VersionPrefix>$(OneHistoryStudioVersion)</VersionPrefix>
+    <Version>$(OneHistoryStudioVersion)</Version>
+    <AssemblyVersion>$(OneHistoryStudioVersion).0</AssemblyVersion>
+    <FileVersion>$(OneHistoryStudioVersion).0</FileVersion>
+    <InformationalVersion>$(OneHistoryStudioVersion)</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 </Project>
