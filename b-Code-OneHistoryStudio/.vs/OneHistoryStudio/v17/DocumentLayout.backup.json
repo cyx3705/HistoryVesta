@@ -23,12 +23,12 @@
       "RelativeMoniker": "D:0:0:{87EF640E-A0AD-43DE-9FF3-1D01966DA756}|src\\App\\App.csproj|solutionrelative:src\\app\\git\\worktreefilescanner.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{87EF640E-A0AD-43DE-9FF3-1D01966DA756}|src\\App\\App.csproj|c:\\onehistory\\onehistory-projects\\2026-018-myapi\\b-code-onehistorystudio\\src\\app\\mcp\\commandschemaexporter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{87EF640E-A0AD-43DE-9FF3-1D01966DA756}|src\\App\\App.csproj|solutionrelative:src\\app\\mcp\\commandschemaexporter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{E478CC66-8BC5-42CA-A7DA-398D069C2324}|src\\AppShell.Core\\AppShell.Core.csproj|c:\\onehistory\\onehistory-projects\\2026-018-myapi\\b-code-onehistorystudio\\src\\appshell.core\\appshell.core.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
       "RelativeMoniker": "D:0:0:{E478CC66-8BC5-42CA-A7DA-398D069C2324}|src\\AppShell.Core\\AppShell.Core.csproj|solutionrelative:src\\appshell.core\\appshell.core.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\Mcp\\CommandSchemaExporter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\App\\Mcp\\CommandSchemaExporter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -103,7 +103,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
               "Title": "CommandSchemaExporter.cs",
               "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\App\\Mcp\\CommandSchemaExporter.cs",
               "RelativeDocumentMoniker": "src\\App\\Mcp\\CommandSchemaExporter.cs",
@@ -115,7 +115,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 5,
               "Title": "AppShell.Core.csproj",
               "DocumentMoniker": "C:\\OneHistory\\OneHistory-Projects\\2026-018-MyAPI\\b-Code-OneHistoryStudio\\src\\AppShell.Core\\AppShell.Core.csproj",
               "RelativeDocumentMoniker": "src\\AppShell.Core\\AppShell.Core.csproj",
