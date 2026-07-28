@@ -143,7 +143,15 @@ public sealed class ShellServiceClient : IDisposable
             if (result.Data is { } element)
             {
                 var commandName = CommandName(text);
-                data = DataDeserializer?.Invoke(commandName, element) ?? element.Clone();
+                try
+                {
+                    data = DataDeserializer?.Invoke(commandName, element) ?? element.Clone();
+                }
+                catch (Exception ex) when (ex is JsonException or NotSupportedException)
+                {
+                    return CommandResult.Fail(
+                        $"服务结果无法还原: command={commandName}, kind={element.ValueKind}: {ex.Message}");
+                }
             }
             return new CommandResult
             {

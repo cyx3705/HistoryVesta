@@ -104,7 +104,10 @@ try {
     }
     $PackagesDir = Join-Path $StageRoot "packages"
     $DemoDir = Join-Path $StageRoot "demo"
-    New-Item -ItemType Directory -Force -Path $PackagesDir, $DemoDir, $NugetCache | Out-Null
+    $BuildArtifacts = Join-Path $StageRoot "artifacts"
+    $SmokeArtifacts = Join-Path $StageRoot "package-smoke-artifacts"
+    New-Item -ItemType Directory -Force -Path `
+        $PackagesDir, $DemoDir, $BuildArtifacts, $SmokeArtifacts, $NugetCache | Out-Null
     $env:NUGET_PACKAGES = $NugetCache
 
     $sourceStatus = (& git -C $RepoRoot status --porcelain -- b-Code-AppShell) -join "`n"
@@ -113,9 +116,14 @@ try {
         throw "Formal publish requires a committed, clean b-Code-AppShell source tree. Run staging without -Publish first."
     }
 
-    Invoke-Dotnet @("restore", "AppShell.sln", "--locked-mode")
-    Invoke-Dotnet @("build", "AppShell.sln", "-c", "Debug", "--no-restore")
-    Invoke-Dotnet @("build", "AppShell.sln", "-c", "Release", "--no-restore")
+    $artifactsProperty = "-p:ArtifactsPath=$BuildArtifacts"
+    Invoke-Dotnet @("restore", "AppShell.sln", "--locked-mode", $artifactsProperty)
+    Invoke-Dotnet @("build", "AppShell.sln", "-c", "Debug", "--no-restore", $artifactsProperty)
+    Invoke-Dotnet @("test", "tests\AppShell.Tests\AppShell.Tests.csproj", "-c", "Debug",
+        "--no-build", "--no-restore", $artifactsProperty)
+    Invoke-Dotnet @("build", "AppShell.sln", "-c", "Release", "--no-restore", $artifactsProperty)
+    Invoke-Dotnet @("test", "tests\AppShell.Tests\AppShell.Tests.csproj", "-c", "Release",
+        "--no-build", "--no-restore", $artifactsProperty)
 
     $auditPath = Join-Path $StageRoot "vulnerability-audit.json"
     $auditOutput = & dotnet list AppShell.sln package --vulnerable --include-transitive --format json
@@ -153,7 +161,8 @@ try {
         "src\AppShell.ServiceHost\AppShell.ServiceHost.csproj"
     )
     foreach ($project in $packProjects) {
-        Invoke-Dotnet @("pack", $project, "-c", "Release", "--no-build", "--no-restore", "-o", $PackagesDir)
+        Invoke-Dotnet @("pack", $project, "-c", "Release", "--no-build", "--no-restore",
+            $artifactsProperty, "-o", $PackagesDir)
     }
 
     $packageIds = @(
@@ -209,13 +218,39 @@ try {
 </configuration>
 "@
     [IO.File]::WriteAllText($smokeConfig, $smokeConfigText, [Text.UTF8Encoding]::new($false))
+    $smokeArtifactsProperty = "-p:ArtifactsPath=$SmokeArtifacts"
     Invoke-Dotnet @("restore", $smokeProject, "--force-evaluate", "--configfile", $smokeConfig,
-        "--packages", (Join-Path $StageRoot "smoke-cache"))
-    Invoke-Dotnet @("build", $smokeProject, "-c", "Release", "--no-restore")
-    Invoke-Dotnet @("run", "--project", $smokeProject, "-c", "Release", "--no-build", "--no-restore")
+        "--packages", (Join-Path $StageRoot "smoke-cache"), $smokeArtifactsProperty)
+    Invoke-Dotnet @("build", $smokeProject, "-c", "Release", "--no-restore", $smokeArtifactsProperty)
+    $runtimeConfigs = @(Get-ChildItem -LiteralPath (Join-Path $SmokeArtifacts "bin\PackageSmoke") `
+        -Recurse -Filter "PackageSmoke.runtimeconfig.json" -File)
+    if ($runtimeConfigs.Count -ne 1) {
+        throw "Expected one PackageSmoke runtimeconfig, found $($runtimeConfigs.Count)"
+    }
+    $SmokeOutput = $runtimeConfigs[0].Directory.FullName
+    $smokeDll = Join-Path $SmokeOutput "PackageSmoke.dll"
+    Assert-File $smokeDll
+    Invoke-Dotnet @($smokeDll)
+
+    $smokeFiles = @(Get-ChildItem -LiteralPath $SmokeOutput -Recurse -File)
+    $smokeBytes = ($smokeFiles | Measure-Object -Property Length -Sum).Sum
+    $forbiddenAssets = @($smokeFiles | Where-Object {
+        $relative = $_.FullName.Substring($SmokeOutput.Length).TrimStart('\', '/')
+        $relative -match '(^|[\\/])runtimes[\\/](linux|osx|ios|android|win-(arm|arm64|x86))'
+    })
+    if ($forbiddenAssets.Count -ne 0) {
+        throw "PackageSmoke contains non-target runtime assets: $($forbiddenAssets.FullName -join ', ')"
+    }
+    $smokeLimit = 10MB
+    if ($smokeBytes -gt $smokeLimit) {
+        $largest = $smokeFiles | Sort-Object Length -Descending | Select-Object -First 20
+        throw "PackageSmoke output is $smokeBytes bytes, limit is $smokeLimit. Largest files: " +
+            (($largest | ForEach-Object { "$($_.Length):$($_.FullName)" }) -join '; ')
+    }
+    Write-Host "PackageSmoke footprint: $smokeBytes bytes ($($smokeFiles.Count) files), RID win-x64"
 
     Invoke-Dotnet @("publish", "src\App\App.csproj", "-c", "Release", "--no-restore",
-        "--self-contained", "false", "-r", "win-x64", "-o", $DemoDir)
+        $artifactsProperty, "--self-contained", "false", "-r", "win-x64", "-o", $DemoDir)
     $demoExe = Join-Path $DemoDir "AppShell.exe"
     Assert-File $demoExe
     $demoVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($demoExe).FileVersion

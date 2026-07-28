@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AppShell.Core\AppShell.Core.csproj" />
+    <ProjectReference Include="..\..\src\AppShell.Services\AppShell.Services.csproj" />
+    <ProjectReference Include="..\..\src\AppShell.Shell\AppShell.Shell.csproj" />
+  </ItemGroup>
+
+</Project>

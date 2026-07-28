@@ -22,24 +22,24 @@ dotnet build .\AppShell.sln -c Release --no-restore
 
 V2.4.0 起，OHS 直接通过 `ProjectReference` 使用本目录源码，不再维护框架副本或执行哈希回灌。
 
-## 2.7.5 本地包
+## 2.7.6 本地包
 
-0.5.0 是首个固定版本包基线；从 2.7.2 起 AppShell 与 OHS 使用同一版本列车。2.7.5 收口版本投影、命令管道和停靠布局自愈，继续保留统一工具窗口、拖动、浮动、停靠和最大化。桌面消费者引用 Shell，
+0.5.0 是首个固定版本包基线；从 2.7.2 起 AppShell 与 OHS 使用同一版本列车。2.7.6 修复远程模块页的同源命令快照与递归项目树传输，继续保留统一工具窗口、拖动、浮动、停靠和最大化。桌面消费者引用 Shell，
 服务化消费者额外引用 ServiceHost：
 
 ```xml
-<PackageReference Include="OneHistory.AppShell.Shell" Version="2.7.5" />
-<PackageReference Include="OneHistory.AppShell.ServiceHost" Version="2.7.5" />
+<PackageReference Include="OneHistory.AppShell.Shell" Version="2.7.6" />
+<PackageReference Include="OneHistory.AppShell.ServiceHost" Version="2.7.6" />
 ```
 
 包发布到仓库内 `z-Package-AppShell/feed`，OHS 自身仍使用 `ProjectReference`。打包与验收入口：
 
 ```powershell
 # 可覆盖 staging：构建、审计、隔离消费和演示发布
-.\eng\Publish-AppShell.ps1 -Version 2.7.5
+.\eng\Publish-AppShell.ps1 -Version 2.7.6
 
 # 不可覆盖的正式本地 feed；要求 b-Code-AppShell 已提交且路径干净
-.\eng\Publish-AppShell.ps1 -Version 2.7.5 -Publish
+.\eng\Publish-AppShell.ps1 -Version 2.7.6 -Publish
 ```
 
 脚本不会执行 Git commit/tag/push，也不会推送 NuGet.org。包结构、许可边界和消费说明见

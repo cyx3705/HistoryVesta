@@ -424,6 +424,23 @@ internal static class ServiceWebSuite
                 SmokeKit.Contains(await response.Content.ReadAsStringAsync(), "pong", "web command result");
             }
 
+            using (var client = new ShellServiceClient(new Uri($"http://127.0.0.1:{port}/"), "TreeContract"))
+            {
+                client.DataDeserializer = (_, data) =>
+                    JsonSerializer.Deserialize<BranchTreeNode>(data.GetRawText(), new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                    });
+                var treeResult = await client.ExecuteAsync("contract.tree", "UI");
+                var tree = treeResult.Data as BranchTreeNode;
+                SmokeKit.True(treeResult.Success && tree != null,
+                    "recursive tree HTTP contract returns typed data");
+                SmokeKit.True(tree!.TryValidate(out var nodeCount, out _)
+                              && nodeCount == 4
+                              && tree.Children[0].Children.Count == 2,
+                    "recursive tree HTTP contract preserves all levels");
+            }
+
             using (var options = new HttpRequestMessage(HttpMethod.Options, "api/health"))
             {
                 options.Headers.Add("Origin", "https://example.test");
@@ -499,6 +516,28 @@ internal static class ServiceWebSuite
             Summary = "smoke ping",
             Readonly = true,
             Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("pong", new { pong = true })),
+        });
+        registry.Register(new CommandDescriptor
+        {
+            Name = "contract.tree",
+            Summary = "recursive transport fixture",
+            Readonly = true,
+            Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("tree", new BranchTreeNode
+            {
+                BranchName = "root",
+                Children =
+                [
+                    new BranchTreeNode
+                    {
+                        BranchName = "child",
+                        Children =
+                        [
+                            new BranchTreeNode { BranchName = "leaf-a" },
+                            new BranchTreeNode { BranchName = "leaf-b" },
+                        ],
+                    },
+                ],
+            })),
         });
         return registry;
     }

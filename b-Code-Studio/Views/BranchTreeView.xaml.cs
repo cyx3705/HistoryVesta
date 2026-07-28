@@ -41,30 +41,39 @@ public partial class BranchTreeView : UserControl
         try
         {
             var result = await bus.ExecuteAsync(command, "UI");
-            if (result.Success && result.Data is ProjectService.BranchNode root)
+            var validationError = "";
+            if (result.Success && result.Data is BranchTreeNode root
+                && root.TryValidate(out var nodeCount, out validationError))
             {
-                BranchTree.ItemsSource = new[] { root };
+                var displayRoot = BranchTreeItem.FromContract(root);
+                BranchTree.ItemsSource = new[] { displayRoot };
 
                 // Q3:沿用 V1 默认展开——根 + 一级子分支 + 每支前 5 个二级子分支
-                root.IsExpanded = true;
-                foreach (var child in root.Children)
+                displayRoot.IsExpanded = true;
+                foreach (var child in displayRoot.Children)
                 {
                     child.IsExpanded = true;
                     foreach (var grandChild in child.Children.Take(5))
                         grandChild.IsExpanded = true;
                 }
 
-                TreeStatus.Text = result.Message.Split('\n')[0];
+                TreeStatus.Text = $"{result.Message.Split('\n')[0]} ({nodeCount} 个节点)";
                 ExpandAllButton.IsEnabled = true;
                 CollapseAllButton.IsEnabled = true;
             }
+            else if (result.Success && result.Data is BranchTreeNode)
+            {
+                ClearTree($"继承树数据无效: {validationError}");
+            }
             else if (result.Success)
             {
-                TreeStatus.Text = result.Message.Split('\n')[0]; // 无缓存提示
+                ClearTree(result.Data == null
+                    ? result.Message.Split('\n')[0]
+                    : $"继承树数据类型无法识别: {result.Data.GetType().Name}");
             }
             else
             {
-                TreeStatus.Text = "加载失败,详见控制台";
+                ClearTree("加载失败: " + result.Message.Split('\n')[0]);
             }
         }
         finally
@@ -81,13 +90,13 @@ public partial class BranchTreeView : UserControl
 
     private void SetExpanded(bool expanded)
     {
-        if (BranchTree.ItemsSource is not IEnumerable<ProjectService.BranchNode> roots)
+        if (BranchTree.ItemsSource is not IEnumerable<BranchTreeItem> roots)
             return;
         foreach (var root in roots)
             ExpandRecursive(root, expanded);
     }
 
-    private static void ExpandRecursive(ProjectService.BranchNode node, bool expanded)
+    private static void ExpandRecursive(BranchTreeItem node, bool expanded)
     {
         node.IsExpanded = expanded;
         foreach (var child in node.Children)
@@ -96,7 +105,7 @@ public partial class BranchTreeView : UserControl
 
     private void OnBranchSelected(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
-        if (e.NewValue is ProjectService.BranchNode node)
+        if (e.NewValue is BranchTreeItem node)
             _selection.CurrentProjectName = node.BranchName;
     }
 
@@ -118,7 +127,7 @@ public partial class BranchTreeView : UserControl
 
     private async Task ShowHistoryAsync(string status)
     {
-        if (BranchTree.SelectedItem is not ProjectService.BranchNode node || _busAccessor() is not { } bus)
+        if (BranchTree.SelectedItem is not BranchTreeItem node || _busAccessor() is not { } bus)
             return;
         _selection.CurrentProjectName = node.BranchName;
         var result = await bus.ExecuteAsync("win.show name=history", "UI");
@@ -127,7 +136,7 @@ public partial class BranchTreeView : UserControl
 
     private async void OnOpenProjectClick(object sender, RoutedEventArgs e)
     {
-        if (BranchTree.SelectedItem is not ProjectService.BranchNode node || _busAccessor() is not { } bus)
+        if (BranchTree.SelectedItem is not BranchTreeItem node || _busAccessor() is not { } bus)
             return;
         var result = await bus.ExecuteAsync(
             $"proj.open name={CommandParser.QuoteArg(node.BranchName)}", "UI");
@@ -136,7 +145,7 @@ public partial class BranchTreeView : UserControl
 
     private void OnCopyBranchClick(object sender, RoutedEventArgs e)
     {
-        if (BranchTree.SelectedItem is not ProjectService.BranchNode node)
+        if (BranchTree.SelectedItem is not BranchTreeItem node)
             return;
         Clipboard.SetText(node.BranchName);
         TreeStatus.Text = $"已复制分支名 {node.BranchName}";
@@ -151,5 +160,13 @@ public partial class BranchTreeView : UserControl
             source = VisualTreeHelper.GetParent(source);
         }
         return null;
+    }
+
+    private void ClearTree(string status)
+    {
+        BranchTree.ItemsSource = null;
+        ExpandAllButton.IsEnabled = false;
+        CollapseAllButton.IsEnabled = false;
+        TreeStatus.Text = status;
     }
 }

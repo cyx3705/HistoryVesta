@@ -21,7 +21,7 @@ public static class StudioCommandDataDeserializer
         => commandName.ToLowerInvariant() switch
         {
             "proj.list" => Read<List<WorktreeInfo>>(data),
-            "proj.tree" => Read<ProjectService.BranchNode>(data),
+            "proj.tree" => Read<BranchTreeNode>(data),
             "proj.metalist" => Read<List<MetaFolderInfo>>(data),
             "proj.history" => Read<BranchHistoryReport>(data),
             "proj.history.show" => Read<CommitDetail>(data),

@@ -246,7 +246,9 @@ public static class ProjectCommands
         {
             var (success, message, root) = await projects.BuildTreeAsync(
                 ctx.Progress, ctx.GetBool("refresh"), ctx.GetBool("cached"));
-            return success ? CommandResult.Ok(message, root) : CommandResult.Fail(message);
+            return success
+                ? CommandResult.Ok(message, root == null ? null : BranchTreeNode.FromDomain(root))
+                : CommandResult.Fail(message);
         },
     };
 

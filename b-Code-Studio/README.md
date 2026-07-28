@@ -48,8 +48,8 @@ checksum 复验完整文件集合、大小与 SHA-256；失败的新目录进入
 `b-Publish` 从 `stage\b-Publish-pre-*` 自动恢复。
 
 ```powershell
-.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.5
-.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.5 -Publish
+.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.6
+.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.6 -Publish
 ```
 
 不得用独立的 `dotnet publish` 或手工复制替代该入口；版本始终从 `StudioVersion.props` 求值。

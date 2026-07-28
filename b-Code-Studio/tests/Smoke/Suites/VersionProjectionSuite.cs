@@ -42,6 +42,7 @@ internal static class VersionProjectionSuite
             ["src/AppShell.Shell/AppShell.Shell.csproj"] = "OneHistory.AppShell.Shell",
             ["src/AppShell.ServiceHost/AppShell.ServiceHost.csproj"] = "OneHistory.AppShell.ServiceHost",
             ["src/App/App.csproj"] = null,
+            ["tests/AppShell.Tests/AppShell.Tests.csproj"] = null,
             ["tests/PackageSmoke/PackageSmoke.csproj"] = null,
         };
         foreach (var (relativePath, packageId) in appShellProjects)
@@ -75,6 +76,7 @@ internal static class VersionProjectionSuite
             "version projection: central AppShell package references use the single source");
 
         AssertMachineConsumers(appShellRoot, appShellVersion);
+        await AssertStageGovernanceAsync();
         await AssertPublishTransactionAsync(studioRoot);
         AssertCurrentMarkdownLinks(appShellRoot, studioRoot);
         Console.WriteLine($"VersionProjectionSmoke: PASS (AppShell/OHS {appShellVersion})");
@@ -186,6 +188,10 @@ internal static class VersionProjectionSuite
         Contains(publish, "Threading.Mutex", "version projection: publish serializes staging writers");
         Contains(publish, "dotnet restore AppShell.sln --locked-mode --force-evaluate",
             "version projection: isolated publish repairs the workspace asset graph");
+        Contains(publish, "ArtifactsPath=", "version projection: AppShell builds use isolated artifacts");
+        Contains(publish, "$smokeLimit = 10MB", "version projection: PackageSmoke has a 10 MB ceiling");
+        Contains(publish, "non-target runtime assets",
+            "version projection: PackageSmoke rejects foreign RID assets");
         True(!Regex.IsMatch(publish, @"\[string\]\$Version\s*=\s*\""\d"),
             "version projection: publish has no independent default version");
 
@@ -213,6 +219,18 @@ internal static class VersionProjectionSuite
         True(!Regex.IsMatch(packageSmoke, @"AppVersion\s*=\s*\""\d"),
             "version projection: PackageSmoke app identity is projected");
 
+        var packageSmokeProject = File.ReadAllText(Path.Combine(
+            appShellRoot, "tests", "PackageSmoke", "PackageSmoke.csproj"));
+        Contains(packageSmokeProject, "<RuntimeIdentifier>win-x64</RuntimeIdentifier>",
+            "version projection: PackageSmoke targets win-x64");
+        Contains(packageSmokeProject, "<SelfContained>false</SelfContained>",
+            "version projection: PackageSmoke is framework-dependent");
+
+        True(File.Exists(Path.Combine(appShellRoot, "tests", "AppShell.Tests", "AppShell.Tests.csproj")),
+            "version projection: AppShell standard test project exists");
+        True(File.Exists(Path.Combine(studioRoot, "tests", "Contracts", "Contracts.csproj")),
+            "version projection: OHS contract test project exists");
+
         foreach (var relativePath in new[] { "README.md", "PACKAGE.md" })
         {
             var content = File.ReadAllText(Path.Combine(appShellRoot, relativePath));
@@ -231,6 +249,35 @@ internal static class VersionProjectionSuite
             "version projection: README publish examples match source");
 
         AssertCurrentDocumentation(appShellRoot, studioRoot, expected);
+    }
+
+    private static async Task AssertStageGovernanceAsync()
+    {
+        var gitIgnore = File.ReadAllLines(Path.Combine(ParentDir, ".gitignore"));
+        True(gitIgnore.Any(line => line.Trim().Equals("stage/", StringComparison.Ordinal)),
+            "version projection: the complete stage directory is ignored");
+
+        var start = new ProcessStartInfo("git")
+        {
+            WorkingDirectory = ParentDir,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+        };
+        start.ArgumentList.Add("ls-files");
+        start.ArgumentList.Add("stage");
+        using var process = Process.Start(start)
+                            ?? throw new InvalidOperationException("Unable to inspect tracked stage files");
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        var stdout = await stdoutTask;
+        var stderr = await stderrTask;
+        True(process.ExitCode == 0,
+            $"version projection: git ls-files stage succeeds: {stderr}");
+        True(string.IsNullOrWhiteSpace(stdout),
+            "version projection: stage contains no tracked files");
     }
 
     private static async Task AssertPublishTransactionAsync(string studioRoot)
