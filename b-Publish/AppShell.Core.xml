@@ -23,6 +23,12 @@
         <member name="M:AppShell.Core.AppIdentity.Use(System.Reflection.Assembly)">
             <summary>显式指定身份来源程序集（测试宿主或多程序集场景）。</summary>
         </member>
+        <member name="T:AppShell.Core.Commands.BuiltinCommandDefinitions">
+            <summary>
+            Shared metadata for commands that execute locally in both the desktop shell and a service host.
+            Hosts bind only their execution handler and UI-thread capability.
+            </summary>
+        </member>
         <member name="T:AppShell.Core.Commands.CommandBus">
             <summary>
             指令总线(§5.2 生命周期):
@@ -34,6 +40,12 @@
         </member>
         <member name="F:AppShell.Core.Commands.CommandBus.EchoCategoryPrefix">
             <summary>回显类别前缀;控制台按此前缀识别指令行。</summary>
+        </member>
+        <member name="M:AppShell.Core.Commands.CommandBus.Validate(System.String)">
+            <summary>
+            Validates a command text against the current registry without routing, logging, confirmation, or execution.
+            UI surfaces use this to reject stale menu references at construction time.
+            </summary>
         </member>
         <member name="P:AppShell.Core.Commands.CommandBus.Confirmation">
             <summary>二次确认通道;未注入时带确认位的指令一律拒绝执行(安全缺省)。</summary>
@@ -105,6 +117,15 @@
         </member>
         <member name="P:AppShell.Core.Commands.CommandDescriptor.SupportsUndo">
             <summary>撤销能力位(§5.4,Q6:首版只预留)。</summary>
+        </member>
+        <member name="P:AppShell.Core.Commands.CommandDescriptor.Dangerous">
+            <summary>
+            代理描述符无法序列化原始确认函数时保留危险性元数据。
+            本地执行仍只由 <see cref="P:AppShell.Core.Commands.CommandDescriptor.ConfirmPrompt"/> 触发确认；目录、MCP 与文档读取本合成属性。
+            </summary>
+        </member>
+        <member name="P:AppShell.Core.Commands.CommandDescriptor.IsDangerous">
+            <summary>命令是否具有危险性元数据或本地确认闸口。</summary>
         </member>
         <member name="P:AppShell.Core.Commands.CommandDescriptor.Readonly">
             <summary>
@@ -227,6 +248,12 @@
         </member>
         <member name="M:AppShell.Core.Commands.CommandRegistry.All">
             <summary>全部指令,按名称排序(help 列表)。</summary>
+        </member>
+        <member name="M:AppShell.Core.Commands.CommandRegistry.DomainsOf(System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            从完整命令名提取一级域。无点号命令本身也是保留域，避免模块以
+            <c>help.foo</c> 或 <c>future.list</c> 的形式绕过根命令/现有域冲突检查。
+            </summary>
         </member>
         <member name="M:AppShell.Core.Commands.CommandRegistry.Suggest(System.String)">
             <summary>
@@ -466,6 +493,9 @@
         </member>
         <member name="P:AppShell.Core.Docking.ShellCommandEventArgs.Source">
             <summary>来源类别:"layout"(拖拽手势)、"UI"(菜单/按钮)等。</summary>
+        </member>
+        <member name="T:AppShell.Core.Docking.StandardWindowIds">
+            <summary>Window identities owned by AppShell and available to derived hosts.</summary>
         </member>
         <member name="T:AppShell.Core.Docking.ToolWindowDescriptor">
             <summary>

@@ -38,13 +38,10 @@
             </summary>
         </member>
         <member name="T:AppShell.Services.Mcp.McpAuditRecorder">
-             <summary>
-             MCP 调用留痕的框架缺省实现(0.4.4):写入 <c>mcp_history</c> 表。
-            
-             **表结构、列名、时间戳格式与截断长度逐项沿用反哺来源 OneHistoryStudio 的既有定义**,
-             派生应用升级到 0.4.4 后既有 mcp_history 数据可直接继续使用,不需要迁移。
-             留痕失败只告警不阻断——记录是旁路,不是闸口。
-             </summary>
+            <summary>MCP 调用留痕的 JSONL 实现。单条追加失败只告警，不阻断调用。</summary>
+        </member>
+        <member name="M:AppShell.Services.Mcp.McpAuditRecorder.#ctor(AppShell.Core.Data.IDataService,AppShell.Core.Logging.IShellLog)">
+            <summary>源代码兼容入口；新装配点应传数据目录。</summary>
         </member>
         <member name="T:AppShell.Services.Mcp.McpGateway">
             <summary>
@@ -89,9 +86,12 @@
         </member>
         <member name="T:AppShell.Services.Mcp.PromptGovernanceStore">
             <summary>
-            MCP 工具描述治理存储(V2.1.2):修订是生效真值，提案/勘误/事故为追加式审计记录。
-            V2.1.1 mcp_descriptions 仅作为迁移来源和降级兼容镜像。
+            MCP 提示词治理的文件存储。所有关联状态在同一份 JSON 文档内原子替换，
+            因而批准、应用、回滚仍保持单进程事务语义，但不再要求关系数据库。
             </summary>
+        </member>
+        <member name="M:AppShell.Services.Mcp.PromptGovernanceStore.#ctor(AppShell.Core.Data.IDataService,AppShell.Core.Logging.IShellLog)">
+            <summary>源代码兼容入口；新装配点应传数据目录。</summary>
         </member>
         <member name="T:AppShell.Services.Modules.ModuleHost">
             <summary>
@@ -136,6 +136,12 @@
         </member>
         <member name="M:AppShell.Services.Modules.ModuleHost.Reload">
             <summary>整体重载:构建新快照 → 注册表换血(UI 线程) → 卸载旧 ALC。</summary>
+        </member>
+        <member name="M:AppShell.Services.Modules.ModuleHost.FindModuleDomainConflicts(System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            返回候选模块命令中与宿主已有命令域冲突的一级域。
+            该纯函数同时供生产换血路径和 Smoke 回归使用。
+            </summary>
         </member>
         <member name="M:AppShell.Services.Modules.ModuleHost.CollectType(AppShell.Services.Modules.ModuleHost.Snapshot,System.String,System.Type,AppShell.Services.Modules.XmlDocs)">
             <summary>把一个业务类的公共方法收集为待注册指令(MD-03/04)。</summary>
@@ -208,88 +214,6 @@
         <member name="M:AppShell.Services.ShellLog.Dispose">
             <summary>退出前冲刷文件队列(App 关闭时调用)。</summary>
         </member>
-        <member name="T:AppShell.Services.SqliteDataService">
-            <summary>
-            SQLite 数据服务(D-01,Q4 已定):嵌入式、零安装、零配置。
-            库文件缺省位于 &lt;应用数据目录&gt;/data/ 下(D-04);
-            支持多命名连接(D-03),缺省连接名 "main"。
-            行定位:查询附带 rowid(别名 __rowid__),编辑/删除以 rowid 拼 where,
-            无主键表同样可编辑;WITHOUT ROWID 表自动退化为只读结果。
-            </summary>
-        </member>
-        <member name="M:AppShell.Services.SqliteDataService.RegisterConnection(System.String,System.String)">
-            <summary>
-            注册命名连接(D-03)。dbFile 为相对名(落到 data/ 下)或绝对路径;
-            文件不存在时首次使用自动创建。
-            </summary>
-        </member>
-        <member name="M:AppShell.Services.SqliteDataService.SqlTargetTable">
-            <remarks>
-            Pattern:<br/>
-            <code>^(?:INSERT\\s+INTO|UPDATE|DELETE\\s+FROM|REPLACE\\s+INTO)\\s+["'`\\[]?(\\w+)</code><br/>
-            Options:<br/>
-            <code>RegexOptions.IgnoreCase</code><br/>
-            Explanation:<br/>
-            <code>
-            ○ Match if at the beginning of the string.<br/>
-            ○ Match with 4 alternative expressions.<br/>
-                ○ Match a sequence of expressions.<br/>
-                    ○ Match a character in the set [Ii].<br/>
-                    ○ Match a character in the set [Nn].<br/>
-                    ○ Match a character in the set [Ss].<br/>
-                    ○ Match a character in the set [Ee].<br/>
-                    ○ Match a character in the set [Rr].<br/>
-                    ○ Match a character in the set [Tt].<br/>
-                    ○ Match a whitespace character atomically at least once.<br/>
-                    ○ Match a character in the set [Ii].<br/>
-                    ○ Match a character in the set [Nn].<br/>
-                    ○ Match a character in the set [Tt].<br/>
-                    ○ Match a character in the set [Oo].<br/>
-                ○ Match a sequence of expressions.<br/>
-                    ○ Match a character in the set [Uu].<br/>
-                    ○ Match a character in the set [Pp].<br/>
-                    ○ Match a character in the set [Dd].<br/>
-                    ○ Match a character in the set [Aa].<br/>
-                    ○ Match a character in the set [Tt].<br/>
-                    ○ Match a character in the set [Ee].<br/>
-                ○ Match a sequence of expressions.<br/>
-                    ○ Match a character in the set [Dd].<br/>
-                    ○ Match a character in the set [Ee].<br/>
-                    ○ Match a character in the set [Ll].<br/>
-                    ○ Match a character in the set [Ee].<br/>
-                    ○ Match a character in the set [Tt].<br/>
-                    ○ Match a character in the set [Ee].<br/>
-                    ○ Match a whitespace character atomically at least once.<br/>
-                    ○ Match a character in the set [Ff].<br/>
-                    ○ Match a character in the set [Rr].<br/>
-                    ○ Match a character in the set [Oo].<br/>
-                    ○ Match a character in the set [Mm].<br/>
-                ○ Match a sequence of expressions.<br/>
-                    ○ Match a character in the set [Rr].<br/>
-                    ○ Match a character in the set [Ee].<br/>
-                    ○ Match a character in the set [Pp].<br/>
-                    ○ Match a character in the set [Ll].<br/>
-                    ○ Match a character in the set [Aa].<br/>
-                    ○ Match a character in the set [Cc].<br/>
-                    ○ Match a character in the set [Ee].<br/>
-                    ○ Match a whitespace character atomically at least once.<br/>
-                    ○ Match a character in the set [Ii].<br/>
-                    ○ Match a character in the set [Nn].<br/>
-                    ○ Match a character in the set [Tt].<br/>
-                    ○ Match a character in the set [Oo].<br/>
-            ○ Match a whitespace character atomically at least once.<br/>
-            ○ Match a character in the set ["'[`] atomically, optionally.<br/>
-            ○ 1st capture group.<br/>
-                ○ Match a word character atomically at least once.<br/>
-            </code>
-            </remarks>
-        </member>
-        <member name="M:AppShell.Services.SqliteDataService.SplitAssignments(System.String)">
-            <summary>
-            把 "name='张三, 先生', age=30" 拆成 (列, 值SQL片段) 列表:
-            顶层逗号分隔,单引号字符串('' 转义)与括号内的逗号不拆。
-            </summary>
-        </member>
         <member name="T:AppShell.Services.Web.RemoteDataService">
             <summary>把同步 IDataService 门面映射到后台服务的 db.* 命令。</summary>
         </member>
@@ -321,50 +245,6 @@
         </member>
         <member name="T:AppShell.Services.WorkspaceService.RecycleBin">
             <summary>回收站删除(SHFileOperation,FOF_ALLOWUNDO)。</summary>
-        </member>
-        <member name="T:System.Text.RegularExpressions.Generated.SqlTargetTable_0">
-            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the SqlTargetTable method.</summary>
-        </member>
-        <member name="F:System.Text.RegularExpressions.Generated.SqlTargetTable_0.Instance">
-            <summary>Cached, thread-safe singleton instance.</summary>
-        </member>
-        <member name="M:System.Text.RegularExpressions.Generated.SqlTargetTable_0.#ctor">
-            <summary>Initializes the instance.</summary>
-        </member>
-        <member name="T:System.Text.RegularExpressions.Generated.SqlTargetTable_0.RunnerFactory">
-            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
-        </member>
-        <member name="M:System.Text.RegularExpressions.Generated.SqlTargetTable_0.RunnerFactory.CreateInstance">
-            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
-        </member>
-        <member name="T:System.Text.RegularExpressions.Generated.SqlTargetTable_0.RunnerFactory.Runner">
-            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
-        </member>
-        <member name="M:System.Text.RegularExpressions.Generated.SqlTargetTable_0.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
-            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
-            <param name="inputSpan">The text being scanned by the regular expression.</param>
-        </member>
-        <member name="M:System.Text.RegularExpressions.Generated.SqlTargetTable_0.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
-            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
-            <param name="inputSpan">The text being scanned by the regular expression.</param>
-            <returns>true if a possible match was found; false if no more matches are possible.</returns>
-        </member>
-        <member name="M:System.Text.RegularExpressions.Generated.SqlTargetTable_0.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
-            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
-            <param name="inputSpan">The text being scanned by the regular expression.</param>
-            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
-        </member>
-        <member name="T:System.Text.RegularExpressions.Generated.Utilities">
-            <summary>Helper methods used by generated <see cref="T:System.Text.RegularExpressions.Regex"/>-derived implementations.</summary>
-        </member>
-        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_defaultTimeout">
-            <summary>Default timeout value set in <see cref="T:System.AppContext"/>, or <see cref="F:System.Text.RegularExpressions.Regex.InfiniteMatchTimeout"/> if none was set.</summary>
-        </member>
-        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_hasTimeout">
-            <summary>Whether <see cref="F:System.Text.RegularExpressions.Generated.Utilities.s_defaultTimeout"/> is non-infinite.</summary>
-        </member>
-        <member name="M:System.Text.RegularExpressions.Generated.Utilities.IsWordChar(System.Char)">
-            <summary>Determines whether the character is part of the [\w] set.</summary>
         </member>
     </members>
 </doc>

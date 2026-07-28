@@ -1,7 +1,7 @@
 # MCP 接入与安全
 
-> 适用版本：OneHistoryStudio V2.7.3
-> 框架基线：AppShell 0.6.1
+> 适用版本：OneHistoryStudio V2.7.6
+> 框架基线：AppShell 2.7.6
 
 ## 当前架构
 
@@ -122,8 +122,9 @@ registry.Register(new CommandDescriptor
 });
 ```
 
-**新增只读指令只需改注册点一处**，不必再去任何名单登记。当前全仓共 32 条核心只读命令
-（框架 18 + Studio 14），全部以此方式声明。
+**新增只读指令只需改命令定义/注册点一处**，不必再去任何名单登记。跨桌面与 Service 的内置命令先在
+共享定义声明，再由各宿主绑定 handler；只读性仍只取最终 `CommandDescriptor.Readonly`。当前具体集合和
+数量只从运行时 `command.list` 或自动生成的命令手册读取，现行手册不维护命令名单或总数副本。
 
 判定优先级（`McpExposurePolicy.State`）：
 
@@ -168,7 +169,7 @@ Readonly == true → readonly
 - CORS 缺省关闭，`web.cors` 只接受显式来源白名单。
 - `web.confirm` 缺省 `local`，Web 危险命令直接拒绝；设为 `web` 后才通过事件流请求并由
   `/api/confirm` 应答，60 秒无应答按拒绝。
-- 每会话有分钟级限流，默认 120 次，可用 `web.ratelimit` 调整。
+- 每会话有分钟级限流，默认 120 次；配置键为 `web.ratelimit`，通过本机 `app.get/app.set` 调整。
 
 每个工具调用最终都被还原为命令文本并经同一个 `CommandBus` 执行。返回结果包含：
 
