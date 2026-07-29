@@ -205,6 +205,8 @@ internal static class VersionProjectionSuite
             "deployment governance: deployment consumes the formal package root");
         Contains(deploy, "C:\\OneHistory\\OneHistory-Push",
             "deployment governance: deployment target remains OneHistory-Push");
+        Contains(deploy, "Join-Path $applicationDataRoot \"data\"",
+            "deployment governance: deployment backs up the current data/main.db location");
     }
 
     private static async Task AssertPublishAreaGovernanceAsync()

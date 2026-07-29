@@ -1,76 +1,35 @@
 {
     "schemaVersion":  1,
     "product":  "OneHistoryStudio",
-    "version":  "2.7.6",
+    "version":  "2.7.7",
     "channel":  "package",
-    "packagedAtUtc":  "2026-07-29T08:56:42.0000000Z",
-    "sourceCommit":  "1a4885172f0bade1c434a212aa0a00d3a88853fe",
+    "sourceCommit":  "6dddf2555667890718faa014d4b01f175d54287a",
     "sourceDirty":  false,
     "sdk":  "9.0.315",
     "targetFramework":  "net8.0-windows",
     "runtime":  "win-x64",
     "selfContained":  false,
-    "commandManualSha256":  "FB61853D8189A3FD78E24379C277549CAD0FE977F33B71EB22EEBDC2BCF8B1BC",
+    "commandManualSha256":  "8A9447C760C1530AE4AA3CC1218903DBE03A48032DF15DB7BBF9468AD24661AB",
     "artifacts":  [
                       {
                           "file":  "AppShell.Core.dll",
-                          "bytes":  99328,
-                          "sha256":  "25B9BE48A0AE0A374979C12C9EF731A9529C47D739646DD87E001F87BD072BBD"
-                      },
-                      {
-                          "file":  "AppShell.Core.pdb",
-                          "bytes":  36868,
-                          "sha256":  "067CB32B2A40B1C8DF73F24A0DFFACFB21910E226C73BA6770AB75E0B7A30A95"
-                      },
-                      {
-                          "file":  "AppShell.Core.xml",
-                          "bytes":  62446,
-                          "sha256":  "09F91D1ACA2D6EF2439D8CE7600F2D75AE396BA840B26C7D36A680ABC37D245C"
+                          "bytes":  107008,
+                          "sha256":  "7C0F1C2DEF7C1549A1529683082E1A0418DFDC553146899AF1695BA5D9658400"
                       },
                       {
                           "file":  "AppShell.ServiceHost.dll",
                           "bytes":  26624,
-                          "sha256":  "767D2C7CB2CA3EC16E495F547439180032F7035F227BD7A3EF55D99459AEC246"
-                      },
-                      {
-                          "file":  "AppShell.ServiceHost.pdb",
-                          "bytes":  16292,
-                          "sha256":  "5F9046223E3882FBF2BFC9B3703AC61BB849AEFBCBE99713C172A0FADFDF412B"
-                      },
-                      {
-                          "file":  "AppShell.ServiceHost.xml",
-                          "bytes":  883,
-                          "sha256":  "9739D568F7CEBDD9B9FFE7BE957603D31751C111FEC98D43772F42379C945FC3"
+                          "sha256":  "6465401BC64D651D7014A1EBCF706218BF6DD3297B8D5802AA4DE2F3856C6CCE"
                       },
                       {
                           "file":  "AppShell.Services.dll",
-                          "bytes":  189952,
-                          "sha256":  "8551655560A256C90BAA96D1C0454EB8B90E52630B922718355AC72D6837A125"
-                      },
-                      {
-                          "file":  "AppShell.Services.pdb",
-                          "bytes":  46908,
-                          "sha256":  "EC701B18CE51F5E142DBA67077531F80224227A2EC37664F8441DDB4D9C523B4"
-                      },
-                      {
-                          "file":  "AppShell.Services.xml",
-                          "bytes":  16426,
-                          "sha256":  "01C28C5204BCECF9382944C2506564A2A431B4D5D9A3A9DC537D52916564D8B0"
+                          "bytes":  211968,
+                          "sha256":  "DFA568F120CF6A944CCEAB286CE7D13EDBA45259FDFD9F6E94D5840C33EF2F68"
                       },
                       {
                           "file":  "AppShell.Shell.dll",
-                          "bytes":  285184,
-                          "sha256":  "E7296368BF13EB5A16A8BCEF5B2DF50B64C2A555219DBD1D1A21FF0C86DA0A14"
-                      },
-                      {
-                          "file":  "AppShell.Shell.pdb",
-                          "bytes":  76540,
-                          "sha256":  "4430CFC0B06315241695981B69C8FF705E7C456D4B7B4474CADEF76A71D52CF0"
-                      },
-                      {
-                          "file":  "AppShell.Shell.xml",
-                          "bytes":  33997,
-                          "sha256":  "EFA9694855063E088F085C67556EAE452C17DC073AE15421AC94F88997A67B3F"
+                          "bytes":  271872,
+                          "sha256":  "9BD5D2BEE31E3049E223876A770C01E72010BE9E39C9F2CA29AC0EF15CEE7EDF"
                       },
                       {
                           "file":  "AvalonDock.dll",
@@ -99,33 +58,33 @@
                       },
                       {
                           "file":  "docs/MCP接入与安全.md",
-                          "bytes":  11084,
-                          "sha256":  "B31A839F940A55FF590D7A9B8624A5151BFF5DE60BAA06764D71DDB189041569"
+                          "bytes":  11097,
+                          "sha256":  "05076E30E3A8DF83780CB2AAC3171699E98553DA5C9AB320815DD9950F870F28"
                       },
                       {
                           "file":  "docs/README.md",
                           "bytes":  7241,
-                          "sha256":  "5F1185887480B8AC2C574D75B1D7DD2BCB417E31F8515C2CC9EB919ECBB0305E"
+                          "sha256":  "F469DD15A874AD087E6E90D50DAB905A0D4674B27EA78D6C80E8AABA9DCE34AB"
                       },
                       {
                           "file":  "docs/发布与升级.md",
-                          "bytes":  45193,
-                          "sha256":  "F51264B615613D1EC26ADA524501527E0030615E74B021D788AB697944C2F34A"
+                          "bytes":  45892,
+                          "sha256":  "96EBA70B9FCC915842CCA2D5FE66E09A1BF429BBDCBD720B74159E1A286086C6"
                       },
                       {
                           "file":  "docs/命令手册.md",
-                          "bytes":  53251,
-                          "sha256":  "FB61853D8189A3FD78E24379C277549CAD0FE977F33B71EB22EEBDC2BCF8B1BC"
+                          "bytes":  40353,
+                          "sha256":  "8A9447C760C1530AE4AA3CC1218903DBE03A48032DF15DB7BBF9468AD24661AB"
                       },
                       {
                           "file":  "docs/模块开发手册.md",
-                          "bytes":  14915,
-                          "sha256":  "5FF91ADA6E45F492D995D9B28CD284B23C38FCEB5A5302B46F3D7FB72F9CC025"
+                          "bytes":  18242,
+                          "sha256":  "1294F86B9D8D46111043A77BEFD6D44C84385C78FBE828F09AAD349E27AEA6FD"
                       },
                       {
                           "file":  "docs/项目库与备份.md",
-                          "bytes":  10441,
-                          "sha256":  "F69165AFEF08AD1B698DA2E06BDF5F638933C04B443145483AA75C2BD725801A"
+                          "bytes":  10533,
+                          "sha256":  "2ABAB6F567714C4C1B8FC839AF7068B603EDA7FF9186977AEA82D303660A2D0F"
                       },
                       {
                           "file":  "es/AvalonDock.resources.dll",
@@ -164,23 +123,23 @@
                       },
                       {
                           "file":  "OneHistoryStudio.deps.json",
-                          "bytes":  7244,
-                          "sha256":  "E20705DCF89D4DEA76A148E738F7554E63107787B84398192CDA2BF4F211B096"
+                          "bytes":  6678,
+                          "sha256":  "0F0EC50AE7B0D980E02AF83439549BADE8B83575A8501C71A22645D5C74EA3BD"
                       },
                       {
                           "file":  "OneHistoryStudio.dll",
-                          "bytes":  741376,
-                          "sha256":  "6141A121811D8A0A44A252DE43A08F5C2C8D2368361B84221053DC35E5103C40"
+                          "bytes":  739840,
+                          "sha256":  "8C05EA31C79A73B18344F2F04BC30BD59844AA50F3DB9479204EDBE527B18783"
                       },
                       {
                           "file":  "OneHistoryStudio.exe",
                           "bytes":  152064,
-                          "sha256":  "85A98524DC59E9E3C82B04B882FB38205D991A6AE806DCBC27439BC06409D3DD"
+                          "sha256":  "52C7C4078373EF2D87AFBDEC70FFF0B83A55F78535031D45AE6DB7F569C39E39"
                       },
                       {
                           "file":  "OneHistoryStudio.pdb",
-                          "bytes":  193872,
-                          "sha256":  "950D63B7072E12890FA3991EF6F8FA4B422426D8246B8A1A2069503FCB1EA1E6"
+                          "bytes":  193656,
+                          "sha256":  "04877BEBDF38096FDE4DA3CD0B3ED42B2A8EE615ECBAB84F9C3EE7F926BD1E2F"
                       },
                       {
                           "file":  "OneHistoryStudio.runtimeconfig.json",
@@ -222,5 +181,6 @@
                           "bytes":  6144,
                           "sha256":  "E12491E16E77AF2130FE9B9D79AD12C64D5AEFAD62E8A181EEA7B0A23835A4EC"
                       }
-                  ]
+                  ],
+    "packagedAtUtc":  "2026-07-29T12:13:32.1769587+00:00"
 }

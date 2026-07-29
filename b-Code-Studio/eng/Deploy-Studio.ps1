@@ -82,15 +82,22 @@ $quarantine = Assert-UnderRoot `
     (Join-Path $DeploymentParent "OneHistoryStudio-failed-$Version-$timestamp-$transactionId") `
     $DeploymentParent "failed deployment"
 
-$database = Join-Path (Join-Path `
-        ([Environment]::GetFolderPath([Environment+SpecialFolder]::ApplicationData)) "OneHistoryStudio") "main.db"
-if (Test-Path -LiteralPath $database -PathType Leaf) {
+$applicationDataRoot = Join-Path `
+    ([Environment]::GetFolderPath([Environment+SpecialFolder]::ApplicationData)) "OneHistoryStudio"
+$databaseCandidates = @(
+    (Join-Path (Join-Path $applicationDataRoot "data") "main.db"),
+    (Join-Path $applicationDataRoot "main.db")
+)
+$database = $databaseCandidates | Where-Object {
+    Test-Path -LiteralPath $_ -PathType Leaf
+} | Select-Object -First 1
+if ($null -ne $database) {
     $databaseBackupRoot = Assert-UnderRoot `
         (Join-Path $DeploymentParent "OneHistoryStudio-DatabaseBackups") $DeploymentParent "database backup"
     New-Item -ItemType Directory -Force -Path $databaseBackupRoot | Out-Null
     $databaseBackup = Join-Path $databaseBackupRoot "main-db-predeploy-$Version-$timestamp.db"
     Copy-Item -LiteralPath $database -Destination $databaseBackup
-    Write-Host "Database backup: $databaseBackup"
+    Write-Host "Database backup: $database -> $databaseBackup"
 }
 
 try {

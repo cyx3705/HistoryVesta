@@ -1,7 +1,7 @@
 # MCP 接入与安全
 
-> 适用版本：OneHistoryStudio V2.7.6
-> 框架基线：AppShell 2.7.6
+> 适用版本：OneHistoryStudio V2.7.7
+> 框架基线：OneHistory.AppShell.* 3.0.0
 
 ## 当前架构
 
