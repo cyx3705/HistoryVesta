@@ -13,6 +13,8 @@
 
 ## 主要变化
 
+- 3.0.2 起，运行期注册或停靠到 `DockSide.Right` 的模块窗口复用现有右侧标签组，不再逐窗口创建独立侧栏；
+  无右侧窗格时才新建。模块不需要为此声明 `DefaultTabTarget`。
 - 3.0.1 起，`EnableModules` 和 `EnableMcp` 从默认开启改为默认关闭；`EnableUiModules` 与
   `EnableRemoteManagementViews` 继续默认关闭。消费方必须显式选择可选宿主能力。
 - MCP 关闭时，本地 `command.*` 和中央命令集仍保留；框架不会创建 MCP 网关、治理/审计对象或监听端口。

@@ -396,6 +396,42 @@ public sealed class DockingContractTests
     }
 
     [Fact]
+    public void LateRegisteredRightModuleWindowJoinsExistingRightPane()
+    {
+        RunSta(() =>
+        {
+            var manager = new DockingManager();
+            var host = new DockingHost(
+                manager,
+                [
+                    Tool(StandardWindowIds.Mcp, DockSide.Center, 1),
+                    Tool(StandardWindowIds.CommandDetail, DockSide.Right, 0.32),
+                    Tool(StandardWindowIds.Modules, DockSide.Right, 0.32),
+                ],
+                new MemoryLayoutStore(),
+                new NullLog());
+            host.Initialize();
+
+            host.RegisterWindow(Tool("module.registered", DockSide.Right, 0.25), "module:test");
+
+            var pane = Assert.Single(manager.Layout.Descendents().OfType<LayoutAnchorablePane>());
+            Assert.Equal(
+                [StandardWindowIds.CommandDetail, StandardWindowIds.Modules, "module.registered"],
+                pane.Children.Select(item => item.ContentId));
+            Assert.Equal("module.registered", pane.SelectedContent?.ContentId);
+            var registered = host.ListWindows().Single(item => item.Id == "module.registered");
+            Assert.Equal(DockSide.Right, registered.Side);
+            Assert.Equal("module:test", registered.Owner);
+
+            host.ResetWindow("module.registered");
+            Assert.Same(
+                pane,
+                manager.Layout.Descendents().OfType<LayoutAnchorable>()
+                    .Single(item => item.ContentId == "module.registered").Parent);
+        });
+    }
+
+    [Fact]
     public void NamedLayoutPreservesHiddenBusinessCenterPage()
     {
         RunSta(() =>
@@ -718,6 +754,113 @@ public sealed class DockingContractTests
                 var ratio = secondHost.ListWindows().Single(item => item.Id == "stage").Ratio;
                 Assert.NotNull(ratio);
                 Assert.InRange(ratio.Value, 0.25, 0.55);
+            }
+            finally
+            {
+                second.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void OpposingSidePanesAlwaysReserveTheCenterWorkspace()
+    {
+        RunSta(() =>
+        {
+            var window = ShowHost(
+                [
+                    Tool(StandardWindowIds.Mcp, DockSide.Center, 1),
+                    Tool("left", DockSide.Left, 0.18),
+                    Tool("right", DockSide.Right, 0.38),
+                ], new MemoryLayoutStore(), out var host);
+            try
+            {
+                PumpDispatcher();
+                host.SetRatio("left", 0.55);
+                host.SetRatio("right", 0.55);
+                PumpDispatcher();
+
+                var windows = host.ListWindows().ToDictionary(item => item.Id);
+                var sides = windows["left"].Ratio!.Value + windows["right"].Ratio!.Value;
+                Assert.InRange(sides, 0.7, 0.81);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void MainWindowResizeDoesNotBecomeANewSplitterGesture()
+    {
+        RunSta(() =>
+        {
+            var window = ShowHost(
+                [
+                    Tool(StandardWindowIds.Mcp, DockSide.Center, 1),
+                    Tool("left", DockSide.Left, 0.2),
+                    Tool("right", DockSide.Right, 0.3),
+                ], new MemoryLayoutStore(), out var host);
+            try
+            {
+                PumpDispatcher();
+                var before = host.ListWindows().ToDictionary(item => item.Id);
+                window.Width = 620;
+                PumpDispatcher();
+                PumpDispatcher();
+                var after = host.ListWindows().ToDictionary(item => item.Id);
+
+                Assert.InRange(
+                    Math.Abs(after["left"].Ratio!.Value - before["left"].Ratio!.Value), 0, 0.03);
+                Assert.InRange(
+                    Math.Abs(after["right"].Ratio!.Value - before["right"].Ratio!.Value), 0, 0.03);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void RestoredOversubscribedSidePanesAreNormalized()
+    {
+        RunSta(() =>
+        {
+            var tools = new[]
+            {
+                Tool(StandardWindowIds.Mcp, DockSide.Center, 1),
+                Tool("left", DockSide.Left, 0.2),
+                Tool("right", DockSide.Right, 0.3),
+            };
+            var store = new MemoryLayoutStore();
+            var first = ShowHost(tools, store, out var firstHost);
+            try
+            {
+                PumpDispatcher();
+                var manager = (DockingManager)first.Content;
+                foreach (var pane in manager.Layout.Descendents().OfType<LayoutAnchorablePane>()
+                             .Where(pane => pane.Children.Any(item =>
+                                 item.ContentId is "left" or "right")))
+                {
+                    pane.DockWidth = new GridLength(480, GridUnitType.Pixel);
+                }
+                firstHost.SaveCurrentLayout();
+            }
+            finally
+            {
+                first.Close();
+            }
+
+            var second = ShowHost(tools, store, out var secondHost);
+            try
+            {
+                PumpDispatcher();
+                PumpDispatcher();
+                var windows = secondHost.ListWindows().ToDictionary(item => item.Id);
+                var sides = windows["left"].Ratio!.Value + windows["right"].Ratio!.Value;
+                Assert.InRange(sides, 0.7, 0.81);
             }
             finally
             {

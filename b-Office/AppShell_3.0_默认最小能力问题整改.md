@@ -3,7 +3,7 @@
 > 发现日期：2026-07-29
 > 影响版本：3.0.0 正式包
 > 修复版本：3.0.1 候选
-> 状态：实现、全量门禁与消费方验证完成，等待审核；未正式发布、未冻结、未推送
+> 状态：实现、全量门禁与消费方验证完成，源码已推送；未正式发布、未冻结
 
 ## 1. 问题
 
@@ -81,5 +81,5 @@
 - [x] WBall 使用独立缓存与隔离 artifacts 从 staging 还原；Debug/Release 均 0 warning / 0 error，Release
   `WBallVerify` 为 `VERIFY PASS`，seed 42/43 的长期确定性哈希未变化。
 
-本轮只生成 `b-Publish/staging/3.0.1` 审核候选。审核通过前不执行
-`Publish-AppShell.ps1 -Version 3.0.1 -Publish`，不更新 Z 级正式快照，不创建 `v3.0.1` 标签，也不 commit/push。
+本轮只生成 `b-Publish/staging/3.0.1` 审核候选。源码提交 `3b82f0d6` 已按授权推送；正式发布审核通过前不执行
+`Publish-AppShell.ps1 -Version 3.0.1 -Publish`，不更新 Z 级正式快照，也不创建 `v3.0.1` 标签。

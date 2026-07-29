@@ -24,6 +24,7 @@ namespace AppShell.Shell.Docking;
 /// </summary>
 public sealed class DockingHost : IDockingService
 {
+    private const double MaximumSideAllocation = 0.8;
     private const string LayoutSource = "layout";
     private const double RatioEpsilon = 0.02;
     private const string PlacementSettingsKey = "layout.placements";
@@ -57,6 +58,7 @@ public sealed class DockingHost : IDockingService
     private readonly Dictionary<string, double> _ratios = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _preserveDefaultRatioOnSeed = new(StringComparer.OrdinalIgnoreCase);
     private readonly DispatcherTimer _resizeDebounce;
+    private bool _windowResizePending;
 
     public DockingHost(
         DockingManager manager,
@@ -105,9 +107,18 @@ public sealed class DockingHost : IDockingService
             {
                 ReapplyRatios();
             }
+            _manager.Dispatcher.BeginInvoke(
+                DispatcherPriority.ApplicationIdle,
+                () =>
+                {
+                    _windowResizePending = false;
+                    _baseline = ComputeAllStates();
+                });
         };
         _manager.SizeChanged += (_, _) =>
         {
+            _windowResizePending = true;
+            _debounce.Stop();
             _resizeDebounce.Stop();
             _resizeDebounce.Start();
         };
@@ -228,6 +239,7 @@ public sealed class DockingHost : IDockingService
                 anchorable.IsActive = true;
             }
             EnsureCentralWorkspace();
+            ReapplyRatios();
         }
     }
 
@@ -358,6 +370,7 @@ public sealed class DockingHost : IDockingService
         using (Suppress())
         {
             ApplyRatio(a, side.Value, ratio);
+            ReapplyRatios();
         }
     }
 
@@ -1248,6 +1261,20 @@ public sealed class DockingHost : IDockingService
             side = DockSide.Right;
         }
 
+        // 默认布局会把同一侧的窗口合并成一个标签组；运行期模块注册也必须遵守
+        // 相同拓扑，避免每注册一个右侧窗口就额外切出一块嵌套侧栏。
+        var existingPane = FindSidePane(side, a);
+        if (existingPane != null)
+        {
+            a.CanAutoHide = true;
+            existingPane.Children.Add(a);
+            existingPane.SelectedContentIndex = existingPane.Children.Count - 1;
+            if (a.ContentId != null)
+                _ratios[a.ContentId] = ratio;
+            root.CollectGarbage();
+            return;
+        }
+
         var pane = new LayoutAnchorablePane(a);
         a.CanAutoHide = true;
 
@@ -1281,6 +1308,16 @@ public sealed class DockingHost : IDockingService
             _ratios[a.ContentId] = ratio;
         root.CollectGarbage();
     }
+
+    private LayoutAnchorablePane? FindSidePane(DockSide side, LayoutAnchorable excluded)
+        => _manager.Layout.Descendents()
+            .OfType<LayoutAnchorable>()
+            .Where(item => !ReferenceEquals(item, excluded)
+                           && item.Parent is LayoutAnchorablePane
+                           && !item.IsHidden
+                           && !IsFloating(item))
+            .FirstOrDefault(item => DetectSide(item) == side)
+            ?.Parent as LayoutAnchorablePane;
 
     /// <summary>找到包含主文档区的中央列;若中央区不是垂直面板,则就地包一层。</summary>
     private LayoutPanel EnsureCenterColumn()
@@ -1496,7 +1533,6 @@ public sealed class DockingHost : IDockingService
                     ApplyRatio(anchorable, side.Value, _ratios[id]);
             }
 
-            return;
         }
 
         var rootPanel = _manager.Layout.RootPanel;
@@ -1505,21 +1541,42 @@ public sealed class DockingHost : IDockingService
             return;
 
         var rootHorizontal = rootPanel.Orientation == Orientation.Horizontal;
-        foreach (var child in rootPanel.Children.Where(c => !ReferenceEquals(c, center)))
-        {
-            if (RatioOfSubtree(child) is { } ratio)
-                SetDockLength(child, rootHorizontal, DockLengthFor(rootHorizontal, ratio));
-        }
+        ReapplyPanelRatios(rootPanel, center, rootHorizontal);
 
         if (center is LayoutPanel column)
         {
             var innerDoc = column.Children.FirstOrDefault(c =>
                 c is LayoutDocumentPane || c.Descendents().OfType<LayoutDocumentPane>().Any());
             var columnHorizontal = column.Orientation == Orientation.Horizontal;
-            foreach (var child in column.Children.Where(c => !ReferenceEquals(c, innerDoc)))
+            if (innerDoc != null)
+                ReapplyPanelRatios(column, innerDoc, columnHorizontal);
+        }
+    }
+
+    private void ReapplyPanelRatios(
+        LayoutPanel panel,
+        ILayoutPanelElement center,
+        bool horizontal)
+    {
+        var sides = panel.Children
+            .Where(child => !ReferenceEquals(child, center))
+            .Select(child => (Child: child, Ratio: RatioOfSubtree(child)))
+            .Where(item => item.Ratio is > 0)
+            .Select(item => (item.Child, Ratio: item.Ratio!.Value))
+            .ToList();
+        var requested = sides.Sum(item => item.Ratio);
+        var scale = requested > MaximumSideAllocation
+            ? MaximumSideAllocation / requested
+            : 1d;
+
+        foreach (var (child, ratio) in sides)
+        {
+            var effective = ratio * scale;
+            SetDockLength(child, horizontal, DockLengthFor(horizontal, effective));
+            foreach (var anchorable in child.Descendents().OfType<LayoutAnchorable>())
             {
-                if (RatioOfSubtree(child) is { } ratio)
-                    SetDockLength(child, columnHorizontal, DockLengthFor(columnHorizontal, ratio));
+                if (anchorable.ContentId != null && _byId.ContainsKey(anchorable.ContentId))
+                    _ratios[anchorable.ContentId] = effective;
             }
         }
     }
@@ -1699,7 +1756,7 @@ public sealed class DockingHost : IDockingService
 
     private void OnLayoutUpdated(object? sender, EventArgs e)
     {
-        if (_suppress > 0)
+        if (_suppress > 0 || _windowResizePending)
             return;
 
         ScheduleCentralWorkspaceRepair();
@@ -1773,6 +1830,9 @@ public sealed class DockingHost : IDockingService
             if (s is { Visible: true, Floating: false, Side: not null and not DockSide.Tab and not DockSide.Center, Ratio: > 0 })
                 _ratios[id] = s.Ratio;
         }
+
+        using (Suppress())
+            ReapplyRatios();
 
         _baseline = now;
     }
