@@ -3,7 +3,7 @@
     "product":  "OneHistoryStudio",
     "version":  "2.7.7",
     "channel":  "package",
-    "sourceCommit":  "6dddf2555667890718faa014d4b01f175d54287a",
+    "sourceCommit":  "26c3c1f869451dde169a5fd2a88d4858aad9f641",
     "sourceDirty":  false,
     "sdk":  "9.0.315",
     "targetFramework":  "net8.0-windows",
@@ -68,8 +68,8 @@
                       },
                       {
                           "file":  "docs/发布与升级.md",
-                          "bytes":  45892,
-                          "sha256":  "96EBA70B9FCC915842CCA2D5FE66E09A1BF429BBDCBD720B74159E1A286086C6"
+                          "bytes":  46674,
+                          "sha256":  "63D45992B14A0B2F46C1E08451BC2229EFC73C1E734CA56DC90E1EB7C477DE3D"
                       },
                       {
                           "file":  "docs/命令手册.md",
@@ -129,7 +129,7 @@
                       {
                           "file":  "OneHistoryStudio.dll",
                           "bytes":  739840,
-                          "sha256":  "8C05EA31C79A73B18344F2F04BC30BD59844AA50F3DB9479204EDBE527B18783"
+                          "sha256":  "E8F22989DC4927E61FDA1736044E9D6165198E84008A49CB9C6872F7C918B04F"
                       },
                       {
                           "file":  "OneHistoryStudio.exe",
@@ -139,7 +139,7 @@
                       {
                           "file":  "OneHistoryStudio.pdb",
                           "bytes":  193656,
-                          "sha256":  "04877BEBDF38096FDE4DA3CD0B3ED42B2A8EE615ECBAB84F9C3EE7F926BD1E2F"
+                          "sha256":  "BE1D810C137EA56207122A2926D3AB0518EBEAC7857D8073361526E340A22EC0"
                       },
                       {
                           "file":  "OneHistoryStudio.runtimeconfig.json",
@@ -182,5 +182,5 @@
                           "sha256":  "E12491E16E77AF2130FE9B9D79AD12C64D5AEFAD62E8A181EEA7B0A23835A4EC"
                       }
                   ],
-    "packagedAtUtc":  "2026-07-29T12:13:32.1769587+00:00"
+    "packagedAtUtc":  "2026-07-29T12:23:57.8572992+00:00"
 }
