@@ -416,7 +416,7 @@ public sealed class DockingContractTests
     }
 
     [Fact]
-    public void LateRegisteredRightModuleWindowJoinsExistingRightPane()
+    public void LateRegisteredDefaultModuleWindowJoinsExistingRightPane()
     {
         RunSta(() =>
         {
@@ -432,7 +432,12 @@ public sealed class DockingContractTests
                 new NullLog());
             host.Initialize();
 
-            host.RegisterWindow(Tool("module.registered", DockSide.Right, 0.25), "module:test");
+            host.RegisterWindow(new ToolWindowDescriptor
+            {
+                Id = "module.registered",
+                Title = "module.registered",
+                ContentFactory = () => new Border(),
+            }, "module:test");
 
             var pane = Assert.Single(manager.Layout.Descendents().OfType<LayoutAnchorablePane>());
             Assert.Equal(

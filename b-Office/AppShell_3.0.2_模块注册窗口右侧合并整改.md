@@ -65,6 +65,8 @@ Shell 建立默认布局时，会把同一 `DockSide` 的窗口合并进一个 `
 - [x] 显式执行 `win.show name=se2sw` 返回“已显示”，窗口保持稳定，未生成第二个嵌套侧栏或独立窗口。
 - [x] AppShell 保留模块通过 `DefaultSide` 修改停靠位置的能力，同时把未声明位置的模块默认放到右侧。
   SE2SW 已删除原 `Top/0.75` 显式覆盖，直接消费 AppShell 的 `Right/0.25` 默认值。
+- [x] SE2SW 已从失效的 OHS 内嵌 AppShell 源码引用切换为正式 `OneHistory.AppShell.Core 3.0.2` 包引用，
+  使用 AppShell 正式 feed 独立还原，不再依赖早期复制底座目录。
 
 说明：自动化的离屏 `PrintWindow` 捕获只得到中央表面，未包含桌面上实际可见的右侧窗格；该捕获结果与人工观察、
 窗口模型及 UI 自动化树均不一致，因此判定为取证方式限制，不作为产品缺陷证据，也不随文档保留误导性截图。
