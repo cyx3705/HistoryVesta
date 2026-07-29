@@ -4,6 +4,7 @@ using AppShell.Core.Storage;
 using AppShell.Shell.Docking;
 using AppShell.Core.Modules;
 using AppShell.Services.Modules;
+using AppShell.Services.Web;
 using AvalonDock;
 using AvalonDock.Controls;
 using AvalonDock.Layout;
@@ -18,6 +19,8 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
+using OneHistoryStudio.Connection;
+using OneHistoryStudio.Views;
 using static OneHistoryStudio.Smoke.SmokeKit;
 
 namespace OneHistoryStudio.Smoke.Suites;
@@ -41,6 +44,7 @@ internal static class DockingSuite
                 RunLiveDocumentPaneEmbedding();
                 RunFloatDockRoundTrip();
                 RunModuleReload();
+                RunOhsNarrowViewMeasure();
             }
             catch (Exception ex)
             {
@@ -63,6 +67,37 @@ internal static class DockingSuite
             Console.WriteLine("DockingRealMouseSmoke: PASS");
         Console.WriteLine("DockingSmoke: PASS");
         return Task.CompletedTask;
+    }
+
+    private static void RunOhsNarrowViewMeasure()
+    {
+        using var client = new ShellServiceClient(
+            new Uri("http://127.0.0.1:65534/"), "NarrowLayoutSmoke");
+        var root = Path.Combine(Path.GetTempPath(), "ohs-narrow-layout-" + Guid.NewGuid().ToString("N"));
+        var profiles = new ConnectionProfileService(
+            new BootstrapProfileStore("NarrowLayoutSmoke", root),
+            new DpapiSecretStore(root),
+            client);
+
+        AssertNarrowView(
+            new ConnectionSettingsView(profiles, static () => null),
+            "connection settings");
+        AssertNarrowView(
+            new GitHubAccountView(static () => null),
+            "GitHub account");
+    }
+
+    private static void AssertNarrowView(FrameworkElement view, string name)
+    {
+        var available = new Size(295, 500);
+        Equal(0d, view.MinWidth, $"{name}: no host-forcing minimum width");
+        Equal(0d, view.MinHeight, $"{name}: no host-forcing minimum height");
+        view.Measure(available);
+        True(view.DesiredSize.Width <= available.Width,
+            $"{name}: desired width fits a restored-window right pane");
+        view.Arrange(new Rect(available));
+        Equal(available.Width, view.ActualWidth,
+            $"{name}: arranged width follows the docking host");
     }
 
     private static void Run()

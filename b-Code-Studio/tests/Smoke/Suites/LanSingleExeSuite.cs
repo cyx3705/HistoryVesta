@@ -436,6 +436,8 @@ internal static class LanSingleExeSuite
         var app = File.ReadAllText(Path.Combine(SmokeKit.RepoRoot, "App.xaml.cs"));
         var githubView = File.ReadAllText(Path.Combine(
             SmokeKit.RepoRoot, "Views", "GitHubAccountView.xaml"));
+        var connectionView = File.ReadAllText(Path.Combine(
+            SmokeKit.RepoRoot, "Views", "ConnectionSettingsView.xaml"));
         var legacy = File.ReadAllText(Path.Combine(
             SmokeKit.ParentDir, "b-Code-Studio.Service", "Studio.Service.csproj"));
         SmokeKit.Contains(studio, "<StartupObject>OneHistoryStudio.Program</StartupObject>",
@@ -452,6 +454,19 @@ internal static class LanSingleExeSuite
             "client composition uses remote workspace");
         SmokeKit.Contains(githubView, "服务器 GitHub 账号",
             "GitHub view identifies server account ownership");
+        foreach (var (name, xaml) in new[]
+                 {
+                     ("connection", connectionView),
+                     ("GitHub", githubView),
+                 })
+        {
+            var userControl = xaml[..xaml.IndexOf('>')];
+            SmokeKit.True(!userControl.Contains("MinWidth=", StringComparison.Ordinal)
+                          && !userControl.Contains("MinHeight=", StringComparison.Ordinal),
+                $"{name} docked view does not force the host minimum size");
+            SmokeKit.Contains(xaml, "<WrapPanel",
+                $"{name} docked view wraps narrow-width actions");
+        }
         var helper = File.ReadAllText(Path.Combine(
             SmokeKit.RepoRoot, "Connection", "LanMachineHelper.cs"));
         SmokeKit.Contains(helper, "LAN 机器配置原本未启用，无需移除",

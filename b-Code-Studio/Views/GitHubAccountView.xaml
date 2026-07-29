@@ -1,7 +1,6 @@
 <UserControl x:Class="OneHistoryStudio.Views.GitHubAccountView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             MinWidth="560" MinHeight="420">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <UserControl.Resources>
         <Style TargetType="TextBlock" x:Key="FieldLabel">
             <Setter Property="Foreground" Value="#555B63" />
@@ -28,26 +27,28 @@
             <StackPanel>
                 <TextBlock Text="服务器 GitHub 账号" FontSize="18" FontWeight="SemiBold" />
                 <TextBlock Text="此处显示和管理当前所连接服务器的凭据、提交身份与仓库远端。"
-                           Foreground="#555B63" Margin="0,3,0,0" />
+                           Foreground="#555B63" Margin="0,3,0,0" TextWrapping="Wrap" />
                 <TextBlock x:Name="ConnectionText" Foreground="#555B63" Margin="0,3,0,0" />
             </StackPanel>
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
+            <WrapPanel Grid.Column="1">
                 <Button Content="检测" Click="OnTestClick" ToolTip="只读检测当前 origin 连接" />
                 <Button Content="刷新" Margin="8,0,0,0" Click="OnRefreshClick" />
-            </StackPanel>
+            </WrapPanel>
         </Grid>
 
         <Grid Grid.Row="1" Margin="0,12,0,8">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="70" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
             <TextBlock Text="origin" Style="{StaticResource FieldLabel}" />
-            <TextBlock x:Name="OriginText" Grid.Column="1" Margin="8,0,20,0" TextTrimming="CharacterEllipsis" />
-            <TextBlock Grid.Column="2" Text="最后检测" Style="{StaticResource FieldLabel}" />
-            <TextBlock x:Name="CheckedText" Grid.Column="3" Margin="8,0,0,0" />
+            <TextBlock x:Name="OriginText" Grid.Column="1" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
+            <TextBlock Grid.Row="1" Text="最后检测" Style="{StaticResource FieldLabel}" />
+            <TextBlock x:Name="CheckedText" Grid.Row="1" Grid.Column="1" Margin="8,4,0,0" />
         </Grid>
 
         <TabControl Grid.Row="2">
@@ -59,11 +60,11 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <StackPanel Orientation="Horizontal">
+                    <WrapPanel>
                         <TextBlock Text="GitHub HTTPS 凭据账号" FontWeight="SemiBold" VerticalAlignment="Center" />
                         <Button Content="登录" Margin="12,0,0,0" Click="OnLoginClick" />
                         <Button Content="注销所选" Margin="8,0,0,0" Click="OnLogoutClick" />
-                    </StackPanel>
+                    </WrapPanel>
                     <DataGrid x:Name="AccountsGrid" Grid.Row="1" Margin="0,6,0,10"
                               AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column">
                         <DataGrid.Columns>
@@ -103,11 +104,11 @@
                         <ComboBoxItem Content="repository" />
                         <ComboBoxItem Content="global" />
                     </ComboBox>
-                    <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal">
+                    <WrapPanel Grid.Row="3" Grid.Column="1">
                         <Button Content="预览" Click="OnIdentityPreviewClick" />
                         <Button Content="应用" Margin="8,0,0,0" Click="OnIdentityApplyClick" />
                         <TextBlock x:Name="IdentitySourceText" Margin="14,0,0,0" VerticalAlignment="Center" Foreground="#555B63" />
-                    </StackPanel>
+                    </WrapPanel>
                 </Grid>
             </TabItem>
 
@@ -126,11 +127,11 @@
                     <TextBox x:Name="FetchUrl" Grid.Column="1" Margin="0,0,0,8" />
                     <TextBlock Grid.Row="1" Text="Push URL" Style="{StaticResource FieldLabel}" />
                     <TextBox x:Name="PushUrl" Grid.Row="1" Grid.Column="1" Margin="0,0,0,12" />
-                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
+                    <WrapPanel Grid.Row="2" Grid.Column="1">
                         <Button Content="预览" Click="OnRemotePreviewClick" />
                         <Button Content="应用" Margin="8,0,0,0" Click="OnRemoteApplyClick" />
                         <TextBlock x:Name="RepositoryText" Margin="14,0,0,0" VerticalAlignment="Center" Foreground="#555B63" />
-                    </StackPanel>
+                    </WrapPanel>
                 </Grid>
             </TabItem>
 
