@@ -14,7 +14,7 @@ namespace OneHistoryStudio.Smoke.Suites;
 /// <summary>验证 OHS 自有版本与冻结 AppShell 包版本彼此独立且完整投影。</summary>
 internal static class VersionProjectionSuite
 {
-    private const string FrozenAppShellVersion = "3.0.2";
+    private const string FrozenAppShellVersion = "3.0.3";
 
     public static async Task RunAsync(string[] args)
     {

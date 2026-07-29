@@ -1,7 +1,7 @@
 # OneHistoryStudio
 
 本目录只承载 OneHistoryStudio 产品源码和测试。产品文档位于 `..\b-Office`；AppShell 由平级
-`2026-023-AppShell` 独立维护，本项目固定消费 `OneHistory.AppShell.* 3.0.2` 包。
+`2026-023-AppShell` 独立维护，本项目固定消费 `OneHistory.AppShell.* 3.0.3` 包。
 
 ## 结构
 
@@ -50,8 +50,8 @@ Release 发布、运行时命令手册重生成、六份 Help 校验、版本校
 `b-Publish\quarantine\OneHistoryStudio`。发布脚本不得创建仓库根 `stage`。
 
 ```powershell
-.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.8
-.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.8 -Publish
+.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.9
+.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.9 -Publish
 ```
 
 不得用独立的 `dotnet publish` 或手工复制替代该入口；版本始终从 `StudioVersion.props` 求值。
