@@ -25,7 +25,7 @@ dotnet build .\AppShell.sln -c Release --no-restore
 
 ## 3.0.x 包
 
-3.0.0 是当前正式发布基线但尚未标签冻结；源码当前为 3.0.2 模块注册窗口右侧合并候选。桌面消费者引用 Shell，
+3.0.2 是当前正式发布基线；源码当前为 3.0.3 Docking 主工作区比例收口候选。桌面消费者引用 Shell，
 服务化消费者额外引用 ServiceHost。正式切换前继续固定使用当前 Z 级快照声明的版本：
 
 ```xml
@@ -38,10 +38,10 @@ dotnet build .\AppShell.sln -c Release --no-restore
 
 ```powershell
 # 可覆盖 staging：构建、审计、隔离消费和演示发布
-.\eng\Publish-AppShell.ps1 -Version 3.0.2
+.\eng\Publish-AppShell.ps1 -Version 3.0.3
 
 # 完整归档不可覆盖；同时替换 z-Package-AppShell 的当前正式快照
-.\eng\Publish-AppShell.ps1 -Version 3.0.2 -Publish
+.\eng\Publish-AppShell.ps1 -Version 3.0.3 -Publish
 ```
 
 脚本不会执行 Git commit/tag/push，也不会推送 NuGet.org。包结构与许可边界见 `PACKAGE.md`。

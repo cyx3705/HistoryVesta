@@ -1,7 +1,7 @@
 # AppShell 3.0
 
 本仓库是 OneHistory AppShell 的独立源码、合同与发布资产真值。`3.0.0` 是当前正式发布基线但尚未标签冻结；
-源码当前进入 `3.0.2` 模块注册窗口右侧合并候选，版本线不再与 OneHistoryStudio 对齐，`0.7.x` 仅保留用于回滚。
+源码当前进入 `3.0.3` Docking 主工作区比例收口候选，版本线不再与 OneHistoryStudio 对齐，`0.7.x` 仅保留用于回滚。
 
 ## 仓库结构
 
@@ -34,10 +34,10 @@ dotnet format .\AppShell.sln --verify-no-changes --no-restore
 
 ```powershell
 # 重建 b-Publish/staging 下的可覆盖审核候选
-.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.0.2
+.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.0.3
 
 # 仅在审核通过、代码和消费文档均已提交且干净后执行
-.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.0.2 -Publish
+.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.0.3 -Publish
 
 # 使用 b-Publish 归档中的历史包验证发布生成链，只更新 b-Publish/virtual
 .\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 0.7.2 -VirtualPublish
@@ -47,7 +47,7 @@ dotnet format .\AppShell.sln --verify-no-changes --no-restore
 ```
 
 审核阶段的消费方必须临时指向
-`b-Publish/staging/3.0.2/packages`；正式提升后改用
+`b-Publish/staging/3.0.3/packages`；正式提升后改用
 `z-Package-AppShell/feed`。`z-Package-AppShell` 始终只保留一个当前发布快照的展开内容，不建立版本号外层目录；每次发布都会整体替换旧内容，历史和虚拟发布只保存在 `b-Publish`。发布脚本不会执行 Git commit、tag、push，也不会推送 NuGet.org。
 
 桌面消费者通常引用 `OneHistory.AppShell.Shell`；服务化宿主额外引用

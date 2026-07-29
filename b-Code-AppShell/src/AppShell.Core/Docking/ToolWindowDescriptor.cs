@@ -13,8 +13,8 @@ public sealed class ToolWindowDescriptor
     public required string Title { get; init; }
 
     /// <summary>
-    /// 默认停靠方位。Center 占据中央工作区；Tab 时须同时指定
-    /// <see cref="DefaultTabTarget"/>。
+    /// 默认停靠方位。未指定时为右侧；模块仍可显式指定 Left/Top/Bottom/Center/Tab
+    /// 覆盖该默认值。Center 占据中央工作区；Tab 时须同时指定 <see cref="DefaultTabTarget"/>。
     /// </summary>
     public DockSide DefaultSide { get; init; } = DockSide.Right;
 

@@ -24,7 +24,7 @@ namespace AppShell.Shell.Docking;
 /// </summary>
 public sealed class DockingHost : IDockingService
 {
-    private const double MaximumSideAllocation = 0.8;
+    private const double MaximumSideAllocation = 0.5;
     private const string LayoutSource = "layout";
     private const double RatioEpsilon = 0.02;
     private const string PlacementSettingsKey = "layout.placements";
@@ -166,6 +166,7 @@ public sealed class DockingHost : IDockingService
                     if (!LayoutHasMainDocumentPane())
                         throw new InvalidOperationException("布局中缺少中央主文档区");
                     EnsureRegisteredWindows();
+                    ConsolidateSidePanes();
                     restored = true;
                     _seedRatiosFromLayout = true; // 以文件里的尺寸为准,反向采集比例
                     _log.Info(LayoutSource, "已恢复上次退出时的布局");
@@ -1318,6 +1319,36 @@ public sealed class DockingHost : IDockingService
                            && !IsFloating(item))
             .FirstOrDefault(item => DetectSide(item) == side)
             ?.Parent as LayoutAnchorablePane;
+
+    private void ConsolidateSidePanes()
+    {
+        foreach (var side in new[] { DockSide.Left, DockSide.Right, DockSide.Top, DockSide.Bottom })
+        {
+            var panes = _manager.Layout.Descendents()
+                .OfType<LayoutAnchorable>()
+                .Where(item => !item.IsHidden && !IsFloating(item) && DetectSide(item) == side)
+                .Select(item => item.Parent)
+                .OfType<LayoutAnchorablePane>()
+                .Distinct()
+                .ToList();
+            if (panes.Count < 2)
+                continue;
+
+            var target = panes
+                .OrderByDescending(pane => pane.Children.Count)
+                .First();
+            foreach (var source in panes.Where(pane => !ReferenceEquals(pane, target)))
+            {
+                foreach (var item in source.Children.ToArray())
+                {
+                    source.Children.Remove(item);
+                    target.Children.Add(item);
+                }
+            }
+        }
+
+        _manager.Layout.CollectGarbage();
+    }
 
     /// <summary>找到包含主文档区的中央列;若中央区不是垂直面板,则就地包一层。</summary>
     private LayoutPanel EnsureCenterColumn()

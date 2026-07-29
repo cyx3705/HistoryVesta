@@ -31,6 +31,26 @@ public sealed class DockingContractTests
     }
 
     [Fact]
+    public void ToolWindowDefaultsToRightAndModulesCanOverridePlacement()
+    {
+        var defaultWindow = new ToolWindowDescriptor
+        {
+            Id = "module.default",
+            Title = "module.default",
+        };
+        var overriddenWindow = new ToolWindowDescriptor
+        {
+            Id = "module.override",
+            Title = "module.override",
+            DefaultSide = DockSide.Top,
+        };
+
+        Assert.Equal(DockSide.Right, defaultWindow.DefaultSide);
+        Assert.Equal(0.25, defaultWindow.DefaultRatio);
+        Assert.Equal(DockSide.Top, overriddenWindow.DefaultSide);
+    }
+
+    [Fact]
     public void CenterIsExplicitAndUsesTheMainDocumentPane()
     {
         RunSta(() =>
@@ -782,7 +802,7 @@ public sealed class DockingContractTests
 
                 var windows = host.ListWindows().ToDictionary(item => item.Id);
                 var sides = windows["left"].Ratio!.Value + windows["right"].Ratio!.Value;
-                Assert.InRange(sides, 0.7, 0.81);
+                Assert.InRange(sides, 0.48, 0.51);
             }
             finally
             {
@@ -860,11 +880,63 @@ public sealed class DockingContractTests
                 PumpDispatcher();
                 var windows = secondHost.ListWindows().ToDictionary(item => item.Id);
                 var sides = windows["left"].Ratio!.Value + windows["right"].Ratio!.Value;
-                Assert.InRange(sides, 0.7, 0.81);
+                Assert.InRange(sides, 0.48, 0.51);
             }
             finally
             {
                 second.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void RestoredDuplicatePanesOnTheSameSideBecomeOneTabGroup()
+    {
+        RunSta(() =>
+        {
+            var tools = new[]
+            {
+                Tool(StandardWindowIds.Mcp, DockSide.Center, 1),
+                Tool("right.one", DockSide.Right, 0.25),
+                Tool("right.two", DockSide.Right, 0.25),
+            };
+            var store = new MemoryLayoutStore();
+            var first = ShowHost(tools, store, out var firstHost);
+            try
+            {
+                PumpDispatcher();
+                var manager = (DockingManager)first.Content;
+                var second = manager.Layout.Descendents().OfType<LayoutAnchorable>()
+                    .Single(item => item.ContentId == "right.two");
+                var original = Assert.IsType<LayoutAnchorablePane>(second.Parent);
+                original.Children.Remove(second);
+                manager.Layout.RootPanel.Children.Add(new LayoutAnchorablePane(second)
+                {
+                    DockWidth = new GridLength(160, GridUnitType.Pixel),
+                });
+                firstHost.SaveCurrentLayout();
+            }
+            finally
+            {
+                first.Close();
+            }
+
+            var restored = ShowHost(tools, store, out _);
+            try
+            {
+                PumpDispatcher();
+                PumpDispatcher();
+                var manager = (DockingManager)restored.Content;
+                var right = manager.Layout.Descendents().OfType<LayoutAnchorable>()
+                    .Where(item => item.ContentId is "right.one" or "right.two")
+                    .ToArray();
+
+                Assert.Equal(2, right.Length);
+                Assert.Same(right[0].Parent, right[1].Parent);
+            }
+            finally
+            {
+                restored.Close();
             }
         });
     }

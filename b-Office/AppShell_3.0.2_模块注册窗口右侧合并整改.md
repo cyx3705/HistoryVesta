@@ -23,7 +23,8 @@ Shell 建立默认布局时，会把同一 `DockSide` 的窗口合并进一个 `
 - 找到同侧窗格后，将新窗口直接加入其标签集合并选中新标签。
 - 同侧完全不存在窗格时，才按声明比例创建新窗格。
 - `RegisterWindow`、模块 `IShellUiRegistrar.RegisterToolWindow`、窗口复位和 `win.dock` 共用该规则。
-- 模块仍声明 `DockSide.Right`，无需知道标准窗口 Id，也无需人工填写 `DefaultTabTarget`。
+- 模块未声明 `DefaultSide` 时由 AppShell 默认右置；模块仍可显式改为其他方位。右置模块无需知道标准窗口 Id，
+  也无需人工填写 `DefaultTabTarget`。
 - 中央文档、显式 `DockSide.Tab`、浮动窗口、owner 回收和保存布局合同不变。
 - 主窗口 `SizeChanged` 期间停止布局手势采样；AvalonDock 重排并按既有比例重新施加尺寸后，才重建基线。
 - 同一轴上的全部侧栏合计最多占宿主 `80%`，至少为中央工作区保留 `20%`；左右与上下分别计算。
@@ -49,3 +50,23 @@ Shell 建立默认布局时，会把同一 `DockSide` 的窗口合并进一个 `
 源码提交 `8cf1bffb` 后已重新生成 `sourceDirty=false` 的 staging，并复用该审核候选正式提升到
 `z-Package-AppShell`；正式 feed 当前只保留四个 3.0.2 运行包，3.0.0 已进入 `b-Publish` 历史归档。
 本次未创建标签。
+
+## 4. SE2SW 真实模块注册冒烟（2026-07-29）
+
+本轮使用 AppShell `3.0.2`（提交 `55c74edb`）和 SE2SW `2.2.0` 既有 Release 产物，在独立数据目录
+`%AppData%/AppShell-SE2SW-Smoke` 中显式开启模块能力；未读取或修改 OHS 正式模块目录。
+
+- [x] SE2SW DLL 与 `ui=true` 清单装载成功：`module.list` 显示 1 个模块、2 条指令。
+- [x] SE2SW 界面实例化成功且内容非空：可读取 OHS 兼容/外界模式、目录选择、重新扫描、转换选项、
+  结果表格等完整控件。
+- [x] `win.list` 的模型状态显示 `commanddetail`、`modules`、`motor`、`se2sw` 均为“停靠·右 32%”；
+  UI 自动化树也将四者列为同一个 `LayoutAnchorablePane` 的标签。
+- [x] 人工桌面观察确认右侧可见 SE2SW 窗口；与 `win.list`、UI 自动化树的停靠结果一致，真实形成窗口通过。
+- [x] 显式执行 `win.show name=se2sw` 返回“已显示”，窗口保持稳定，未生成第二个嵌套侧栏或独立窗口。
+- [x] AppShell 保留模块通过 `DefaultSide` 修改停靠位置的能力，同时把未声明位置的模块默认放到右侧。
+  SE2SW 已删除原 `Top/0.75` 显式覆盖，直接消费 AppShell 的 `Right/0.25` 默认值。
+
+说明：自动化的离屏 `PrintWindow` 捕获只得到中央表面，未包含桌面上实际可见的右侧窗格；该捕获结果与人工观察、
+窗口模型及 UI 自动化树均不一致，因此判定为取证方式限制，不作为产品缺陷证据，也不随文档保留误导性截图。
+
+结论：AppShell 3.0.2 对 SE2SW 的真实注册、内容实例化和右侧标签合并冒烟通过；未发现重复窗口或空白内容。

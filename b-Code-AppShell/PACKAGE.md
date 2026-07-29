@@ -13,8 +13,8 @@ WPF shell and docking UI, local services, module hosting, and an MCP gateway.
 ## Install
 
 ```xml
-<PackageReference Include="OneHistory.AppShell.Shell" Version="3.0.2" />
-<PackageReference Include="OneHistory.AppShell.ServiceHost" Version="3.0.2" />
+<PackageReference Include="OneHistory.AppShell.Shell" Version="3.0.3" />
+<PackageReference Include="OneHistory.AppShell.ServiceHost" Version="3.0.3" />
 ```
 
 AppShell 3.0.x targets .NET 8. The Shell and ServiceHost packages require Windows and WPF. Packages in this
