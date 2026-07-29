@@ -18,8 +18,8 @@ public sealed record ToolScanRow(
     string? Error);
 
 /// <summary>
-/// 项目库自扩展飞轮的业务层(V2.2 §3/§4):
-/// M1 = 清单发现与部署状态判定(tool.scan,只读);M2 追加 sync/remove 与模块槽写入。
+/// 项目库工具发现、同步与溯源业务层：
+/// 提供清单发现、部署状态判定、同步、移除与模块槽写入。
 /// 工具溯源写入 state/tool-registry.json，模块槽仍是部署产物真值。
 /// </summary>
 public sealed class ToolSyncService
@@ -46,7 +46,7 @@ public sealed class ToolSyncService
         _commandNames = commandNames;
     }
 
-    // ---------------------------------------------------------------- mcpExposure(CX-01 / Q211-2)
+    // ---------------------------------------------------------------- MCP exposure
 
     private volatile Dictionary<string, string>? _exposureCache;
 
@@ -76,8 +76,8 @@ public sealed class ToolSyncService
     private void InvalidateExposureCache() => _exposureCache = null;
 
     /// <summary>
-    /// TL-02:沿 worktree 清单发现全部 module.manifest.json,
-    /// 逐项校验(TL-03)并标注部署状态;单项错误不中断整次扫描。
+    /// 沿 worktree 清单发现全部 module.manifest.json，
+    /// 逐项校验并标注部署状态；单项错误不中断整次扫描。
     /// </summary>
     public async Task<(bool Success, string Message, List<ToolScanRow> Rows)> ScanAsync()
     {
@@ -137,7 +137,7 @@ public sealed class ToolSyncService
         return (true, sb.ToString(), rows);
     }
 
-    /// <summary>A220-2:按产物 SHA-256 与 tool_registry 对比判定部署状态。</summary>
+    /// <summary>按产物 SHA-256 与 tool_registry 对比判定部署状态。</summary>
     private string DeployStateOf(ToolManifest manifest)
     {
         if (!File.Exists(manifest.ArtifactPath))
@@ -179,11 +179,11 @@ public sealed class ToolSyncService
         return Convert.ToHexString(SHA256.HashData(stream));
     }
 
-    // ---------------------------------------------------------------- 同步(TS-01/04/05)
+    // ---------------------------------------------------------------- 同步
 
     /// <summary>
     /// tool.sync:把清单产物复制入模块槽 Modules\&lt;name&gt;\ 并落溯源;热重载自动接手。
-    /// all=true 只动「未同步/已过期」项;显式动作,无自动装载(TS-04)。
+    /// all=true 只处理“未同步/已过期”项；这是显式动作，不自动装载其他项。
     /// </summary>
     public async Task<(bool Success, string Message)> SyncAsync(string? name, bool all, IProgress<string>? progress)
     {
@@ -235,7 +235,7 @@ public sealed class ToolSyncService
     {
         try
         {
-            // 找回完整清单(路径已校验);name 经正则约束,槽路径必在 Modules 内(TS-05)
+            // 找回已通过路径校验的完整清单；name 经正则约束，槽路径必在 Modules 内。
             var worktreeRoot = Path.GetDirectoryName(Path.GetDirectoryName(row.ManifestPath)!)!;
             var entry = ToolManifestLoader.Load(
                 row.ManifestPath, worktreeRoot, row.SourceProject, _commandNames?.Invoke());
@@ -249,7 +249,7 @@ public sealed class ToolSyncService
 
             var sourceSha = Sha256Of(manifest.ArtifactPath);
 
-            // 重建槽内容(单槽覆盖,Q220-2 版本共存留 V2.3)
+            // 重建槽内容；同名模块槽执行整体覆盖。
             if (Directory.Exists(slot))
                 Directory.Delete(slot, recursive: true);
             Directory.CreateDirectory(slot);
@@ -275,7 +275,7 @@ public sealed class ToolSyncService
                     return (false, $"依赖缺失: {dep}");
             }
 
-            // TS-05:复制后哈希复核
+            // 复制后执行哈希复核。
             var copiedSha = Sha256Of(artifactTarget);
             if (!copiedSha.Equals(sourceSha, StringComparison.OrdinalIgnoreCase))
                 return (false, "复制后哈希不一致,已中止(槽内容不可信,请重试)");
@@ -297,9 +297,9 @@ public sealed class ToolSyncService
         }
     }
 
-    // ---------------------------------------------------------------- 移除与清单(TS-02/03)
+    // ---------------------------------------------------------------- 移除与清单
 
-    /// <summary>tool.remove:删槽 + 注销溯源(面板副本随 MD-08 在下次重载回收)。</summary>
+    /// <summary>tool.remove：删除槽并注销溯源；面板副本在下次重载时回收。</summary>
     public (bool Success, string Message) Remove(string name)
     {
         name = name.Trim();

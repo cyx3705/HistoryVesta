@@ -3,8 +3,8 @@ using AppShell.Core.Commands;
 namespace OneHistoryStudio.Git;
 
 /// <summary>
-/// tool.* 指令域(V2.2 自扩展飞轮)。
-/// M1 = tool.scan(只读盘点,readonly 档暴露);M2 追加 sync / remove / list。
+/// tool.* 工具发现、同步与溯源指令域。
+/// tool.scan 是只读盘点；sync / remove / list 管理模块槽与溯源。
 /// </summary>
 public static class ToolCommands
 {

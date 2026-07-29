@@ -7,7 +7,7 @@ using AppShell.Services;
 
 namespace OneHistoryStudio.Git;
 
-/// <summary>台账中的一种文件格式(V2.2.1 §4.4)。Suggestion 由 V221-M2 建议引擎填充。</summary>
+/// <summary>台账中的一种文件格式。Suggestion 由规则建议引擎填充。</summary>
 public sealed record FormatRow(
     string Format,
     int FileCount,
@@ -47,7 +47,7 @@ public sealed record InventoryReport(
     IReadOnlyList<DirectoryCandidateRow> Directories);
 
 /// <summary>
-/// 文件格式全覆盖扫描(V2.2.1 §4)。三条效率铁律:
+/// 文件格式全覆盖扫描。三条效率约束：
 /// ①按格式聚合不按文件展开(实测 39311 文件 → 278 格式,141:1);
 /// ②项目级有界并行;③缓存 + 增量失效(HEAD + 索引 mtime + 两规则文件哈希)。
 /// git 自身的 ls-files 即权威归宿判定,不重复实现忽略匹配。
@@ -61,7 +61,7 @@ public sealed class FormatInventoryService
     private const int DirectoryRollupSegments = 2;
 
     /// <summary>
-    /// 目录候选阈值(Q221-3):文件数达标才单列为目录候选,
+    /// 目录候选阈值：文件数达标才单列为目录候选，
     /// 未达标的散尾统一归入 other 类别整体决策,避免长尾淹没缺口清单。
     /// </summary>
     private const int DirectoryCandidateThreshold = 50;
@@ -204,7 +204,7 @@ public sealed class FormatInventoryService
     }
 
     /// <summary>
-    /// 建议清单(V2.2.1 §5 / A221-5):对未决格式给出处置建议;未知格式留白不猜。
+    /// 对未决格式给出处置建议；未知格式留白不猜。
     /// apply 由调用方(指令层)按预览-应用两段式执行,本方法只产出建议。
     /// </summary>
     public async Task<(bool Success, string Message, IReadOnlyList<RuleSuggestion> Suggestions)> SuggestAsync(
@@ -419,7 +419,7 @@ public sealed class FormatInventoryService
         .ThenByDescending(f => f.FileCount)
         .ToList();
 
-        // Q221-3:达阈值的目录单列为候选(一条目录规则吃掉);散尾并入 other 一行整体决策
+        // 达阈值的目录单列为候选；散尾并入 other 一行整体决策。
         var allDirs = scans.SelectMany(scan => scan.Directories.Select(kv =>
             new DirectoryCandidateRow(scan.Project, kv.Key, kv.Value, Ignored: false))).ToList();
 

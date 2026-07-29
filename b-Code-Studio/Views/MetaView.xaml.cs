@@ -6,7 +6,7 @@ using OneHistoryStudio.Git;
 namespace OneHistoryStudio.Views;
 
 /// <summary>
-/// Meta文件工具窗口(V2.0.1 MF-01~07):汇总各项目根下 z/Z 开头的一级元文件夹。
+/// Meta 文件工具窗口：汇总各项目根下 z/Z 开头的一级元文件夹。
 /// 架构不变量 1:刷新/双击组装指令经总线执行(来源 "UI");
 /// 搜索框是纯视图过滤,不改状态、不发指令。
 /// </summary>

@@ -1,6 +1,6 @@
 namespace OneHistoryStudio.Git;
 
-/// <summary>一条建议:对某格式该怎么处置(V2.2.1 §5)。Track=false 即建议忽略。</summary>
+/// <summary>一条格式处置建议。Track=false 即建议忽略。</summary>
 public sealed record RuleSuggestion(
     string Pattern,
     bool Track,
@@ -10,8 +10,8 @@ public sealed record RuleSuggestion(
     int AffectedFiles);
 
 /// <summary>
-/// 规则建议引擎(V2.2.1 §5):只建议、不自动应用;未知格式一律留白不猜。
-/// 分类清单为代码内常量——原设计的可配置键属投机性过度设计,已删(D221-9)。
+/// 规则建议引擎：只建议、不自动应用；未知格式一律留白不猜。
+/// 分类清单为代码内常量，避免出现与实现行为分离的配置入口。
 /// </summary>
 public static class RuleSuggestionEngine
 {
@@ -101,7 +101,7 @@ public static class RuleSuggestionEngine
                 row.UndecidedCount);
         }
 
-        return null; // 未知格式:宁留未决也不猜(D221-4)
+        return null; // 未知格式宁留未决也不猜。
     }
 
     private static string Mb(long bytes) => (bytes / (1024.0 * 1024)).ToString("0.#");

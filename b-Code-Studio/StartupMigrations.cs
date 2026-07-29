@@ -10,20 +10,20 @@ using AppShell.Shell;
 namespace OneHistoryStudio;
 
 /// <summary>
-/// 版本化一次性迁移(V2.1.6 QC-03):历代升级的一次性清理集中于此。
+/// 版本化一次性迁移：升级清理集中于此。
 /// settings 键 app.migrated 记录已完成版号,达标则整段跳过——二次启动零探测零日志。
-/// 各步幂等;动数据库前自动备份 main.db。今后每个版本的一次性动作只在此追加,不进装配点。
+/// 各步幂等；动数据库前自动备份 main.db。新增一次性动作只在此追加，不进入装配点。
 /// </summary>
 public static class StartupMigrations
 {
     public const string KeyMigrated = "app.migrated";
 
-    /// <summary>v1 = V2.1.6 质量整备；v2 = V2.1.7 提交推送面板归位。</summary>
+    /// <summary>迁移序号只描述执行顺序；已执行到第二阶段。</summary>
     private const int CurrentVersion = 2;
 
     /// <summary>
-    /// V2.1.5 指令详情布局初始化状态位。沿用旧键不并入 app.migrated:
-    /// 它同时是"布局已初始化"的标志,全新数据目录也要走一次(与历史清理的语义不同)。
+    /// 指令详情布局初始化状态位。沿用独立键，不并入 app.migrated：
+    /// 它同时是“布局已初始化”的标志，全新数据目录也要执行一次。
     /// </summary>
     private const string CommandDetailLayoutKey = "layout.commanddetail.v215.tab32";
 
@@ -38,14 +38,14 @@ public static class StartupMigrations
             var panels = paths.PanelsDir;
             if (done < 1)
             {
-                DeleteIfExists(Path.Combine(panels, "motor.json"), "V2-M0 演示面板", log);
-                DeleteIfExists(Path.Combine(panels, "projmod.json"), "V2.1.1 已并入模块管理页", log);
-                DeleteIfExists(Path.Combine(panels, "projops.json"), "V2.1.4 已升级为项目操作页", log);
+                DeleteIfExists(Path.Combine(panels, "motor.json"), "已停用的演示面板", log);
+                DeleteIfExists(Path.Combine(panels, "projmod.json"), "功能已并入模块管理页", log);
+                DeleteIfExists(Path.Combine(panels, "projops.json"), "功能已并入项目操作页", log);
                 DropLegacyDemoFiles(paths, log);
             }
 
             if (done < 2)
-                DeleteIfExists(Path.Combine(panels, "projpush.json"), "V2.1.7 功能已归入项目窗口", log);
+                DeleteIfExists(Path.Combine(panels, "projpush.json"), "功能已归入项目窗口", log);
 
             settings.Set(KeyMigrated, CurrentVersion.ToString());
             log.Info("app", $"一次性迁移完成(app.migrated = {CurrentVersion})");
@@ -58,8 +58,8 @@ public static class StartupMigrations
     }
 
     /// <summary>
-    /// V2.1.5 指令详情窗口默认布局初始化(窗口创建后挂 Loaded,一次性)。
-    /// 逻辑自 App.OnStartup 原样迁入,行为不变。
+    /// 指令详情窗口默认布局初始化（窗口创建后挂 Loaded，仅执行一次）。
+    /// 在窗口 Loaded 后执行，以确保停靠目标已创建。
     /// </summary>
     public static void InitCommandDetailLayoutOnce(ShellWindow window, ISettingsService settings, IShellLog log)
     {
@@ -73,7 +73,7 @@ public static class StartupMigrations
             window.Docking.Dock("commanddetail", DockSide.Tab, targetId: "projops");
             window.Docking.SetRatio("commanddetail", 0.32);
             settings.Set(CommandDetailLayoutKey, "true");
-            log.Info("layout", "V2.1.5 已初始化指令详情窗口默认布局");
+            log.Info("layout", "已初始化指令详情窗口默认布局");
         }
     }
 

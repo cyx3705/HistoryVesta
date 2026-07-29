@@ -2,7 +2,7 @@ using AppShell.Core.Commands;
 
 namespace OneHistoryStudio.Git;
 
-/// <summary>V2.3.0 分支历史、恢复提交、本地硬重置与 lease 强推指令。</summary>
+/// <summary>分支历史、恢复提交、本地硬重置与 lease 强推指令。</summary>
 public static class BranchHistoryCommands
 {
     public static void RegisterAll(

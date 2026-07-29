@@ -3,12 +3,11 @@
 namespace OneHistoryStudio.Git;
 
 /// <summary>
-/// ProjectService 的 Meta 文件夹切面(V2.0.1 MF-10/12):项目根下以 z/Z 开头的一级子目录。
-/// V2.3.3 QC-06 分文件,行为未改。
+/// ProjectService 的 Meta 文件夹切面：项目根下以 z/Z 开头的一级子目录。
 /// </summary>
 public sealed partial class ProjectService
 {
-    // ---------------------------------------------------------------- Meta 文件夹(V2.0.1 MF-10/12)
+    // ---------------------------------------------------------------- Meta 文件夹
 
     /// <summary>
     /// 扫描全部 worktree 根下以 z/Z 开头的一级子文件夹。

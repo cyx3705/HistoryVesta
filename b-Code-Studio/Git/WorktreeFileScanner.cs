@@ -2,8 +2,8 @@ using System.IO;
 
 namespace OneHistoryStudio.Git;
 
-// 移植自 b-Code-OneHistory-V1(OneHistoryGitTool/Services/WorktreeFileScanner.cs),
-// 阈值由调用方传入(V2 中来自 proj.warnmb / proj.rejectmb 配置)。
+// worktree 文件扫描器。
+// 阈值由调用方从 proj.warnmb / proj.rejectmb 配置传入。
 
 public enum FileSizeCheckStatus
 {

@@ -45,7 +45,7 @@ public static class GitRuleCommands
         },
     };
 
-    // ---------------------------------------------------------------- V2.2.1 全覆盖扫描
+    // ---------------------------------------------------------------- 全覆盖扫描
 
     private static CommandDescriptor BuildScan(FormatInventoryService inventory) => new()
     {

@@ -8,7 +8,7 @@ using OneHistoryStudio.Git;
 namespace OneHistoryStudio.Views;
 
 /// <summary>
-/// 继承树工具窗口内容(UI-02/03):
+/// 继承树工具窗口内容：
 /// 启动自动加载文件缓存(proj.tree cached=true,秒开);
 /// 「重新扫描」= proj.tree refresh=true(重扫裸仓库并更新缓存)。
 /// 视图只消费 CommandResult.Data,与控制台 proj.tree 同源。
@@ -48,7 +48,7 @@ public partial class BranchTreeView : UserControl
                 var displayRoot = BranchTreeItem.FromContract(root);
                 BranchTree.ItemsSource = new[] { displayRoot };
 
-                // Q3:沿用 V1 默认展开——根 + 一级子分支 + 每支前 5 个二级子分支
+                // 默认展开根、一级子分支，以及每支前 5 个二级子分支。
                 displayRoot.IsExpanded = true;
                 foreach (var child in displayRoot.Children)
                 {

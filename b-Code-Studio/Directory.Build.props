@@ -3,13 +3,13 @@
   <Import Project="..\Directory.Build.props" />
 
   <!--
-    V2.3.3 QC-01 / QC-03:解决方案级公共构建属性。
+    解决方案级公共构建属性。
     作用范围:本目录及其子目录的全部工程(src\* 与 tests\*)。
   -->
 
   <PropertyGroup>
     <!--
-      QC-01 运行时裁剪。
+      运行时裁剪。
       Microsoft.Data.Sqlite → SQLitePCLRaw.lib.e_sqlite3 默认携带 20 个 RID 的原生库
       (browser-wasm / linux-mips64 / linux-s390x / maccatalyst / osx / win 等),
       每份构建输出中 runtimes\ 独占 25M / 27M。本产品是 net8.0-windows + WPF 的

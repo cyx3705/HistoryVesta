@@ -4,14 +4,14 @@ using System.Text;
 namespace OneHistoryStudio.Git;
 
 /// <summary>
-/// ProjectService 的仓库修复切面(PJ-11)。
-/// V2.3.3 QC-06 分文件;路径守卫(TryValidateManagedDirectChild / TryValidateWorktreeRoot)
+/// ProjectService 的仓库修复切面。
+/// worktree 修复切面；路径守卫（TryValidateManagedDirectChild / TryValidateWorktreeRoot）
 /// 留在主文件,本块只调用,不改其行为——先生成完整计划、任何越界都在零删除状态下拒绝,
 /// 该安全次序一行未动。
 /// </summary>
 public sealed partial class ProjectService
 {
-    // ---------------------------------------------------------------- 修复(PJ-11,按主项目 Note.txt 方案)
+    // ---------------------------------------------------------------- 修复
 
     public async Task<(bool Success, string Message)> RepairAsync(IProgress<string>? progress)
     {

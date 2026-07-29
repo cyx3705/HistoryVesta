@@ -5,8 +5,8 @@ using AppShell.Core.Commands;
 namespace OneHistoryStudio.Git;
 
 /// <summary>
-/// proj.* 指令域注册(PJ-01~PJ-13)。
-/// 危险操作(delete / commitall / pushall / repair)经总线 ConfirmPrompt 单闸口(N-04);
+/// proj.* 指令域注册。
+/// 危险操作（delete / commitall / pushall / repair）统一经过总线 ConfirmPrompt；
 /// 受保护分支在确认之前即由 ConfirmPrompt 返回 null + Handler 拒绝,不弹无意义确认框。
 /// </summary>
 public static class ProjectCommands
@@ -100,7 +100,7 @@ public static class ProjectCommands
         registry.Register(BuildMetaOpen(projects), source);
     }
 
-    // ---------------------------------------------------------------- proj.list(PJ-01)
+    // ---------------------------------------------------------------- proj.list
 
     private static CommandDescriptor BuildList(ProjectService projects) => new()
     {
@@ -148,7 +148,7 @@ public static class ProjectCommands
         },
     };
 
-    // ---------------------------------------------------------------- proj.create(PJ-02)
+    // ---------------------------------------------------------------- proj.create
 
     private static CommandDescriptor BuildCreate(ProjectService projects, HistoryRecorder history) => new()
     {
@@ -179,7 +179,7 @@ public static class ProjectCommands
         },
     };
 
-    // ---------------------------------------------------------------- proj.delete(PJ-03)
+    // ---------------------------------------------------------------- proj.delete
 
     private static CommandDescriptor BuildDelete(ProjectService projects, HistoryRecorder history) => new()
     {
@@ -216,7 +216,7 @@ public static class ProjectCommands
         },
     };
 
-    // ---------------------------------------------------------------- proj.tree(PJ-04)
+    // ---------------------------------------------------------------- proj.tree
 
     private static CommandDescriptor BuildTree(ProjectService projects) => new()
     {
@@ -252,7 +252,7 @@ public static class ProjectCommands
         },
     };
 
-    // ---------------------------------------------------------------- proj.commit(PJ-05)
+    // ---------------------------------------------------------------- proj.commit
 
     private static CommandDescriptor BuildCommit(ProjectService projects, HistoryRecorder history) => new()
     {
@@ -279,7 +279,7 @@ public static class ProjectCommands
             new ParameterSpec
             {
                 Name = "submodules",
-                Description = "V2.3.1 兼容参数：true=both，false=parent；target 存在时忽略",
+                Description = "兼容参数：true=both，false=parent；target 存在时忽略",
                 Type = ParamType.Bool,
                 Default = "false",
             },
@@ -309,7 +309,7 @@ public static class ProjectCommands
         },
     };
 
-    // ---------------------------------------------------------------- proj.push(PJ-06)
+    // ---------------------------------------------------------------- proj.push
 
     private static CommandDescriptor BuildPush(ProjectService projects, HistoryRecorder history) => new()
     {
@@ -329,7 +329,7 @@ public static class ProjectCommands
             new ParameterSpec
             {
                 Name = "submodules",
-                Description = "V2.3.1 兼容参数：true=both，false=parent；target 存在时忽略",
+                Description = "兼容参数：true=both，false=parent；target 存在时忽略",
                 Type = ParamType.Bool,
                 Default = "false",
             },
@@ -349,7 +349,7 @@ public static class ProjectCommands
         },
     };
 
-    // ---------------------------------------------------------------- proj.commitall(PJ-07)
+    // ---------------------------------------------------------------- proj.commitall
 
     private static CommandDescriptor BuildCommitAll(ProjectService projects, HistoryRecorder history) => new()
     {
@@ -369,7 +369,7 @@ public static class ProjectCommands
             new ParameterSpec
             {
                 Name = "submodules",
-                Description = "V2.3.1 兼容参数：true=both，false=parent；target 存在时忽略",
+                Description = "兼容参数：true=both，false=parent；target 存在时忽略",
                 Type = ParamType.Bool,
                 Default = "false",
             },
@@ -404,7 +404,7 @@ public static class ProjectCommands
         },
     };
 
-    // ---------------------------------------------------------------- proj.pushall(PJ-08)
+    // ---------------------------------------------------------------- proj.pushall
 
     private static CommandDescriptor BuildPushAll(ProjectService projects, HistoryRecorder history) => new()
     {
@@ -417,7 +417,7 @@ public static class ProjectCommands
             new ParameterSpec
             {
                 Name = "submodules",
-                Description = "V2.3.1 兼容参数：true=both，false=parent；target 存在时忽略",
+                Description = "兼容参数：true=both，false=parent；target 存在时忽略",
                 Type = ParamType.Bool,
                 Default = "false",
             },
@@ -442,7 +442,7 @@ public static class ProjectCommands
         },
     };
 
-    // ---------------------------------------------------------------- proj.open(PJ-09)
+    // ---------------------------------------------------------------- proj.open
 
     private static CommandDescriptor BuildOpen(ProjectService projects) => new()
     {
@@ -465,7 +465,7 @@ public static class ProjectCommands
         }),
     };
 
-    // ---------------------------------------------------------------- proj.scan(PJ-10)
+    // ---------------------------------------------------------------- proj.scan
 
     private static CommandDescriptor BuildScan(ProjectService projects) => new()
     {
@@ -490,7 +490,7 @@ public static class ProjectCommands
         },
     };
 
-    // ---------------------------------------------------------------- proj.repair(PJ-11)
+    // ---------------------------------------------------------------- proj.repair
 
     private static CommandDescriptor BuildRepair(ProjectService projects, HistoryRecorder history) => new()
     {
@@ -512,7 +512,7 @@ public static class ProjectCommands
         },
     };
 
-    // ---------------------------------------------------------------- proj.note(DT-02)
+    // ---------------------------------------------------------------- proj.note
 
     private static CommandDescriptor BuildNote(ProjectService projects, HistoryRecorder history) => new()
     {
@@ -545,7 +545,7 @@ public static class ProjectCommands
         }),
     };
 
-    // ---------------------------------------------------------------- proj.config(PJ-12)
+    // ---------------------------------------------------------------- proj.config
 
     private static CommandDescriptor BuildConfig(ProjectService projects) => new()
     {
@@ -556,7 +556,7 @@ public static class ProjectCommands
         Handler = CommandDescriptor.Sync(_ => CommandResult.Ok(projects.DescribeConfig())),
     };
 
-    // ---------------------------------------------------------------- proj.metalist(V2.0.1 MF-10)
+    // ---------------------------------------------------------------- proj.metalist
 
     private static CommandDescriptor BuildMetaList(ProjectService projects) => new()
     {
@@ -617,7 +617,7 @@ public static class ProjectCommands
         },
     };
 
-    // ---------------------------------------------------------------- proj.metaopen(V2.0.1 MF-12)
+    // ---------------------------------------------------------------- proj.metaopen
 
     private static CommandDescriptor BuildMetaOpen(ProjectService projects) => new()
     {

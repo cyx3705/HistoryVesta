@@ -121,7 +121,7 @@
                         Click="OnAddRuleClick" />
             </Grid>
 
-            <!-- V2.2.2:选择项目自动加载全格式台账;按钮强制刷新缓存 -->
+            <!-- 选择项目自动加载全格式台账；按钮强制刷新缓存。 -->
             <Border DockPanel.Dock="Top" Background="#F7F7F7" BorderBrush="#DDD" BorderThickness="1"
                     Padding="6" Margin="0,0,0,6">
                 <DockPanel>

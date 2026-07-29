@@ -3,8 +3,7 @@ using System.Text;
 
 namespace OneHistoryStudio.Git;
 
-// 移植自 b-Code-OneHistory-V1(OneHistoryGitTool/Services/WorktreeLfsHelper.cs),
-// git 调用改经 GitRunner 统一封装(N-02)。
+// worktree LFS 操作统一经 GitRunner 封装。
 
 public static class WorktreeLfsHelper
 {

@@ -1,8 +1,5 @@
 # MCP 接入与安全
 
-> 适用版本：OneHistoryStudio V2.7.10
-> 框架基线：OneHistory.AppShell.* 3.0.3
-
 ## 当前架构
 
 V2.7.3 起，MCP 由常驻的 `OneHistoryStudio.exe --service-host` 承载，不再依赖 WPF 前端存活；

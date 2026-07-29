@@ -4,9 +4,9 @@ using AppShell.Core.Commands;
 namespace OneHistoryStudio.Views;
 
 /// <summary>
-/// 视图通用小件(V2.1.6 R2)。
+/// 视图通用小件。
 /// 说明:未做视图基类——WPF 要求 XAML 根元素类型与代码后置基类一致,
-/// 换基类必须改 9 个 XAML 根元素,收益小于风险(DQ16-4),故取组合式助手。
+/// 使用组合式助手，避免为共享小功能改动所有 XAML 根元素。
 /// </summary>
 internal static class ViewKit
 {

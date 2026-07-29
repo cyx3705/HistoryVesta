@@ -6,7 +6,7 @@ namespace OneHistoryStudio.Git;
 
 public sealed record WorktreeInfo(string BranchName, string WorktreePath, string LastCommitTime = "");
 
-/// <summary>某项目根下以 z/Z 开头的一级子文件夹(V2.0.1 Meta 文件)。</summary>
+/// <summary>某项目根下以 z/Z 开头的一级 Meta 文件夹。</summary>
 public sealed record MetaFolderInfo(
     string ProjectName,
     string MetaName,
@@ -36,14 +36,13 @@ public sealed record CommitReport(
 
 /// <summary>
 /// proj.* 指令域的业务实现:OneHistory 项目库(裸仓库 + worktree)管理。
-/// 流程移植自 b-Code-OneHistory-V1;确认交互统一走总线确认通道(N-04),
-/// 运行参数走配置服务现读现生效(PJ-12)。
+/// 确认交互统一走总线确认通道，运行参数通过配置服务现读现生效。
 ///
-/// V2.3.3 QC-06 分文件(兑现 V2.1.6 DQ16-3 的挂账,原单文件 1648 行 / 五类职责混住):
+/// ProjectService 按职责拆分为多个 partial 文件：
 /// - 本文件:配置、工作树增删改查、扫描、打开、继承树转调、**路径守卫**;
-/// - ProjectService.Commit.cs:提交与推送(PJ-05~PJ-08);
-/// - ProjectService.Repair.cs:仓库修复(PJ-11);
-/// - ProjectService.Meta.cs:Meta 文件夹(MF-10/12);
+/// - ProjectService.Commit.cs：提交与推送；
+/// - ProjectService.Repair.cs：仓库修复；
+/// - ProjectService.Meta.cs：Meta 文件夹；
 /// - BranchTreeService.cs:继承树构建与缓存(已抽为独立类,本类保留转调)。
 ///
 /// 路径守卫 TryValidateManagedDirectChild / TryValidateWorktreeRoot 刻意留在本文件:
@@ -51,7 +50,7 @@ public sealed record CommitReport(
 /// </summary>
 public sealed partial class ProjectService
 {
-    // 设置键(PJ-12):首启写入默认值,此后 app.set / app.get 可读写
+    // 设置键：首启写入默认值，此后 app.set / app.get 可读写。
     public const string KeyBareRepo = "proj.barerepo";
     public const string KeyWorktreeRoot = "proj.worktreeroot";
     public const string KeyBaseBranch = "proj.basebranch";
@@ -63,14 +62,14 @@ public sealed partial class ProjectService
     private readonly string _dataDir;
     private readonly GitlinkService _gitlinks = new();
 
-    /// <summary>继承树构建与缓存(V2.3.3 QC-06 抽出);本类保留同名转调方法。</summary>
+    /// <summary>继承树构建与缓存由 BranchTreeService 实现；本类保留同名转调方法。</summary>
     private readonly BranchTreeService _tree;
 
     /// <summary>执行中途的二次确认通道(LFS 启用询问等);由装配点接到总线 Confirmation。</summary>
     private readonly Func<string, bool> _confirm;
 
     /// <summary>
-    /// 分支描述提供者(DT-02,装配点接 HistoryRecorder.AllNotes):
+    /// 分支描述提供者，由装配点连接 HistoryRecorder.AllNotes：
     /// 继承树在展示前用它覆盖节点描述——缓存里存的是构建时的提交信息,
     /// 覆盖在读取时进行,proj.note 后无需重扫即可见。
     /// </summary>
@@ -85,7 +84,7 @@ public sealed partial class ProjectService
         _settings = settings;
         _confirm = confirm;
         _dataDir = dataDir;
-        // 配置以委托传入:proj.barerepo / proj.basebranch 现读现生效(PJ-12),不能取构造时的快照
+        // 配置以委托传入：proj.barerepo / proj.basebranch 现读现生效，不能取构造时的快照。
         _tree = new BranchTreeService(() => BareRepo, () => BaseBranch, dataDir);
     }
 
@@ -146,7 +145,7 @@ public sealed partial class ProjectService
         return sb.ToString();
     }
 
-    // ---------------------------------------------------------------- 列表(PJ-01)
+    // ---------------------------------------------------------------- 列表
 
     public async Task<(GitResult Git, List<WorktreeInfo> Worktrees)> ListWorktreesAsync()
     {
@@ -160,7 +159,7 @@ public sealed partial class ProjectService
                         && !w.WorktreePath.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        // 最后提交时间:单次 for-each-ref 补全(UI-01 列表列),失败不影响主流程
+        // 最后提交时间由单次 for-each-ref 补全；失败不影响主流程。
         var times = await GitRunner.RunAsync(BareRepo,
             ["for-each-ref", "--format=%(refname:short)|%(committerdate:iso-local)", "refs/heads/"]);
         if (times.Success)
@@ -204,7 +203,7 @@ public sealed partial class ProjectService
         return (true, worktree.WorktreePath, worktree);
     }
 
-    /// <summary>解析 git worktree list --porcelain 输出(移植自 V1)。</summary>
+    /// <summary>解析 git worktree list --porcelain 输出。</summary>
     public static List<WorktreeInfo> ParseWorktreeList(string output)
     {
         var result = new List<WorktreeInfo>();
@@ -236,7 +235,7 @@ public sealed partial class ProjectService
         return result;
     }
 
-    // ---------------------------------------------------------------- 创建(PJ-02)
+    // ---------------------------------------------------------------- 创建
 
     public async Task<(bool Success, string Message)> CreateAsync(
         string name, string? baseBranch, IProgress<string>? progress)
@@ -277,7 +276,7 @@ public sealed partial class ProjectService
         return (true, $"项目已就绪: {targetPath}(分支 {name},基于 {baseBranch})");
     }
 
-    // ---------------------------------------------------------------- 删除(PJ-03)
+    // ---------------------------------------------------------------- 删除
 
     public bool IsProtected(string branchName) => ProtectedBranches.Contains(branchName.Trim());
 
@@ -314,7 +313,7 @@ public sealed partial class ProjectService
             }
             else
             {
-                // 与 V1 一致:worktree 可能已损坏,移除失败仍继续删分支
+                // worktree 可能已损坏；移除失败时仍继续尝试删除分支。
                 sb.AppendLine($"移除工作树失败(继续尝试删除分支): {removeWt.Output}");
             }
         }
@@ -332,7 +331,7 @@ public sealed partial class ProjectService
         return (true, sb.ToString());
     }
 
-    // ---------------------------------------------------------------- 扫描(PJ-10)
+    // ---------------------------------------------------------------- 扫描
 
     public async Task<(bool Success, string Message)> ScanAsync(string name)
     {
@@ -360,12 +359,12 @@ public sealed partial class ProjectService
         return (true, sb.ToString());
     }
 
-    // ---------------------------------------------------------------- 继承树(PJ-04)
-    // V2.3.3 QC-06:构建、渲染与文件缓存已抽出到 BranchTreeService;此处只保留转调,
+    // ---------------------------------------------------------------- 继承树
+    // 构建、渲染与文件缓存由 BranchTreeService 负责；此处只保留转调，
     // ProjectCommands / BranchTreeView / BranchHistoryService 的调用签名一字未改。
 
     /// <summary>
-    /// 继承树入口(PJ-04):默认读文件缓存秒开;refresh=true 重扫并更新缓存;
+    /// 继承树入口：默认读取文件缓存；refresh=true 时重扫并更新缓存；
     /// cachedOnly=true 无缓存时不触发扫描(视图启动自动加载用)。
     /// </summary>
     public Task<(bool Success, string Message, BranchNode? Root)> BuildTreeAsync(
@@ -386,13 +385,13 @@ public sealed partial class ProjectService
 
         public required string BranchName { get; init; }
 
-        /// <summary>展示描述:默认最后提交信息,读取时被 branch_notes 覆盖(DT-02)。</summary>
+        /// <summary>展示描述默认使用最后提交信息，读取时可被 branch_notes 覆盖。</summary>
         public string Description { get; set; } = "";
 
         public string LastPushTime { get; init; } = "";
         public List<BranchNode> Children { get; } = new();
 
-        /// <summary>继承树视图的展开状态(UI-02;TreeViewItem 双向绑定)。</summary>
+        /// <summary>继承树视图的展开状态，与 TreeViewItem 双向绑定。</summary>
         public bool IsExpanded
         {
             get => _isExpanded;
@@ -416,7 +415,7 @@ public sealed partial class ProjectService
         => _tree.BuildInheritanceTreeAsync(allBranches, rootInfo, progress);
 
 
-    // ---------------------------------------------------------------- 打开(PJ-09)
+    // ---------------------------------------------------------------- 打开
 
     public (bool Success, string Message) OpenFolder(string? name)
     {

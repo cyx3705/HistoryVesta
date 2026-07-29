@@ -4,16 +4,13 @@ using System.Text;
 namespace OneHistoryStudio.Git;
 
 /// <summary>
-/// ProjectService 的提交与推送切面(PJ-05 / PJ-06 / PJ-07 / PJ-08)。
-/// V2.3.3 QC-06:原 ProjectService.cs 一个文件 1648 行、五类职责混住;本块 616 行按职责
-/// 分到独立文件。这里用 partial 而非抽新类——提交链路与 _confirm 确认通道、_gitlinks
-/// 子模块发现、WarnBytes/RejectBytes 阈值和 LFS 预检深度耦合,在「对外行为全不变」的
-/// 整备版里拆类的回归风险大于收益(沿用 V2.1.6 DQ16-3 的判断)。
-/// 子先父后的安全合同(V2.3.1)与 target 语义(V2.3.2)只搬位置,内部行为一行未改。
+/// ProjectService 的提交与推送切面。提交链路与确认通道、gitlink 子模块发现、
+/// 文件大小阈值和 LFS 预检共享状态，因此保留在同一个 partial 类型中。
+/// 子仓库先于父仓库提交，target 决定操作范围。
 /// </summary>
 public sealed partial class ProjectService
 {
-    // ---------------------------------------------------------------- 提交(PJ-05)
+    // ---------------------------------------------------------------- 提交
 
     public async Task<CommitReport> CommitAsync(
         string name,
@@ -325,7 +322,7 @@ public sealed partial class ProjectService
             BeforeSha: plan.BeforeSha, AfterSha: afterSha);
     }
 
-    // ---------------------------------------------------------------- 推送(PJ-06 / PJ-08)
+    // ---------------------------------------------------------------- 推送
 
     public async Task<PushReport> PushAsync(
         string name, bool includeSubmodules = false, CancellationToken cancellation = default)
@@ -512,7 +509,7 @@ public sealed partial class ProjectService
         return (true, entries.Count == 0 ? "没有子模块需要推送" : $"已推送 {entries.Count} 个子模块", entries);
     }
 
-    // ---------------------------------------------------------------- 批量提交(PJ-07)
+    // ---------------------------------------------------------------- 批量提交
 
     public async Task<BatchCommitReport> CommitAllAsync(
         string message,

@@ -9,7 +9,7 @@ public sealed record GitResult(int ExitCode, string Output)
 }
 
 /// <summary>
-/// 统一 git 进程封装(需求 N-02):固定 -C 工作目录、UTF-8 输出、超时与异常兜底。
+/// 统一 git 进程封装：固定 -C 工作目录、UTF-8 输出、超时与异常兜底。
 /// 全项目禁止在此之外散落 Process.Start("git")。
 /// </summary>
 public static class GitRunner

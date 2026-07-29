@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using AppShell.Core.Commands;
 using AppShell.ServiceHost;
@@ -36,6 +37,7 @@ internal static class VersionProjectionSuite
         AssertEvaluatedVersion(evaluated, studioVersion, studioProject);
 
         AssertPackageConsumers();
+        AssertCurrentSourceAndDocumentation();
         await AssertPublishAreaGovernanceAsync();
         await AssertPublishTransactionAsync(studioRoot);
         Console.WriteLine(
@@ -192,6 +194,53 @@ internal static class VersionProjectionSuite
             "deployment governance: deployment target remains OneHistory-Push");
         Contains(deploy, "Join-Path $applicationDataRoot \"data\"",
             "deployment governance: deployment backs up the current data/main.db location");
+    }
+
+    private static void AssertCurrentSourceAndDocumentation()
+    {
+        var studioRoot = Path.Combine(ParentDir, "b-Code-Studio");
+        var historicalToken = new Regex(
+            @"\bV\d+\.\d+(?:\.\d+)?\b|\bV\d+-[A-Z0-9]+\b|\bM\d+(?:\.\d+)?\b|\b(?!SHA-)[A-Z]{1,5}-\d{2,}(?:-\d+)?\b|\bQ\d{3,}(?:-\d+)?\b|\b[AD]\d{3,}(?:-\d+)?\b|移植自|原样迁入|今后每个版本|历史清理",
+            RegexOptions.CultureInvariant);
+        var productionFiles = Directory.EnumerateFiles(studioRoot, "*", SearchOption.AllDirectories)
+            .Where(path => new[] { ".cs", ".xaml", ".props", ".csproj" }
+                .Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}tests{Path.DirectorySeparatorChar}",
+                               StringComparison.OrdinalIgnoreCase)
+                           && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}",
+                               StringComparison.OrdinalIgnoreCase)
+                           && !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}",
+                               StringComparison.OrdinalIgnoreCase));
+        foreach (var path in productionFiles)
+        {
+            True(!historicalToken.IsMatch(File.ReadAllText(path)),
+                $"current source contains no release-history narration: {Path.GetRelativePath(ParentDir, path)}");
+        }
+
+        var metaRoot = Path.Combine(ParentDir, "b-Office", "meta");
+        foreach (var path in Directory.EnumerateFiles(metaRoot, "*.md"))
+        {
+            True(!File.ReadAllLines(path).Any(line =>
+                    line.StartsWith("> 适用版本：", StringComparison.Ordinal)
+                    || line.StartsWith("> 当前版本：", StringComparison.Ordinal)),
+                $"current manual has no hand-synchronized applicability version: {Path.GetFileName(path)}");
+        }
+        var officeReadme = File.ReadAllText(Path.Combine(ParentDir, "b-Office", "README.md"));
+        True(!officeReadme.Contains("> 当前版本：", StringComparison.Ordinal),
+            "documentation center has no hand-synchronized current version");
+
+        var moduleManual = File.ReadAllText(Path.Combine(metaRoot, "模块开发手册.md"));
+        foreach (var forbidden in new[]
+                 {
+                     "计划为 4.0",
+                     "下一代合同",
+                     "下一条公共契约线",
+                     "多来源/外部只读模块目录装载合同",
+                 })
+        {
+            True(!moduleManual.Contains(forbidden, StringComparison.Ordinal),
+                $"module manual does not predeclare AppShell roadmap: {forbidden}");
+        }
     }
 
     private static async Task AssertPublishAreaGovernanceAsync()

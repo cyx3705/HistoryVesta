@@ -5,8 +5,8 @@ using AppShell.Core.Logging;
 namespace OneHistoryStudio;
 
 /// <summary>
-/// debug.* 工具指令(自装配点迁入,V2.1.6 QC-05):
-/// logflood = 承压回归(验收 8/N-03)常备;sleep = --exec 自动化脚本的等待原语。
+/// debug.* 工具指令：
+/// logflood 用于承压回归；sleep 是 --exec 自动化脚本的等待原语。
 /// </summary>
 public static class DebugCommands
 {
@@ -17,7 +17,7 @@ public static class DebugCommands
     }
 
     /// <summary>
-    /// debug.logflood:按指定速率注入日志(验收 8 / N-03 承压验证)。
+    /// debug.logflood：按指定速率注入日志以执行承压验证。
     /// 异步长任务示范:后台线程产出、经 Progress 上报进度、全程不阻塞 UI(§5.2)。
     /// </summary>
     private static CommandDescriptor BuildLogFlood(IShellLog log) => new()

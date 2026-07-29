@@ -5,15 +5,15 @@ using AppShell.Services;
 namespace OneHistoryStudio.Git;
 
 /// <summary>
-/// 分支继承树的构建、渲染与文件缓存(PJ-04)。
-/// V2.3.3 QC-06:从 ProjectService(原 1648 行)抽出——本块只依赖裸仓库路径、根分支名、
+/// 分支继承树的构建、渲染与文件缓存。
+/// 分支树构建服务只依赖裸仓库路径、根分支名、
 /// 数据目录和描述提供者,与提交/推送/修复互不相干,是最干净的一刀。
 /// ProjectService 保留同名转调方法,调用方签名一字未改。
 ///
 /// 节点类型仍是 ProjectService.BranchNode / BranchInfo:它们是嵌套公共类型,
 /// 移出会改变 11 处调用点的类型名。本版铁律是对外行为不变,不为整理而制造调用面变更。
 ///
-/// 配置以委托方式注入而非快照:proj.barerepo / proj.basebranch 是现读现生效的(PJ-12),
+/// 配置以委托方式注入而非快照：proj.barerepo / proj.basebranch 现读现生效，
 /// 构造时取值会让 app.set 改配置后本服务仍用旧路径。
 /// </summary>
 public sealed class BranchTreeService
@@ -34,16 +34,16 @@ public sealed class BranchTreeService
     private string BaseBranch => _baseBranch();
 
     /// <summary>
-    /// 分支描述提供者(DT-02,装配点接 HistoryRecorder.AllNotes):
+    /// 分支描述提供者，由装配点连接 HistoryRecorder.AllNotes：
     /// 继承树在展示前用它覆盖节点描述——缓存里存的是构建时的提交信息,
     /// 覆盖在读取时进行,proj.note 后无需重扫即可见。
     /// </summary>
     public Func<IReadOnlyDictionary<string, string>>? NotesProvider { get; set; }
 
-    // ---------------------------------------------------------------- 继承树(PJ-04,移植 V1 merge-base 算法)
+    // ---------------------------------------------------------------- 继承树
 
     /// <summary>
-    /// 继承树入口(PJ-04):默认读文件缓存秒开;refresh=true 重扫并更新缓存;
+    /// 继承树入口：默认读取文件缓存；refresh=true 时重扫并更新缓存；
     /// cachedOnly=true 无缓存时不触发扫描(视图启动自动加载用)。
     /// </summary>
     public async Task<(bool Success, string Message, ProjectService.BranchNode? Root)> BuildTreeAsync(
@@ -90,7 +90,7 @@ public sealed class BranchTreeService
         return (true, sb.ToString(), rootNode);
     }
 
-    /// <summary>用 branch_notes 的项目描述覆盖节点默认描述(DT-02)。</summary>
+    /// <summary>用 branch_notes 的项目描述覆盖节点默认描述。</summary>
     private void ApplyNotes(ProjectService.BranchNode root)
     {
         var notes = NotesProvider?.Invoke();
@@ -129,7 +129,7 @@ public sealed class BranchTreeService
             });
         }
 
-        // 提交说明逐分支单独取,避免 subject 中的 | 破坏解析(V1 同款)
+        // 提交说明逐分支单独读取，避免 subject 中的 | 破坏解析。
         foreach (var b in list)
         {
             var msg = await GitRunner.RunAsync(BareRepo, ["log", "-1", "--pretty=%s", b.Name]);
@@ -140,12 +140,12 @@ public sealed class BranchTreeService
     }
 
     /// <summary>
-    /// 继承树算法 v2(修正 V1 缺陷):
-    /// 一次性取每个分支的完整提交链,比对全部在内存完成(git 调用从 O(n²) 降到 O(n))。
+    /// 继承树算法一次性读取每个分支的完整提交链，比对全部在内存完成，
+    /// 从而把 git 调用从 O(n²) 降到 O(n)。
     /// 判定规则——候选 P 是 child 的父分支候选,当且仅当 child 提交链上第一个
     /// 属于 P 的提交(分叉点)是 P 的**自有提交**(不在根模板分支历史内):
-    /// 分叉点若落在模板历史里,说明两者只是共同的模板血统,不构成父子证据
-    /// (V1 用 merge-base 最短距离,同点分叉的兄弟分支会被随机挂成父子)。
+    /// 分叉点若落在模板历史里，说明两者只是共同的模板血统，不构成父子证据；
+    /// 不能只按 merge-base 最短距离判断，否则同点分叉的兄弟分支可能被错误挂成父子。
     /// 多个候选同时成立时取分叉点最深(离 child tip 最近)者;仍并列按名称升序
     /// (编号约定 = 创建顺序)。无任何候选 → 挂根模板。
     /// </summary>

@@ -159,8 +159,8 @@ public partial class App : Application
     /// 工具窗口注册(表驱动)。顶部标签组 = 项目总览系五页(0.55);右侧 = 指令详情/项目操作;
     /// 资源/表/控制台内容由 Shell 提供(Workspace/DataService/§4.4),只声明停靠位置;
     /// 控制窗口群面板由 panels/*.json 声明,无需在此登记。
-    /// commanddetail 的 V2.1.5 默认位由 StartupMigrations.InitCommandDetailLayoutOnce 二次调整。
-    /// V2.3.3 QC-07:本表自装配点外移,OnStartup 回到 ≤150 行预算内。
+    /// commanddetail 的默认位由 StartupMigrations.InitCommandDetailLayoutOnce 二次调整。
+    /// 描述符集中维护，避免把窗口装配细节重新塞回 OnStartup。
     /// </summary>
     private static void RegisterToolWindows(
         ShellConfig config,
@@ -175,7 +175,7 @@ public partial class App : Application
         [
             ("overview", "项目总览", DockSide.Top, null, 0.55, () => new Views.OverviewView(busAccessor, projectSelection)),
             ("tree", "继承树", DockSide.Tab, "overview", 0.55, () => new Views.BranchTreeView(busAccessor, projectSelection)),
-            // mcp / commanddetail / modules 窗口内容自 0.4.4 起由框架 TakeOverDescriptor 注入(工厂 null);
+            // mcp / commanddetail / modules 窗口内容由框架 TakeOverDescriptor 注入（工厂为 null）；
             // 这里仅声明它们在本应用的停靠位,框架保留该布局。
             (StandardWindowIds.Mcp, "命令集", DockSide.Tab, "overview", 0.55, null),
             (StandardWindowIds.CommandDetail, "指令详情", DockSide.Right, null, 0.32, null),
@@ -206,7 +206,7 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// mcpExposure 档位接线(V2.2 CX-01/Q211-2):策略层经注册来源识别模块指令,
+    /// mcpExposure 档位接线：策略层经注册来源识别模块指令，
     /// 再查溯源表取清单声明档;根平铺模块无记录 → null = standard 现状。
     /// </summary>
     private static void WireMcpExposurePolicy(Func<ShellWindow?> window, ToolSyncService tools)
@@ -221,7 +221,7 @@ public partial class App : Application
         McpExposurePolicy.ModuleExposure = tools.GetExposure;
     }
 
-    /// <summary>N-05:全局未处理异常捕获 → 落日志 → 友好提示,不崩溃。</summary>
+    /// <summary>全局未处理异常捕获：落日志并给出友好提示。</summary>
     private void RegisterGlobalExceptionHandlers(ShellLog log, string appName)
     {
         DispatcherUnhandledException += (_, args) =>

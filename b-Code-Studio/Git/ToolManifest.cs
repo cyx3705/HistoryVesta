@@ -6,8 +6,8 @@ using AppShell.Core.Commands;
 namespace OneHistoryStudio.Git;
 
 /// <summary>
-/// 工具清单(V2.2 TL-01):工具项目 z 级元文件夹中 module.manifest.json 的解析结果。
-/// 路径字段均已解析为绝对路径并通过 worktree 内界校验(M1.5 守卫等级)。
+/// 工具项目 z 级元文件夹中 module.manifest.json 的解析结果。
+/// 路径字段均已解析为绝对路径并通过 worktree 内界校验。
 /// </summary>
 public sealed class ToolManifest
 {
@@ -21,7 +21,7 @@ public sealed class ToolManifest
 
     public bool Ui { get; init; }
 
-    /// <summary>standard / readonly / hidden(Q211-2,V22-M3 生效)。</summary>
+    /// <summary>standard / readonly / hidden。</summary>
     public string McpExposure { get; init; } = "standard";
 
     /// <summary>来源项目(分支名)。</summary>
@@ -30,11 +30,11 @@ public sealed class ToolManifest
     public required string ManifestPath { get; init; }
 }
 
-/// <summary>一份清单文件的装载结果:成功携 Manifest,失败携错误说明(TL-03 逐项报错不中断)。</summary>
+/// <summary>一份清单文件的装载结果：成功携 Manifest，失败携错误说明且不中断其他项。</summary>
 public sealed record ToolManifestEntry(
     ToolManifest? Manifest, string SourceProject, string ManifestPath, string? Error);
 
-/// <summary>module.manifest.json 装载与校验(TL-01/03)。</summary>
+/// <summary>module.manifest.json 装载与校验。</summary>
 public static partial class ToolManifestLoader
 {
     public const string FileName = "module.manifest.json";
@@ -162,7 +162,7 @@ public static partial class ToolManifestLoader
         }, branch, manifestPath, null);
     }
 
-    /// <summary>相对路径 → worktree 内绝对路径;越界/带盘符一律拒绝(TL-03)。返回错误文本或 null。</summary>
+    /// <summary>相对路径转为 worktree 内绝对路径；越界或带盘符时拒绝。返回错误文本或 null。</summary>
     private static string? Resolve(string worktreeRoot, string relative, out string? full)
     {
         full = null;

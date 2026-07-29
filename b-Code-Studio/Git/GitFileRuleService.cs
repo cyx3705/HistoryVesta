@@ -19,7 +19,7 @@ public sealed record GitFileRuleInfo(
     int LfAttributeCount,
     string Status);
 
-/// <summary>项目根已声明的一条格式规则(V2.2.1 台账扫描消费)。</summary>
+/// <summary>项目根已声明的一条格式规则，供台账扫描消费。</summary>
 public sealed record DeclaredRule(string Pattern, bool Track, bool Lfs, bool Lf, bool Managed);
 
 public sealed record GitFileRulePreview(
@@ -47,7 +47,7 @@ public sealed class GitFileRuleService
     private const string ManagedEnd = "# OneHistoryStudio managed end";
 
     /// <summary>
-    /// 基线块(V2.2.1 §3.4 / D221-8):由 git.rule.sync 自模板整块重刷,机器所有。
+    /// 基线块由 git.rule.sync 从模板整块重刷，属于机器所有内容。
     /// 与 managed 块(本项目特例)分离,基线更新不伤项目自身决定;两者都在块外内容之外。
     /// </summary>
     private const string BaselineBegin = "# OneHistoryStudio baseline begin";
@@ -62,7 +62,7 @@ public sealed class GitFileRuleService
     public GitFileRuleService(ProjectService projects) => _projects = projects;
 
     /// <summary>
-    /// 基线同步(V2.2.1 §3.4 / A221-9):把模板项目根规则文件的托管内容
+    /// 基线同步：把模板项目根规则文件的托管内容
     /// 整块刷入目标项目的 baseline 块;项目自身的 managed 块与块外手写内容不动。
     /// apply=false 只预览。省略 project 则同步全部工作树(模板自身除外)。
     /// </summary>
@@ -159,7 +159,7 @@ public sealed class GitFileRuleService
     }
 
     /// <summary>
-    /// 读取项目根已声明的格式规则(V2.2.1:供台账扫描复用,保持规则解析唯一实现)。
+    /// 读取项目根已声明的格式规则，供台账扫描复用并保持规则解析只有一份实现。
     /// 只回声明,不查索引——调用方若需归宿判定,应以 git ls-files 的三态为权威。
     /// </summary>
     public static async Task<IReadOnlyDictionary<string, DeclaredRule>> ReadDeclaredRulesAsync(
@@ -214,7 +214,7 @@ public sealed class GitFileRuleService
             return (false, "不纳入 Git 时 LFS 和 LF 必须同时关闭", null);
         if (lfs && lf)
             return (false, "LFS 与 LF 互斥，不能同时开启", null);
-        // V2.2.1 §3.3:目录规则只表达"忽略",不生成 .gitattributes 行(目录级 LFS/LF 无意义)
+        // 目录规则只表达“忽略”，不生成 .gitattributes 行；目录级 LFS/LF 没有意义。
         if (LooksLikeDirectoryPattern(pattern) && (track || lfs || lf))
             return (false, "目录规则只能用于忽略:请设 track=false lfs=false lf=false", null);
 
@@ -595,7 +595,7 @@ public sealed class GitFileRuleService
         foreach (var entry in Entries(ignore))
         {
             var pattern = ParseIgnorePattern(entry.Text);
-            // V2.2.1:格式规则与目录规则都读回(目录规则只可能出现在 .gitignore)
+            // 格式规则与目录规则都读回；目录规则只可能出现在 .gitignore。
             if (pattern == null || (!LooksLikeFormatPattern(pattern) && !LooksLikeDirectoryPattern(pattern)))
                 continue;
             result[pattern] = Merge(result.GetValueOrDefault(pattern), pattern,
@@ -747,7 +747,7 @@ public sealed class GitFileRuleService
     }
 
     /// <summary>
-    /// 只重刷基线块:managed 块与块外手写内容逐字保留(A221-9)。
+    /// 只重刷基线块：managed 块与块外手写内容逐字保留。
     /// 基线块统一置于文件最前,便于人一眼看出"哪些是全库统一的"。
     /// </summary>
     private static string RewriteBaselineBlock(TextDocument document, IReadOnlyList<string> baselineLines)
@@ -832,8 +832,8 @@ public sealed class GitFileRuleService
         => pattern.StartsWith("*.", StringComparison.Ordinal) && !pattern.Contains('/') && !pattern.Contains('\\');
 
     /// <summary>
-    /// 目录规则形态(V2.2.1 §3.3):以 / 结尾的相对路径,如 Library/、b-Unity/Temp/。
-    /// 禁绝对路径、盘符、`..`、反斜杠、通配符与空白——守卫等级沿 M1.5 路径纪律。
+    /// 目录规则是以 / 结尾的相对路径，如 Library/、b-Unity/Temp/。
+    /// 禁绝对路径、盘符、`..`、反斜杠、通配符与空白。
     /// </summary>
     public static bool LooksLikeDirectoryPattern(string pattern)
     {
@@ -857,7 +857,7 @@ public sealed class GitFileRuleService
             throw new InvalidOperationException("pattern 长度须 ≤128 且不允许 ..");
 
         // 目录规则(以 / 结尾)与格式规则(*.ext)两种形态,由形态自动判别;
-        // 不为目录另开指令(D221-9:避免同一件事两套入口)
+        // 不为目录另开指令，避免同一件事出现两套入口。
         if (LooksLikeDirectoryPattern(pattern))
             return pattern;
 

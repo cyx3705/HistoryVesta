@@ -344,7 +344,7 @@ public partial class ProjectOperationsView : UserControl
             await LoadRulesAsync(project);
     }
 
-    // ---------------------------------------------------------------- V2.2.1 全覆盖扫描入口
+    // ---------------------------------------------------------------- 全覆盖扫描入口
 
     /// <summary>强制重扫本项目并把完整格式台账重新合并进规则表。</summary>
     private async void OnScanCoverageClick(object sender, System.Windows.RoutedEventArgs e)
