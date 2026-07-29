@@ -12,6 +12,7 @@ using AppShell.Services.Web;
 using AppShell.Shell;
 using OneHistoryStudio.Connection;
 using OneHistoryStudio.Git;
+using OneHistoryStudio.Service;
 
 namespace OneHistoryStudio;
 
@@ -43,7 +44,8 @@ public partial class App : Application
         _log = log;
         RegisterGlobalExceptionHandlers(log, identity.Name);
 
-        var webPort = settings.GetInt(WebGateway.KeyPort, 8738);
+        var webPort = settings.GetInt(
+            WebGateway.KeyPort, StudioServiceCompositionFactory.DefaultServicePort);
         var endpoint = BootstrapProfileStore.ResolveEndpoint(bootstrap, webPort);
         var secrets = new DpapiSecretStore(paths.Root);
         _serviceClient = new ShellServiceClient(new ShellEndpointProfile(

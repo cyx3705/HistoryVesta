@@ -16,6 +16,8 @@ namespace OneHistoryStudio.Service;
 /// <summary>OneHistoryStudio 后台服务的唯一组合根。</summary>
 public static class StudioServiceCompositionFactory
 {
+    public const int DefaultServicePort = 8738;
+
     public static ServiceComposition Create(bool registerAutostart, string? dataApplicationName = null)
     {
         AppIdentity.Use(typeof(StudioServiceCompositionFactory).Assembly);
@@ -23,6 +25,12 @@ public static class StudioServiceCompositionFactory
         var paths = new AppPaths(dataApplicationName ?? identity.Name);
         var log = new ShellLog(paths);
         var settings = new SettingsService(paths);
+        if (string.IsNullOrWhiteSpace(settings.Get(WebGateway.KeyPort)))
+        {
+            settings.Set(
+                WebGateway.KeyPort,
+                DefaultServicePort.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
         StartupMigrations.Run(settings, paths, log);
 
         var registry = new CommandRegistry();

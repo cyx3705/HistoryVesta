@@ -27,6 +27,7 @@ internal static class ServiceWebSuite
     {
         await VerifyCommandRoutingAsync();
         await VerifyServiceCompositionAsync();
+        VerifyConfiguredServicePortPreserved();
         await VerifyMcpSessionsAsync();
         await VerifyWebGatewayAsync();
         Console.WriteLine("ServiceWebSmoke: PASS");
@@ -41,6 +42,10 @@ internal static class ServiceWebSuite
         var composition = StudioServiceCompositionFactory.Create(false, temporaryName);
         try
         {
+            SmokeKit.Equal(
+                StudioServiceCompositionFactory.DefaultServicePort.ToString(),
+                composition.Settings.Get(WebGateway.KeyPort),
+                "service composition pins the OHS default endpoint port");
             ServiceCommands.RegisterAll(
                 composition.Registry,
                 composition,
@@ -107,6 +112,27 @@ internal static class ServiceWebSuite
         {
             composition.Dispose();
             DeleteAppData(root);
+        }
+    }
+
+    private static void VerifyConfiguredServicePortPreserved()
+    {
+        var temporaryName = "OHS-Configured-Port-Smoke-" + Guid.NewGuid().ToString("N");
+        var paths = new AppPaths(temporaryName);
+        var settings = new SettingsService(paths);
+        settings.Set(WebGateway.KeyPort, "19438");
+        var composition = StudioServiceCompositionFactory.Create(false, temporaryName);
+        try
+        {
+            SmokeKit.Equal(
+                "19438",
+                composition.Settings.Get(WebGateway.KeyPort),
+                "service composition preserves an explicitly configured endpoint port");
+        }
+        finally
+        {
+            composition.Dispose();
+            DeleteAppData(paths.Root);
         }
     }
 
