@@ -666,7 +666,11 @@ internal static class DockingSuite
         string id)
     {
         var anchorable = manager.Layout.Descendents().OfType<LayoutAnchorable>()
-            .Single(item => item.ContentId == id);
+                             .SingleOrDefault(item => item.ContentId == id)
+                         ?? documentPane.Children.OfType<LayoutAnchorable>()
+                             .Single(item => item.ContentId == id);
+        if (ReferenceEquals(anchorable.Parent, documentPane))
+            return;
         ((ILayoutContainer)anchorable.Parent!).RemoveChild(anchorable);
         documentPane.Children.Add(anchorable);
         manager.Layout.CollectGarbage();
