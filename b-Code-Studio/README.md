@@ -50,8 +50,8 @@ Release 发布、运行时命令手册重生成、六份 Help 校验、版本校
 `b-Publish\quarantine\OneHistoryStudio`。发布脚本不得创建仓库根 `stage`。
 
 ```powershell
-.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.6
-.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.6 -Publish
+.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.7
+.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.7 -Publish
 ```
 
 不得用独立的 `dotnet publish` 或手工复制替代该入口；版本始终从 `StudioVersion.props` 求值。

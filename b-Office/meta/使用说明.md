@@ -1,6 +1,6 @@
 # OneHistoryStudio 使用说明
 
-> 适用版本：OneHistoryStudio V2.7.6
+> 适用版本：OneHistoryStudio V2.7.7
 
 OneHistoryStudio 是面向个人项目库的 Git 工作树管理、历史查看、文件规则管理、命令执行和模块扩展工具。程序界面与控制台共用同一套指令注册表，因此按钮、脚本、Help 和 MCP 工具具有一致的命令语义。
 
