@@ -18,10 +18,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="OneHistory.AppShell.Core" Version="3.0.0" />
-    <PackageReference Include="OneHistory.AppShell.Services" Version="3.0.0" />
-    <PackageReference Include="OneHistory.AppShell.Shell" Version="3.0.0" />
-    <PackageReference Include="OneHistory.AppShell.ServiceHost" Version="3.0.0" />
+    <PackageReference Include="OneHistory.AppShell.Core" Version="3.0.2" />
+    <PackageReference Include="OneHistory.AppShell.Services" Version="3.0.2" />
+    <PackageReference Include="OneHistory.AppShell.Shell" Version="3.0.2" />
+    <PackageReference Include="OneHistory.AppShell.ServiceHost" Version="3.0.2" />
   </ItemGroup>
 
   <ItemGroup>
