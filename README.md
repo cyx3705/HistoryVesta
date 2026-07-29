@@ -1,7 +1,7 @@
 # AppShell 3.0
 
-本仓库是 OneHistory AppShell 的独立源码、合同与发布资产真值。`3.0.0` 是当前正式发布基线但尚未标签冻结；
-当前正式版本为 `3.0.3`，已完成 Docking 主工作区比例收口；版本线不再与 OneHistoryStudio 对齐，`0.7.x` 仅保留用于回滚。
+本仓库是 OneHistory AppShell 的独立源码、合同与发布资产真值。`3.0.3` 是 V3 最终冻结基线，
+冻结标签为 `v3.0.3`；版本线不再与 OneHistoryStudio 对齐，`0.7.x` 仅保留用于回滚。
 
 ## 仓库结构
 

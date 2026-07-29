@@ -1,8 +1,8 @@
 # AppShell 3.0 冻结执行证据
 
-> 执行日期：2026-07-28；消费文档发布机制复核：2026-07-29
-> 候选版本：3.0.0
-> 状态：M1-M8 与中央主工作区修正均已通过候选流水线、人工功能检测和消费方回归；3.0.0 已批准正式发布，版本冻结（tag/push）延后
+> 首轮执行：2026-07-28；最终收口：2026-07-29
+> 最终冻结版本：3.0.3
+> 状态：M1-M8、冻结前整改、中央主工作区、模块默认右置与主工作区比例收口均已通过；正式发布、消费方复验和冻结门禁完成
 
 ## 1. 冻结结果
 
@@ -15,7 +15,9 @@
 - FZ-06：长期集合、资源释放、硬编码、跨应用资源、null 降级和线程亲和完成体检；限制另见
   [运行时约束与已知限制](package/AppShell_3.0_运行时约束与已知限制.md)。
 - BASE-273-276：2.7.6 中仍有效的框架质量修复已核对并纳入 3.0.0。
-- 四包源码、程序集、NuGet 与演示宿主统一为 3.0.0。
+- 3.0.1 将 MCP 与模块能力改为默认关闭，由消费方显式启用；本地命令集不依赖 MCP 网关。
+- 3.0.2 保留模块注册器的模块修改能力，运行期模块窗口默认合并到右侧现有标签组。
+- 3.0.3 合并历史同侧窗格并将侧栏总上限收紧到 50%；四包源码、程序集、NuGet 与演示宿主版本统一。
 
 ## 2. 独立项目落位
 
@@ -42,8 +44,8 @@ dotnet format .\AppShell.sln --verify-no-changes --no-restore
 
 结果：
 
-- Debug：0 warning / 0 error，69/69 tests PASS。
-- Release：0 warning / 0 error，69/69 tests PASS。
+- Debug：0 warning / 0 error，76/76 tests PASS。
+- Release：0 warning / 0 error，76/76 tests PASS。
 - 格式门禁：PASS。
 - Public API Analyzer：Debug/Release 均无诊断。
 - Core、Services、Shell、ServiceHost 的 `PublicAPI.Unshipped.txt` 均为 0 条；公开面全部进入 shipped 基线。
@@ -59,9 +61,20 @@ dotnet format .\AppShell.sln --verify-no-changes --no-restore
   保持工具页身份并可拖回、嵌入位置保存/重启恢复、早期 `0.01px` 并排拓扑迁移、WBall 无命令集场景，
   以及真实 WPF 视觉树中的主文档宽度、中央页面头常显和多页面选择。
 
-## 4. 审核候选
+## 4. 正式快照与候选沿革
 
-2026-07-29 在中央主工作区页面头、页面选择及普通工具页拖入/拖回修正后，重新执行不带 `-Publish` 的完整候选流水线：
+最终正式发布以源码候选提交 `dcfc56f9` 为输入，发布提交为 `278a0cd2`。复核结果：
+
+- 正式 manifest：`version=3.0.3`、`channel=formal`、`sourceDirty=false`、
+  `compatibilityValidated=true`。
+- `b-Publish` 的 9 个二进制产物与 5 个文档/复用入口、`z-Package-AppShell` 的 4 个运行包与
+  4 份消费合同均存在；逐项文件大小和 SHA-256 与 manifest/校验和一致。
+- Z 级 feed 恰好保留 Core、Services、Shell、ServiceHost 四个 3.0.3 运行包，没有混入旧版本。
+- NuGet 漏洞审计覆盖六个项目，未发现已知漏洞；隔离 PackageSmoke、演示发布和包结构检查通过。
+- 正式包、归档、Z 级快照和随包消费文档在发布提交后不再改写；冻结提交只更新内部冻结元数据。
+
+3.0.0 首轮候选阶段在中央主工作区页面头、页面选择及普通工具页拖入/拖回修正后，执行了不带
+`-Publish` 的完整候选流水线：
 
 ```powershell
 .\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.0.0
@@ -92,6 +105,19 @@ dotnet format .\AppShell.sln --verify-no-changes --no-restore
   不再存在旧的 `Pixel`/`Star` 契约测试阻断。
 
 ## 5. 消费方回归
+
+最终冻结前，两个正式消费方均从 3.0.3 包完成复验：
+
+- OneHistoryStudio 2.7.9：从 3.0.3 staging 隔离还原，Debug/Release 均 0 warning / 0 error；
+  Debug/Release 共 22 次 Smoke 全部通过，运行时版本投影为 `OHS 2.7.9 / AppShell 3.0.3`。
+- WBall：提交 `9cb74dc6` 将依赖固定为 `OneHistory.AppShell.Shell [3.0.3]`；从正式 Z 级 feed
+  使用全新 NuGet 缓存还原，隔离 Debug/Release 均 0 warning / 0 error，格式门禁通过，
+  `WBallVerify` 返回 `VERIFY PASS`，确定性哈希保持不变。
+- SE2SW 不是独立冻结消费方；其 2.2.0 真实模块注册冒烟已在 3.0.2 完成：模块及 2 条指令装载、
+  界面内容实例化、右侧窗口形成和同组标签合并均通过，并由人工桌面观察确认。3.0.3 未改变公开 API，
+  相关回归由 76 项框架测试继续覆盖。
+
+以下保留 3.0.0 候选阶段的完整消费回归记录，作为冻结演进审计：
 
 ### OneHistoryStudio 020
 
@@ -157,8 +183,10 @@ dotnet format .\AppShell.sln --verify-no-changes --no-restore
 
 ## 7. 发布与冻结边界
 
-- 人工功能检测、Claude 审查以及 OHS/WBall 候选消费均已通过，3.0.0 获准进入仓库内本地正式发布。
-- 发布顺序固定为：提交源码、消费文档与证据，确认发布输入和候选来源提交均干净，再执行
-  `Publish-AppShell.ps1 -Version 3.0.0 -Publish`，将同一候选提升到正式历史归档和 Z 级当前快照。
-- 正式提升只发布仓库内本地 feed、版本化文档、复用入口、清单、校验和及 Z 级快照；不发布到 NuGet.org。
-- 本次明确暂缓版本冻结：不创建 `v3.0.0` tag，不 push；待正式包继续使用并获冻结指令后再收口。
+- 人工功能检测、Claude 两轮审查、AppShell 双配置门禁、正式快照校验以及 OHS/WBall 3.0.3
+  消费复验均已通过，V3 冻结条件满足。
+- 3.0.3 只发布到仓库内本地 feed、版本化文档、复用入口、清单、校验和及 Z 级快照；未发布到 NuGet.org。
+- 注解标签 `v3.0.3` 指向包含本证据及冻结元数据的收口提交；该提交完整包含发布提交 `278a0cd2`
+  的正式资产，且不改写其包内容。
+- `v3.0.3` 是 V3 最终冻结基线。冻结后仅接受致命崩溃、数据丢失或安全漏洞修复；其他功能和公开合同
+  变更进入后续版本线，并重新执行完整发布与消费门禁。
