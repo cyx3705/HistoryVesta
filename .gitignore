@@ -15,10 +15,12 @@ TestResults/
 *.log
 z-Package-AppShell/staging/
 stage/
+b-Publish/
 b-Publish.__new-*/
+z-Package.__new-*/
 
 # Deployment databases and rollback archives are machine-local recovery assets.
 b-Office/evidence/**/*.db
 b-Office/evidence/**/*.zip
 
-# b-Publish is intentionally tracked as the current delivery snapshot.
+# b-Publish is generated staging; z-Package is the tracked formal release snapshot.

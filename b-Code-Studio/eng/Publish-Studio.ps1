@@ -11,7 +11,8 @@ Set-StrictMode -Version Latest
 $ComponentRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $RepoRoot = [IO.Path]::GetFullPath((Join-Path $ComponentRoot ".."))
 $StageParent = [IO.Path]::GetFullPath((Join-Path $RepoRoot "stage"))
-$DeliveryRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "b-Publish"))
+$StagingRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "b-Publish"))
+$PackageRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "z-Package"))
 
 function Invoke-Dotnet {
     param([string[]]$Arguments)
@@ -89,7 +90,9 @@ elseif ($Version -ne $SourceVersion) {
     throw "StudioVersion.props declares $SourceVersion; requested $Version"
 }
 
-$StageRoot = Assert-UnderRoot (Join-Path $StageParent "ohs-$Version") $StageParent "staging path"
+$transactionId = [Guid]::NewGuid().ToString("N")
+$StageRoot = Assert-UnderRoot `
+    (Join-Path $StageParent "ohs-$Version-$transactionId") $StageParent "candidate path"
 $AppRoot = Join-Path $StageRoot "app"
 $ManifestPath = Join-Path $StageRoot "$Version.json"
 $ChecksumPath = Join-Path $StageRoot "$Version.sha256"
@@ -120,10 +123,10 @@ try {
         throw "Refusing to overwrite immutable staging directory: $StageRoot"
     }
 
-    $sourceStatus = (& git -C $RepoRoot status --porcelain -- b-Code-Studio b-Code-AppShell b-Office) -join "`n"
+    $sourceStatus = (& git -C $RepoRoot status --porcelain -- b-Code-Studio b-Code-Studio.Service b-Office) -join "`n"
     $sourceDirty = -not [string]::IsNullOrWhiteSpace($sourceStatus)
     if ($Publish -and $sourceDirty) {
-        throw "Formal publish requires clean b-Code-Studio, b-Code-AppShell and b-Office source trees."
+        throw "Formal publish requires clean b-Code-Studio, b-Code-Studio.Service and b-Office source trees."
     }
 
     Invoke-Dotnet @( "restore", "OHS.sln", "--locked-mode", "-p:NuGetAudit=false" )
@@ -194,7 +197,7 @@ try {
         schemaVersion = 1
         product = "OneHistoryStudio"
         version = $Version
-        channel = $(if ($Publish) { "local" } else { "staging" })
+        channel = "staging"
         sourceCommit = $sourceCommit
         sourceDirty = $sourceDirty
         sdk = (& dotnet --version).Trim()
@@ -206,48 +209,87 @@ try {
     }
     [IO.File]::WriteAllText($ManifestPath, (($manifest | ConvertTo-Json -Depth 8) + "`n"), [Text.UTF8Encoding]::new($false))
 
+    $publishParent = Split-Path -Parent $StagingRoot
+    $temporaryStaging = Assert-UnderRoot `
+        (Join-Path $publishParent "b-Publish.__new-$transactionId") $publishParent "temporary staging"
+    $backupStaging = Assert-UnderRoot `
+        (Join-Path $StageParent "b-Publish-pre-$Version-$transactionId") $StageParent "backup staging"
+    $quarantineStaging = Assert-UnderRoot `
+        (Join-Path $StageParent "b-Publish-failed-$Version-$transactionId") $StageParent "failed staging"
+    try {
+        Copy-DirectoryContents $AppRoot $temporaryStaging
+        $temporaryMetadata = Join-Path $temporaryStaging "release"
+        New-Item -ItemType Directory -Force -Path $temporaryMetadata | Out-Null
+        Copy-Item -LiteralPath $ManifestPath -Destination (Join-Path $temporaryMetadata "$Version.json")
+        Copy-Item -LiteralPath $ChecksumPath -Destination (Join-Path $temporaryMetadata "$Version.sha256")
+        $validateStaging = {
+            param($Root)
+            Assert-ReleaseTree $Root $Version "staging"
+        }
+        Invoke-DirectoryPromotion `
+            $temporaryStaging $StagingRoot $backupStaging $quarantineStaging $validateStaging
+        Write-Host "Staged OneHistoryStudio $Version at $StagingRoot"
+        if (Test-Path -LiteralPath $backupStaging) {
+            Write-Host "Previous staging retained at $backupStaging"
+        }
+        Remove-Item -LiteralPath $StageRoot -Recurse -Force
+    }
+    catch {
+        $stagingError = $_
+        if ((Test-Path -LiteralPath $temporaryStaging) -and
+            (-not (Test-Path -LiteralPath $quarantineStaging))) {
+            try {
+                Move-Item -LiteralPath $temporaryStaging -Destination $quarantineStaging
+            }
+            catch {
+                throw "Staging failed: $($stagingError.Exception.Message); candidate quarantine failed: $($_.Exception.Message)"
+            }
+        }
+        throw $stagingError
+    }
+
     if ($Publish) {
-        $publishParent = Split-Path -Parent $DeliveryRoot
-        $transactionId = [Guid]::NewGuid().ToString("N")
-        $temporaryDelivery = Assert-UnderRoot `
-            (Join-Path $publishParent "b-Publish.__new-$transactionId") $publishParent "temporary delivery"
-        $backupDelivery = Assert-UnderRoot `
-            (Join-Path $StageParent "b-Publish-pre-$Version-$transactionId") $StageParent "backup delivery"
-        $quarantineDelivery = Assert-UnderRoot `
-            (Join-Path $StageParent "b-Publish-failed-$Version-$transactionId") $StageParent "failed delivery"
+        $temporaryPackage = Assert-UnderRoot `
+            (Join-Path $publishParent "z-Package.__new-$transactionId") $publishParent "temporary package"
+        $backupPackage = Assert-UnderRoot `
+            (Join-Path $StageParent "z-Package-pre-$Version-$transactionId") $StageParent "backup package"
+        $quarantinePackage = Assert-UnderRoot `
+            (Join-Path $StageParent "z-Package-failed-$Version-$transactionId") $StageParent "failed package"
         try {
-            Copy-DirectoryContents $AppRoot $temporaryDelivery
-            $temporaryMetadata = Join-Path $temporaryDelivery "release"
-            New-Item -ItemType Directory -Force -Path $temporaryMetadata | Out-Null
-            Copy-Item -LiteralPath $ManifestPath -Destination (Join-Path $temporaryMetadata "$Version.json")
-            Copy-Item -LiteralPath $ChecksumPath -Destination (Join-Path $temporaryMetadata "$Version.sha256")
-            $validateRelease = {
+            Copy-DirectoryContents $StagingRoot $temporaryPackage
+            $packageManifestPath = Join-Path (Join-Path $temporaryPackage "release") "$Version.json"
+            $packageManifest = [IO.File]::ReadAllText($packageManifestPath) | ConvertFrom-Json
+            $packageManifest.channel = "package"
+            $packageManifest | Add-Member -NotePropertyName packagedAtUtc `
+                -NotePropertyValue ([DateTimeOffset]::UtcNow.ToString("O")) -Force
+            [IO.File]::WriteAllText(
+                $packageManifestPath,
+                (($packageManifest | ConvertTo-Json -Depth 8) + "`n"),
+                [Text.UTF8Encoding]::new($false))
+            $validatePackage = {
                 param($Root)
-                Assert-ReleaseTree $Root $Version
+                Assert-ReleaseTree $Root $Version "package"
             }
             Invoke-DirectoryPromotion `
-                $temporaryDelivery $DeliveryRoot $backupDelivery $quarantineDelivery $validateRelease
-            Write-Host "Published OneHistoryStudio $Version to $DeliveryRoot"
-            if (Test-Path -LiteralPath $backupDelivery) {
-                Write-Host "Rollback snapshot retained at $backupDelivery"
+                $temporaryPackage $PackageRoot $backupPackage $quarantinePackage $validatePackage
+            Write-Host "Published OneHistoryStudio $Version package to $PackageRoot"
+            if (Test-Path -LiteralPath $backupPackage) {
+                Write-Host "Previous package retained at $backupPackage"
             }
         }
         catch {
-            $publishError = $_
-            if ((Test-Path -LiteralPath $temporaryDelivery) -and
-                (-not (Test-Path -LiteralPath $quarantineDelivery))) {
+            $packageError = $_
+            if ((Test-Path -LiteralPath $temporaryPackage) -and
+                (-not (Test-Path -LiteralPath $quarantinePackage))) {
                 try {
-                    Move-Item -LiteralPath $temporaryDelivery -Destination $quarantineDelivery
+                    Move-Item -LiteralPath $temporaryPackage -Destination $quarantinePackage
                 }
                 catch {
-                    throw "Publish failed: $($publishError.Exception.Message); candidate quarantine failed: $($_.Exception.Message)"
+                    throw "Package publish failed: $($packageError.Exception.Message); candidate quarantine failed: $($_.Exception.Message)"
                 }
             }
-            throw $publishError
+            throw $packageError
         }
-    }
-    else {
-        Write-Host "Staged OneHistoryStudio $Version at $StageRoot"
     }
 }
 finally {

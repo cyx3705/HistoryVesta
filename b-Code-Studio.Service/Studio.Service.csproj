@@ -15,6 +15,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\b-Code-Studio\Studio.csproj" />
-    <ProjectReference Include="..\b-Code-AppShell\src\AppShell.ServiceHost\AppShell.ServiceHost.csproj" />
+    <PackageReference Include="OneHistory.AppShell.ServiceHost" Version="3.0.0" />
   </ItemGroup>
 </Project>

@@ -3,8 +3,6 @@ using System.IO;
 using AppShell.Core.Commands;
 using AppShell.Core.Storage;
 using AppShell.Services;
-using AppShell.Shell;
-using OneHistoryStudio.Connection;
 
 namespace OneHistoryStudio.Service;
 
@@ -17,13 +15,6 @@ internal static class ServiceBuiltinCommands
     {
         RegisterHelp(registry);
         RegisterApp(registry, settings, dataDirectory);
-        foreach (var descriptor in FrontendCommandCatalog.CreateFrameworkProxies())
-            registry.Register(descriptor, "framework:frontend");
-
-        var applicationFrontend = new CommandRegistry();
-        ConnectionCommands.RegisterAll(applicationFrontend, null!);
-        foreach (var descriptor in applicationFrontend.All())
-            registry.Register(FrontendCommandCatalog.CreateProxy(descriptor), "app:frontend");
     }
 
     private static void RegisterHelp(CommandRegistry registry)

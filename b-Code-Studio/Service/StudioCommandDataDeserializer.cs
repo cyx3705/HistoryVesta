@@ -2,7 +2,6 @@ using System.Text.Json;
 using AppShell.Services.Mcp;
 using AppShell.Services.Modules;
 using AppShell.Shell.Mcp;
-using AppShell.Core.Data;
 using AppShell.Core.Files;
 using OneHistoryStudio.Git;
 using OneHistoryStudio.Connection;
@@ -43,13 +42,6 @@ public static class StudioCommandDataDeserializer
             "mcp.pending" => Read<List<PromptProposal>>(data),
             "correction.list" => Read<List<PromptCorrection>>(data),
             "incident.list" => Read<List<PromptIncident>>(data),
-            "db.list" or "db.tables" => Read<List<string>>(data),
-            "db.schema" => Read<List<ColumnInfo>>(data),
-            "db.query" => Read<QueryResult>(data),
-            "db.insert" or "db.update" or "db.delete" or "db.export" => Read<long>(data),
-            "db.sql" => data.ValueKind == JsonValueKind.Object
-                ? Read<QueryResult>(data)
-                : Read<int>(data),
             "res.list" => Read<WorkspaceListing>(data),
             _ => data.Clone(),
         };

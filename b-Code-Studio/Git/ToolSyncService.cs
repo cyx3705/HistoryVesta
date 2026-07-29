@@ -1,9 +1,7 @@
 ﻿using AppShell.Core;
 using System.IO;
 using System.Security.Cryptography;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
-using AppShell.Core.Data;
 using AppShell.Core.Logging;
 
 namespace OneHistoryStudio.Git;
@@ -46,20 +44,6 @@ public sealed class ToolSyncService
         _log = log;
         _modulesDir = modulesDir;
         _commandNames = commandNames;
-    }
-
-    [Obsolete("Use ToolSyncService(ProjectService, string dataDirectory, ...).")]
-    public ToolSyncService(
-        ProjectService projects,
-        IDataService data,
-        IShellLog log,
-        Func<string> modulesDir,
-        Func<IEnumerable<string>>? commandNames = null)
-        : this(projects,
-            Path.Combine(Path.GetTempPath(), "OneHistoryStudio.Tools",
-                RuntimeHelpers.GetHashCode(data).ToString("x")),
-            log, modulesDir, commandNames)
-    {
     }
 
     // ---------------------------------------------------------------- mcpExposure(CX-01 / Q211-2)

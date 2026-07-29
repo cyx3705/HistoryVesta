@@ -61,7 +61,8 @@ function Read-ReleaseChecksumMap {
 function Assert-ReleaseTree {
     param(
         [Parameter(Mandatory = $true)][string]$Root,
-        [Parameter(Mandatory = $true)][string]$ExpectedVersion
+        [Parameter(Mandatory = $true)][string]$ExpectedVersion,
+        [string]$ExpectedChannel
     )
 
     $fullRoot = [IO.Path]::GetFullPath($Root)
@@ -96,6 +97,10 @@ function Assert-ReleaseTree {
         [string]$manifest.product -ne 'OneHistoryStudio' -or
         [string]$manifest.version -ne $ExpectedVersion) {
         throw "Release manifest identity does not match OneHistoryStudio $ExpectedVersion"
+    }
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedChannel) -and
+        [string]$manifest.channel -ne $ExpectedChannel) {
+        throw "Release manifest channel is $($manifest.channel), expected $ExpectedChannel"
     }
 
     $checksums = Read-ReleaseChecksumMap $checksumPath

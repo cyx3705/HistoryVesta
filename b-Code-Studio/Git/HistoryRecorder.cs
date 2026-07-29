@@ -1,5 +1,4 @@
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using AppShell.Core.Data;
@@ -38,13 +37,6 @@ public sealed class HistoryRecorder : IMcpAuditLog
         _notesPath = Path.Combine(state, "branch-notes.json");
         _log = log;
         _mcp = new McpAuditRecorder(dataDirectory, log);
-    }
-
-    [Obsolete("Use HistoryRecorder(string dataDirectory, IShellLog log).")]
-    public HistoryRecorder(IDataService data, IShellLog log)
-        : this(Path.Combine(Path.GetTempPath(), "OneHistoryStudio.History",
-            RuntimeHelpers.GetHashCode(data).ToString("x")), log)
-    {
     }
 
     public void Record(string branch, string action, string message, string result, int warnings = 0)

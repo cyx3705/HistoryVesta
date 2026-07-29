@@ -49,7 +49,7 @@ internal static class ServiceWebSuite
             SmokeKit.True(composition.Registry.All().Count > 0, "service command registry is non-empty");
             foreach (var name in new[]
                      {
-                         "help", "history", "run", "res.list", "proj.list",
+                         "help", "proj.list",
                          "mcp.status", "module.list", "svc.status", "web.status",
                      })
             {
@@ -59,43 +59,9 @@ internal static class ServiceWebSuite
                     command.Name.StartsWith("db.", StringComparison.OrdinalIgnoreCase)),
                 "service composition omits retired database commands");
 
-            foreach (var source in FrontendCommandCatalog.FrameworkSourceDescriptors)
-            {
-                SmokeKit.True(composition.Registry.TryGet(source.Name, out var proxy),
-                    $"framework frontend proxy {source.Name}");
-                AssertProxyMetadata(source, proxy);
-            }
-
-            var applicationFrontend = new CommandRegistry();
-            ConnectionCommands.RegisterAll(applicationFrontend, null!);
-            foreach (var source in applicationFrontend.All())
-            {
-                SmokeKit.True(composition.Registry.TryGet(source.Name, out var proxy),
-                    $"application frontend proxy {source.Name}");
-                AssertProxyMetadata(source, proxy);
-            }
-
-            SmokeKit.Equal(
-                BuiltinCommandDefinitions.Names.Count,
-                FrontendCommandCatalog.SharedBuiltinSourceDescriptors.Count,
-                "desktop shared built-in count");
-            foreach (var source in FrontendCommandCatalog.SharedBuiltinSourceDescriptors
-                         .Where(source => !source.Name.StartsWith("db.", StringComparison.OrdinalIgnoreCase)))
-            {
-                SmokeKit.True(composition.Registry.TryGet(source.Name, out var service),
-                    $"service shared built-in {source.Name}");
-                AssertSharedBuiltinMetadata(source, service);
-            }
-
-            var deleteProxy = composition.Registry.All().Single(command => command.Name == "res.delete");
-            SmokeKit.True(deleteProxy.IsDangerous && deleteProxy.ConfirmPrompt == null,
-                "frontend proxy preserves dangerous metadata without duplicate service confirmation");
-            var invalidProxyArgument = await composition.Bus.ExecuteAsync(
-                "win.dock name=console pos=bottom unexpected=true",
-                "Shell:fixture:SmokeShell");
-            SmokeKit.True(!invalidProxyArgument.Success
-                          && invalidProxyArgument.Message.Contains("未知参数: unexpected=", StringComparison.Ordinal),
-                "frontend proxy validates the real parameter schema before relay");
+            SmokeKit.True(composition.Registry.All().All(command =>
+                    command.ExecutionSite != CommandExecutionSite.Frontend),
+                "service startup does not fabricate a frontend command catalog");
             var catalog = composition.Bus.ExecuteAsync("command.list", "smoke")
                 .GetAwaiter().GetResult();
             var catalogJson = JsonSerializer.SerializeToElement(catalog.Data);

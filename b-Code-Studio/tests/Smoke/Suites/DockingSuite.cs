@@ -37,8 +37,8 @@ internal static class DockingSuite
                 if (realMouse)
                     RunRealMouseRoundTrip();
                 Run();
-                RunDocumentPaneRecovery();
-                RunLiveDocumentPaneGuard();
+                RunDocumentPanePersistence();
+                RunLiveDocumentPaneEmbedding();
                 RunFloatDockRoundTrip();
                 RunModuleReload();
             }
@@ -108,8 +108,8 @@ internal static class DockingSuite
         True(manager.Layout.Descendents().OfType<LayoutAnchorable>().All(item => item.CanFloat),
             "all tool windows can float");
         True(manager.Layout.Descendents().OfType<LayoutAnchorable>()
-                .All(item => !item.CanDockAsTabbedDocument),
-            "static and dynamically registered tools reject document-pane docking");
+                .All(item => item.CanDockAsTabbedDocument),
+            "static and dynamically registered tools allow central page embedding");
 
         host.SaveLayout("three-tools");
         host.MaximizeWindow("tool-b");
@@ -144,7 +144,7 @@ internal static class DockingSuite
         ContentFactory = () => counter.Create(),
     };
 
-    private static void RunDocumentPaneRecovery()
+    private static void RunDocumentPanePersistence()
     {
         var store = new MemoryLayoutStore();
         var firstManager = new DockingManager();
@@ -157,13 +157,13 @@ internal static class DockingSuite
 
         True(
             firstManager.Layout.Descendents().OfType<LayoutAnchorable>()
-                .All(item => !item.CanDockAsTabbedDocument),
-            "tool windows reject document-pane docking");
+                .All(item => item.CanDockAsTabbedDocument),
+            "tool windows allow document-pane docking");
 
         var documentPane = firstManager.Layout.Descendents().OfType<LayoutDocumentPane>().Single();
         MoveIntoDocumentPane(firstManager, documentPane, "tool-main");
         MoveIntoDocumentPane(firstManager, documentPane, "tool-tab");
-        Equal(2, documentPane.ChildrenCount, "defect fixture contains tools in central document pane");
+        Equal(2, documentPane.ChildrenCount, "fixture embeds tools in central document pane");
         store.WriteCurrent(Serialize(firstManager));
 
         var recoveryLog = new MemoryLog();
@@ -176,20 +176,18 @@ internal static class DockingSuite
         recoveredHost.Initialize();
 
         var recoveredBackground = recoveredManager.Layout.Descendents().OfType<LayoutDocumentPane>().Single();
-        Equal(0, recoveredBackground.ChildrenCount, "corrupted central document pane is emptied on restore");
+        Equal(2, recoveredBackground.ChildrenCount, "embedded central pages survive layout restore");
         True(
             recoveredManager.Layout.Descendents().OfType<LayoutAnchorable>()
-                .All(item => !item.CanDockAsTabbedDocument && !IsInsideDocumentPane(item)),
-            "restored tools remain tool windows outside the document pane");
-        True(
-            recoveryLog.Snapshot().Any(entry =>
-                entry.Message.Contains("2 个工具窗口误入中央背景区", StringComparison.Ordinal)),
-            "corrupted document docking emits recovery warning");
+                .Where(item => item.ContentId is "tool-main" or "tool-tab")
+                .All(item => item.CanDockAsTabbedDocument && IsInsideDocumentPane(item)),
+            "restored tools remain embedded selectable pages");
+        True(!recoveryLog.Snapshot().Any(entry => entry.Message.Contains("误入中央主文档区", StringComparison.Ordinal)),
+            "valid central embedding emits no recovery warning");
 
-        MoveIntoDocumentPane(recoveredManager, recoveredBackground, "tool-main");
         recoveredHost.SaveCurrentLayout();
-        Equal(0, recoveredBackground.ChildrenCount,
-            "save boundary repairs an illegal drop before the debounce fires");
+        Equal(2, recoveredBackground.ChildrenCount,
+            "save boundary preserves embedded pages");
 
         var persistedManager = new DockingManager();
         var persistedHost = new DockingHost(
@@ -198,12 +196,15 @@ internal static class DockingSuite
             store,
             new MemoryLog());
         persistedHost.Initialize();
-        Equal(0, persistedManager.Layout.Descendents().OfType<LayoutDocumentPane>()
+        Equal(2, persistedManager.Layout.Descendents().OfType<LayoutDocumentPane>()
             .Single().ChildrenCount,
-            "repaired layout remains clean after a subsequent save and restart");
+            "embedded pages remain after a subsequent save and restart");
+        True(persistedHost.ListWindows().Where(item => item.Id is "tool-main" or "tool-tab")
+                .All(item => item.Side == DockSide.Center),
+            "persisted embedded pages report the central side");
     }
 
-    private static void RunLiveDocumentPaneGuard()
+    private static void RunLiveDocumentPaneEmbedding()
     {
         var manager = new DockingManager();
         var log = new MemoryLog();
@@ -215,9 +216,8 @@ internal static class DockingSuite
         host.Initialize();
         PumpDispatcher(TimeSpan.FromMilliseconds(100));
 
-        // Start from a user-customized layout rather than descriptor defaults. If a future
-        // AvalonDock gesture places these tools in the document pane, recovery must preserve
-        // the user's last good placement instead of silently resetting it.
+        // Start from a user-customized layout, then model the result produced by an AvalonDock
+        // drag into the main document pane.
         host.Dock("tool-main", DockSide.Left, 0.31);
         host.Dock("tool-tab", DockSide.Tab, targetId: "tool-main");
         host.Float("tool-right");
@@ -228,8 +228,8 @@ internal static class DockingSuite
         True(preGestureStates.Single(item => item.Id == "tool-right").IsFloating,
             "custom fixture starts with the right tool floating");
 
-        var generated = 0;
-        host.CommandGenerated += (_, _) => generated++;
+        var generated = new List<string>();
+        host.CommandGenerated += (_, e) => generated.Add(e.CommandText);
         var documentPane = manager.Layout.Descendents().OfType<LayoutDocumentPane>().Single();
         MoveIntoDocumentPane(manager, documentPane, "tool-main");
         MoveIntoDocumentPane(manager, documentPane, "tool-tab");
@@ -237,26 +237,25 @@ internal static class DockingSuite
 
         PumpDispatcher(TimeSpan.FromMilliseconds(750));
 
-        Equal(0, documentPane.ChildrenCount,
-            "live gesture guard empties the central document pane after debounce");
+        Equal(3, documentPane.ChildrenCount,
+            "live drag embeds all selected tools in the central document pane");
         var main = manager.Layout.Descendents().OfType<LayoutAnchorable>()
             .Single(item => item.ContentId == "tool-main");
         var tab = manager.Layout.Descendents().OfType<LayoutAnchorable>()
             .Single(item => item.ContentId == "tool-tab");
-        True(ReferenceEquals(main.Parent, tab.Parent),
-            "live repair restores the pre-gesture custom tool tab group");
+        True(ReferenceEquals(main.Parent, tab.Parent) && ReferenceEquals(main.Parent, documentPane),
+            "live drag joins the tools to one central page group");
         var restoredStates = host.ListWindows();
-        Equal(DockSide.Left, restoredStates.Single(item => item.Id == "tool-main").Side,
-            "live repair restores the pre-gesture custom side");
-        True(restoredStates.Single(item => item.Id == "tool-right").IsFloating,
-            "live repair restores the pre-gesture floating state");
+        True(restoredStates.Where(item => item.Id is "tool-main" or "tool-tab" or "tool-right")
+                .All(item => !item.IsFloating && item.Side == DockSide.Center),
+            "live embedded tools report the central side");
         True(manager.Layout.Descendents().OfType<LayoutAnchorable>()
-                .All(item => !item.CanDockAsTabbedDocument && !IsInsideDocumentPane(item)),
-            "live repair preserves the tool-only docking contract");
-        True(log.Snapshot().Any(entry =>
-                entry.Message.Contains("3 个工具窗口误入中央背景区", StringComparison.Ordinal)),
-            "live illegal docking emits a recovery warning");
-        Equal(0, generated, "self-healing does not record the illegal gesture as a valid command");
+                .All(item => item.CanDockAsTabbedDocument && IsInsideDocumentPane(item)),
+            "live embedding keeps pages draggable back out");
+        True(!log.Snapshot().Any(entry => entry.Message.Contains("误入中央主文档区", StringComparison.Ordinal)),
+            "live central embedding emits no recovery warning");
+        True(generated.Count(command => command.EndsWith(" pos=center", StringComparison.Ordinal)) >= 3,
+            "live embedding records replayable central docking commands");
     }
 
     private static ToolWindowDescriptor[] RecoveryTools(Counter counter) =>
@@ -377,32 +376,47 @@ internal static class DockingSuite
                 "real tab drag emits the canonical float command");
 
             var floatingWindow = FindFloatingWindow(manager);
-            var floatingBoundsBeforeInvalidDrop = RealMouseInput.GetWindowBounds(
-                new WindowInteropHelper(floatingWindow).Handle);
             var floatingCaption = FloatingCaptionPoint(floatingWindow);
             PerformRealMouseDrag(floatingCaption, documentPoint,
-                "release floating tool over the central document background");
+                "embed floating tool in the central document pane");
+            var embedded = host.ListWindows().Single(item => item.Id == "drag-tool");
+            True(!embedded.IsFloating && embedded.Side == DockSide.Center,
+                "central document pane accepts a real tool-window drop");
+            Equal(1, documentModel.ChildrenCount,
+                "central document pane contains the embedded tool page");
+            True(IsInsideDocumentPane(FindAnchorable(manager, "drag-tool")),
+                "real central drop keeps the page in the main document pane");
+            True(commands.Any(command => command == "win.dock name=drag-tool pos=center"),
+                "real central drop emits a replayable center docking command");
+
+            var embeddedTab = FindVisual<LayoutDocumentTabItem>(manager,
+                item => ReferenceEquals(item.Model, FindAnchorable(manager, "drag-tool")));
+            PerformRealMouseDrag(ScreenCenter(embeddedTab), outsidePoint,
+                "drag embedded central page back out as a floating tool");
             True(host.ListWindows().Single(item => item.Id == "drag-tool").IsFloating,
-                "central document background rejects a real tool-window drop");
-            var floatingBoundsAfterInvalidDrop = RealMouseInput.GetWindowBounds(
-                new WindowInteropHelper(FindFloatingWindow(manager)).Handle);
-            True(Math.Abs(floatingBoundsAfterInvalidDrop.Left - floatingBoundsBeforeInvalidDrop.Left) > 40 ||
-                 Math.Abs(floatingBoundsAfterInvalidDrop.Top - floatingBoundsBeforeInvalidDrop.Top) > 40,
-                "real floating-title drag moves the native floating window");
-            Equal(0, documentModel.ChildrenCount,
-                "central document pane stays empty after a real invalid drop");
-            True(!commands.Any(command => command.StartsWith("win.dock name=drag-tool", StringComparison.Ordinal)),
-                "invalid central drop emits no valid docking command");
+                "embedded central page can be dragged back out");
 
-            floatingWindow = FindFloatingWindow(manager);
-            floatingCaption = FloatingCaptionPoint(floatingWindow);
-            var targetTitle = FindVisual<AnchorablePaneTitle>(manager,
-                item => ReferenceEquals(item.Model, targetModel));
-            var targetPoint = ScreenCenter(targetTitle);
-            PerformRealMouseDrag(floatingCaption, targetPoint,
-                "dock floating tool into the right-side tool pane");
+            ToolWindowInfo docked = null!;
+            for (var attempt = 1; attempt <= 2; attempt++)
+            {
+                // The central-tab tear-off replaces the native floating window and can also
+                // re-template the target pane. Always reacquire both live visuals immediately
+                // before the physical gesture instead of reusing pre-transition coordinates.
+                PumpDispatcher(TimeSpan.FromMilliseconds(350));
+                floatingWindow = FindFloatingWindow(manager);
+                floatingCaption = FloatingCaptionPoint(floatingWindow);
+                targetModel = FindAnchorable(manager, "target-tool");
+                var targetTitle = FindVisual<AnchorablePaneTitle>(manager,
+                    item => ReferenceEquals(item.Model, targetModel));
+                var targetPoint = ScreenCenter(targetTitle);
+                PerformRealMouseDrag(floatingCaption, targetPoint,
+                    $"dock floating tool into the right-side tool pane (attempt {attempt})");
 
-            var docked = host.ListWindows().Single(item => item.Id == "drag-tool");
+                docked = host.ListWindows().Single(item => item.Id == "drag-tool");
+                if (!docked.IsFloating && docked.Side == DockSide.Right)
+                    break;
+            }
+
             if (docked.IsFloating || docked.Side != DockSide.Right)
             {
                 throw new InvalidOperationException(
@@ -418,8 +432,8 @@ internal static class DockingSuite
             Equal(0, documentModel.ChildrenCount,
                 "real mouse roundtrip leaves the central document pane empty");
             True(manager.Layout.Descendents().OfType<LayoutAnchorable>()
-                    .All(item => !item.CanDockAsTabbedDocument && !IsInsideDocumentPane(item)),
-                "real mouse roundtrip preserves the tool-only docking contract");
+                    .All(item => item.CanDockAsTabbedDocument && !IsInsideDocumentPane(item)),
+                "real mouse roundtrip keeps every tool eligible for central embedding");
             var dragDockCommands = commands.Where(command =>
                     command.StartsWith("win.dock name=drag-tool ", StringComparison.Ordinal))
                 .ToList();

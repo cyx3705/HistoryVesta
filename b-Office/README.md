@@ -4,7 +4,8 @@
 > 更新日期：2026-07-28
 > 面向对象：仓库开发者、维护者与 AI
 
-这里是 OneHistoryStudio 仓库内文档的唯一导航入口。现行手册、一次性证据和当前版本施工文档分区保存，彼此不能混用。
+这里是 OneHistoryStudio 仓库内文档的唯一导航入口。现行手册、一次性证据和版本记录分区保存，彼此不能混用。
+AppShell 权威文档已迁至平级 `2026-023-AppShell/b-Office`，本仓不保留可漂移副本。
 
 > **长期治理规则（2026-07-28 起强制执行）**：治理目标不是删除历史文件，而是隔离 AI 的默认读取。
 > 未来开发只以当前源码、运行时注册表和 `meta/` 现行手册为基线，不得要求开发者或 AI 阅读 V 版本文档
@@ -27,7 +28,7 @@ b-Office/
 
 | 区域 | 性质 | 维护规则 |
 |---|---|---|
-| `meta/` | 当前产品手册，也是 `Publish\docs\` 的唯一来源 | 随当前版本更新 |
+| `meta/` | 当前产品手册，也是 `b-Publish\docs\` 暂存和 `z-Package\docs\` 正式发布的唯一来源 | 随当前版本更新 |
 | `evidence/` | 部署、清理、迁移和实验形成的小型文本事实 | 形成后保持原文；禁止数据库、压缩包、完整发布物和可再生成的原始输出 |
 | `versions/` | 当前或历史版本的设计、实施与验收记录 | 不得成为现行基线；有效结论抽入 `meta/`，原文可保留但默认禁止 AI 读取，详细规则见 `versions/README.md` |
 
@@ -75,7 +76,6 @@ b-Office/
 - [V2.3.3 部署物清理清单](./evidence/部署物清理清单-V2.3.3.md)
 - [V2.4.0 M0 迁移前现状清单](./evidence/V2.4.0-M0-迁移前现状清单.md)
 - [V2.4.5 structuredContent 客户端实验](./evidence/V2.4.5-structuredContent客户端行为实验.md)
-- [AppShell 0.7.2 正式部署证据](./evidence/deploy-appshell-0.7.2-20260727-232824.md)
 - [OneHistoryStudio 2.7.3 正式部署证据](./evidence/deploy-ohs-2.7.3-20260728-091042.md)
 
 ## 历史快照（已取消）
@@ -109,10 +109,7 @@ git show <提交>:b-Office/versions/<历史文件名>.md
 
 ## 架构参考
 
-- [AppShell 文档索引](./appshell/README.md)
-- [AppShell 二次开发演进手册](./appshell/二次开发演进手册.md)
-- [AppShell 框架需求规划](./appshell/通用窗口框架模板_需求规划_README_3.md)
-- [AppShell 版本记录](./appshell/AppShell版本记录.md)
+- [AppShell 3.0 权威文档](../../2026-023-AppShell/b-Office/README.md)
 
 发生描述冲突时，现行操作以当前源码、运行时 `help`、命令集页面、自动生成命令手册和六份 `meta`
 手册为准；当前版本施工文档只描述尚未交付的增量，不能覆盖现行基线。

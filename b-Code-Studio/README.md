@@ -1,7 +1,7 @@
 # OneHistoryStudio
 
-本目录只承载 OneHistoryStudio 产品源码和测试。跨组件文档位于
-`..\b-Office`，AppShell 唯一源码位于 `..\b-Code-AppShell`。
+本目录只承载 OneHistoryStudio 产品源码和测试。产品文档位于 `..\b-Office`；AppShell 由平级
+`2026-023-AppShell` 独立维护，本项目固定消费 `OneHistory.AppShell.* 3.0.0` 包。
 
 ## 结构
 
@@ -9,7 +9,7 @@
 - `Git`、`Views`、`App.xaml*`：OHS 装配、项目管理与页面源码。
 - `tests/Smoke`：合并后的完整自动化冒烟套件。
 
-模块样例位于平级 `..\b-Code-Samples`，正式发布快照位于平级 `..\b-Publish`。
+可覆盖的发布暂存快照位于平级 `..\b-Publish`，正式可消费快照位于 `..\z-Package`。
 
 ## 构建
 
@@ -30,8 +30,8 @@ dotnet build .\OHS.sln -c Release -p:NuGetAudit=false
 ```
 
 停靠真实输入验收必须在可交互 Windows 桌面显式启用。它只创建标题为
-`OneHistoryStudio Docking Real-Mouse Smoke` 的隔离窗口，使用真实鼠标完成工具标签拖出、中央无效释放和
-右侧工具区拖回，结束时释放按键、关闭测试窗口并恢复原鼠标位置；不读取或修改正式 OHS 布局：
+`OneHistoryStudio Docking Real-Mouse Smoke` 的隔离窗口，使用真实鼠标完成工具标签拖出、嵌入中央主窗口、
+从中央再次拖出并拖回右侧工具区，结束时释放按键、关闭测试窗口并恢复原鼠标位置；不读取或修改正式 OHS 布局：
 
 ```powershell
 .\b-Code-Studio\tests\Smoke\bin\Debug\net8.0-windows\Smoke.exe --suite Docking --real-mouse
@@ -42,10 +42,10 @@ dotnet build .\OHS.sln -c Release -p:NuGetAudit=false
 
 发布统一使用 `eng\Publish-Studio.ps1`。默认模式会执行锁定还原、Debug/Release 构建、两套 Smoke、
 Release 发布、运行时命令手册重生成、六份 Help 校验、版本校验、SHA-256 和 manifest，并写入新的
-`stage\ohs-<version>`；脚本拒绝覆盖已有 staging。只有显式 `-Publish` 且 `b-Code-Studio`、
-`b-Code-AppShell`、`b-Office` 都洁净时，才会把候选原子提升到 `b-Publish`。提升前后都按 manifest 和
-checksum 复验完整文件集合、大小与 SHA-256；失败的新目录进入 `stage\b-Publish-failed-*`，原
-`b-Publish` 从 `stage\b-Publish-pre-*` 自动恢复。
+`b-Publish` 暂存区；每次使用同卷临时候选原子替换，不提交 Git。只有显式 `-Publish` 且
+`b-Code-Studio`、`b-Code-Studio.Service`、`b-Office` 都洁净时，才会继续把已验证暂存原子提升到
+`z-Package` 正式区。两个阶段都按 manifest 和 checksum 复验完整文件集合、大小与 SHA-256；旧暂存、
+旧正式包及失败候选进入 `stage` 作为回滚或故障隔离。
 
 ```powershell
 .\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.6
@@ -54,7 +54,15 @@ checksum 复验完整文件集合、大小与 SHA-256；失败的新目录进入
 
 不得用独立的 `dotnet publish` 或手工复制替代该入口；版本始终从 `StudioVersion.props` 求值。
 
-本目录不再包含 `AppShell.Core/Services/Shell` 副本。
+部署只消费 `z-Package`，目标固定为 `C:\OneHistory\OneHistory-Push\OneHistoryStudio`。默认仅预览并
+验证正式包；`-Apply` 才执行数据库备份和整目录事务替换。脚本不会启动、停止或重启程序，也不修改自启动：
+
+```powershell
+.\b-Code-Studio\eng\Deploy-Studio.ps1
+.\b-Code-Studio\eng\Deploy-Studio.ps1 -Apply
+```
+
+本仓不包含 AppShell 源码、包仓或开发文档副本；框架契约以 023 的 3.0 权威文档为准。
 
 产品行为、命令、MCP 工具形态和页面布局以当前源码、运行时和
 [现行手册](../b-Office/README.md) 为准；构建、Smoke、GUI、发布与部署门见
