@@ -1,16 +1,17 @@
 # AppShell
 
-AppShell 是 OHS 伞形项目中的通用桌面应用框架组件，也是框架源码的唯一真值。
+AppShell 是独立维护的通用桌面应用框架，也是框架源码的唯一真值。
 
 ## 结构
 
-- `src/AppShell.Core`：指令、数据、停靠、日志和存储契约。
-- `src/AppShell.Services`：日志、SQLite、设置、工作区、MCP 与模块托管实现。
+- `src/AppShell.Core`：指令、停靠、日志、MCP 和存储契约。
+- `src/AppShell.Services`：日志、设置、工作区、MCP 与模块托管实现。
 - `src/AppShell.ServiceHost`：无窗 WPF 服务宿主、确认通道和 `svc.*` 生命周期。
 - `src/AppShell.Shell`：WPF 主壳、停靠窗口和内置命令。
 - `src/App`：框架演示宿主，用于独立构建和 GUI 验收。
-- `../b-Office/appshell`：框架需求、演进纪律和版本记录。
-- `../b-Office/versions`：当前版本临时施工增量，交付后抽干删除。
+- `../b-Office/package`：消费文档编辑源；`../b-Office` 根目录保留冻结合同和内部设计记录。
+- `../b-Publish`：候选构建、完整版本归档和发布证据。
+- `../z-Package-AppShell`：当前正式四包、精简复用说明和同版本消费合同。
 
 ## 构建
 
@@ -20,29 +21,30 @@ dotnet build .\AppShell.sln -c Debug --no-restore
 dotnet build .\AppShell.sln -c Release --no-restore
 ```
 
-V2.4.0 起，OHS 直接通过 `ProjectReference` 使用本目录源码，不再维护框架副本或执行哈希回灌。
+消费方通过固定版本的 `PackageReference` 使用 AppShell，不直接引用本目录源码。
 
-## 2.7.3 本地包
+## 3.0.0 冻结包
 
-0.5.0 是首个固定版本包基线；从 2.7.2 起 AppShell 与 OHS 使用同一版本列车。2.7.3 增加 LAN Shell 会话、端点配置和单入口 ServiceHost，继续保留统一工具窗口、拖动、浮动、停靠和最大化。桌面消费者引用 Shell，
+3.0.0 是独立后的长期冻结契约，统一源码、程序集和四个包的版本号，并冻结公开 API、四类标准窗口、命令总线和服务端权威命令目录。桌面消费者引用 Shell，
 服务化消费者额外引用 ServiceHost：
 
 ```xml
-<PackageReference Include="OneHistory.AppShell.Shell" Version="2.7.3" />
-<PackageReference Include="OneHistory.AppShell.ServiceHost" Version="2.7.3" />
+<PackageReference Include="OneHistory.AppShell.Shell" Version="3.0.0" />
+<PackageReference Include="OneHistory.AppShell.ServiceHost" Version="3.0.0" />
 ```
 
-包发布到仓库内 `z-Package-AppShell/feed`，OHS 自身仍使用 `ProjectReference`。打包与验收入口：
+审核候选写入仓库内 `b-Publish/staging`；审核通过后完整归档到 `b-Publish`，
+并用当前正式四包更新 `z-Package-AppShell/feed`。打包与验收入口：
 
 ```powershell
 # 可覆盖 staging：构建、审计、隔离消费和演示发布
-.\eng\Publish-AppShell.ps1 -Version 2.7.3
+.\eng\Publish-AppShell.ps1 -Version 3.0.0
 
-# 不可覆盖的正式本地 feed；要求 b-Code-AppShell 已提交且路径干净
-.\eng\Publish-AppShell.ps1 -Version 2.7.3 -Publish
+# 完整归档不可覆盖；同时替换 z-Package-AppShell 的当前正式快照
+.\eng\Publish-AppShell.ps1 -Version 3.0.0 -Publish
 ```
 
-脚本不会执行 Git commit/tag/push，也不会推送 NuGet.org。包结构、许可边界和消费说明见
-`PACKAGE.md`；当前服务、模块 UI 和发布合同分别见
-`../b-Office/meta/MCP接入与安全.md`、`../b-Office/meta/模块开发手册.md` 和
-`../b-Office/meta/发布与升级.md`。旧 0.x 施工文档只可从 Git 历史调查，不得用于新模块接入。
+脚本不会执行 Git commit/tag/push，也不会推送 NuGet.org。包结构与许可边界见 `PACKAGE.md`。
+完整消费文档由 `../b-Office/package` 生成，归档到 `../b-Publish/docs/<版本>`，并随当前正式快照写入
+`../z-Package-AppShell/docs/`，不再重复装入每个 NuGet 包；其他项目和 AI 先读
+`../z-Package-AppShell/AppShell.reuse.md`，再按需跟随其中的合同链接。

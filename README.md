@@ -1,40 +1,57 @@
-# 2026-020 OneHistoryStudio
+# AppShell 3.0
 
-本项目是 OneHistoryStudio V2 产品线的伞形元项目，由 `2026-018-MyAPI` 在产品血缘上继承而来。
-V2.4.0 起，OHS、AppShell、历史版本、产品文档和未来框架包在同一项目边界内协同演进；
-V2.4.1 将产品源码、样例与发布快照拆成平级组件，进一步缩短内部路径。
+本仓库是 OneHistory AppShell 的独立源码、冻结合同与发布资产真值。`3.0.0` 是长期冻结基线；
+版本线不再与 OneHistoryStudio 对齐，`0.7.x` 仅保留用于回滚。
 
-## 组件
+## 仓库结构
 
-| 目录 | 职责 | 构建状态 |
-|---|---|---|
-| `b-Code-AppShell` | AppShell 唯一框架源码与独立演示宿主 | 纳入 `OHS.sln` |
-| `b-Code-Studio` | OHS 产品源码与 Smoke | 纳入 `OHS.sln` |
-| `b-Code-Studio.Service` | OHS 常驻后台服务入口 | 纳入 `OHS.sln` |
-| `b-Code-Samples` | 模块开发样例 | 独立构建 |
-| `b-Publish` | 当前正式发布快照 | 不参与解决方案构建 |
-| `b-Code-OneHistory-V1` | OneHistory V1 历史组件 | 只读，不构建 |
-| `b-Office` | OHS 现行手册、版本工程文档与行为快照 | 不构建 |
-| `z-Package-AppShell` | AppShell 对外版本包空壳 | 不参与内部构建 |
+| 路径 | 内容 |
+|---|---|
+| `b-Code-AppShell/` | Core、Services、Shell、ServiceHost、演示宿主与测试 |
+| `b-Code-Samples/` | 模块开发示例 |
+| `b-Office/package/` | 消费文档编辑源 |
+| `b-Office/maintenance/` | 内部迁移、升级、回滚和完整版本历史 |
+| `b-Office/release/` | 发布清单和复用说明模板 |
+| `b-Office/` | 冻结契约、内部设计与执行证据 |
+| `b-Publish/` | 候选构建、历史包、符号、Demo、完整文档和发布证据 |
+| `z-Package-AppShell/` | 当前发布快照的展开内容，不保存历史版本目录 |
 
-文档入口：[OHS 文档中心](./b-Office/README.md) ｜
-[发布与升级](./b-Office/meta/发布与升级.md) ｜
-[AppShell 演进手册](./b-Office/appshell/二次开发演进手册.md)
+根级 `AppShell.sln` 是仓库验收入口，只包含六个冻结项目；组件目录内的
+`b-Code-AppShell/AppShell.sln` 是发布脚本使用的等价入口。
 
-## 构建入口
+## 构建与测试
 
 ```powershell
-dotnet build .\OHS.sln -c Debug -p:NuGetAudit=false
-dotnet build .\OHS.sln -c Release -p:NuGetAudit=false
+dotnet restore .\AppShell.sln --locked-mode
+dotnet build .\AppShell.sln -c Debug --no-restore
+dotnet test .\b-Code-AppShell\tests\AppShell.Tests\AppShell.Tests.csproj -c Debug --no-build --no-restore
+dotnet build .\AppShell.sln -c Release --no-restore
+dotnet test .\b-Code-AppShell\tests\AppShell.Tests\AppShell.Tests.csproj -c Release --no-build --no-restore
+dotnet format .\AppShell.sln --verify-no-changes --no-restore
 ```
 
-AppShell 也可在 `b-Code-AppShell` 中使用 `AppShell.sln` 独立构建。OHS 直接引用 AppShell
-源码，不再维护副本、模板哈希对账或回灌流程。
+## 审核候选与正式发布
 
-## 演进规则
+```powershell
+# 重建 b-Publish/staging 下的可覆盖审核候选
+.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.0.0
 
-- 020 长期承载 OHS V2.x；当前开发基线只来自源码、运行时和 `b-Office/meta`。`b-Office/versions`
-  只暂存当前版本增量，交付时抽入 `meta` 后删除，已交付历史不得成为开发依赖。
-- 只有架构代际变化才从 020 创建新项目，例如未来的 OHS V3。
-- AppShell 公共契约变更必须通过框架演示宿主、OHS Smoke 和 GUI 实跑。
-- `bin/obj/.vs` 不入库；正式 Publish 作为当前交付快照保留。
+# 仅在审核通过、代码和消费文档均已提交且干净后执行
+.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.0.0 -Publish
+
+# 使用 b-Publish 归档中的历史包验证发布生成链，只更新 b-Publish/virtual
+.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 0.7.2 -VirtualPublish
+
+# 测试/回滚时将已验证快照的内部内容整体替换到 z 根目录
+.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 0.7.2 -VirtualPublish -DeployToZ
+```
+
+审核阶段的消费方必须临时指向
+`b-Publish/staging/3.0.0/packages`；正式提升后改用
+`z-Package-AppShell/feed`。`z-Package-AppShell` 始终只保留一个当前发布快照的展开内容，不建立版本号外层目录；每次发布都会整体替换旧内容，历史和虚拟发布只保存在 `b-Publish`。发布脚本不会执行 Git commit、tag、push，也不会推送 NuGet.org。
+
+桌面消费者通常引用 `OneHistory.AppShell.Shell`；服务化宿主额外引用
+`OneHistory.AppShell.ServiceHost`。当前已验证消费方为 OneHistoryStudio（020）和 WBall（022）。
+
+维护入口见 [b-Office/README.md](b-Office/README.md)。其他项目和 AI 先读取
+`z-Package-AppShell/AppShell.reuse.md`，再按需索引同一当前快照中的 `z-Package-AppShell/docs/`；历史版本文档与发布证据从 `b-Publish` 查阅。

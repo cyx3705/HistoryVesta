@@ -1,0 +1,47 @@
+#nullable enable
+AppShell.ServiceHost.IAutostartManager
+AppShell.ServiceHost.IAutostartManager.IsEnabled(string! name) -> bool
+AppShell.ServiceHost.IAutostartManager.IsEnabled(string! name, string! executablePath, System.Collections.Generic.IReadOnlyList<string!>! arguments) -> bool
+AppShell.ServiceHost.IAutostartManager.SetEnabled(string! name, string! executablePath, bool enabled) -> void
+AppShell.ServiceHost.IAutostartManager.SetEnabled(string! name, string! executablePath, System.Collections.Generic.IReadOnlyList<string!>! arguments, bool enabled) -> void
+AppShell.ServiceHost.ServiceCommands
+AppShell.ServiceHost.ServiceComposition
+AppShell.ServiceHost.ServiceComposition.Autostart.get -> AppShell.ServiceHost.IAutostartManager?
+AppShell.ServiceHost.ServiceComposition.Autostart.init -> void
+AppShell.ServiceHost.ServiceComposition.Bus.get -> AppShell.Core.Commands.CommandBus!
+AppShell.ServiceHost.ServiceComposition.Bus.init -> void
+AppShell.ServiceHost.ServiceComposition.DeferredWork.get -> System.Collections.Generic.IReadOnlyList<AppShell.Core.Modules.IDeferredStartupWork!>!
+AppShell.ServiceHost.ServiceComposition.DeferredWork.init -> void
+AppShell.ServiceHost.ServiceComposition.Dispose() -> void
+AppShell.ServiceHost.ServiceComposition.DisposeApplicationServices.get -> System.Action?
+AppShell.ServiceHost.ServiceComposition.DisposeApplicationServices.init -> void
+AppShell.ServiceHost.ServiceComposition.Log.get -> AppShell.Core.Logging.IShellLog!
+AppShell.ServiceHost.ServiceComposition.Log.init -> void
+AppShell.ServiceHost.ServiceComposition.Mcp.get -> AppShell.Services.Mcp.McpGateway?
+AppShell.ServiceHost.ServiceComposition.Mcp.init -> void
+AppShell.ServiceHost.ServiceComposition.Modules.get -> AppShell.Services.Modules.ModuleHost?
+AppShell.ServiceHost.ServiceComposition.Modules.init -> void
+AppShell.ServiceHost.ServiceComposition.RegisterAutostartOnFirstRun.get -> bool
+AppShell.ServiceHost.ServiceComposition.RegisterAutostartOnFirstRun.init -> void
+AppShell.ServiceHost.ServiceComposition.Registry.get -> AppShell.Core.Commands.CommandRegistry!
+AppShell.ServiceHost.ServiceComposition.Registry.init -> void
+AppShell.ServiceHost.ServiceComposition.ServiceComposition() -> void
+AppShell.ServiceHost.ServiceComposition.ServiceName.get -> string!
+AppShell.ServiceHost.ServiceComposition.ServiceName.init -> void
+AppShell.ServiceHost.ServiceComposition.Settings.get -> AppShell.Core.Storage.ISettingsService!
+AppShell.ServiceHost.ServiceComposition.Settings.init -> void
+AppShell.ServiceHost.ServiceComposition.Web.get -> AppShell.Services.Web.WebGateway?
+AppShell.ServiceHost.ServiceComposition.Web.init -> void
+AppShell.ServiceHost.ServiceConfirmation
+AppShell.ServiceHost.ServiceConfirmation.Confirm(string! prompt) -> bool
+AppShell.ServiceHost.ServiceConfirmation.ConfirmRemote(string! client, string! prompt, int timeoutSeconds) -> bool?
+AppShell.ServiceHost.ServiceConfirmation.ServiceConfirmation() -> void
+AppShell.ServiceHost.ServiceHost
+AppShell.ServiceHost.WindowsRunAutostartManager
+AppShell.ServiceHost.WindowsRunAutostartManager.IsEnabled(string! name) -> bool
+AppShell.ServiceHost.WindowsRunAutostartManager.IsEnabled(string! name, string! executablePath, System.Collections.Generic.IReadOnlyList<string!>! arguments) -> bool
+AppShell.ServiceHost.WindowsRunAutostartManager.SetEnabled(string! name, string! executablePath, bool enabled) -> void
+AppShell.ServiceHost.WindowsRunAutostartManager.SetEnabled(string! name, string! executablePath, System.Collections.Generic.IReadOnlyList<string!>! arguments, bool enabled) -> void
+AppShell.ServiceHost.WindowsRunAutostartManager.WindowsRunAutostartManager() -> void
+static AppShell.ServiceHost.ServiceCommands.RegisterAll(AppShell.Core.Commands.CommandRegistry! registry, AppShell.ServiceHost.ServiceComposition! composition, System.Action! requestStop, string! executablePath, string! source = "framework:service", System.Collections.Generic.IReadOnlyList<string!>? serviceArguments = null) -> void
+static AppShell.ServiceHost.ServiceHost.Run(AppShell.ServiceHost.ServiceComposition! composition, string? executablePath = null, System.Collections.Generic.IReadOnlyList<string!>? serviceArguments = null) -> int

@@ -12,10 +12,13 @@ public sealed class ToolWindowDescriptor
     /// <summary>标题栏与「视图」菜单显示的标题。</summary>
     public required string Title { get; init; }
 
-    /// <summary>默认停靠方位。DockSide.Tab 时须同时指定 <see cref="DefaultTabTarget"/>。</summary>
+    /// <summary>
+    /// 默认停靠方位。Center 占据中央工作区；Tab 时须同时指定
+    /// <see cref="DefaultTabTarget"/>。
+    /// </summary>
     public DockSide DefaultSide { get; init; } = DockSide.Right;
 
-    /// <summary>默认占主程序窗体的比例(0~1,W-05 比例语义)。</summary>
+    /// <summary>四边停靠时默认占主窗体的比例，须严格位于 (0,1)；Center/Tab 布局不使用该值。</summary>
     public double DefaultRatio { get; init; } = 0.25;
 
     /// <summary>DefaultSide 为 Tab 时,并入哪个窗口所在的标签组(填对方 Id)。</summary>

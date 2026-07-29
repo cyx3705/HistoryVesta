@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Net.Http.Headers;
 using System.Net.WebSockets;
@@ -18,18 +19,22 @@ public sealed class ShellServiceClient : IDisposable
     };
 
     private readonly HttpClient _http;
+    private readonly HttpClientHandler _httpHandler;
     private readonly Uri _baseUri;
     private readonly ShellEndpointProfile _profile;
     private readonly string _name;
     private readonly string _sessionId = Guid.NewGuid().ToString("N");
     private readonly CancellationTokenSource _lifetime = new();
     private ClientWebSocket? _events;
+    private int _disposed;
 
     public Func<string, JsonElement, object?>? DataDeserializer { get; set; }
 
     public ShellConnectionState State { get; private set; } = ShellConnectionState.Disconnected;
 
     public event Action<ShellConnectionState>? StateChanged;
+
+    internal TimeSpan RemoteRequestTimeout => _profile.EffectiveConnectTimeout;
 
     public ShellServiceClient(Uri baseUri, string name)
         : this(new ShellEndpointProfile(baseUri, Guid.NewGuid().ToString("N")), name)
@@ -41,19 +46,8 @@ public sealed class ShellServiceClient : IDisposable
         _profile = profile;
         _baseUri = profile.BaseUri;
         _name = name;
-        var handler = new HttpClientHandler();
-        if (_baseUri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
-        {
-            handler.ServerCertificateCustomValidationCallback = (_, certificate, _, errors) =>
-            {
-                var hasPin = ShellEndpointProfile.NormalizeFingerprint(
-                    profile.CertificateFingerprint).Length > 0;
-                return hasPin
-                    ? profile.ValidateCertificate(certificate == null ? null : new(certificate))
-                    : errors == System.Net.Security.SslPolicyErrors.None && profile.BaseUri.IsLoopback;
-            };
-        }
-        _http = new HttpClient(handler)
+        _httpHandler = CreateHttpHandler(profile);
+        _http = new HttpClient(_httpHandler, disposeHandler: false)
         {
             BaseAddress = _baseUri,
             Timeout = TimeSpan.FromSeconds(30),
@@ -62,6 +56,23 @@ public sealed class ShellServiceClient : IDisposable
         _http.DefaultRequestHeaders.Add("X-Client-Name", name);
         _http.DefaultRequestHeaders.Add("X-Session-Id", _sessionId);
         _http.DefaultRequestHeaders.Add("X-Device-Id", profile.DeviceId);
+    }
+
+    private static HttpClientHandler CreateHttpHandler(ShellEndpointProfile profile)
+    {
+        var handler = new HttpClientHandler();
+        if (!profile.BaseUri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            return handler;
+
+        handler.ServerCertificateCustomValidationCallback = (_, certificate, _, errors) =>
+        {
+            var hasPin = ShellEndpointProfile.NormalizeFingerprint(
+                profile.CertificateFingerprint).Length > 0;
+            return hasPin
+                ? profile.ValidateCertificate(certificate == null ? null : new(certificate))
+                : errors == System.Net.Security.SslPolicyErrors.None && profile.BaseUri.IsLoopback;
+        };
+        return handler;
     }
 
     public async Task<bool> WaitForReadyAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
@@ -86,8 +97,10 @@ public sealed class ShellServiceClient : IDisposable
                         SetState(ShellConnectionState.Rejected);
                         return false;
                     }
+                    var clientVersion = typeof(ShellServiceClient).Assembly.GetName().Version
+                                        ?? new Version(0, 0);
                     if (Version.TryParse(health.MinClientVersion, out var minimum)
-                        && minimum > new Version(2, 7, 3))
+                        && minimum > clientVersion)
                     {
                         SetState(ShellConnectionState.VersionMismatch);
                         return false;
@@ -135,7 +148,15 @@ public sealed class ShellServiceClient : IDisposable
             if (result.Data is { } element)
             {
                 var commandName = CommandName(text);
-                data = DataDeserializer?.Invoke(commandName, element) ?? element.Clone();
+                try
+                {
+                    data = DataDeserializer?.Invoke(commandName, element) ?? element.Clone();
+                }
+                catch (Exception ex) when (ex is JsonException or NotSupportedException)
+                {
+                    return CommandResult.Fail(
+                        $"服务结果无法还原: command={commandName}, kind={element.ValueKind}: {ex.Message}");
+                }
             }
             return new CommandResult
             {
@@ -202,9 +223,14 @@ public sealed class ShellServiceClient : IDisposable
             .ConfigureAwait(false);
     }
 
-    public Task RunEventLoopAsync(CommandBus localBus, CancellationToken cancellationToken = default)
-        => RunEventLoopCoreAsync(localBus, CancellationTokenSource
-            .CreateLinkedTokenSource(_lifetime.Token, cancellationToken).Token);
+    public async Task RunEventLoopAsync(
+        CommandBus localBus,
+        CancellationToken cancellationToken = default)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+            _lifetime.Token, cancellationToken);
+        await RunEventLoopCoreAsync(localBus, linked.Token).ConfigureAwait(false);
+    }
 
     private async Task RunEventLoopCoreAsync(CommandBus localBus, CancellationToken cancellationToken)
     {
@@ -238,6 +264,8 @@ public sealed class ShellServiceClient : IDisposable
                     Path = "/api/events",
                 };
                 await _events.ConnectAsync(builder.Uri, cancellationToken).ConfigureAwait(false);
+                await PublishCommandCatalogAsync(_events, localBus.Registry, cancellationToken)
+                    .ConfigureAwait(false);
                 await ReceiveEventsAsync(_events, localBus, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -250,9 +278,31 @@ public sealed class ShellServiceClient : IDisposable
             catch (HttpRequestException)
             {
             }
+            catch (Exception ex)
+            {
+                Trace.TraceWarning($"AppShell 前端事件循环异常，将重连: {ex}");
+            }
 
             await Task.Delay(500, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    private async Task PublishCommandCatalogAsync(
+        ClientWebSocket socket,
+        CommandRegistry registry,
+        CancellationToken cancellationToken)
+    {
+        var commands = registry.All()
+            .Select(descriptor => FrontendCommandCapability.From(
+                descriptor,
+                registry.GetSource(descriptor.Name)))
+            .ToList();
+        var catalog = new FrontendCapabilityCatalog(_name, commands);
+        await SendAsync(socket, new JsonObject
+        {
+            ["type"] = "commandCatalog",
+            ["catalog"] = JsonSerializer.SerializeToNode(catalog, JsonOptions),
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     private static async Task ReceiveEventsAsync(
@@ -263,47 +313,58 @@ public sealed class ShellServiceClient : IDisposable
         var buffer = new byte[64 * 1024];
         while (socket.State == WebSocketState.Open && !cancellationToken.IsCancellationRequested)
         {
-            var result = await socket.ReceiveAsync(buffer, cancellationToken).ConfigureAwait(false);
-            if (result.MessageType == WebSocketMessageType.Close)
+            var payload = await WebSocketMessageReader.ReceiveTextAsync(
+                socket, buffer, cancellationToken).ConfigureAwait(false);
+            if (payload == null)
                 return;
-            if (result.MessageType != WebSocketMessageType.Text || !result.EndOfMessage)
-                continue;
 
-            using var doc = JsonDocument.Parse(buffer.AsMemory(0, result.Count));
-            var root = doc.RootElement;
-            if (!root.TryGetProperty("type", out var type))
-                continue;
-
-            if (type.GetString() == "uiCommand")
+            JsonDocument doc;
+            try
             {
-                var id = root.GetProperty("id").GetString() ?? "";
-                var text = root.GetProperty("text").GetString() ?? "";
-                var commandResult = await localBus.ExecuteAsync(
-                    text,
-                    "Service:Relay",
-                    cancellationToken).ConfigureAwait(false);
-                await SendAsync(socket, new JsonObject
-                {
-                    ["type"] = "commandResult",
-                    ["id"] = id,
-                    ["success"] = commandResult.Success,
-                    ["message"] = commandResult.Message,
-                    ["data"] = ToNode(commandResult.Data),
-                }, cancellationToken).ConfigureAwait(false);
+                doc = JsonDocument.Parse(payload);
             }
-            else if (type.GetString() == "confirmation")
+            catch (JsonException ex)
             {
-                var id = root.GetProperty("id").GetString() ?? "";
-                var prompt = root.TryGetProperty("prompt", out var promptValue)
-                    ? promptValue.GetString() ?? "确认远程操作？"
-                    : "确认远程操作？";
-                var approved = await ConfirmAsync(localBus, prompt).ConfigureAwait(false);
-                await SendAsync(socket, new JsonObject
+                Trace.TraceWarning($"AppShell 前端忽略无效 WebSocket JSON: {ex.Message}");
+                continue;
+            }
+            using (doc)
+            {
+                var root = doc.RootElement;
+                if (!root.TryGetProperty("type", out var type))
+                    continue;
+
+                if (type.GetString() == "uiCommand")
                 {
-                    ["type"] = "confirmationResult",
-                    ["id"] = id,
-                    ["approved"] = approved,
-                }, cancellationToken).ConfigureAwait(false);
+                    var id = root.GetProperty("id").GetString() ?? "";
+                    var text = root.GetProperty("text").GetString() ?? "";
+                    var commandResult = await localBus.ExecuteAsync(
+                        text,
+                        "Service:Relay",
+                        cancellationToken).ConfigureAwait(false);
+                    await SendAsync(socket, new JsonObject
+                    {
+                        ["type"] = "commandResult",
+                        ["id"] = id,
+                        ["success"] = commandResult.Success,
+                        ["message"] = commandResult.Message,
+                        ["data"] = ToNode(commandResult.Data),
+                    }, cancellationToken).ConfigureAwait(false);
+                }
+                else if (type.GetString() == "confirmation")
+                {
+                    var id = root.GetProperty("id").GetString() ?? "";
+                    var prompt = root.TryGetProperty("prompt", out var promptValue)
+                        ? promptValue.GetString() ?? "确认远程操作？"
+                        : "确认远程操作？";
+                    var approved = await ConfirmAsync(localBus, prompt).ConfigureAwait(false);
+                    await SendAsync(socket, new JsonObject
+                    {
+                        ["type"] = "confirmationResult",
+                        ["id"] = id,
+                        ["approved"] = approved,
+                    }, cancellationToken).ConfigureAwait(false);
+                }
             }
         }
     }
@@ -337,9 +398,13 @@ public sealed class ShellServiceClient : IDisposable
 
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            return;
+
         _lifetime.Cancel();
         _events?.Dispose();
         _http.Dispose();
+        _httpHandler.Dispose();
         _lifetime.Dispose();
     }
 

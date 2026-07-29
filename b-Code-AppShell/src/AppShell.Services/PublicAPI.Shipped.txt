@@ -1,0 +1,343 @@
+#nullable enable
+AppShell.Services.AppPaths
+AppShell.Services.AppPaths.AppPaths(string! appName, bool createBusinessDirectories = true) -> void
+AppShell.Services.AppPaths.DataDir.get -> string!
+AppShell.Services.AppPaths.LayoutDir.get -> string!
+AppShell.Services.AppPaths.LogsDir.get -> string!
+AppShell.Services.AppPaths.ModulesDir.get -> string!
+AppShell.Services.AppPaths.PanelsDir.get -> string!
+AppShell.Services.AppPaths.Root.get -> string!
+AppShell.Services.AppPaths.WorkspaceDir.get -> string!
+AppShell.Services.FileLayoutStore
+AppShell.Services.FileLayoutStore.DeleteCurrent() -> void
+AppShell.Services.FileLayoutStore.FileLayoutStore(AppShell.Services.AppPaths! paths) -> void
+AppShell.Services.FileLayoutStore.ListNamed() -> System.Collections.Generic.IReadOnlyList<string!>!
+AppShell.Services.FileLayoutStore.ReadCurrent() -> string?
+AppShell.Services.FileLayoutStore.ReadNamed(string! name) -> string?
+AppShell.Services.FileLayoutStore.WriteCurrent(string! payload) -> void
+AppShell.Services.FileLayoutStore.WriteNamed(string! name, string! payload) -> void
+AppShell.Services.Mcp.McpAuditRecorder
+AppShell.Services.Mcp.McpAuditRecorder.McpAuditRecorder(string! dataDirectory, AppShell.Core.Logging.IShellLog! log) -> void
+AppShell.Services.Mcp.McpAuditRecorder.RecordMcp(string! client, string! tool, string! arguments, string! result, long elapsedMs) -> void
+AppShell.Services.Mcp.McpGateway
+AppShell.Services.Mcp.McpGateway.AutostartEnabled.get -> bool
+AppShell.Services.Mcp.McpGateway.CallCount.get -> long
+AppShell.Services.Mcp.McpGateway.ConfirmMode.get -> string!
+AppShell.Services.Mcp.McpGateway.ConfirmTimeout.get -> int
+AppShell.Services.Mcp.McpGateway.Dispose() -> void
+AppShell.Services.Mcp.McpGateway.IsRunning.get -> bool
+AppShell.Services.Mcp.McpGateway.LastCall.get -> string!
+AppShell.Services.Mcp.McpGateway.McpGateway(System.Func<AppShell.Core.Commands.CommandBus?>! busAccessor, AppShell.Core.Storage.ISettingsService! settings, AppShell.Core.Logging.IShellLog! log, AppShell.Core.Mcp.IMcpAuditLog! history, AppShell.Services.Mcp.PromptGovernanceStore! prompts, AppShell.Core.ApplicationIdentity! identity, System.Func<string!, string!, int, bool?>? remoteConfirm = null) -> void
+AppShell.Services.Mcp.McpGateway.Policy.get -> string!
+AppShell.Services.Mcp.McpGateway.Port.get -> int
+AppShell.Services.Mcp.McpGateway.Start(int? port) -> (bool Success, string! Message)
+AppShell.Services.Mcp.McpGateway.Stop() -> (bool Success, string! Message)
+AppShell.Services.Mcp.McpGateway.TryAutostart() -> (bool Success, string! Message)
+AppShell.Services.Mcp.McpGateway.VisibleTools() -> System.Collections.Generic.IReadOnlyList<AppShell.Core.Mcp.McpToolInfo!>!
+AppShell.Services.Mcp.PromptCorrection
+AppShell.Services.Mcp.PromptCorrection.Claim.get -> string!
+AppShell.Services.Mcp.PromptCorrection.Claim.init -> void
+AppShell.Services.Mcp.PromptCorrection.Command.get -> string!
+AppShell.Services.Mcp.PromptCorrection.Command.init -> void
+AppShell.Services.Mcp.PromptCorrection.Correction.get -> string!
+AppShell.Services.Mcp.PromptCorrection.Correction.init -> void
+AppShell.Services.Mcp.PromptCorrection.Created.get -> string!
+AppShell.Services.Mcp.PromptCorrection.Created.init -> void
+AppShell.Services.Mcp.PromptCorrection.Evidence.get -> string!
+AppShell.Services.Mcp.PromptCorrection.Evidence.init -> void
+AppShell.Services.Mcp.PromptCorrection.Id.get -> string!
+AppShell.Services.Mcp.PromptCorrection.Id.init -> void
+AppShell.Services.Mcp.PromptCorrection.LinkedProposal.get -> string?
+AppShell.Services.Mcp.PromptCorrection.LinkedProposal.init -> void
+AppShell.Services.Mcp.PromptCorrection.PromptCorrection(string! Id, string! Command, string! Claim, string! Correction, string! Evidence, string! SourceClient, string! Created, string! Status, string? LinkedProposal) -> void
+AppShell.Services.Mcp.PromptCorrection.SourceClient.get -> string!
+AppShell.Services.Mcp.PromptCorrection.SourceClient.init -> void
+AppShell.Services.Mcp.PromptCorrection.Status.get -> string!
+AppShell.Services.Mcp.PromptCorrection.Status.init -> void
+AppShell.Services.Mcp.PromptGovernanceStore
+AppShell.Services.Mcp.PromptGovernanceStore.AllEffectiveDescriptions() -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+AppShell.Services.Mcp.PromptGovernanceStore.ApplyDirect(string! command, string? description, string! source, string! reason, string? revertedFrom = null, string? createdBy = null) -> AppShell.Services.Mcp.PromptRevision!
+AppShell.Services.Mcp.PromptGovernanceStore.ApplyProposal(string! id, string! reviewer) -> AppShell.Services.Mcp.PromptRevision!
+AppShell.Services.Mcp.PromptGovernanceStore.ApproveProposal(string! id, string! reviewer) -> AppShell.Services.Mcp.PromptProposal!
+AppShell.Services.Mcp.PromptGovernanceStore.CreateCorrection(string! command, string! claim, string! correction, string! evidence, string! sourceClient, string? linkedProposal = null) -> AppShell.Services.Mcp.PromptCorrection!
+AppShell.Services.Mcp.PromptGovernanceStore.CreateIncident(string! command, string! symptom, string! expected, string! actual, string! evidence, string! sourceClient, string? linkedCorrection = null) -> AppShell.Services.Mcp.PromptIncident!
+AppShell.Services.Mcp.PromptGovernanceStore.CreateProposal(string! command, string! oldText, string! proposedText, string! reason, string! evidence, string! sourceClient) -> AppShell.Services.Mcp.PromptProposal!
+AppShell.Services.Mcp.PromptGovernanceStore.GetCorrection(string! id) -> AppShell.Services.Mcp.PromptCorrection?
+AppShell.Services.Mcp.PromptGovernanceStore.GetCurrentRevision(string! command) -> AppShell.Services.Mcp.PromptRevision?
+AppShell.Services.Mcp.PromptGovernanceStore.GetProposal(string! id) -> AppShell.Services.Mcp.PromptProposal?
+AppShell.Services.Mcp.PromptGovernanceStore.GetRevision(string! id) -> AppShell.Services.Mcp.PromptRevision?
+AppShell.Services.Mcp.PromptGovernanceStore.GetRevisions(string! command, int limit = 50) -> System.Collections.Generic.IReadOnlyList<AppShell.Services.Mcp.PromptRevision!>!
+AppShell.Services.Mcp.PromptGovernanceStore.ListCorrections(string? command = null, int limit = 100) -> System.Collections.Generic.IReadOnlyList<AppShell.Services.Mcp.PromptCorrection!>!
+AppShell.Services.Mcp.PromptGovernanceStore.ListIncidents(string? command = null, int limit = 100) -> System.Collections.Generic.IReadOnlyList<AppShell.Services.Mcp.PromptIncident!>!
+AppShell.Services.Mcp.PromptGovernanceStore.ListProposals(string? command = null, bool openOnly = false, int limit = 100) -> System.Collections.Generic.IReadOnlyList<AppShell.Services.Mcp.PromptProposal!>!
+AppShell.Services.Mcp.PromptGovernanceStore.PromptGovernanceStore(string! dataDirectory, AppShell.Core.Logging.IShellLog! log) -> void
+AppShell.Services.Mcp.PromptGovernanceStore.RejectProposal(string! id, string! reviewer, string! reason) -> AppShell.Services.Mcp.PromptProposal!
+AppShell.Services.Mcp.PromptGovernanceStore.RevertToRevision(string! revisionId, string! reviewer, string! reason) -> AppShell.Services.Mcp.PromptRevision!
+AppShell.Services.Mcp.PromptIncident
+AppShell.Services.Mcp.PromptIncident.Actual.get -> string!
+AppShell.Services.Mcp.PromptIncident.Actual.init -> void
+AppShell.Services.Mcp.PromptIncident.Command.get -> string!
+AppShell.Services.Mcp.PromptIncident.Command.init -> void
+AppShell.Services.Mcp.PromptIncident.Created.get -> string!
+AppShell.Services.Mcp.PromptIncident.Created.init -> void
+AppShell.Services.Mcp.PromptIncident.Evidence.get -> string!
+AppShell.Services.Mcp.PromptIncident.Evidence.init -> void
+AppShell.Services.Mcp.PromptIncident.Expected.get -> string!
+AppShell.Services.Mcp.PromptIncident.Expected.init -> void
+AppShell.Services.Mcp.PromptIncident.Id.get -> string!
+AppShell.Services.Mcp.PromptIncident.Id.init -> void
+AppShell.Services.Mcp.PromptIncident.LinkedCorrection.get -> string?
+AppShell.Services.Mcp.PromptIncident.LinkedCorrection.init -> void
+AppShell.Services.Mcp.PromptIncident.PromptIncident(string! Id, string! Command, string! Symptom, string! Expected, string! Actual, string! Evidence, string! SourceClient, string! Created, string? Resolution, string? LinkedCorrection) -> void
+AppShell.Services.Mcp.PromptIncident.Resolution.get -> string?
+AppShell.Services.Mcp.PromptIncident.Resolution.init -> void
+AppShell.Services.Mcp.PromptIncident.SourceClient.get -> string!
+AppShell.Services.Mcp.PromptIncident.SourceClient.init -> void
+AppShell.Services.Mcp.PromptIncident.Symptom.get -> string!
+AppShell.Services.Mcp.PromptIncident.Symptom.init -> void
+AppShell.Services.Mcp.PromptProposal
+AppShell.Services.Mcp.PromptProposal.AppliedRevision.get -> string?
+AppShell.Services.Mcp.PromptProposal.AppliedRevision.init -> void
+AppShell.Services.Mcp.PromptProposal.BaseRevision.get -> string?
+AppShell.Services.Mcp.PromptProposal.BaseRevision.init -> void
+AppShell.Services.Mcp.PromptProposal.Command.get -> string!
+AppShell.Services.Mcp.PromptProposal.Command.init -> void
+AppShell.Services.Mcp.PromptProposal.Created.get -> string!
+AppShell.Services.Mcp.PromptProposal.Created.init -> void
+AppShell.Services.Mcp.PromptProposal.Evidence.get -> string!
+AppShell.Services.Mcp.PromptProposal.Evidence.init -> void
+AppShell.Services.Mcp.PromptProposal.Id.get -> string!
+AppShell.Services.Mcp.PromptProposal.Id.init -> void
+AppShell.Services.Mcp.PromptProposal.OldText.get -> string!
+AppShell.Services.Mcp.PromptProposal.OldText.init -> void
+AppShell.Services.Mcp.PromptProposal.PromptProposal(string! Id, string! Command, string? BaseRevision, string! OldText, string! ProposedText, string! Reason, string! Evidence, string! SourceClient, string! Created, string! Status, string? Reviewer, string? Reviewed, string? ReviewNote, string? AppliedRevision) -> void
+AppShell.Services.Mcp.PromptProposal.ProposedText.get -> string!
+AppShell.Services.Mcp.PromptProposal.ProposedText.init -> void
+AppShell.Services.Mcp.PromptProposal.Reason.get -> string!
+AppShell.Services.Mcp.PromptProposal.Reason.init -> void
+AppShell.Services.Mcp.PromptProposal.Reviewed.get -> string?
+AppShell.Services.Mcp.PromptProposal.Reviewed.init -> void
+AppShell.Services.Mcp.PromptProposal.Reviewer.get -> string?
+AppShell.Services.Mcp.PromptProposal.Reviewer.init -> void
+AppShell.Services.Mcp.PromptProposal.ReviewNote.get -> string?
+AppShell.Services.Mcp.PromptProposal.ReviewNote.init -> void
+AppShell.Services.Mcp.PromptProposal.SourceClient.get -> string!
+AppShell.Services.Mcp.PromptProposal.SourceClient.init -> void
+AppShell.Services.Mcp.PromptProposal.Status.get -> string!
+AppShell.Services.Mcp.PromptProposal.Status.init -> void
+AppShell.Services.Mcp.PromptRevision
+AppShell.Services.Mcp.PromptRevision.Applied.get -> bool
+AppShell.Services.Mcp.PromptRevision.Applied.init -> void
+AppShell.Services.Mcp.PromptRevision.Command.get -> string!
+AppShell.Services.Mcp.PromptRevision.Command.init -> void
+AppShell.Services.Mcp.PromptRevision.Created.get -> string!
+AppShell.Services.Mcp.PromptRevision.Created.init -> void
+AppShell.Services.Mcp.PromptRevision.CreatedBy.get -> string!
+AppShell.Services.Mcp.PromptRevision.CreatedBy.init -> void
+AppShell.Services.Mcp.PromptRevision.Description.get -> string?
+AppShell.Services.Mcp.PromptRevision.Description.init -> void
+AppShell.Services.Mcp.PromptRevision.Id.get -> string!
+AppShell.Services.Mcp.PromptRevision.Id.init -> void
+AppShell.Services.Mcp.PromptRevision.ParentRevision.get -> string?
+AppShell.Services.Mcp.PromptRevision.ParentRevision.init -> void
+AppShell.Services.Mcp.PromptRevision.PromptRevision(string! Id, string! Command, string? Description, string? ParentRevision, string! Source, string! Reason, string! Created, string! CreatedBy, bool Applied, string? RevertedFrom) -> void
+AppShell.Services.Mcp.PromptRevision.Reason.get -> string!
+AppShell.Services.Mcp.PromptRevision.Reason.init -> void
+AppShell.Services.Mcp.PromptRevision.RevertedFrom.get -> string?
+AppShell.Services.Mcp.PromptRevision.RevertedFrom.init -> void
+AppShell.Services.Mcp.PromptRevision.Source.get -> string!
+AppShell.Services.Mcp.PromptRevision.Source.init -> void
+AppShell.Services.Modules.ModuleHost
+AppShell.Services.Modules.ModuleHost.Attach(AppShell.Core.Commands.CommandRegistry! registry) -> void
+AppShell.Services.Modules.ModuleHost.ChangeDirectory(string! newDir) -> void
+AppShell.Services.Modules.ModuleHost.Dispose() -> void
+AppShell.Services.Modules.ModuleHost.EnableCommands.get -> bool
+AppShell.Services.Modules.ModuleHost.EnableCommands.set -> void
+AppShell.Services.Modules.ModuleHost.EnableUiModules.get -> bool
+AppShell.Services.Modules.ModuleHost.EnableUiModules.set -> void
+AppShell.Services.Modules.ModuleHost.ModuleHost(string! modulesDir, AppShell.Core.Logging.IShellLog! log) -> void
+AppShell.Services.Modules.ModuleHost.Modules.get -> System.Collections.Generic.IReadOnlyList<AppShell.Services.Modules.ModuleMeta!>!
+AppShell.Services.Modules.ModuleHost.ModulesDirectory.get -> string!
+AppShell.Services.Modules.ModuleHost.Reload() -> void
+AppShell.Services.Modules.ModuleHost.ReloadCompleted -> System.Action?
+AppShell.Services.Modules.ModuleHost.ShellUi.get -> AppShell.Core.Modules.IShellUiRegistrar?
+AppShell.Services.Modules.ModuleHost.ShellUi.set -> void
+AppShell.Services.Modules.ModuleHost.Start() -> void
+AppShell.Services.Modules.ModuleHost.UiContext.get -> System.Threading.SynchronizationContext?
+AppShell.Services.Modules.ModuleHost.UiContext.set -> void
+AppShell.Services.Modules.ModuleMeta
+AppShell.Services.Modules.ModuleMeta.AssemblyFile.get -> string!
+AppShell.Services.Modules.ModuleMeta.AssemblyFile.init -> void
+AppShell.Services.Modules.ModuleMeta.Author.get -> string!
+AppShell.Services.Modules.ModuleMeta.Author.init -> void
+AppShell.Services.Modules.ModuleMeta.CommandCount.get -> int
+AppShell.Services.Modules.ModuleMeta.CommandCount.init -> void
+AppShell.Services.Modules.ModuleMeta.Description.get -> string!
+AppShell.Services.Modules.ModuleMeta.Description.init -> void
+AppShell.Services.Modules.ModuleMeta.ModuleMeta(string! ModuleName, string! Description, string! Author, string! Version, bool Open, string! AssemblyFile, int CommandCount, string! Slot = "", bool Ui = false) -> void
+AppShell.Services.Modules.ModuleMeta.ModuleName.get -> string!
+AppShell.Services.Modules.ModuleMeta.ModuleName.init -> void
+AppShell.Services.Modules.ModuleMeta.Open.get -> bool
+AppShell.Services.Modules.ModuleMeta.Open.init -> void
+AppShell.Services.Modules.ModuleMeta.Slot.get -> string!
+AppShell.Services.Modules.ModuleMeta.Slot.init -> void
+AppShell.Services.Modules.ModuleMeta.Ui.get -> bool
+AppShell.Services.Modules.ModuleMeta.Ui.init -> void
+AppShell.Services.Modules.ModuleMeta.Version.get -> string!
+AppShell.Services.Modules.ModuleMeta.Version.init -> void
+AppShell.Services.Modules.ModulePanelSync
+AppShell.Services.SettingsService
+AppShell.Services.SettingsService.All() -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.KeyValuePair<string!, string!>>!
+AppShell.Services.SettingsService.Get(string! key) -> string?
+AppShell.Services.SettingsService.GetInt(string! key, int fallback) -> int
+AppShell.Services.SettingsService.Set(string! key, string! value) -> void
+AppShell.Services.SettingsService.SettingsService(AppShell.Services.AppPaths! paths) -> void
+AppShell.Services.ShellLog
+AppShell.Services.ShellLog.Dispose() -> void
+AppShell.Services.ShellLog.EntryAdded -> System.EventHandler<AppShell.Core.Logging.ShellLogEntry!>?
+AppShell.Services.ShellLog.Log(AppShell.Core.Logging.ShellLogLevel level, string! category, string! message) -> void
+AppShell.Services.ShellLog.ShellLog(AppShell.Services.AppPaths! paths, int retainDays = 30) -> void
+AppShell.Services.ShellLog.Snapshot() -> System.Collections.Generic.IReadOnlyList<AppShell.Core.Logging.ShellLogEntry!>!
+AppShell.Services.Web.DeviceAuthenticationResult
+AppShell.Services.Web.DeviceAuthenticationResult.DeviceAuthenticationResult(bool Success, string? DeviceId, string? Subject, System.Collections.Generic.IReadOnlySet<string!>! Scopes, string? Failure = null) -> void
+AppShell.Services.Web.DeviceAuthenticationResult.DeviceId.get -> string?
+AppShell.Services.Web.DeviceAuthenticationResult.DeviceId.init -> void
+AppShell.Services.Web.DeviceAuthenticationResult.Failure.get -> string?
+AppShell.Services.Web.DeviceAuthenticationResult.Failure.init -> void
+AppShell.Services.Web.DeviceAuthenticationResult.Scopes.get -> System.Collections.Generic.IReadOnlySet<string!>!
+AppShell.Services.Web.DeviceAuthenticationResult.Scopes.init -> void
+AppShell.Services.Web.DeviceAuthenticationResult.Subject.get -> string?
+AppShell.Services.Web.DeviceAuthenticationResult.Subject.init -> void
+AppShell.Services.Web.DeviceAuthenticationResult.Success.get -> bool
+AppShell.Services.Web.DeviceAuthenticationResult.Success.init -> void
+AppShell.Services.Web.DevicePairingResult
+AppShell.Services.Web.DevicePairingResult.AccessToken.get -> string?
+AppShell.Services.Web.DevicePairingResult.AccessToken.init -> void
+AppShell.Services.Web.DevicePairingResult.DeviceId.get -> string?
+AppShell.Services.Web.DevicePairingResult.DeviceId.init -> void
+AppShell.Services.Web.DevicePairingResult.DevicePairingResult(bool Success, string? ServerId, string? DeviceId, string? AccessToken, System.Collections.Generic.IReadOnlySet<string!>! Scopes, string? Failure = null) -> void
+AppShell.Services.Web.DevicePairingResult.Failure.get -> string?
+AppShell.Services.Web.DevicePairingResult.Failure.init -> void
+AppShell.Services.Web.DevicePairingResult.Scopes.get -> System.Collections.Generic.IReadOnlySet<string!>!
+AppShell.Services.Web.DevicePairingResult.Scopes.init -> void
+AppShell.Services.Web.DevicePairingResult.ServerId.get -> string?
+AppShell.Services.Web.DevicePairingResult.ServerId.init -> void
+AppShell.Services.Web.DevicePairingResult.Success.get -> bool
+AppShell.Services.Web.DevicePairingResult.Success.init -> void
+AppShell.Services.Web.IDeviceAuthenticationProvider
+AppShell.Services.Web.IDeviceAuthenticationProvider.Authenticate(string! deviceId, string! token, string? remoteAddress) -> AppShell.Services.Web.DeviceAuthenticationResult!
+AppShell.Services.Web.IDevicePairingProvider
+AppShell.Services.Web.IDevicePairingProvider.Pair(string! code, string! deviceId, string! deviceName, string? remoteAddress) -> AppShell.Services.Web.DevicePairingResult!
+AppShell.Services.Web.RemoteWorkspaceService
+AppShell.Services.Web.RemoteWorkspaceService.CanSelectLocalRoot.get -> bool
+AppShell.Services.Web.RemoteWorkspaceService.Changed -> System.Action?
+AppShell.Services.Web.RemoteWorkspaceService.CreateDirectory(string! relativePath) -> void
+AppShell.Services.Web.RemoteWorkspaceService.DeleteToRecycleBin(string! relativePath) -> void
+AppShell.Services.Web.RemoteWorkspaceService.List(string? relativePath = null) -> System.Collections.Generic.IReadOnlyList<AppShell.Core.Files.WorkspaceEntry!>!
+AppShell.Services.Web.RemoteWorkspaceService.RemoteWorkspaceService(AppShell.Services.Web.ShellServiceClient! client) -> void
+AppShell.Services.Web.RemoteWorkspaceService.Rename(string! relativePath, string! newName) -> void
+AppShell.Services.Web.RemoteWorkspaceService.ResolveFull(string! relativePath) -> string!
+AppShell.Services.Web.RemoteWorkspaceService.Root.get -> string!
+AppShell.Services.Web.RemoteWorkspaceService.SetRoot(string! path) -> void
+AppShell.Services.Web.ShellConnectionState
+AppShell.Services.Web.ShellConnectionState.Connecting = 1 -> AppShell.Services.Web.ShellConnectionState
+AppShell.Services.Web.ShellConnectionState.Disconnected = 0 -> AppShell.Services.Web.ShellConnectionState
+AppShell.Services.Web.ShellConnectionState.PairingRequired = 2 -> AppShell.Services.Web.ShellConnectionState
+AppShell.Services.Web.ShellConnectionState.Ready = 3 -> AppShell.Services.Web.ShellConnectionState
+AppShell.Services.Web.ShellConnectionState.Rejected = 4 -> AppShell.Services.Web.ShellConnectionState
+AppShell.Services.Web.ShellConnectionState.VersionMismatch = 5 -> AppShell.Services.Web.ShellConnectionState
+AppShell.Services.Web.ShellEndpointProfile
+AppShell.Services.Web.ShellEndpointProfile.AccessTokenProvider.get -> System.Func<string?>?
+AppShell.Services.Web.ShellEndpointProfile.AccessTokenProvider.init -> void
+AppShell.Services.Web.ShellEndpointProfile.BaseUri.get -> System.Uri!
+AppShell.Services.Web.ShellEndpointProfile.BaseUri.init -> void
+AppShell.Services.Web.ShellEndpointProfile.CertificateFingerprint.get -> string?
+AppShell.Services.Web.ShellEndpointProfile.CertificateFingerprint.init -> void
+AppShell.Services.Web.ShellEndpointProfile.ConnectTimeout.get -> System.TimeSpan?
+AppShell.Services.Web.ShellEndpointProfile.ConnectTimeout.init -> void
+AppShell.Services.Web.ShellEndpointProfile.DeviceId.get -> string!
+AppShell.Services.Web.ShellEndpointProfile.DeviceId.init -> void
+AppShell.Services.Web.ShellEndpointProfile.EffectiveConnectTimeout.get -> System.TimeSpan
+AppShell.Services.Web.ShellEndpointProfile.ServerId.get -> string?
+AppShell.Services.Web.ShellEndpointProfile.ServerId.init -> void
+AppShell.Services.Web.ShellEndpointProfile.ShellEndpointProfile(System.Uri! BaseUri, string! DeviceId, System.Func<string?>? AccessTokenProvider = null, string? CertificateFingerprint = null, System.TimeSpan? ConnectTimeout = null, string? ServerId = null) -> void
+AppShell.Services.Web.ShellEndpointProfile.ValidateCertificate(System.Security.Cryptography.X509Certificates.X509Certificate2? certificate) -> bool
+AppShell.Services.Web.ShellServiceClient
+AppShell.Services.Web.ShellServiceClient.DataDeserializer.get -> System.Func<string!, System.Text.Json.JsonElement, object?>?
+AppShell.Services.Web.ShellServiceClient.DataDeserializer.set -> void
+AppShell.Services.Web.ShellServiceClient.Dispose() -> void
+AppShell.Services.Web.ShellServiceClient.ExecuteAsync(string! text, string! source, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<AppShell.Core.Commands.CommandResult!>!
+AppShell.Services.Web.ShellServiceClient.PairAsync(string! code, string! deviceName, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<AppShell.Services.Web.DevicePairingResult!>!
+AppShell.Services.Web.ShellServiceClient.ReconnectAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+AppShell.Services.Web.ShellServiceClient.RunEventLoopAsync(AppShell.Core.Commands.CommandBus! localBus, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+AppShell.Services.Web.ShellServiceClient.ShellServiceClient(AppShell.Services.Web.ShellEndpointProfile! profile, string! name) -> void
+AppShell.Services.Web.ShellServiceClient.ShellServiceClient(System.Uri! baseUri, string! name) -> void
+AppShell.Services.Web.ShellServiceClient.State.get -> AppShell.Services.Web.ShellConnectionState
+AppShell.Services.Web.ShellServiceClient.StateChanged -> System.Action<AppShell.Services.Web.ShellConnectionState>?
+AppShell.Services.Web.ShellServiceClient.WaitForReadyAsync(System.TimeSpan timeout, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+AppShell.Services.Web.WebCommands
+AppShell.Services.Web.WebGateway
+AppShell.Services.Web.WebGateway.ActiveBindAddress.get -> string!
+AppShell.Services.Web.WebGateway.BindAddress.get -> string!
+AppShell.Services.Web.WebGateway.ConnectedClients.get -> int
+AppShell.Services.Web.WebGateway.ConnectedShells.get -> int
+AppShell.Services.Web.WebGateway.DeviceAuthentication.get -> AppShell.Services.Web.IDeviceAuthenticationProvider?
+AppShell.Services.Web.WebGateway.DeviceAuthentication.set -> void
+AppShell.Services.Web.WebGateway.DevicePairing.get -> AppShell.Services.Web.IDevicePairingProvider?
+AppShell.Services.Web.WebGateway.DevicePairing.set -> void
+AppShell.Services.Web.WebGateway.DisconnectDevice(string! deviceId) -> int
+AppShell.Services.Web.WebGateway.Dispose() -> void
+AppShell.Services.Web.WebGateway.IsRunning.get -> bool
+AppShell.Services.Web.WebGateway.Port.get -> int
+AppShell.Services.Web.WebGateway.RelayFrontendCommandAsync(string! text, string! source, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<AppShell.Core.Commands.CommandResult!>!
+AppShell.Services.Web.WebGateway.RequestWebConfirmation(string! prompt, string! source, System.TimeSpan timeout) -> bool
+AppShell.Services.Web.WebGateway.ServerId.get -> string!
+AppShell.Services.Web.WebGateway.ServerId.set -> void
+AppShell.Services.Web.WebGateway.Start(int? port = null) -> (bool Success, string! Message)
+AppShell.Services.Web.WebGateway.Stop() -> (bool Success, string! Message)
+AppShell.Services.Web.WebGateway.TryGetSession(string! source, out AppShell.Core.Mcp.ClientSession! session) -> bool
+AppShell.Services.Web.WebGateway.WebGateway(System.Func<AppShell.Core.Commands.CommandBus?>! busAccessor, AppShell.Core.Storage.ISettingsService! settings, AppShell.Core.Logging.IShellLog! log) -> void
+AppShell.Services.WorkspaceService
+AppShell.Services.WorkspaceService.Changed -> System.Action?
+AppShell.Services.WorkspaceService.CreateDirectory(string! relativePath) -> void
+AppShell.Services.WorkspaceService.DeleteToRecycleBin(string! relativePath) -> void
+AppShell.Services.WorkspaceService.Dispose() -> void
+AppShell.Services.WorkspaceService.List(string? relativePath = null) -> System.Collections.Generic.IReadOnlyList<AppShell.Core.Files.WorkspaceEntry!>!
+AppShell.Services.WorkspaceService.Rename(string! relativePath, string! newName) -> void
+AppShell.Services.WorkspaceService.ResolveFull(string! relativePath) -> string!
+AppShell.Services.WorkspaceService.Root.get -> string!
+AppShell.Services.WorkspaceService.SetRoot(string! path) -> void
+AppShell.Services.WorkspaceService.WorkspaceService(string! rootPath) -> void
+const AppShell.Services.Mcp.McpGateway.KeyAutostart = "mcp.autostart" -> string!
+const AppShell.Services.Mcp.McpGateway.KeyConfirm = "mcp.confirm" -> string!
+const AppShell.Services.Mcp.McpGateway.KeyConfirmTimeout = "mcp.confirmtimeout" -> string!
+const AppShell.Services.Mcp.McpGateway.KeyPolicy = "mcp.policy" -> string!
+const AppShell.Services.Mcp.McpGateway.KeyPort = "mcp.port" -> string!
+const AppShell.Services.Mcp.McpGateway.KeyPortRetries = "mcp.portretries" -> string!
+const AppShell.Services.Mcp.McpGateway.KeySessionLimit = "mcp.sessionlimit" -> string!
+const AppShell.Services.Mcp.McpGateway.KeyTimeout = "mcp.timeout" -> string!
+const AppShell.Services.Mcp.McpGateway.KeyToken = "mcp.token" -> string!
+const AppShell.Services.Mcp.PromptGovernanceStore.TableDescriptions = "mcp_descriptions" -> string!
+const AppShell.Services.Mcp.PromptGovernanceStore.TableProposals = "mcp_prompt_proposals" -> string!
+const AppShell.Services.Web.WebGateway.KeyBind = "web.bind" -> string!
+const AppShell.Services.Web.WebGateway.KeyConfirm = "web.confirm" -> string!
+const AppShell.Services.Web.WebGateway.KeyCors = "web.cors" -> string!
+const AppShell.Services.Web.WebGateway.KeyFrontendCatalog = "web.frontendcatalog" -> string!
+const AppShell.Services.Web.WebGateway.KeyFrontendCatalogLimit = "web.frontendcataloglimit" -> string!
+const AppShell.Services.Web.WebGateway.KeyPort = "web.port" -> string!
+const AppShell.Services.Web.WebGateway.KeyPortRetries = "web.portretries" -> string!
+const AppShell.Services.Web.WebGateway.KeyRateLimit = "web.ratelimit" -> string!
+const AppShell.Services.Web.WebGateway.KeyRateWindowLimit = "web.ratewindowlimit" -> string!
+const AppShell.Services.Web.WebGateway.KeyToken = "web.token" -> string!
+const AppShell.Services.WorkspaceService.KeyRoot = "workspace.root" -> string!
+static AppShell.Services.AppPaths.GetDataDir(string! root) -> string!
+static AppShell.Services.AppPaths.GetModulesDir(string! root) -> string!
+static AppShell.Services.AppPaths.GetPanelsDir(string! root) -> string!
+static AppShell.Services.AppPaths.GetWorkspaceDir(string! root) -> string!
+static AppShell.Services.Modules.ModuleHost.FindModuleDomainConflicts(System.Collections.Generic.IEnumerable<string!>! reservedCommandNames, System.Collections.Generic.IEnumerable<string!>! moduleCommandNames) -> System.Collections.Generic.IReadOnlySet<string!>!
+static AppShell.Services.Modules.ModulePanelSync.SyncFiles(string! modulesDir, string! panelsDir, AppShell.Core.Logging.IShellLog! log) -> bool
+static AppShell.Services.Web.DeviceAuthenticationResult.Accept(string! deviceId, string! subject, System.Collections.Generic.IEnumerable<string!>! scopes) -> AppShell.Services.Web.DeviceAuthenticationResult!
+static AppShell.Services.Web.DeviceAuthenticationResult.Reject(string! failure = "unauthorized") -> AppShell.Services.Web.DeviceAuthenticationResult!
+static AppShell.Services.Web.ShellEndpointProfile.NormalizeFingerprint(string? value) -> string!
+static AppShell.Services.Web.WebCommands.RegisterAll(AppShell.Core.Commands.CommandRegistry! registry, AppShell.Services.Web.WebGateway! gateway, AppShell.Core.Storage.ISettingsService! settings, string! source = "framework:web") -> void
+static readonly AppShell.Services.Mcp.McpGateway.SupportedProtocols -> System.Collections.Generic.IReadOnlyList<string!>!

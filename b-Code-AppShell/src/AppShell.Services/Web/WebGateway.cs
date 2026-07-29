@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Threading.Channels;
 using AppShell.Core;
 using AppShell.Core.Commands;
 using AppShell.Core.Logging;
@@ -16,14 +17,23 @@ namespace AppShell.Services.Web;
 /// <summary>命令总线的 HTTP/WS 接入点，供本机 Shell 与受鉴权 Web 客户端共用。</summary>
 public sealed class WebGateway : IDisposable
 {
+    private const string LanProtocolVersion = "3.0.0";
     public const string KeyPort = "web.port";
     public const string KeyBind = "web.bind";
     public const string KeyToken = "web.token";
     public const string KeyCors = "web.cors";
     public const string KeyConfirm = "web.confirm";
     public const string KeyRateLimit = "web.ratelimit";
+    public const string KeyRateWindowLimit = "web.ratewindowlimit";
+    public const string KeyPortRetries = "web.portretries";
+    public const string KeyFrontendCatalog = "web.frontendcatalog";
+    public const string KeyFrontendCatalogLimit = "web.frontendcataloglimit";
 
-    private const int DefaultPort = 8738;
+    private const int DefaultPortBase = 8938;
+    private const int DefaultPortSpan = 200;
+    private const int DefaultPortRetries = 20;
+    private const int DefaultRateWindowLimit = 4096;
+    private const int DefaultFrontendCatalogLimit = 32;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -39,6 +49,9 @@ public sealed class WebGateway : IDisposable
     private readonly ConcurrentDictionary<string, PendingCommand> _pending = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, PendingConfirmation> _pendingConfirmations = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, RateWindow> _rateWindows = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, FrontendCapabilityCatalog> _sessionCatalogs = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, FrontendCapabilityCatalog> _cachedCatalogs = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _catalogLock = new();
 
     private HttpListener? _listener;
     private CancellationTokenSource? _cts;
@@ -80,6 +93,8 @@ public sealed class WebGateway : IDisposable
         {
             if (!_clients.TryRemove(item.Key, out var client))
                 continue;
+            _sessionCatalogs.TryRemove(client.Session.Id, out _);
+            _rateWindows.TryRemove(client.Session.Id, out _);
             CompletePendingForSession(client.Session.Id);
             client.Dispose();
             disconnected++;
@@ -106,9 +121,16 @@ public sealed class WebGateway : IDisposable
             if (IsRunning)
                 return (false, $"Web 服务已在运行(端口 {Port})");
 
-            Port = port ?? _settings.GetInt(KeyPort, DefaultPort);
-            if (Port is < 1024 or > 65535)
-                return (false, $"端口无效: {Port}(允许 1024~65535)");
+            RestoreCachedFrontendCatalogs();
+
+            var configured = int.TryParse(
+                _settings.Get(KeyPort), System.Globalization.NumberStyles.Integer,
+                System.Globalization.CultureInfo.InvariantCulture, out var configuredPort)
+                ? configuredPort
+                : (int?)null;
+            var initialPort = port ?? configured ?? DeriveDefaultPort(ServerId);
+            if (initialPort is < 1024 or > 65535)
+                return (false, $"端口无效: {initialPort}(允许 1024~65535)");
 
             var bind = BindAddress;
             var token = _settings.Get(KeyToken);
@@ -116,25 +138,41 @@ public sealed class WebGateway : IDisposable
                                   && DeviceAuthentication == null)
                 return (false, "非 localhost 绑定必须配置设备鉴权或非空 web.token");
 
-            try
+            var retries = Math.Clamp(
+                _settings.GetInt(KeyPortRetries, DefaultPortRetries), 0, 100);
+            Exception? lastError = null;
+            for (var attempt = 0; attempt <= retries; attempt++)
             {
-                _listener = new HttpListener();
-                var scheme = IsLoopback(bind) ? "http" : "https";
-                _listener.Prefixes.Add($"{scheme}://{bind}:{Port}/");
-                if (!IsLoopback(bind))
-                    _listener.Prefixes.Add($"http://127.0.0.1:{Port}/");
-                _listener.Start();
-                ActiveBindAddress = bind;
-            }
-            catch (Exception ex)
-            {
-                _listener?.Close();
-                _listener = null;
-                return (false, $"监听失败: {ex.Message}");
+                var candidate = initialPort + attempt;
+                if (candidate > 65535)
+                    break;
+                try
+                {
+                    var listener = new HttpListener();
+                    var scheme = IsLoopback(bind) ? "http" : "https";
+                    listener.Prefixes.Add($"{scheme}://{bind}:{candidate}/");
+                    if (!IsLoopback(bind))
+                        listener.Prefixes.Add($"http://127.0.0.1:{candidate}/");
+                    listener.Start();
+                    _listener = listener;
+                    Port = candidate;
+                    ActiveBindAddress = bind;
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    lastError = ex;
+                    _listener?.Close();
+                    _listener = null;
+                }
             }
 
-            if (port.HasValue)
-                _settings.Set(KeyPort, port.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            if (_listener == null)
+                return (false,
+                    $"监听失败: 从端口 {initialPort} 起连续尝试 {retries + 1} 个端口均不可用: {lastError?.Message}");
+
+            if (port.HasValue || configured.HasValue)
+                _settings.Set(KeyPort, Port.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
             _cts = new CancellationTokenSource();
             _ = AcceptLoopAsync(_listener, _cts.Token);
@@ -151,9 +189,12 @@ public sealed class WebGateway : IDisposable
             if (!IsRunning)
                 return (false, "Web 服务未在运行");
 
+            var releasedPort = Port;
             _cts?.Cancel();
             _listener?.Close();
             _listener = null;
+            _cts?.Dispose();
+            _cts = null;
             ActiveBindAddress = "";
             foreach (var client in _clients.Values)
                 client.Dispose();
@@ -164,8 +205,11 @@ public sealed class WebGateway : IDisposable
             foreach (var confirmation in _pendingConfirmations.Values)
                 confirmation.Completion.TrySetResult(false);
             _pendingConfirmations.Clear();
+            _sessionCatalogs.Clear();
+            _rateWindows.Clear();
+            Port = 0;
             _log.Info("web", "Web 服务已停止");
-            return (true, $"Web 服务已停止(端口 {Port} 已释放)");
+            return (true, $"Web 服务已停止(端口 {releasedPort} 已释放)");
         }
     }
 
@@ -174,15 +218,53 @@ public sealed class WebGateway : IDisposable
         string source,
         CancellationToken cancellationToken)
     {
-        var originSessionId = SessionIdFromSource(source);
-        var frontend = originSessionId != null
-                       && _clients.TryGetValue(originSessionId, out var origin)
-                       && origin.Session.Kind == ClientKind.Shell
-                       && origin.Socket.State == WebSocketState.Open
-            ? origin
-            : null;
+        ParsedCommand parsed;
+        try
+        {
+            parsed = CommandParser.Parse(text);
+        }
+        catch (CommandSyntaxException ex)
+        {
+            return CommandResult.Fail($"前端命令语法错误: {ex.Message}");
+        }
+
+        var target = parsed.Named.GetValueOrDefault("_frontend");
+        var candidates = _clients.Values
+            .Where(client => client.Session.Kind == ClientKind.Shell
+                             && client.Socket.State == WebSocketState.Open)
+            .Where(client => !_sessionCatalogs.TryGetValue(client.Session.Id, out var catalog)
+                             || catalog.Commands.Any(command => command.Name.Equals(
+                                 parsed.Name, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+        EventClient? frontend = null;
+        if (!string.IsNullOrWhiteSpace(target))
+        {
+            var matched = candidates.Where(client =>
+                    client.Session.Id.Equals(target, StringComparison.OrdinalIgnoreCase)
+                    || client.Session.Name.Equals(target, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (matched.Count != 1)
+                return CommandResult.Fail(matched.Count == 0
+                    ? $"目标前端不可用: {target}"
+                    : $"目标前端不唯一: {target}，请改用会话 ID");
+            frontend = matched[0];
+        }
+        else
+        {
+            var originSessionId = SessionIdFromSource(source);
+            frontend = originSessionId == null
+                ? null
+                : candidates.FirstOrDefault(client => client.Session.Id.Equals(
+                    originSessionId, StringComparison.Ordinal));
+            if (frontend == null && candidates.Count == 1)
+                frontend = candidates[0];
+            if (frontend == null && candidates.Count > 1)
+                return CommandResult.Fail("多个前端可执行该命令，请指定 _frontend=<会话 ID 或应用名>");
+        }
+
         if (frontend == null)
-            return CommandResult.Fail("发起会话没有可用前端");
+            return CommandResult.Fail("前端不可用");
+        var relayText = RemoveFrontendTarget(parsed);
 
         var id = Guid.NewGuid().ToString("N");
         var completion = new TaskCompletionSource<CommandResult>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -195,7 +277,7 @@ public sealed class WebGateway : IDisposable
             {
                 ["type"] = "uiCommand",
                 ["id"] = id,
-                ["text"] = text,
+                ["text"] = relayText,
                 ["source"] = source,
             }, cancellationToken).ConfigureAwait(false);
 
@@ -290,17 +372,33 @@ public sealed class WebGateway : IDisposable
             }
 
             var path = context.Request.Url?.AbsolutePath.TrimEnd('/') ?? "";
+            var remoteRateKey = "remote:" + (context.Request.RemoteEndPoint?.Address.ToString() ?? "unknown");
             if (path.Equals("/api/pair", StringComparison.OrdinalIgnoreCase)
                 && context.Request.HttpMethod == "POST")
             {
+                if (!AllowRequest(remoteRateKey))
+                {
+                    await WriteJsonAsync(context, new { error = "rate limit exceeded" }, 429).ConfigureAwait(false);
+                    return;
+                }
                 await HandlePairingAsync(context).ConfigureAwait(false);
                 return;
             }
 
+            if (IsRateLimitReached(remoteRateKey))
+            {
+                await WriteJsonAsync(context, new { error = "rate limit exceeded" }, 429).ConfigureAwait(false);
+                return;
+            }
             var requestedSession = CreateSession(context.Request);
             var session = Authenticate(context.Request, requestedSession);
             if (session == null)
             {
+                if (!AllowRequest(remoteRateKey))
+                {
+                    await WriteJsonAsync(context, new { error = "rate limit exceeded" }, 429).ConfigureAwait(false);
+                    return;
+                }
                 await WriteJsonAsync(context, new { error = "unauthorized" }, 401).ConfigureAwait(false);
                 return;
             }
@@ -330,8 +428,8 @@ public sealed class WebGateway : IDisposable
                     shells = ConnectedShells,
                     serverId = ServerId,
                     productVersion = AppIdentity.Current.Version,
-                    appShellProtocolVersion = "2.7.3",
-                    minClientVersion = "2.7.3",
+                    appShellProtocolVersion = LanProtocolVersion,
+                    minClientVersion = LanProtocolVersion,
                     capabilities = new[] { "device-auth", "session-affine-ui", "single-exe" },
                 }, 200).ConfigureAwait(false);
                 return;
@@ -356,7 +454,7 @@ public sealed class WebGateway : IDisposable
                     descriptor.Example,
                     source = bus.Registry.GetSource(descriptor.Name),
                     descriptor.Readonly,
-                    dangerous = descriptor.ConfirmPrompt != null,
+                    dangerous = descriptor.IsDangerous,
                     executionSite = descriptor.ExecutionSite.ToString(),
                     mcpState = McpExposurePolicy.State(descriptor),
                     inputSchema = schemas.GetValueOrDefault(descriptor.Name)?.InputSchema,
@@ -419,6 +517,16 @@ public sealed class WebGateway : IDisposable
 
             await WriteJsonAsync(context, new { error = "not found" }, 404).ConfigureAwait(false);
         }
+        catch (InvalidDataException ex)
+        {
+            _log.Warn("web", $"请求体被拒绝: {ex.Message}");
+            TryClose(context, 413);
+        }
+        catch (JsonException ex)
+        {
+            _log.Warn("web", $"请求 JSON 无效: {ex.Message}");
+            TryClose(context, 400);
+        }
         catch (Exception ex)
         {
             _log.Error("web", $"请求处理失败: {ex.Message}");
@@ -433,7 +541,33 @@ public sealed class WebGateway : IDisposable
     {
         var accepted = await context.AcceptWebSocketAsync(null).ConfigureAwait(false);
         var client = new EventClient(session, accepted.WebSocket);
-        _clients[session.Id] = client;
+        if (!_clients.TryAdd(session.Id, client))
+        {
+            try
+            {
+                await SendAsync(client, new JsonObject
+                {
+                    ["type"] = "error",
+                    ["error"] = "session_id_in_use",
+                    ["message"] = "该 session id 已有活动连接",
+                }, CancellationToken.None).ConfigureAwait(false);
+                await client.Socket.CloseAsync(
+                    WebSocketCloseStatus.PolicyViolation,
+                    "session id already connected",
+                    CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (WebSocketException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            finally
+            {
+                client.Dispose();
+            }
+            return;
+        }
         await SendAsync(client, new JsonObject
         {
             ["type"] = "connected",
@@ -446,38 +580,59 @@ public sealed class WebGateway : IDisposable
         {
             while (client.Socket.State == WebSocketState.Open && !cancellationToken.IsCancellationRequested)
             {
-                var received = await client.Socket.ReceiveAsync(buffer, cancellationToken).ConfigureAwait(false);
-                if (received.MessageType == WebSocketMessageType.Close)
+                var payloadBytes = await WebSocketMessageReader.ReceiveTextAsync(
+                    client.Socket, buffer, cancellationToken).ConfigureAwait(false);
+                if (payloadBytes == null)
                     break;
-                if (received.MessageType != WebSocketMessageType.Text || !received.EndOfMessage)
-                    continue;
 
-                using var doc = JsonDocument.Parse(buffer.AsMemory(0, received.Count));
-                var root = doc.RootElement;
-                if (root.TryGetProperty("type", out var type)
-                    && type.GetString() == "commandResult"
-                    && root.TryGetProperty("id", out var id)
-                    && _pending.TryGetValue(id.GetString() ?? "", out var pending)
-                    && pending.SessionId.Equals(session.Id, StringComparison.Ordinal))
+                JsonDocument doc;
+                try
                 {
-                    var success = root.TryGetProperty("success", out var ok) && ok.GetBoolean();
-                    var message = root.TryGetProperty("message", out var msg) ? msg.GetString() ?? "" : "";
-                    object? data = root.TryGetProperty("data", out var payload)
-                        ? JsonSerializer.Deserialize<object>(payload.GetRawText(), JsonOptions)
-                        : null;
-                    pending.Completion.TrySetResult(success
-                        ? CommandResult.Ok(message, data)
-                        : CommandResult.Fail(message));
+                    doc = JsonDocument.Parse(payloadBytes);
                 }
-                else if (root.TryGetProperty("type", out type)
-                         && type.GetString() == "confirmationResult"
-                         && root.TryGetProperty("id", out var confirmationId)
-                         && _pendingConfirmations.TryGetValue(
-                             confirmationId.GetString() ?? "", out var confirmation)
-                         && confirmation.SessionId.Equals(session.Id, StringComparison.Ordinal))
+                catch (JsonException ex)
                 {
-                    confirmation.Completion.TrySetResult(
-                        root.TryGetProperty("approved", out var approved) && approved.GetBoolean());
+                    _log.Warn("web", $"已忽略无效 WebSocket JSON: {ex.Message}");
+                    continue;
+                }
+                using (doc)
+                {
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("type", out var type)
+                        && type.GetString() == "commandResult"
+                        && root.TryGetProperty("id", out var id)
+                        && _pending.TryGetValue(id.GetString() ?? "", out var pending)
+                        && pending.SessionId.Equals(session.Id, StringComparison.Ordinal))
+                    {
+                        var success = root.TryGetProperty("success", out var ok) && ok.GetBoolean();
+                        var message = root.TryGetProperty("message", out var msg) ? msg.GetString() ?? "" : "";
+                        object? data = root.TryGetProperty("data", out var payload)
+                            ? JsonSerializer.Deserialize<object>(payload.GetRawText(), JsonOptions)
+                            : null;
+                        pending.Completion.TrySetResult(success
+                            ? CommandResult.Ok(message, data)
+                            : CommandResult.Fail(message));
+                    }
+                    else if (root.TryGetProperty("type", out type)
+                             && type.GetString() == "confirmationResult"
+                             && root.TryGetProperty("id", out var confirmationId)
+                             && _pendingConfirmations.TryGetValue(
+                                 confirmationId.GetString() ?? "", out var confirmation)
+                             && confirmation.SessionId.Equals(session.Id, StringComparison.Ordinal))
+                    {
+                        confirmation.Completion.TrySetResult(
+                            root.TryGetProperty("approved", out var approved) && approved.GetBoolean());
+                    }
+                    else if (root.TryGetProperty("type", out type)
+                             && type.GetString() == "commandCatalog"
+                             && session.Kind == ClientKind.Shell
+                             && root.TryGetProperty("catalog", out var catalogJson))
+                    {
+                        var catalog = JsonSerializer.Deserialize<FrontendCapabilityCatalog>(
+                            catalogJson.GetRawText(), JsonOptions);
+                        if (catalog != null)
+                            ApplyFrontendCatalog(session, catalog);
+                    }
                 }
             }
         }
@@ -489,8 +644,14 @@ public sealed class WebGateway : IDisposable
         }
         finally
         {
-            _clients.TryRemove(session.Id, out _);
-            CompletePendingForSession(session.Id);
+            var removed = ((ICollection<KeyValuePair<string, EventClient>>)_clients).Remove(
+                new KeyValuePair<string, EventClient>(session.Id, client));
+            if (removed)
+            {
+                _sessionCatalogs.TryRemove(session.Id, out _);
+                _rateWindows.TryRemove(session.Id, out _);
+                CompletePendingForSession(session.Id);
+            }
             client.Dispose();
         }
     }
@@ -511,6 +672,106 @@ public sealed class WebGateway : IDisposable
         }
     }
 
+    private void ApplyFrontendCatalog(ClientSession session, FrontendCapabilityCatalog catalog)
+    {
+        var registry = _busAccessor()?.Registry;
+        if (registry == null || string.IsNullOrWhiteSpace(catalog.FrontendName)
+            || catalog.Commands.Count > 4096)
+            return;
+        var commands = catalog.Commands
+            .Where(command => !string.IsNullOrWhiteSpace(command.Name))
+            .GroupBy(command => command.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .ToList();
+        var normalized = catalog with { Commands = commands };
+
+        lock (_catalogLock)
+        {
+            _sessionCatalogs[session.Id] = normalized;
+            _cachedCatalogs[normalized.FrontendName] = normalized;
+            TrimCatalogCache(normalized.FrontendName);
+            ApplyCatalogToRegistry(registry, normalized);
+            _settings.Set(KeyFrontendCatalog, JsonSerializer.Serialize(
+                _cachedCatalogs.Values.OrderBy(item => item.FrontendName).ToList(), JsonOptions));
+        }
+        _log.Info("web", $"已同步前端命令目录: {normalized.FrontendName}，{commands.Count} 条");
+    }
+
+    private void RestoreCachedFrontendCatalogs()
+    {
+        var registry = _busAccessor()?.Registry;
+        var json = _settings.Get(KeyFrontendCatalog);
+        if (registry == null || string.IsNullOrWhiteSpace(json))
+            return;
+        lock (_catalogLock)
+        {
+            if (_cachedCatalogs.Count > 0)
+                return;
+            try
+            {
+                var catalogs = JsonSerializer.Deserialize<List<FrontendCapabilityCatalog>>(json, JsonOptions) ?? [];
+                foreach (var catalog in catalogs.Where(item => item.Commands.Count <= 4096))
+                {
+                    _cachedCatalogs[catalog.FrontendName] = catalog;
+                    TrimCatalogCache(catalog.FrontendName);
+                    ApplyCatalogToRegistry(registry, catalog);
+                }
+            }
+            catch (JsonException ex)
+            {
+                _log.Warn("web", $"缓存的前端命令目录无效，已忽略: {ex.Message}");
+            }
+        }
+    }
+
+    private void TrimCatalogCache(string keepName)
+    {
+        var limit = Math.Clamp(
+            _settings.GetInt(KeyFrontendCatalogLimit, DefaultFrontendCatalogLimit), 1, 256);
+        foreach (var name in _cachedCatalogs.Keys
+                     .Where(name => !name.Equals(keepName, StringComparison.OrdinalIgnoreCase))
+                     .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                     .Take(Math.Max(0, _cachedCatalogs.Count - limit))
+                     .ToList())
+        {
+            _cachedCatalogs.Remove(name);
+        }
+    }
+
+    private static void ApplyCatalogToRegistry(CommandRegistry registry, FrontendCapabilityCatalog catalog)
+    {
+        foreach (var command in catalog.Commands)
+        {
+            try
+            {
+                if (!CommandParser.Parse(command.Name).Name.Equals(command.Name, StringComparison.OrdinalIgnoreCase))
+                    continue;
+            }
+            catch (CommandSyntaxException)
+            {
+                continue;
+            }
+
+            if (registry.TryGet(command.Name, out var existing))
+            {
+                if (existing.ExecutionSite != CommandExecutionSite.Frontend)
+                    continue;
+                registry.Unregister(command.Name);
+            }
+            registry.Register(command.CreateProxy(), $"frontend:{catalog.FrontendName}");
+        }
+    }
+
+    private static string RemoveFrontendTarget(ParsedCommand parsed)
+    {
+        var parts = new List<string> { parsed.Name };
+        parts.AddRange(parsed.Positionals.Select(CommandParser.QuoteArg));
+        parts.AddRange(parsed.Named
+            .Where(pair => !pair.Key.Equals("_frontend", StringComparison.OrdinalIgnoreCase))
+            .Select(pair => $"{pair.Key}={CommandParser.QuoteArg(pair.Value)}"));
+        return string.Join(' ', parts);
+    }
+
     private ClientSession CreateSession(HttpListenerRequest request)
     {
         var kind = request.Headers["X-AppShell-Client"]?.Equals("Shell", StringComparison.OrdinalIgnoreCase) == true
@@ -518,7 +779,7 @@ public sealed class WebGateway : IDisposable
             : ClientKind.Web;
         var name = request.Headers["X-Client-Name"];
         var id = request.Headers["X-Session-Id"];
-        id ??= $"{kind}:{request.RemoteEndPoint?.Address}:{name ?? kind.ToString()}";
+        id ??= StableSessionId(kind, request.RemoteEndPoint?.Address, name);
         var address = request.RemoteEndPoint?.Address;
         return ClientSession.Create(
             kind,
@@ -628,25 +889,63 @@ public sealed class WebGateway : IDisposable
         {
             var parsed = CommandParser.Parse(text);
             if (!registry.TryGet(parsed.Name, out var descriptor))
-                return true;
+            {
+                denial = $"未知指令: {parsed.Name}";
+                return false;
+            }
             if (descriptor.Readonly)
                 return true;
             denial = $"设备 scope=read 不允许执行 {descriptor.Name}";
             return false;
         }
-        catch (CommandSyntaxException)
+        catch (CommandSyntaxException ex)
         {
-            return true;
+            denial = $"指令语法错误: {ex.Message}";
+            return false;
         }
     }
 
     private static string SessionSource(ClientSession session)
-        => $"{(session.IsLoopback ? session.Kind.ToString() : "Lan" + session.Kind)}:{session.Id}:{session.Name}";
+        => $"{(session.IsLoopback ? session.Kind.ToString() : "Lan" + session.Kind)}:" +
+           $"v1.{Base64UrlEncode(session.Id)}:{session.Name}";
 
     private static string? SessionIdFromSource(string source)
     {
-        var parts = source.Split(':', 3);
-        return parts.Length == 3 && parts[1].Length > 0 ? parts[1] : null;
+        var first = source.IndexOf(':');
+        if (first < 0)
+            return null;
+        var second = source.IndexOf(':', first + 1);
+        if (second < 0)
+            return null;
+        var encoded = source[(first + 1)..second];
+        if (!encoded.StartsWith("v1.", StringComparison.Ordinal))
+            return encoded.Length > 0 ? encoded : null;
+        try
+        {
+            return Base64UrlDecode(encoded[3..]);
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+    }
+
+    private static string StableSessionId(ClientKind kind, IPAddress? address, string? name)
+    {
+        var seed = $"{kind}\n{address}\n{name ?? kind.ToString()}";
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(seed));
+        return Convert.ToHexString(hash.AsSpan(0, 16)).ToLowerInvariant();
+    }
+
+    private static string Base64UrlEncode(string value)
+        => Convert.ToBase64String(Encoding.UTF8.GetBytes(value))
+            .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+    private static string Base64UrlDecode(string value)
+    {
+        var padded = value.Replace('-', '+').Replace('_', '/');
+        padded += new string('=', (4 - padded.Length % 4) % 4);
+        return Encoding.UTF8.GetString(Convert.FromBase64String(padded));
     }
 
     private static string? ReadBearer(HttpListenerRequest request)
@@ -680,7 +979,47 @@ public sealed class WebGateway : IDisposable
             (_, current) => now - current.Start >= TimeSpan.FromMinutes(1)
                 ? new RateWindow(now, 1)
                 : current with { Count = current.Count + 1 });
+        TrimRateWindows(now, sessionId);
         return window.Count <= limit;
+    }
+
+    private bool IsRateLimitReached(string key)
+    {
+        if (!_rateWindows.TryGetValue(key, out var window))
+            return false;
+        if (DateTimeOffset.UtcNow - window.Start >= TimeSpan.FromMinutes(1))
+        {
+            _rateWindows.TryRemove(key, out _);
+            return false;
+        }
+        var limit = Math.Clamp(_settings.GetInt(KeyRateLimit, 120), 10, 10_000);
+        return window.Count >= limit;
+    }
+
+    private void TrimRateWindows(DateTimeOffset now, string keepSessionId)
+    {
+        var limit = Math.Clamp(
+            _settings.GetInt(KeyRateWindowLimit, DefaultRateWindowLimit), 128, 65_536);
+        if (_rateWindows.Count <= limit)
+            return;
+
+        foreach (var item in _rateWindows.Where(item =>
+                     now - item.Value.Start >= TimeSpan.FromMinutes(1)).ToList())
+            _rateWindows.TryRemove(item.Key, out _);
+        foreach (var key in _rateWindows.Keys
+                     .Where(key => !key.Equals(keepSessionId, StringComparison.Ordinal))
+                     .OrderBy(key => key, StringComparer.Ordinal)
+                     .Take(Math.Max(0, _rateWindows.Count - limit))
+                     .ToList())
+            _rateWindows.TryRemove(key, out _);
+    }
+
+    private static int DeriveDefaultPort(string appName)
+    {
+        var hash = 2166136261u;
+        foreach (var character in appName.Trim().ToUpperInvariant())
+            hash = (hash ^ character) * 16777619u;
+        return DefaultPortBase + (int)(hash % DefaultPortSpan);
     }
 
     private void ApplyCors(HttpListenerContext context)
@@ -712,13 +1051,19 @@ public sealed class WebGateway : IDisposable
             ["message"] = entry.Message,
         };
         foreach (var client in _clients.Values)
-            _ = SendIgnoringErrorsAsync(client, payload);
+        {
+            if ((entry.Category.Equals("cmd", StringComparison.OrdinalIgnoreCase)
+                 || entry.Category.StartsWith(CommandBus.EchoCategoryPrefix, StringComparison.OrdinalIgnoreCase))
+                && !client.Session.Scopes.Contains("operate")
+                && !client.Session.Scopes.Contains("admin"))
+                continue;
+            client.TryQueueLog(payload);
+        }
     }
 
     private static async Task<T?> ReadJsonAsync<T>(HttpListenerRequest request)
     {
-        using var reader = new StreamReader(request.InputStream, Encoding.UTF8);
-        var body = await reader.ReadToEndAsync().ConfigureAwait(false);
+        var body = await HttpRequestBodyReader.ReadUtf8Async(request).ConfigureAwait(false);
         return JsonSerializer.Deserialize<T>(body, JsonOptions);
     }
 
@@ -783,12 +1128,22 @@ public sealed class WebGateway : IDisposable
 
     private sealed class EventClient : IDisposable
     {
+        private const int LogQueueCapacity = 256;
         private int _disposed;
+        private readonly Channel<JsonObject> _logQueue;
+        private readonly Task _logPump;
 
         public EventClient(ClientSession session, WebSocket socket)
         {
             Session = session;
             Socket = socket;
+            _logQueue = Channel.CreateBounded<JsonObject>(new BoundedChannelOptions(LogQueueCapacity)
+            {
+                SingleReader = true,
+                SingleWriter = false,
+                FullMode = BoundedChannelFullMode.DropOldest,
+            });
+            _logPump = Task.Run(PumpLogsAsync);
         }
 
         public ClientSession Session { get; }
@@ -797,12 +1152,28 @@ public sealed class WebGateway : IDisposable
 
         public SemaphoreSlim SendLock { get; } = new(1, 1);
 
+        public bool TryQueueLog(JsonObject payload)
+            => Volatile.Read(ref _disposed) == 0
+               && _logQueue.Writer.TryWrite((JsonObject)payload.DeepClone());
+
+        private async Task PumpLogsAsync()
+        {
+            await foreach (var payload in _logQueue.Reader.ReadAllAsync().ConfigureAwait(false))
+                await SendIgnoringErrorsAsync(this, payload).ConfigureAwait(false);
+        }
+
         public void Dispose()
         {
             if (Interlocked.Exchange(ref _disposed, 1) != 0)
                 return;
+            _logQueue.Writer.TryComplete();
             Socket.Dispose();
             SendLock.Dispose();
+            _ = _logPump.ContinueWith(
+                static task => _ = task.Exception,
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
         }
     }
 

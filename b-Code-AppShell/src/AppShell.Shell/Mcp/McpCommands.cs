@@ -80,28 +80,28 @@ public static class McpCommands
 
     private static CommandDescriptor BuildStatus(
         Func<McpGateway?> gateway, AppShell.Core.Storage.ISettingsService settings) => new()
-    {
-        Name = "mcp.status",
-        Summary = "查看 MCP 服务状态(运行/端口/策略/暴露工具数/累计调用/最近一次调用)",
-        Example = "mcp.status",
-        Handler = CommandDescriptor.Sync(_ =>
         {
-            var g = gateway();
-            if (g == null)
-                return CommandResult.Fail("网关未装配");
+            Name = "mcp.status",
+            Summary = "查看 MCP 服务状态(运行/端口/策略/暴露工具数/累计调用/最近一次调用)",
+            Example = "mcp.status",
+            Handler = CommandDescriptor.Sync(_ =>
+            {
+                var g = gateway();
+                if (g == null)
+                    return CommandResult.Fail("网关未装配");
 
-            var sb = new StringBuilder();
-            sb.Append($"MCP 服务: {(g.IsRunning ? $"运行中 http://127.0.0.1:{g.Port}/mcp" : "未启动(mcp.start 开启)")}");
-            sb.Append($"\n  策略   : {g.Policy}(app.set key=mcp.policy value=readonly|standard)");
-            sb.Append($"\n  暴露   : {g.VisibleTools().Count} 个工具(mcp.schema 看全量形态)");
-            sb.Append($"\n  令牌   : {(string.IsNullOrEmpty(settings.Get(McpGateway.KeyToken)) ? "未设置(本机回环可信)" : "已设置(Bearer 必需)")}");
-            sb.Append($"\n  自启动 : mcp.autostart = {(g.AutostartEnabled ? "true" : "false")}");
-            sb.Append($"\n  危险指令: mcp.confirm = {g.ConfirmMode}" +
-                      $"{(g.ConfirmMode == "host" ? $"(远程请求宿主弹框确认,{g.ConfirmTimeout}s 超时拒绝)" : "(一律拒绝;host 档开启中继确认)")}");
-            sb.Append($"\n  调用   : 累计 {g.CallCount} 次,最近 {g.LastCall}");
-            return CommandResult.Ok(sb.ToString());
-        }),
-    };
+                var sb = new StringBuilder();
+                sb.Append($"MCP 服务: {(g.IsRunning ? $"运行中 http://127.0.0.1:{g.Port}/mcp" : "未启动(mcp.start 开启)")}");
+                sb.Append($"\n  策略   : {g.Policy}(app.set key=mcp.policy value=readonly|standard)");
+                sb.Append($"\n  暴露   : {g.VisibleTools().Count} 个工具(mcp.schema 看全量形态)");
+                sb.Append($"\n  令牌   : {(string.IsNullOrEmpty(settings.Get(McpGateway.KeyToken)) ? "未设置(本机回环可信)" : "已设置(Bearer 必需)")}");
+                sb.Append($"\n  自启动 : mcp.autostart = {(g.AutostartEnabled ? "true" : "false")}");
+                sb.Append($"\n  危险指令: mcp.confirm = {g.ConfirmMode}" +
+                          $"{(g.ConfirmMode == "host" ? $"(远程请求宿主弹框确认,{g.ConfirmTimeout}s 超时拒绝)" : "(一律拒绝;host 档开启中继确认)")}");
+                sb.Append($"\n  调用   : 累计 {g.CallCount} 次,最近 {g.LastCall}");
+                return CommandResult.Ok(sb.ToString());
+            }),
+        };
 
     // ---------------------------------------------------------------- mcp.schema(MC-05)
 
@@ -109,13 +109,13 @@ public static class McpCommands
     {
         Name = "mcp.schema",
         Summary = "查看指令的 MCP 工具形态(不带参列全部;带 name 输出单条完整 JSON Schema)",
-        Example = "mcp.schema name=db.query",
+        Example = "mcp.schema name=command.list",
         Parameters =
         [
             new ParameterSpec
             {
                 Name = "name",
-                Description = "指令名或工具名(如 db.query / db_query);省略列出全部",
+                Description = "指令名或工具名(如 command.list / command_list);省略列出全部",
                 Position = 0,
             },
         ],
@@ -165,7 +165,7 @@ public static class McpCommands
     {
         Name = "mcp.parse",
         Summary = "调试:模拟 tools/call 反向解析——JSON arguments 组装为指令文本,exec=true 随即经总线执行",
-        Example = "mcp.parse command=db.query args=\"{\\\"table\\\":\\\"users\\\",\\\"limit\\\":20}\" exec=true",
+        Example = "mcp.parse command=command.list args=\"{}\" exec=true",
         Parameters =
         [
             new ParameterSpec

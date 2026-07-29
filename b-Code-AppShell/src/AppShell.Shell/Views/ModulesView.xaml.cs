@@ -13,6 +13,7 @@ namespace AppShell.Shell.Views;
 public partial class ModulesView : UserControl
 {
     private readonly Func<CommandBus?> _busAccessor;
+    private ModuleCatalogSnapshot? _snapshot;
 
     private bool _initialLoadDone;
 
@@ -44,7 +45,12 @@ public partial class ModulesView : UserControl
         var bus = _busAccessor();
         if (bus == null)
             return;
-        await bus.ExecuteAsync("module.reload", "UI");
+        var result = await bus.ExecuteAsync("module.reload", "UI");
+        if (!result.Success)
+        {
+            ClearSnapshot("模块重载失败: " + FirstLine(result.Message));
+            return;
+        }
         await RefreshAsync();
     }
 
@@ -85,31 +91,36 @@ public partial class ModulesView : UserControl
     {
         var bus = _busAccessor();
         if (bus == null)
+        {
+            ClearSnapshot("命令总线尚未就绪");
             return;
+        }
 
         UpdateToolRegistryActions(bus.Registry);
         RefreshButton.IsEnabled = false;
+        var selectedModule = (ModuleList.SelectedItem as ModuleRow)?.ModuleName;
+        ClearSnapshot("正在加载模块与命令目录...");
         try
         {
-            var result = await bus.ExecuteAsync("module.list", "UI");
-            if (result.Success && result.Data is IReadOnlyList<ModuleMeta> modules)
+            var result = await ModuleCatalogReader.LoadAsync(bus);
+            if (result.Success && result.Snapshot is { } snapshot)
             {
-                ModuleList.ItemsSource = modules.Select(m => new ModuleRow(
+                _snapshot = snapshot;
+                var rows = snapshot.Modules.Select(m => new ModuleRow(
                         m.ModuleName, m.Version, m.Open ? "全暴露" : "精准暴露",
                         m.CommandCount, m.AssemblyFile, m.Description))
                     .ToList();
-                StatusText.Text = modules.Count == 0
+                ModuleList.ItemsSource = rows;
+                StatusText.Text = rows.Count == 0
                     ? "当前无已装载模块;把模块 DLL 放入 Modules 目录即自动装载(约 1s)"
-                    : $"已装载 {modules.Count} 个模块,共 {modules.Sum(m => m.CommandCount)} 条模块指令";
-            }
-            else if (result.Success)
-            {
-                ModuleList.ItemsSource = null;
-                StatusText.Text = result.Message.Split('\n')[0];
+                    : $"已装载 {rows.Count} 个模块,共 {snapshot.Commands.Count} 条模块指令";
+                if (selectedModule != null)
+                    ModuleList.SelectedItem = rows.FirstOrDefault(row =>
+                        row.ModuleName.Equals(selectedModule, StringComparison.OrdinalIgnoreCase));
             }
             else
             {
-                StatusText.Text = "加载失败,详见控制台";
+                ClearSnapshot(result.Message);
             }
         }
         finally
@@ -144,12 +155,9 @@ public partial class ModulesView : UserControl
 
         ToolRemoveButton.IsEnabled = true;
 
-        // 注册表只读展示:该模块域下的全部指令(域名 = 模块名)
-        var registry = _busAccessor()?.Registry;
-        var commands = registry?.All()
-            .Where(c => c.Name.StartsWith(row.ModuleName + ".", StringComparison.OrdinalIgnoreCase))
-            .Select(c => new CommandRow(c.Name, c.Summary, c.Example ?? ""))
-            .ToList() ?? new List<CommandRow>();
+        var commands = _snapshot?.CommandsFor(row.ModuleName)
+            .Select(command => new CommandRow(command.Name, command.Summary, command.Example))
+            .ToList() ?? [];
 
         CommandList.ItemsSource = commands;
         CommandsTitle.Text = $"{row.ModuleName} 注册的指令({commands.Count} 条):";
@@ -160,4 +168,17 @@ public partial class ModulesView : UserControl
         if (CommandList.SelectedItem is CommandRow row)
             _ = _busAccessor()?.ExecuteAsync($"help {row.Name}", "UI");
     }
+
+    private void ClearSnapshot(string status)
+    {
+        _snapshot = null;
+        ModuleList.ItemsSource = null;
+        CommandList.ItemsSource = null;
+        CommandsTitle.Text = "(选中模块查看其注册的指令)";
+        ToolRemoveButton.IsEnabled = false;
+        StatusText.Text = status;
+    }
+
+    private static string FirstLine(string value)
+        => value.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim() ?? value;
 }

@@ -6,6 +6,8 @@ namespace AppShell.Core.Commands;
 /// </summary>
 public sealed class CommandHistory
 {
+    private const string RedactedFormatHeader = "# AppShell.CommandHistory.v2:redacted";
+
     private readonly object _gate = new();
     private readonly List<string> _items = new();
     private readonly string _filePath;
@@ -19,10 +21,20 @@ public sealed class CommandHistory
         {
             if (File.Exists(filePath))
             {
-                _items.AddRange(
-                    File.ReadAllLines(filePath)
-                        .Where(l => !string.IsNullOrWhiteSpace(l))
-                        .TakeLast(_capacity));
+                var lines = File.ReadAllLines(filePath);
+                if (lines.FirstOrDefault() == RedactedFormatHeader)
+                {
+                    _items.AddRange(
+                        lines.Skip(1)
+                            .Where(l => !string.IsNullOrWhiteSpace(l))
+                            .TakeLast(_capacity));
+                }
+                else
+                {
+                    // Earlier formats stored raw input. Do not load or preserve entries that may
+                    // contain credentials; new entries arrive from the already-redacted echo log.
+                    File.WriteAllLines(filePath, [RedactedFormatHeader]);
+                }
             }
         }
         catch (IOException)
@@ -31,7 +43,10 @@ public sealed class CommandHistory
         }
     }
 
-    /// <summary>追加一条(与上一条重复时不重复入表)。</summary>
+    /// <summary>
+    /// 追加一条已经过 CommandBus 回显脱敏的文本(与上一条重复时不重复入表)。
+    /// 原始用户输入不得直接传入；Shell 使用 <c>cmd:手动</c> 回显作为唯一写入源。
+    /// </summary>
     public void Add(string command)
     {
         var text = command.Trim();
@@ -64,7 +79,7 @@ public sealed class CommandHistory
         {
             lock (_gate)
             {
-                File.WriteAllLines(_filePath, _items);
+                File.WriteAllLines(_filePath, new[] { RedactedFormatHeader }.Concat(_items));
             }
         }
         catch (IOException)

@@ -30,6 +30,28 @@ public sealed class CommandBus
 
     public CommandRegistry Registry => _registry;
 
+    /// <summary>
+    /// Validates a command text against the current registry without routing, logging, confirmation, or execution.
+    /// UI surfaces use this to reject stale menu references at construction time.
+    /// </summary>
+    public string? Validate(string text)
+    {
+        ParsedCommand parsed;
+        try
+        {
+            parsed = CommandParser.Parse(text);
+        }
+        catch (CommandSyntaxException ex)
+        {
+            return $"语法错误: {ex.Message}";
+        }
+
+        if (!_registry.TryGet(parsed.Name, out var descriptor))
+            return $"未知指令: {parsed.Name}";
+
+        return BindArguments(descriptor, parsed, out _);
+    }
+
     /// <summary>二次确认通道;未注入时带确认位的指令一律拒绝执行(安全缺省)。</summary>
     public IConfirmationService? Confirmation { get; set; }
 
@@ -85,9 +107,15 @@ public sealed class CommandBus
         catch (Exception ex)
         {
             // 最后一道兜底(N-05):总线自身缺陷也不允许击穿宿主
-            result = CommandResult.Fail($"总线内部错误: {ex.Message}");
-            _log.Log(ShellLogLevel.Error, "cmd", $"总线内部错误: {ex}");
+            var safeError = ex.GetType().Name;
+            result = CommandResult.Fail($"总线内部错误: {safeError}");
+            _log.Log(
+                ShellLogLevel.Error,
+                EchoCategoryPrefix + "internal",
+                $"总线内部错误({ex.GetType().Name}): {safeError}");
         }
+
+        result = RedactCommandResult(trimmed, result);
 
         // 2. 结果回显(错误红色高亮由控制台按级别渲染,C-02)
         _log.Log(
@@ -99,13 +127,145 @@ public sealed class CommandBus
         return result;
     }
 
-    private static string RedactSensitiveArguments(string text)
-        => Regex.Replace(
+    private string RedactSensitiveArguments(string text)
+    {
+        ParsedCommand parsed;
+        try
+        {
+            parsed = CommandParser.Parse(text);
+        }
+        catch (CommandSyntaxException)
+        {
+            return RedactSensitiveFallback(text);
+        }
+
+        var redactValue = IsSecretSettingCommand(parsed);
+        var parts = new List<string> { parsed.Name };
+        parts.AddRange(parsed.Positionals.Select((value, index) =>
+            CommandParser.QuoteArg(IsSensitivePosition(parsed, index)
+                ? "[REDACTED]"
+                : value)));
+        parts.AddRange(parsed.Named.Select(pair =>
+            $"{pair.Key}={CommandParser.QuoteArg(IsSensitiveArgument(pair.Key) ||
+                                                  redactValue && pair.Key.Equals(
+                                                      "value", StringComparison.OrdinalIgnoreCase)
+                ? "[REDACTED]"
+                : pair.Value)}"));
+        return string.Join(' ', parts);
+    }
+
+    private string RedactSensitiveResult(string commandText, string message)
+    {
+        try
+        {
+            var parsed = CommandParser.Parse(commandText);
+            foreach (var value in SensitiveValues(parsed)
+                         .Where(value => !string.IsNullOrEmpty(value))
+                         .Distinct(StringComparer.Ordinal)
+                         .OrderByDescending(value => value.Length))
+            {
+                message = message.Replace(value, "[REDACTED]", StringComparison.Ordinal);
+            }
+            return message;
+        }
+        catch (CommandSyntaxException)
+        {
+            return RedactSensitiveFallback(message);
+        }
+    }
+
+    private IEnumerable<string> SensitiveValues(ParsedCommand parsed)
+    {
+        foreach (var pair in parsed.Named)
+        {
+            if (IsSensitiveArgument(pair.Key) ||
+                IsSecretSettingCommand(parsed) && pair.Key.Equals("value", StringComparison.OrdinalIgnoreCase))
+                yield return pair.Value;
+        }
+
+        for (var index = 0; index < parsed.Positionals.Count; index++)
+        {
+            if (IsSensitivePosition(parsed, index))
+                yield return parsed.Positionals[index];
+        }
+    }
+
+    private static bool IsSecretSettingCommand(ParsedCommand parsed)
+    {
+        if (parsed.Name.Equals("web.token", StringComparison.OrdinalIgnoreCase) ||
+            parsed.Name.Equals("mcp.token", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (!parsed.Name.Equals("app.set", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var key = parsed.Named.GetValueOrDefault("key") ?? parsed.Positionals.FirstOrDefault();
+        return key != null && IsSensitiveSettingKey(key);
+    }
+
+    private bool IsSensitivePosition(ParsedCommand parsed, int position)
+    {
+        if (parsed.Name.Equals("app.set", StringComparison.OrdinalIgnoreCase))
+            return IsSecretSettingCommand(parsed) && position == 1;
+        if (parsed.Name.Equals("web.token", StringComparison.OrdinalIgnoreCase)
+            || parsed.Name.Equals("mcp.token", StringComparison.OrdinalIgnoreCase))
+            return position == 0;
+        return Registry.TryGet(parsed.Name, out var descriptor)
+               && descriptor.Parameters.Any(parameter =>
+                   parameter.Position == position && IsSensitiveArgument(parameter.Name));
+    }
+
+    private static bool IsSensitiveArgument(string name)
+    {
+        var normalized = NormalizeSensitiveName(name);
+        return normalized.Equals("code", StringComparison.OrdinalIgnoreCase)
+               || normalized.EndsWith("token", StringComparison.OrdinalIgnoreCase)
+               || normalized.EndsWith("password", StringComparison.OrdinalIgnoreCase)
+               || normalized.EndsWith("passwd", StringComparison.OrdinalIgnoreCase)
+               || normalized.EndsWith("secret", StringComparison.OrdinalIgnoreCase)
+               || normalized.EndsWith("privatekey", StringComparison.OrdinalIgnoreCase)
+               || normalized.EndsWith("connectionstring", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsSensitiveSettingKey(string key)
+        => IsSensitiveArgument(key);
+
+    private static string NormalizeSensitiveName(string name)
+        => name.Replace(".", "", StringComparison.Ordinal)
+            .Replace("_", "", StringComparison.Ordinal)
+            .Replace("-", "", StringComparison.Ordinal);
+
+    private string RedactSensitiveFallback(string text)
+    {
+        var redacted = Regex.Replace(
             text,
-            "(?i)(\\b(?:code|token|password|passwd|secret)\\s*=\\s*)(?:\"[^\"]*\"|'[^']*'|[^\\s]+)",
+            "(?i)(\\b(?:code|(?:[a-z0-9_.-]*(?:token|password|passwd|secret|private[_-]?key|connection[_-]?string))|value)\\s*=\\s*)(?:\"[^\"]*\"|'[^']*'|[^\\s]+)",
             "$1[REDACTED]",
             RegexOptions.CultureInvariant,
             TimeSpan.FromMilliseconds(100));
+
+        var commandMatch = Regex.Match(
+            text,
+            "^\\s*(?<name>[A-Za-z_][\\w-]*(?:\\.[A-Za-z_][\\w-]*)*)(?=\\s|$)",
+            RegexOptions.CultureInvariant,
+            TimeSpan.FromMilliseconds(100));
+        if (!commandMatch.Success)
+            return redacted;
+
+        var commandName = commandMatch.Groups["name"].Value;
+        var mayContainSensitiveArguments = commandName.Equals("app.set", StringComparison.OrdinalIgnoreCase)
+                                           || IsSensitiveArgument(commandName)
+                                           || Registry.TryGet(commandName, out var descriptor)
+                                           && descriptor.Parameters.Any(parameter =>
+                                               IsSensitiveArgument(parameter.Name));
+        var argumentsStart = commandMatch.Index + commandMatch.Length;
+        if (!mayContainSensitiveArguments ||
+            string.IsNullOrWhiteSpace(text[argumentsStart..]))
+            return redacted;
+
+        // Parsing failed, so positional boundaries are no longer trustworthy. Mask the complete
+        // remainder for commands that can carry secrets instead of risking a partial disclosure.
+        return text[..argumentsStart] + " [REDACTED]";
+    }
 
     private async Task<CommandResult> ExecuteCoreAsync(
         string text,
@@ -141,7 +301,19 @@ public sealed class CommandBus
         }
 
         // 参数校验
-        var bindError = BindArguments(descriptor, parsed, out var values);
+        var bindParsed = descriptor.ExecutionSite == CommandExecutionSite.Frontend
+                         && parsed.Named.ContainsKey("_frontend")
+            ? new ParsedCommand
+            {
+                Name = parsed.Name,
+                Positionals = parsed.Positionals,
+                Named = parsed.Named
+                    .Where(pair => !pair.Key.Equals("_frontend", StringComparison.OrdinalIgnoreCase))
+                    .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
+                RawText = parsed.RawText,
+            }
+            : parsed;
+        var bindError = BindArguments(descriptor, bindParsed, out var values);
         if (bindError != null)
             return CommandResult.Fail($"{bindError}\n{FormatUsage(descriptor)}");
 
@@ -189,8 +361,49 @@ public sealed class CommandBus
         }
         catch (Exception ex)
         {
-            _log.Log(ShellLogLevel.Error, "cmd", $"{descriptor.Name} 执行异常: {ex}");
-            return CommandResult.Fail($"{descriptor.Name} 执行异常: {ex.Message}");
+            var safeError = ex.GetType().Name;
+            _log.Log(
+                ShellLogLevel.Error,
+                EchoCategoryPrefix + "internal",
+                $"{descriptor.Name} 执行异常({ex.GetType().Name}): {safeError}");
+            return CommandResult.Fail($"{descriptor.Name} 执行异常: {safeError}");
+        }
+    }
+
+    private CommandResult RedactCommandResult(string commandText, CommandResult result)
+    {
+        var message = RedactSensitiveResult(commandText, result.Message);
+        var data = result.Data is string text
+            ? RedactSensitiveResult(commandText, text)
+            : result.Data != null && HasSensitiveResultRisk(commandText)
+                ? null
+                : result.Data;
+        if (message.Equals(result.Message, StringComparison.Ordinal)
+            && ReferenceEquals(data, result.Data))
+            return result;
+        return new CommandResult
+        {
+            Success = result.Success,
+            Message = message,
+            Data = data,
+        };
+    }
+
+    private bool HasSensitiveResultRisk(string commandText)
+    {
+        try
+        {
+            var parsed = CommandParser.Parse(commandText);
+            if (SensitiveValues(parsed).Any(value => !string.IsNullOrEmpty(value)))
+                return true;
+            if (!parsed.Name.Equals("app.get", StringComparison.OrdinalIgnoreCase))
+                return false;
+            var key = parsed.Named.GetValueOrDefault("key") ?? parsed.Positionals.FirstOrDefault();
+            return key != null && IsSensitiveSettingKey(key);
+        }
+        catch (CommandSyntaxException)
+        {
+            return false;
         }
     }
 

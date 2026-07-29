@@ -32,7 +32,7 @@ public interface IDockingService
     /// <summary>浮动为独立顶层窗口(win.float)。</summary>
     void Float(string id);
 
-    /// <summary>停靠到指定方位(win.dock);side=Tab 时并入 targetId 所在标签组。</summary>
+    /// <summary>停靠到指定方位(win.dock);Center 占中央工作区，Tab 并入 targetId 标签组。</summary>
     void Dock(string id, DockSide side, double? ratio = null, string? targetId = null);
 
     /// <summary>调整窗口占主程序窗体的比例(win.ratio)。</summary>

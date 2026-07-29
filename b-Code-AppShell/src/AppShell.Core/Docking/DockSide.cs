@@ -5,10 +5,12 @@ namespace AppShell.Core.Docking;
 /// </summary>
 public enum DockSide
 {
-    Left,
-    Right,
-    Top,
-    Bottom,
+    Left = 0,
+    Right = 1,
+    Top = 2,
+    Bottom = 3,
     /// <summary>并入目标标签组(win.dock pos=tab target=...)。</summary>
-    Tab,
+    Tab = 4,
+    /// <summary>占据中央工作区；多个中央窗口组成标签组。</summary>
+    Center = 5,
 }

@@ -3,7 +3,6 @@ using System.IO;
 using System.Text;
 using System.Windows;
 using AppShell.Core.Commands;
-using AppShell.Core.Data;
 using AppShell.Core.Docking;
 using AppShell.Core.Files;
 using AppShell.Core.Logging;
@@ -12,7 +11,6 @@ using AppShell.Services;
 using AppShell.Shell.Console;
 using AppShell.Shell.Docking;
 using AppShell.Shell.Panels;
-using AppShell.Shell.Table;
 
 namespace AppShell.Shell;
 
@@ -35,12 +33,6 @@ public sealed class ShellCommandServices
 
     public required string DataDirectory { get; init; }
 
-    /// <summary>数据服务(M3);null 时 db.* 指令组不注册。</summary>
-    public IDataService? Data { get; init; }
-
-    /// <summary>表窗口(M3);db.query 结果同步显示的落点。</summary>
-    public TableView? Table { get; init; }
-
     /// <summary>工作区文件服务(M4);null 时 res.* 指令组不注册。</summary>
     public IWorkspaceService? Workspace { get; init; }
 
@@ -50,7 +42,7 @@ public sealed class ShellCommandServices
 
 /// <summary>
 /// 框架内置指令组(§5.3 / 附录 B):help / cls / history / run /
-/// app.* / log.level / win.* / layout.*。db.*(M3)、res.* 与 panel.*(M4)后续并入。
+/// app.* / log.level / win.* / layout.*、res.* 与 panel.*。
 /// </summary>
 public static class BuiltinCommands
 {
@@ -61,8 +53,6 @@ public static class BuiltinCommands
         RegisterLog(r, s);
         RegisterWin(r, s);
         RegisterLayout(r, s);
-        if (s.Data != null)
-            RegisterDb(r, s, s.Data);
         if (s.Workspace != null)
             RegisterRes(r, s, s.Workspace);
         if (s.Panels != null)
@@ -81,7 +71,7 @@ public static class BuiltinCommands
             Position = 0,
         };
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "res.root",
             Summary = "查看 / 切换工作区根目录",
@@ -102,7 +92,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "res.list",
             Summary = "列出目录内容",
@@ -130,7 +120,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "res.open",
             Summary = "用系统默认程序打开文件",
@@ -144,7 +134,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "res.reveal",
             Summary = "在系统资源管理器中显示",
@@ -161,7 +151,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "res.mkdir",
             Summary = "新建文件夹(限工作区内)",
@@ -175,7 +165,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "res.rename",
             Summary = "重命名文件或文件夹",
@@ -194,7 +184,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "res.delete",
             Summary = "删除到回收站(需二次确认,不做永久删除)",
@@ -215,10 +205,11 @@ public static class BuiltinCommands
 
     private static void RegisterPanel(CommandRegistry r, ShellCommandServices s, PanelManager panels)
     {
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "panel.list",
             Summary = "列出全部控制面板及其窗口状态",
+            Readonly = true,
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
             {
@@ -240,7 +231,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "panel.show",
             Summary = "显示控制面板(等价 win.show)",
@@ -265,7 +256,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "panel.set",
             Summary = "程序向面板控件回写值(P-07)",
@@ -291,7 +282,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "panel.reload",
             Summary = "重读面板 JSON 配置并原地重建(新增面板需重启)",
@@ -304,29 +295,15 @@ public static class BuiltinCommands
 
     private static void RegisterBasics(CommandRegistry r, ShellCommandServices s)
     {
-        r.Register(new CommandDescriptor
-        {
-            Name = "help",
-            Summary = "列出全部指令 / 显示某指令详情与示例",
-            Readonly = true,
-            Example = "help win.dock",
-            Parameters =
-            [
-                new ParameterSpec
-                {
-                    Name = "command",
-                    Description = "指令名;省略时列出全部指令",
-                    Position = 0,
-                },
-            ],
-            Handler = CommandDescriptor.Sync(ctx =>
+        r.Register(BuiltinCommandDefinitions.Bind(
+            "help",
+            CommandDescriptor.Sync(ctx =>
             {
                 var name = ctx.GetString("command");
                 return name == null ? HelpList(s.Bus.Registry) : HelpDetail(s.Bus.Registry, name);
-            }),
-        });
+            })));
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "cls",
             Summary = "清空控制台显示(不清日志文件)",
@@ -338,7 +315,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "history",
             Summary = "查看指令历史",
@@ -370,7 +347,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "run",
             Summary = "逐行执行指令脚本文件(# 注释与空行忽略)",
@@ -486,7 +463,7 @@ public static class BuiltinCommands
         sb.Append($"\n{CommandBus.FormatUsage(d)}");
         if (d.Example != null)
             sb.Append($"\n示例: {d.Example}");
-        if (d.ConfirmPrompt != null)
+        if (d.IsDangerous)
             sb.Append("\n安全: 执行动作可能要求本地二次确认");
         if (d.RequiresUiThread)
             sb.Append("\n线程: UI");
@@ -497,7 +474,7 @@ public static class BuiltinCommands
 
     private static void RegisterApp(CommandRegistry r, ShellCommandServices s)
     {
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "app.exit",
             Summary = "退出程序",
@@ -509,7 +486,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "app.about",
             Summary = "显示关于对话框",
@@ -522,50 +499,30 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
-        {
-            Name = "app.opendata",
-            Summary = "在系统资源管理器中打开应用数据目录",
-            Handler = CommandDescriptor.Sync(_ =>
+        r.Register(BuiltinCommandDefinitions.Bind(
+            "app.opendata",
+            CommandDescriptor.Sync(_ =>
             {
                 Process.Start(new ProcessStartInfo("explorer.exe", s.DataDirectory)
                 {
                     UseShellExecute = true,
                 });
                 return CommandResult.Ok($"已打开 {s.DataDirectory}");
-            }),
-        });
+            })));
 
-        r.Register(new CommandDescriptor
-        {
-            Name = "app.set",
-            Summary = "写应用配置项",
-            Example = "app.set key=console.history value=1000",
-            Parameters =
-            [
-                new ParameterSpec { Name = "key", Description = "配置键", Required = true, Position = 0 },
-                new ParameterSpec { Name = "value", Description = "配置值", Required = true, Position = 1 },
-            ],
-            Handler = CommandDescriptor.Sync(ctx =>
+        r.Register(BuiltinCommandDefinitions.Bind(
+            "app.set",
+            CommandDescriptor.Sync(ctx =>
             {
                 var key = ctx.RequireString("key");
                 var value = ctx.RequireString("value");
                 s.Settings.Set(key, value);
-                return CommandResult.Ok($"{key} = {value}");
-            }),
-        });
+                return CommandResult.Ok($"{key} = {DisplaySettingValue(key, value)}");
+            })));
 
-        r.Register(new CommandDescriptor
-        {
-            Name = "app.get",
-            Summary = "读应用配置项;不带参数列出全部",
-            Readonly = true,
-            Example = "app.get key=console.history",
-            Parameters =
-            [
-                new ParameterSpec { Name = "key", Description = "配置键;省略列出全部", Position = 0 },
-            ],
-            Handler = CommandDescriptor.Sync(ctx =>
+        r.Register(BuiltinCommandDefinitions.Bind(
+            "app.get",
+            CommandDescriptor.Sync(ctx =>
             {
                 var key = ctx.GetString("key");
                 if (key != null)
@@ -573,23 +530,50 @@ public static class BuiltinCommands
                     var value = s.Settings.Get(key);
                     return value == null
                         ? CommandResult.Ok($"{key} (未设置)")
-                        : CommandResult.Ok($"{key} = {value}");
+                        : CommandResult.Ok($"{key} = {DisplaySettingValue(key, value)}");
                 }
 
                 var all = s.Settings.All();
                 if (all.Count == 0)
                     return CommandResult.Ok("(无配置项)");
                 return CommandResult.Ok(
-                    $"共 {all.Count} 项:" + string.Concat(all.Select(kv => $"\n  {kv.Key} = {kv.Value}")));
-            }),
-        });
+                    $"共 {all.Count} 项:" + string.Concat(
+                        all.Select(kv => $"\n  {kv.Key} = {DisplaySettingValue(kv.Key, kv.Value)}")));
+            })));
+    }
+
+    /// <summary>
+    /// 令牌类设置值一律以占位符回报(FZR-01)。
+    ///
+    /// 脱敏必须落在指令结果本身,而不是总线的日志回显:`app.get` 声明了 Readonly,
+    /// 因而对 scope=read 的远程设备放行,并在默认 readonly 策略下作为 MCP 工具可见。
+    /// 结果对象会原样序列化进 HTTP 响应体与 tools/call 载荷,只脱敏日志挡不住这两条路径。
+    ///
+    /// 判定谓词与 <c>CommandBus.IsSensitiveSettingKey</c> 同源。冻结期不为共享它新增
+    /// 公开 API 或 InternalsVisibleTo,故此处保留一份副本;3.1 统一到单一真值(见整改清单 FZR-22)。
+    /// </summary>
+    private static string DisplaySettingValue(string key, string value)
+        => IsSensitiveSettingKey(key) ? "(已配置)" : value;
+
+    private static bool IsSensitiveSettingKey(string key)
+    {
+        var normalized = key.Replace(".", "", StringComparison.Ordinal)
+            .Replace("_", "", StringComparison.Ordinal)
+            .Replace("-", "", StringComparison.Ordinal);
+        return normalized.Equals("code", StringComparison.OrdinalIgnoreCase)
+               || normalized.EndsWith("token", StringComparison.OrdinalIgnoreCase)
+               || normalized.EndsWith("password", StringComparison.OrdinalIgnoreCase)
+               || normalized.EndsWith("passwd", StringComparison.OrdinalIgnoreCase)
+               || normalized.EndsWith("secret", StringComparison.OrdinalIgnoreCase)
+               || normalized.EndsWith("privatekey", StringComparison.OrdinalIgnoreCase)
+               || normalized.EndsWith("connectionstring", StringComparison.OrdinalIgnoreCase);
     }
 
     // ---------------------------------------------------------------- log.*
 
     private static void RegisterLog(CommandRegistry r, ShellCommandServices s)
     {
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "log.level",
             Summary = "调整控制台日志显示级别(文件始终全量)",
@@ -630,7 +614,7 @@ public static class BuiltinCommands
             Position = 0,
         };
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "win.list",
             Summary = "列出全部窗口及状态",
@@ -649,6 +633,7 @@ public static class BuiltinCommands
                             DockSide.Right => "停靠·右",
                             DockSide.Top => "停靠·上",
                             DockSide.Bottom => "停靠·下",
+                            DockSide.Center => "中央区",
                             DockSide.Tab => "标签组",
                             _ => "停靠",
                         };
@@ -671,7 +656,7 @@ public static class BuiltinCommands
         RegisterWindowVerb(r, s, "win.reset", "把窗口复位到注册时的默认位置",
             (d, id) => { d.ResetWindow(id); return $"{id} 已复位到默认位置"; });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "win.max",
             Summary = "最大化指定工具窗口",
@@ -690,7 +675,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "win.restore",
             Summary = "退出窗口最大化并恢复原布局",
@@ -702,11 +687,11 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "win.dock",
-            Summary = "停靠窗口到指定方位(pos=tab 时并入 target 所在标签组)",
-            Example = "win.dock name=console pos=bottom ratio=0.3",
+            Summary = "停靠窗口到指定方位(pos=center 占中央区，pos=tab 并入目标标签组)",
+            Example = $"win.dock name={StandardWindowIds.Console} pos=bottom ratio=0.3",
             RequiresUiThread = true,
             Parameters =
             [
@@ -716,10 +701,15 @@ public static class BuiltinCommands
                     Name = "pos",
                     Description = "停靠方位",
                     Required = true,
-                    AllowedValues = ["left", "right", "top", "bottom", "tab"],
+                    AllowedValues = ["left", "right", "top", "bottom", "center", "tab"],
                 },
                 new ParameterSpec { Name = "target", Description = "pos=tab 时,并入哪个窗口所在的标签组" },
-                new ParameterSpec { Name = "ratio", Description = "占主窗体比例 0~1", Type = ParamType.Double },
+                new ParameterSpec
+                {
+                    Name = "ratio",
+                    Description = "四边停靠比例；提供时须严格位于 (0,1)，Center/Tab 不使用",
+                    Type = ParamType.Double,
+                },
             ],
             Handler = CommandDescriptor.Sync(ctx =>
             {
@@ -729,8 +719,9 @@ public static class BuiltinCommands
                 var id = ctx.RequireString("name");
                 var side = ParseSide(ctx.RequireString("pos"));
                 var ratio = ctx.Has("ratio") ? ctx.GetDouble("ratio") : (double?)null;
-                if (ratio is <= 0 or >= 1)
-                    return CommandResult.Fail($"ratio 应在 0~1 之间,实际: {ratio}");
+                if (ratio is { } ratioValue &&
+                    (!double.IsFinite(ratioValue) || ratioValue is <= 0 or >= 1))
+                    return CommandResult.Fail($"ratio 应严格位于 (0,1),实际: {ratio}");
 
                 var target = ctx.GetString("target");
                 if (side == DockSide.Tab && target == null)
@@ -743,6 +734,7 @@ public static class BuiltinCommands
                     DockSide.Right => "右侧",
                     DockSide.Top => "顶部",
                     DockSide.Bottom => "底部",
+                    DockSide.Center => "中央区",
                     _ => $"{target} 所在标签组",
                 };
                 var pct = ratio is { } rv ? $"({rv:P0})" : "";
@@ -750,11 +742,11 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "win.ratio",
             Summary = "调整窗口占主窗体的比例",
-            Example = "win.ratio name=table value=0.3",
+            Example = $"win.ratio name={StandardWindowIds.Console} value=0.3",
             RequiresUiThread = true,
             Parameters =
             [
@@ -762,7 +754,7 @@ public static class BuiltinCommands
                 new ParameterSpec
                 {
                     Name = "value",
-                    Description = "比例 0~1",
+                    Description = "四边停靠比例，须严格位于 (0,1)",
                     Required = true,
                     Type = ParamType.Double,
                     Position = 1,
@@ -774,8 +766,8 @@ public static class BuiltinCommands
                     return error;
 
                 var value = ctx.GetDouble("value");
-                if (value is <= 0 or >= 1)
-                    return CommandResult.Fail($"value 应在 0~1 之间,实际: {value}");
+                if (!double.IsFinite(value) || value is <= 0 or >= 1)
+                    return CommandResult.Fail($"value 应严格位于 (0,1),实际: {value}");
 
                 var id = ctx.RequireString("name");
                 s.Docking.SetRatio(id, value);
@@ -791,11 +783,11 @@ public static class BuiltinCommands
         string summary,
         Func<IDockingService, string, string> action)
     {
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = name,
             Summary = summary,
-            Example = $"{name} name=console",
+            Example = $"{name} name={StandardWindowIds.Console}",
             RequiresUiThread = true,
             Parameters =
             [
@@ -833,262 +825,15 @@ public static class BuiltinCommands
         "right" => DockSide.Right,
         "top" => DockSide.Top,
         "bottom" => DockSide.Bottom,
+        "center" => DockSide.Center,
         _ => DockSide.Tab,
     };
-
-    // ---------------------------------------------------------------- db.*(§6.1 / 附录 B,M3)
-
-    private static void RegisterDb(CommandRegistry r, ShellCommandServices s, IDataService data)
-    {
-        var connParam = new ParameterSpec
-        {
-            Name = "conn",
-            Description = $"连接名,缺省 {IDataService.DefaultConnection}(db.list 可查)",
-        };
-        var tableParam = new ParameterSpec
-        {
-            Name = "table",
-            Description = "表名(db.tables 可查)",
-            Required = true,
-            Position = 0,
-        };
-
-        r.Register(new CommandDescriptor
-        {
-            Name = "db.list",
-            Summary = "列出全部命名数据库连接",
-            Readonly = true,
-            Handler = CommandDescriptor.Sync(_ =>
-            {
-                var names = data.ListConnections();
-                return names.Count == 0
-                    ? CommandResult.Ok("(未注册任何连接)")
-                    : CommandResult.Ok($"共 {names.Count} 个连接:" + string.Concat(names.Select(n => $"\n  {n}")));
-            }),
-        });
-
-        r.Register(new CommandDescriptor
-        {
-            Name = "db.tables",
-            Summary = "列出连接内全部表",
-            Readonly = true,
-            Example = "db.tables",
-            Parameters = [new ParameterSpec
-            {
-                Name = "conn",
-                Description = $"连接名,缺省 {IDataService.DefaultConnection}",
-                Position = 0,
-            }],
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var tables = data.ListTables(ctx.GetString("conn"));
-                return tables.Count == 0
-                    ? CommandResult.Ok("(库内没有表)")
-                    : CommandResult.Ok($"共 {tables.Count} 张表:" + string.Concat(tables.Select(t => $"\n  {t}")));
-            }),
-        });
-
-        r.Register(new CommandDescriptor
-        {
-            Name = "db.schema",
-            Summary = "查看表结构(字段名 / 类型 / 主键 / 非空)",
-            Readonly = true,
-            Example = "db.schema table=users",
-            Parameters = [tableParam, connParam],
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var columns = data.GetSchema(ctx.RequireString("table"), ctx.GetString("conn"));
-                var sb = new StringBuilder($"{ctx.RequireString("table")} 共 {columns.Count} 列:");
-                foreach (var c in columns)
-                {
-                    sb.Append($"\n  {c.Name,-20} {c.Type,-10}");
-                    if (c.IsPrimaryKey)
-                        sb.Append(" [主键]");
-                    if (c.NotNull)
-                        sb.Append(" [非空]");
-                }
-
-                return CommandResult.Ok(sb.ToString());
-            }),
-        });
-
-        r.Register(new CommandDescriptor
-        {
-            Name = "db.query",
-            Summary = "查询表数据(表窗口同步显示结果)",
-            Readonly = true,
-            Example = "db.query table=users where=\"age>30 and city='北京'\" limit=100",
-            RequiresUiThread = true, // 结果要同步进表窗口
-            Parameters =
-            [
-                tableParam,
-                new ParameterSpec { Name = "where", Description = "SQL 条件片段(原样拼接)" },
-                new ParameterSpec { Name = "order", Description = "SQL 排序片段,如 \"age desc\"" },
-                new ParameterSpec { Name = "limit", Description = "每页行数", Type = ParamType.Int, Default = "500" },
-                new ParameterSpec { Name = "page", Description = "页码(1 起)", Type = ParamType.Int, Default = "1" },
-                connParam,
-            ],
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var table = ctx.RequireString("table");
-                var where = ctx.GetString("where");
-                var conn = ctx.GetString("conn") ?? IDataService.DefaultConnection;
-                var result = data.Query(
-                    table, where, ctx.GetString("order"),
-                    ctx.GetInt("limit", 500), ctx.GetInt("page", 1), conn);
-
-                var synced = "";
-                if (s.Table != null)
-                {
-                    s.Table.ShowResult(conn, table, where, result);
-                    s.Docking.Show("table");
-                    synced = "(表窗口已同步显示)";
-                }
-
-                return CommandResult.Ok(
-                    $"{result.TotalRows} 行,第 {result.Page}/{result.TotalPages} 页{synced}",
-                    result);
-            }),
-        });
-
-        r.Register(new CommandDescriptor
-        {
-            Name = "db.insert",
-            Summary = "插入一行",
-            Example = "db.insert table=users set=\"name='张三', age=30\"",
-            Parameters =
-            [
-                tableParam,
-                new ParameterSpec
-                {
-                    Name = "set",
-                    Description = "列=值 列表,逗号分隔,字符串用单引号",
-                    Required = true,
-                },
-                connParam,
-            ],
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var n = data.Insert(
-                    ctx.RequireString("table"), ctx.RequireString("set"), ctx.GetString("conn"));
-                return CommandResult.Ok($"已插入 {n} 行");
-            }),
-        });
-
-        r.Register(new CommandDescriptor
-        {
-            Name = "db.update",
-            Summary = "更新行(无 where 将更新整表,需二次确认)",
-            Example = "db.update table=users set=\"vip=1\" where=\"id=1032\"",
-            Parameters =
-            [
-                tableParam,
-                new ParameterSpec { Name = "set", Description = "列=值 列表,逗号分隔", Required = true },
-                new ParameterSpec { Name = "where", Description = "SQL 条件;省略 = 整表更新(危险)" },
-                connParam,
-            ],
-            // T-08 / 验收 9:手输路径的整表更新在总线拦截器统一二次确认
-            ConfirmPrompt = ctx => ctx.GetString("where") == null
-                ? $"db.update 未指定 where,将更新表 {ctx.GetString("table")} 的全部行!确认继续?"
-                : null,
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var n = data.Update(
-                    ctx.RequireString("table"), ctx.RequireString("set"),
-                    ctx.GetString("where"), ctx.GetString("conn"));
-                return CommandResult.Ok($"影响 {n} 行");
-            }),
-        });
-
-        r.Register(new CommandDescriptor
-        {
-            Name = "db.delete",
-            Summary = "删除行(无 where 将清空整表,需二次确认)",
-            Example = "db.delete table=users where=\"id=1032\"",
-            Parameters =
-            [
-                tableParam,
-                new ParameterSpec { Name = "where", Description = "SQL 条件;省略 = 清空整表(危险)" },
-                connParam,
-            ],
-            ConfirmPrompt = ctx => ctx.GetString("where") == null
-                ? $"db.delete 未指定 where,将删除表 {ctx.GetString("table")} 的全部行!确认继续?"
-                : null,
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var n = data.Delete(
-                    ctx.RequireString("table"), ctx.GetString("where"), ctx.GetString("conn"));
-                return CommandResult.Ok($"已删除 {n} 行");
-            }),
-        });
-
-        r.Register(new CommandDescriptor
-        {
-            Name = "db.export",
-            Summary = "导出查询结果为 CSV 文件",
-            Example = "db.export table=users file=用户.csv where=\"vip=1\"",
-            Parameters =
-            [
-                tableParam,
-                new ParameterSpec
-                {
-                    Name = "file",
-                    Description = "目标文件;相对路径落到工作区目录",
-                    Required = true,
-                },
-                new ParameterSpec { Name = "where", Description = "SQL 条件片段" },
-                connParam,
-            ],
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var raw = ctx.RequireString("file");
-                var path = Path.IsPathRooted(raw)
-                    ? raw
-                    : Path.Combine(AppPaths.GetWorkspaceDir(s.DataDirectory), raw);
-                var n = data.ExportCsv(
-                    ctx.RequireString("table"), path, ctx.GetString("where"), ctx.GetString("conn"));
-                return CommandResult.Ok($"已导出 {n} 行到 {path}");
-            }),
-        });
-
-        r.Register(new CommandDescriptor
-        {
-            Name = "db.sql",
-            Summary = "SQL 直通(高级用户;执行前有风险确认)",
-            Example = "db.sql \"SELECT city, COUNT(*) FROM users GROUP BY city\"",
-            RequiresUiThread = true, // SELECT 结果进表窗口
-            Parameters =
-            [
-                new ParameterSpec { Name = "sql", Description = "完整 SQL 语句", Required = true, Position = 0 },
-                connParam,
-            ],
-            ConfirmPrompt = ctx =>
-                $"SQL 直通绕过一切保护,确认执行?\n\n{ctx.RequireString("sql")}",
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var (result, affected) = data.ExecuteSql(
-                    ctx.RequireString("sql"), ctx.GetString("conn"));
-                if (result == null)
-                    return CommandResult.Ok($"影响 {affected} 行");
-
-                var synced = "";
-                if (s.Table != null)
-                {
-                    s.Table.ShowAdhoc(result);
-                    s.Docking.Show("table");
-                    synced = "(表窗口已显示,只读)";
-                }
-
-                return CommandResult.Ok($"{result.Rows.Count} 行{synced}", result);
-            }),
-        });
-    }
 
     // ---------------------------------------------------------------- layout.*
 
     private static void RegisterLayout(CommandRegistry r, ShellCommandServices s)
     {
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "layout.save",
             Summary = "把当前布局保存为命名方案",
@@ -1106,7 +851,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "layout.load",
             Summary = "加载命名布局方案",
@@ -1125,7 +870,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "layout.list",
             Summary = "列出全部命名布局方案",
@@ -1140,7 +885,7 @@ public static class BuiltinCommands
             }),
         });
 
-        r.Register(new CommandDescriptor
+        RegisterFrontend(r, new CommandDescriptor
         {
             Name = "layout.reset",
             Summary = "重置为默认布局",
@@ -1152,4 +897,7 @@ public static class BuiltinCommands
             }),
         });
     }
+
+    private static void RegisterFrontend(CommandRegistry registry, CommandDescriptor descriptor)
+        => registry.Register(descriptor, FrontendCommandCatalog.Source);
 }

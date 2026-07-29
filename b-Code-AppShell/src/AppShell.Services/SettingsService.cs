@@ -28,9 +28,9 @@ public sealed class SettingsService : ISettingsService
                 _values = new Dictionary<string, string>(_values, StringComparer.OrdinalIgnoreCase);
             }
         }
-        catch (Exception)
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
-            // 设置文件损坏时按空配置起步,不阻断启动
+            PreserveUnreadableSettings(ex);
         }
     }
 
@@ -53,8 +53,20 @@ public sealed class SettingsService : ISettingsService
     {
         lock (_gate)
         {
+            var existed = _values.TryGetValue(key, out var previous);
             _values[key] = value;
-            Persist();
+            try
+            {
+                Persist();
+            }
+            catch
+            {
+                if (existed)
+                    _values[key] = previous!;
+                else
+                    _values.Remove(key);
+                throw;
+            }
         }
     }
 
@@ -69,14 +81,40 @@ public sealed class SettingsService : ISettingsService
 
     private void Persist()
     {
+        Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
+        var temporary = _filePath + ".tmp." + Guid.NewGuid().ToString("N");
         try
         {
-            File.WriteAllText(
-                _filePath,
-                JsonSerializer.Serialize(_values, JsonOptions));
+            File.WriteAllText(temporary, JsonSerializer.Serialize(_values, JsonOptions));
+            File.Move(temporary, _filePath, overwrite: true);
         }
-        catch (IOException)
+        finally
         {
+            try { File.Delete(temporary); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
+    }
+
+    private void PreserveUnreadableSettings(Exception error)
+    {
+        var preserved = "";
+        if (error is JsonException && File.Exists(_filePath))
+        {
+            preserved = _filePath + ".corrupt-" + DateTime.Now.ToString(
+                "yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture);
+            try
+            {
+                File.Move(_filePath, preserved, overwrite: false);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                preserved = $"(备份失败: {ex.Message})";
+            }
+        }
+
+        System.Diagnostics.Trace.TraceWarning(
+            $"AppShell 设置文件无法读取，已使用空配置: {_filePath}; {error.Message}" +
+            (preserved.Length == 0 ? "" : $"; 原文件: {preserved}"));
     }
 }

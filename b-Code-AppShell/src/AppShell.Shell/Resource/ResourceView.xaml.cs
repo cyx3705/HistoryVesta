@@ -22,6 +22,7 @@ public partial class ResourceView : UserControl
     private readonly Func<string, bool>? _openHandler;
     private readonly string? _defaultRoot;
     private readonly DispatcherTimer _refreshDebounce;
+    private int _reloadInProgress;
 
     public ResourceView(
         IWorkspaceService workspace,
@@ -62,26 +63,45 @@ public partial class ResourceView : UserControl
     }
 
     /// <summary>res.root 切换根目录后的刷新入口。</summary>
-    public void ReloadTree()
+    public void ReloadTree() => _ = ReloadTreeAsync();
+
+    private async Task ReloadTreeAsync()
     {
+        if (Interlocked.Exchange(ref _reloadInProgress, 1) != 0)
+            return;
+
         // 记住已展开的目录,刷新后尽量还原
         var expanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         CollectExpanded(Tree.Items, expanded);
 
         Tree.Items.Clear();
+        Tree.Items.Add(StatusNode("正在读取工作区…", Brushes.Gray));
+        Tree.IsEnabled = false;
+        RefreshButton.IsEnabled = false;
+        RefreshMenuItem.IsEnabled = false;
         try
         {
-            foreach (var entry in _workspace.List())
+            var entries = await Task.Run(() => _workspace.List());
+            Tree.Items.Clear();
+            foreach (var entry in entries)
                 Tree.Items.Add(CreateNode(entry));
             RootText.Text = _workspace.Root;
+            RestoreExpanded(Tree.Items, expanded);
         }
         catch (Exception ex)
         {
             _log.Error("res", $"读取工作区失败: {ex.Message}");
-            return;
+            Tree.Items.Clear();
+            Tree.Items.Add(StatusNode($"读取失败：{ex.Message}", Brushes.Firebrick));
+            RootText.Text = "服务器工作区暂不可用";
         }
-
-        RestoreExpanded(Tree.Items, expanded);
+        finally
+        {
+            Tree.IsEnabled = true;
+            RefreshButton.IsEnabled = true;
+            RefreshMenuItem.IsEnabled = true;
+            Volatile.Write(ref _reloadInProgress, 0);
+        }
     }
 
     // ---------------------------------------------------------------- 树构建(懒加载)
@@ -110,7 +130,7 @@ public partial class ResourceView : UserControl
 
     private static readonly object LazyPlaceholder = new();
 
-    private void OnNodeExpanded(object sender, RoutedEventArgs e)
+    private async void OnNodeExpanded(object sender, RoutedEventArgs e)
     {
         if (e.OriginalSource is not TreeViewItem node
             || node.Tag is not WorkspaceEntry { IsDirectory: true } entry)
@@ -122,14 +142,24 @@ public partial class ResourceView : UserControl
             return;
 
         node.Items.Clear();
+        node.Items.Add(StatusNode("正在读取…", Brushes.Gray));
+        node.IsEnabled = false;
         try
         {
-            foreach (var child in _workspace.List(entry.RelativePath))
+            var children = await Task.Run(() => _workspace.List(entry.RelativePath));
+            node.Items.Clear();
+            foreach (var child in children)
                 node.Items.Add(CreateNode(child));
         }
         catch (Exception ex)
         {
             _log.Error("res", $"读取目录失败: {ex.Message}");
+            node.Items.Clear();
+            node.Items.Add(StatusNode($"读取失败：{ex.Message}", Brushes.Firebrick));
+        }
+        finally
+        {
+            node.IsEnabled = true;
         }
     }
 
@@ -299,4 +329,11 @@ public partial class ResourceView : UserControl
         < 1024 * 1024 * 1024 => $"{bytes / 1048576.0:0.#} MB",
         _ => $"{bytes / 1073741824.0:0.##} GB",
     };
+
+    private static TreeViewItem StatusNode(string text, Brush foreground)
+        => new()
+        {
+            Header = new TextBlock { Text = text, Foreground = foreground },
+            IsEnabled = false,
+        };
 }

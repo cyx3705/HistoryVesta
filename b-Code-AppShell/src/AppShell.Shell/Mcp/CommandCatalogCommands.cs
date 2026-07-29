@@ -98,7 +98,7 @@ public static class CommandCatalogCommands
                 descriptor.Parameters.Count,
                 sourceName,
                 sourceDetail,
-                descriptor.ConfirmPrompt != null,
+                descriptor.IsDangerous,
                 descriptor.RequiresUiThread,
                 tool?.ToolName,
                 McpExposurePolicy.State(descriptor),
@@ -116,12 +116,12 @@ public static class CommandCatalogCommands
         CommandSchemaExporter exporter,
         PromptGovernanceStore prompts,
         Func<McpGateway?> gateway) => new()
-    {
-        Name = "command.list",
-        Summary = "结构化列出全部注册指令及其来源、风险和 MCP 投影",
-        Readonly = true,
-        Example = "command.list domain=proj mcp=visible filter=scan",
-        Parameters =
+        {
+            Name = "command.list",
+            Summary = "结构化列出全部注册指令及其来源、风险和 MCP 投影",
+            Readonly = true,
+            Example = "command.list domain=proj mcp=visible filter=scan",
+            Parameters =
         [
             StringParam("domain", "可选指令域，如 proj / attr / command"),
             new ParameterSpec
@@ -133,79 +133,79 @@ public static class CommandCatalogCommands
             },
             StringParam("filter", "按名称、说明或来源搜索"),
         ],
-        Handler = CommandDescriptor.Sync(ctx =>
-        {
-            IEnumerable<CommandCatalogRow> rows = Snapshot(
-                registry, exporter, prompts, gateway()?.Policy ?? "readonly");
-            var domain = ctx.GetString("domain")?.Trim();
-            if (!string.IsNullOrWhiteSpace(domain))
-                rows = rows.Where(row => row.Domain.Equals(domain, StringComparison.OrdinalIgnoreCase));
-
-            var mcp = ctx.GetString("mcp") ?? "all";
-            rows = mcp.ToLowerInvariant() switch
+            Handler = CommandDescriptor.Sync(ctx =>
             {
-                "visible" => rows.Where(row => row.PolicyVisible),
-                "hidden" => rows.Where(row => !row.PolicyVisible),
-                _ => rows,
-            };
+                IEnumerable<CommandCatalogRow> rows = Snapshot(
+                    registry, exporter, prompts, gateway()?.Policy ?? "readonly");
+                var domain = ctx.GetString("domain")?.Trim();
+                if (!string.IsNullOrWhiteSpace(domain))
+                    rows = rows.Where(row => row.Domain.Equals(domain, StringComparison.OrdinalIgnoreCase));
 
-            var filter = ctx.GetString("filter")?.Trim();
-            if (!string.IsNullOrWhiteSpace(filter))
-            {
-                rows = rows.Where(row =>
-                    row.CommandName.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                    || row.Summary.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                    || row.Source.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                    || (row.SourceDetail?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false));
-            }
+                var mcp = ctx.GetString("mcp") ?? "all";
+                rows = mcp.ToLowerInvariant() switch
+                {
+                    "visible" => rows.Where(row => row.PolicyVisible),
+                    "hidden" => rows.Where(row => !row.PolicyVisible),
+                    _ => rows,
+                };
 
-            var list = rows.ToList();
-            var text = new StringBuilder($"命令集: {list.Count} / {registry.All().Count} 条");
-            foreach (var row in list)
-                text.Append($"\n  {row.CommandName,-28} [{row.Source}/{row.McpState}] {row.Summary}");
-            return CommandResult.Ok(text.ToString(), list);
-        }),
-    };
+                var filter = ctx.GetString("filter")?.Trim();
+                if (!string.IsNullOrWhiteSpace(filter))
+                {
+                    rows = rows.Where(row =>
+                        row.CommandName.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                        || row.Summary.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                        || row.Source.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                        || (row.SourceDetail?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false));
+                }
+
+                var list = rows.ToList();
+                var text = new StringBuilder($"命令集: {list.Count} / {registry.All().Count} 条");
+                foreach (var row in list)
+                    text.Append($"\n  {row.CommandName,-28} [{row.Source}/{row.McpState}] {row.Summary}");
+                return CommandResult.Ok(text.ToString(), list);
+            }),
+        };
 
     private static CommandDescriptor BuildShow(
         CommandRegistry registry,
         CommandSchemaExporter exporter,
         PromptGovernanceStore prompts,
         Func<McpGateway?> gateway) => new()
-    {
-        Name = "command.show",
-        Summary = "查看单条指令的 Help 参数、来源、风险和 MCP 映射",
-        Readonly = true,
-        Example = "command.show name=mcp.apply",
-        Parameters = [StringParam("name", "完整指令名", required: true, position: 0)],
-        Handler = CommandDescriptor.Sync(ctx =>
         {
-            var name = ctx.RequireString("name").Trim();
-            if (!registry.TryGet(name, out var descriptor))
-                return CommandResult.Fail($"指令不存在: {name}");
+            Name = "command.show",
+            Summary = "查看单条指令的 Help 参数、来源、风险和 MCP 映射",
+            Readonly = true,
+            Example = "command.show name=mcp.apply",
+            Parameters = [StringParam("name", "完整指令名", required: true, position: 0)],
+            Handler = CommandDescriptor.Sync(ctx =>
+            {
+                var name = ctx.RequireString("name").Trim();
+                if (!registry.TryGet(name, out var descriptor))
+                    return CommandResult.Fail($"指令不存在: {name}");
 
-            var row = Snapshot(registry, exporter, prompts, gateway()?.Policy ?? "readonly")
-                .First(item => item.CommandName.Equals(descriptor.Name, StringComparison.OrdinalIgnoreCase));
-            var parameters = descriptor.Parameters.Select(parameter => new CommandParameterInfo(
-                parameter.Name,
-                parameter.Type.ToString().ToLowerInvariant(),
-                parameter.Required,
-                parameter.Default,
-                parameter.Position,
-                parameter.AllowedValues ?? [],
-                parameter.Description)).ToList();
-            var tool = exporter.Find(descriptor.Name);
-            var schema = tool?.InputSchema.ToJsonString(PrettyJson);
-            var detail = new CommandCatalogDetail(row, parameters, schema);
+                var row = Snapshot(registry, exporter, prompts, gateway()?.Policy ?? "readonly")
+                    .First(item => item.CommandName.Equals(descriptor.Name, StringComparison.OrdinalIgnoreCase));
+                var parameters = descriptor.Parameters.Select(parameter => new CommandParameterInfo(
+                    parameter.Name,
+                    parameter.Type.ToString().ToLowerInvariant(),
+                    parameter.Required,
+                    parameter.Default,
+                    parameter.Position,
+                    parameter.AllowedValues ?? [],
+                    parameter.Description)).ToList();
+                var tool = exporter.Find(descriptor.Name);
+                var schema = tool?.InputSchema.ToJsonString(PrettyJson);
+                var detail = new CommandCatalogDetail(row, parameters, schema);
 
-            var text = new StringBuilder($"{descriptor.Name} [{row.Source}/{row.McpState}]\n{descriptor.Summary}");
-            if (!string.IsNullOrWhiteSpace(descriptor.Example))
-                text.Append($"\n示例: {descriptor.Example}");
-            if (row.HardExclusionReason != null)
-                text.Append($"\nMCP 硬排除: {row.HardExclusionReason}");
-            return CommandResult.Ok(text.ToString(), detail);
-        }),
-    };
+                var text = new StringBuilder($"{descriptor.Name} [{row.Source}/{row.McpState}]\n{descriptor.Summary}");
+                if (!string.IsNullOrWhiteSpace(descriptor.Example))
+                    text.Append($"\n示例: {descriptor.Example}");
+                if (row.HardExclusionReason != null)
+                    text.Append($"\nMCP 硬排除: {row.HardExclusionReason}");
+                return CommandResult.Ok(text.ToString(), detail);
+            }),
+        };
 
     private static CommandDescriptor BuildDomains(CommandRegistry registry) => new()
     {
@@ -229,11 +229,11 @@ public static class CommandCatalogCommands
         CommandRegistry registry,
         CommandSchemaExporter exporter,
         Func<McpGateway?> gateway) => new()
-    {
-        Name = "command.manual",
-        Summary = "从运行时注册表和 MCP 投影预览或生成 Markdown 命令手册",
-        Example = "command.manual file=command-manual.md apply=false",
-        Parameters =
+        {
+            Name = "command.manual",
+            Summary = "从运行时注册表和 MCP 投影预览或生成 Markdown 命令手册",
+            Example = "command.manual file=command-manual.md apply=false",
+            Parameters =
         [
             new ParameterSpec
             {
@@ -250,49 +250,49 @@ public static class CommandCatalogCommands
                 Default = "false",
             },
         ],
-        ConfirmPrompt = context => context.GetBool("apply")
-            ? $"确认生成命令手册 {context.GetString("file")}？只允许写入当前工作目录边界内的 .md 文件。"
-            : null,
-        Handler = CommandDescriptor.Sync(context =>
-        {
-            var relative = context.RequireString("file").Trim();
-            if (Path.IsPathRooted(relative) || !relative.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
-                return CommandResult.Fail("file 必须是当前工作目录内的相对 .md 路径");
+            ConfirmPrompt = context => context.GetBool("apply")
+                ? $"确认生成命令手册 {context.GetString("file")}？只允许写入当前工作目录边界内的 .md 文件。"
+                : null,
+            Handler = CommandDescriptor.Sync(context =>
+            {
+                var relative = context.RequireString("file").Trim();
+                if (Path.IsPathRooted(relative) || !relative.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+                    return CommandResult.Fail("file 必须是当前工作目录内的相对 .md 路径");
 
-            var root = Path.GetFullPath(Environment.CurrentDirectory);
-            var target = Path.GetFullPath(Path.Combine(root, relative));
-            var rootPrefix = root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                             + Path.DirectorySeparatorChar;
-            if (!target.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase))
-                return CommandResult.Fail("命令手册路径越出当前工作目录");
+                var root = Path.GetFullPath(Environment.CurrentDirectory);
+                var target = Path.GetFullPath(Path.Combine(root, relative));
+                var rootPrefix = root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                                 + Path.DirectorySeparatorChar;
+                if (!target.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase))
+                    return CommandResult.Fail("命令手册路径越出当前工作目录");
 
-            var markdown = CommandManualGenerator.Render(
-                registry, exporter, gateway()?.Policy ?? "readonly");
-            var preview = new CommandManualPreview(
-                target, registry.All().Count, CommandManualGenerator.Sha256(markdown),
-                markdown, context.GetBool("apply"));
-            if (!context.GetBool("apply"))
+                var markdown = CommandManualGenerator.Render(
+                    registry, exporter, gateway()?.Policy ?? "readonly");
+                var preview = new CommandManualPreview(
+                    target, registry.All().Count, CommandManualGenerator.Sha256(markdown),
+                    markdown, context.GetBool("apply"));
+                if (!context.GetBool("apply"))
+                    return CommandResult.Ok(
+                        $"命令手册预览: {preview.CommandCount} 条，SHA-256 {preview.Sha256}，尚未写入\n{target}",
+                        preview);
+
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                var temp = target + $".tmp-{Guid.NewGuid():N}";
+                try
+                {
+                    File.WriteAllText(temp, markdown, new UTF8Encoding(false));
+                    File.Move(temp, target, overwrite: true);
+                }
+                finally
+                {
+                    if (File.Exists(temp))
+                        File.Delete(temp);
+                }
                 return CommandResult.Ok(
-                    $"命令手册预览: {preview.CommandCount} 条，SHA-256 {preview.Sha256}，尚未写入\n{target}",
+                    $"命令手册已生成: {preview.CommandCount} 条，SHA-256 {preview.Sha256}\n{target}",
                     preview);
-
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            var temp = target + $".tmp-{Guid.NewGuid():N}";
-            try
-            {
-                File.WriteAllText(temp, markdown, new UTF8Encoding(false));
-                File.Move(temp, target, overwrite: true);
-            }
-            finally
-            {
-                if (File.Exists(temp))
-                    File.Delete(temp);
-            }
-            return CommandResult.Ok(
-                $"命令手册已生成: {preview.CommandCount} 条，SHA-256 {preview.Sha256}\n{target}",
-                preview);
-        }),
-    };
+            }),
+        };
 
     private static string DomainOf(string name)
     {
@@ -302,10 +302,10 @@ public static class CommandCatalogCommands
 
     private static ParameterSpec StringParam(
         string name, string description, bool required = false, int? position = null) => new()
-    {
-        Name = name,
-        Description = description,
-        Required = required,
-        Position = position,
-    };
+        {
+            Name = name,
+            Description = description,
+            Required = required,
+            Position = position,
+        };
 }

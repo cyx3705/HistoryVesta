@@ -6,19 +6,23 @@ WPF shell and docking UI, local services, module hosting, and an MCP gateway.
 ## Packages
 
 - `OneHistory.AppShell.Core`: framework contracts and command/MCP metadata.
-- `OneHistory.AppShell.Services`: settings, logging, SQLite, workspace, modules, and MCP services.
+- `OneHistory.AppShell.Services`: settings, logging, workspace, modules, and MCP services.
 - `OneHistory.AppShell.Shell`: the WPF application shell. Referencing this package brings in Core and Services.
 - `OneHistory.AppShell.ServiceHost`: headless WPF service lifecycle, confirmation, and `svc.*` hosting.
 
 ## Install
 
 ```xml
-<PackageReference Include="OneHistory.AppShell.Shell" Version="2.7.3" />
-<PackageReference Include="OneHistory.AppShell.ServiceHost" Version="2.7.3" />
+<PackageReference Include="OneHistory.AppShell.Shell" Version="3.0.0" />
+<PackageReference Include="OneHistory.AppShell.ServiceHost" Version="3.0.0" />
 ```
 
-AppShell 2.7.3 targets .NET 8. The Shell and ServiceHost packages require Windows and WPF. Packages in this
+AppShell 3.0.0 targets .NET 8. The Shell and ServiceHost packages require Windows and WPF. Packages in this
 repository-local feed are for OneHistory-owned projects; no public distribution license is granted
 by the package itself.
 
-See `b-Office/appshell/二次开发演进手册.md` in the source repository for integration guidance.
+The current z-level release snapshot includes `AppShell.reuse.md` beside the feed directory and the
+version-matched consumer contracts under `docs/`. Consumers and AI tools should start with the reuse
+document and follow its links to the API/command, module/MCP, runtime-limit, and change-summary contracts.
+Release evidence and maintenance documents remain outside the runtime packages. XML API documentation
+stays beside each assembly under `lib/<TFM>/` for IntelliSense and precise API lookup.

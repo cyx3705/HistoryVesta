@@ -39,7 +39,7 @@ public sealed class AppPaths
     /// <summary>布局文件目录(W-07 / W-08)。</summary>
     public string LayoutDir { get; }
 
-    /// <summary>SQLite 库文件目录(D-04,M3 使用)。</summary>
+    /// <summary>应用自有业务数据目录。</summary>
     public string DataDir { get; }
 
     /// <summary>资源窗口默认工作区根目录(R-08,M4 使用)。</summary>

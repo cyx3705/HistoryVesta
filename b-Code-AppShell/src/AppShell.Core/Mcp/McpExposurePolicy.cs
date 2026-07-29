@@ -11,11 +11,22 @@ namespace AppShell.Core.Mcp;
 /// </summary>
 public static class McpExposurePolicy
 {
+    private static Func<string, string?>? _moduleOfCommand;
+    private static Func<string, string?>? _moduleExposure;
+
     /// <summary>V2.2 CX-01:命令名 → 所属模块名(注册来源 "module:&lt;name&gt;");装配点接 Registry.GetSource。</summary>
-    public static Func<string, string?>? ModuleOfCommand { get; set; }
+    public static Func<string, string?>? ModuleOfCommand
+    {
+        get => Volatile.Read(ref _moduleOfCommand);
+        set => Volatile.Write(ref _moduleOfCommand, value);
+    }
 
     /// <summary>V2.2 CX-01:模块名 → 清单声明的 mcpExposure;无清单(根平铺)返回 null = standard 现状。</summary>
-    public static Func<string, string?>? ModuleExposure { get; set; }
+    public static Func<string, string?>? ModuleExposure
+    {
+        get => Volatile.Read(ref _moduleExposure);
+        set => Volatile.Write(ref _moduleExposure, value);
+    }
 
     private static string? ExposureOf(string commandName)
     {
@@ -34,7 +45,8 @@ public static class McpExposurePolicy
     /// 本集合与 <see cref="RegisterReadonly"/> 继续保留,仅用于**无法修改注册点**的场景
     /// (例如第三方程序集提供的命令描述符)。正常开发一律用 Readonly = true,不要走这里。
     /// </summary>
-    private static readonly HashSet<string> ReadonlyCommands = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> ReadonlyCommands =
+        new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// 按名字补登记只读指令(0.4.4 引入,V2.4.4 起退为兜底通道)。幂等、可重复调用。
@@ -47,15 +59,15 @@ public static class McpExposurePolicy
         foreach (var name in commandNames)
         {
             if (!string.IsNullOrWhiteSpace(name))
-                ReadonlyCommands.Add(name.Trim());
+                ReadonlyCommands.TryAdd(name.Trim(), 0);
         }
     }
 
     /// <summary>当前生效的只读指令全集(框架基线 + 派生登记),供管理页与自检使用。</summary>
-    public static IReadOnlyCollection<string> ReadonlyCommandNames => ReadonlyCommands;
+    public static IReadOnlyCollection<string> ReadonlyCommandNames => ReadonlyCommands.Keys.ToArray();
 
     public static bool IsReadonlyAllowed(string commandName)
-        => ReadonlyCommands.Contains(commandName)
+        => ReadonlyCommands.ContainsKey(commandName)
            || string.Equals(ExposureOf(commandName), "readonly", StringComparison.OrdinalIgnoreCase);
 
     public static string? HardExclusionReason(string commandName)
@@ -75,7 +87,7 @@ public static class McpExposurePolicy
     {
         if (HardExclusionReason(descriptor.Name) != null)
             return "hidden";
-        if (descriptor.ConfirmPrompt != null)
+        if (descriptor.IsDangerous)
             return "dangerous";
         if (descriptor.Readonly)
             return "readonly";
@@ -84,7 +96,9 @@ public static class McpExposurePolicy
 
     public static bool IsVisible(CommandDescriptor descriptor, string policy)
         => HardExclusionReason(descriptor.Name) == null
-           && descriptor.ConfirmPrompt == null
+           && !descriptor.IsDangerous
+           && (descriptor.ExecutionSite != CommandExecutionSite.Frontend
+               || descriptor.AllowMcpExecution)
            && (policy.Equals("standard", StringComparison.OrdinalIgnoreCase)
                || descriptor.Readonly
                || IsReadonlyAllowed(descriptor.Name));

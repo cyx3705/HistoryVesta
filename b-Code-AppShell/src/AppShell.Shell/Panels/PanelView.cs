@@ -79,173 +79,173 @@ public sealed partial class PanelView : UserControl
         switch (c.Type.ToLowerInvariant())
         {
             case "button":
-            {
-                var button = new Button
                 {
-                    Content = c.Label ?? "执行",
-                    Margin = new Thickness(0, 6, 0, 2),
-                    Padding = new Thickness(10, 4, 10, 4),
-                };
-                if (c.Style == "danger")
-                {
-                    button.Foreground = Brushes.White;
-                    button.Background = new SolidColorBrush(Color.FromRgb(0xC4, 0x25, 0x25));
-                }
+                    var button = new Button
+                    {
+                        Content = c.Label ?? "执行",
+                        Margin = new Thickness(0, 6, 0, 2),
+                        Padding = new Thickness(10, 4, 10, 4),
+                    };
+                    if (c.Style == "danger")
+                    {
+                        button.Foreground = Brushes.White;
+                        button.Background = new SolidColorBrush(Color.FromRgb(0xC4, 0x25, 0x25));
+                    }
 
-                var command = c.Command;
-                button.Click += (_, _) => FireCommand(command);
-                Grid.SetRow(button, row);
-                Grid.SetColumn(button, 0);
-                Grid.SetColumnSpan(button, 2);
-                grid.Children.Add(button);
-                return;
-            }
+                    var command = c.Command;
+                    button.Click += (_, _) => FireCommand(command);
+                    Grid.SetRow(button, row);
+                    Grid.SetColumn(button, 0);
+                    Grid.SetColumnSpan(button, 2);
+                    grid.Children.Add(button);
+                    return;
+                }
 
             case "label":
-            {
-                var text = new TextBlock
                 {
-                    Text = c.Default ?? "",
-                    Foreground = Brushes.Gray,
-                    VerticalAlignment = VerticalAlignment.Center,
-                };
-                if (c.Id != null)
-                {
-                    _getters[c.Id] = () => text.Text;
-                    _setters[c.Id] = v => text.Text = v;
-                }
+                    var text = new TextBlock
+                    {
+                        Text = c.Default ?? "",
+                        Foreground = Brushes.Gray,
+                        VerticalAlignment = VerticalAlignment.Center,
+                    };
+                    if (c.Id != null)
+                    {
+                        _getters[c.Id] = () => text.Text;
+                        _setters[c.Id] = v => text.Text = v;
+                    }
 
-                input = text;
-                break;
-            }
+                    input = text;
+                    break;
+                }
 
             case "combo":
-            {
-                var combo = new ComboBox { ItemsSource = c.Items ?? [] };
-                combo.SelectedItem = c.Default != null && (c.Items?.Contains(c.Default) ?? false)
-                    ? c.Default
-                    : c.Items?.FirstOrDefault();
-                if (c.Id != null)
                 {
-                    _getters[c.Id] = () => combo.SelectedItem as string ?? "";
-                    _setters[c.Id] = v => combo.SelectedItem =
-                        (c.Items ?? []).FirstOrDefault(i => i.Equals(v, StringComparison.OrdinalIgnoreCase));
-                }
+                    var combo = new ComboBox { ItemsSource = c.Items ?? [] };
+                    combo.SelectedItem = c.Default != null && (c.Items?.Contains(c.Default) ?? false)
+                        ? c.Default
+                        : c.Items?.FirstOrDefault();
+                    if (c.Id != null)
+                    {
+                        _getters[c.Id] = () => combo.SelectedItem as string ?? "";
+                        _setters[c.Id] = v => combo.SelectedItem =
+                            (c.Items ?? []).FirstOrDefault(i => i.Equals(v, StringComparison.OrdinalIgnoreCase));
+                    }
 
-                input = combo;
-                break;
-            }
+                    input = combo;
+                    break;
+                }
 
             case "check":
-            {
-                var check = new CheckBox
                 {
-                    IsChecked = c.Default is "true" or "1",
-                    VerticalAlignment = VerticalAlignment.Center,
-                };
-                if (c.Id != null)
-                {
-                    _getters[c.Id] = () => check.IsChecked == true ? "true" : "false";
-                    _setters[c.Id] = v => check.IsChecked = v is "true" or "1";
-                }
+                    var check = new CheckBox
+                    {
+                        IsChecked = c.Default is "true" or "1",
+                        VerticalAlignment = VerticalAlignment.Center,
+                    };
+                    if (c.Id != null)
+                    {
+                        _getters[c.Id] = () => check.IsChecked == true ? "true" : "false";
+                        _setters[c.Id] = v => check.IsChecked = v is "true" or "1";
+                    }
 
-                input = check;
-                break;
-            }
+                    input = check;
+                    break;
+                }
 
             case "slider":
-            {
-                var slider = new Slider
                 {
-                    Minimum = c.Min ?? 0,
-                    Maximum = c.Max ?? 100,
-                    TickFrequency = c.Step ?? 1,
-                    IsSnapToTickEnabled = c.Step != null,
-                    VerticalAlignment = VerticalAlignment.Center,
-                };
-                if (double.TryParse(c.Default, NumberStyles.Float, CultureInfo.InvariantCulture, out var dv))
-                    slider.Value = dv;
-
-                var valueText = new TextBlock
-                {
-                    Width = 44,
-                    TextAlignment = TextAlignment.Right,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = Brushes.Gray,
-                };
-                valueText.Text = Format(slider.Value);
-                slider.ValueChanged += (_, _) => valueText.Text = Format(slider.Value);
-
-                var panel = new DockPanel();
-                DockPanel.SetDock(valueText, Dock.Right);
-                panel.Children.Add(valueText);
-                panel.Children.Add(slider);
-
-                if (c.Id != null)
-                {
-                    _getters[c.Id] = () => Format(slider.Value);
-                    _setters[c.Id] = v =>
+                    var slider = new Slider
                     {
-                        if (double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out var nv))
-                            slider.Value = nv;
+                        Minimum = c.Min ?? 0,
+                        Maximum = c.Max ?? 100,
+                        TickFrequency = c.Step ?? 1,
+                        IsSnapToTickEnabled = c.Step != null,
+                        VerticalAlignment = VerticalAlignment.Center,
                     };
-                }
+                    if (double.TryParse(c.Default, NumberStyles.Float, CultureInfo.InvariantCulture, out var dv))
+                        slider.Value = dv;
 
-                input = panel;
-                break;
-            }
+                    var valueText = new TextBlock
+                    {
+                        Width = 44,
+                        TextAlignment = TextAlignment.Right,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Foreground = Brushes.Gray,
+                    };
+                    valueText.Text = Format(slider.Value);
+                    slider.ValueChanged += (_, _) => valueText.Text = Format(slider.Value);
+
+                    var panel = new DockPanel();
+                    DockPanel.SetDock(valueText, Dock.Right);
+                    panel.Children.Add(valueText);
+                    panel.Children.Add(slider);
+
+                    if (c.Id != null)
+                    {
+                        _getters[c.Id] = () => Format(slider.Value);
+                        _setters[c.Id] = v =>
+                        {
+                            if (double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out var nv))
+                                slider.Value = nv;
+                        };
+                    }
+
+                    input = panel;
+                    break;
+                }
 
             case "file":
             case "dir":
-            {
-                var box = new TextBox { Text = c.Default ?? "", VerticalContentAlignment = VerticalAlignment.Center };
-                var browse = new Button { Content = "…", Padding = new Thickness(8, 0, 8, 0), Margin = new Thickness(4, 0, 0, 0) };
-                var isDir = c.Type.Equals("dir", StringComparison.OrdinalIgnoreCase);
-                browse.Click += (_, _) =>
                 {
-                    if (isDir)
+                    var box = new TextBox { Text = c.Default ?? "", VerticalContentAlignment = VerticalAlignment.Center };
+                    var browse = new Button { Content = "…", Padding = new Thickness(8, 0, 8, 0), Margin = new Thickness(4, 0, 0, 0) };
+                    var isDir = c.Type.Equals("dir", StringComparison.OrdinalIgnoreCase);
+                    browse.Click += (_, _) =>
                     {
-                        var dialog = new Microsoft.Win32.OpenFolderDialog();
-                        if (dialog.ShowDialog() == true)
-                            box.Text = dialog.FolderName;
-                    }
-                    else
+                        if (isDir)
+                        {
+                            var dialog = new Microsoft.Win32.OpenFolderDialog();
+                            if (dialog.ShowDialog() == true)
+                                box.Text = dialog.FolderName;
+                        }
+                        else
+                        {
+                            var dialog = new Microsoft.Win32.OpenFileDialog();
+                            if (dialog.ShowDialog() == true)
+                                box.Text = dialog.FileName;
+                        }
+                    };
+
+                    var panel = new DockPanel();
+                    DockPanel.SetDock(browse, Dock.Right);
+                    panel.Children.Add(browse);
+                    panel.Children.Add(box);
+
+                    if (c.Id != null)
                     {
-                        var dialog = new Microsoft.Win32.OpenFileDialog();
-                        if (dialog.ShowDialog() == true)
-                            box.Text = dialog.FileName;
+                        _getters[c.Id] = () => box.Text;
+                        _setters[c.Id] = v => box.Text = v;
                     }
-                };
 
-                var panel = new DockPanel();
-                DockPanel.SetDock(browse, Dock.Right);
-                panel.Children.Add(browse);
-                panel.Children.Add(box);
-
-                if (c.Id != null)
-                {
-                    _getters[c.Id] = () => box.Text;
-                    _setters[c.Id] = v => box.Text = v;
+                    input = panel;
+                    break;
                 }
-
-                input = panel;
-                break;
-            }
 
             case "number":
             case "text":
             default:
-            {
-                var box = new TextBox { Text = c.Default ?? "", VerticalContentAlignment = VerticalAlignment.Center };
-                if (c.Id != null)
                 {
-                    _getters[c.Id] = () => box.Text;
-                    _setters[c.Id] = v => box.Text = v;
-                }
+                    var box = new TextBox { Text = c.Default ?? "", VerticalContentAlignment = VerticalAlignment.Center };
+                    if (c.Id != null)
+                    {
+                        _getters[c.Id] = () => box.Text;
+                        _setters[c.Id] = v => box.Text = v;
+                    }
 
-                input = box;
-                break;
-            }
+                    input = box;
+                    break;
+                }
         }
 
         var label = new TextBlock

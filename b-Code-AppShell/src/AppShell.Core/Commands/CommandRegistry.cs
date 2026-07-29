@@ -8,6 +8,7 @@ public sealed class CommandRegistry
 {
     private readonly Dictionary<string, CommandDescriptor> _commands = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string> _sources = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _gate = new();
 
     public event Action? Changed;
 
@@ -15,9 +16,12 @@ public sealed class CommandRegistry
     {
         if (string.IsNullOrWhiteSpace(source))
             throw new ArgumentException("指令来源不能为空", nameof(source));
-        if (!_commands.TryAdd(descriptor.Name, descriptor))
-            throw new InvalidOperationException($"指令名冲突: {descriptor.Name} 已注册,禁止覆盖(§5.3)");
-        _sources[descriptor.Name] = source.Trim();
+        lock (_gate)
+        {
+            if (!_commands.TryAdd(descriptor.Name, descriptor))
+                throw new InvalidOperationException($"指令名冲突: {descriptor.Name} 已注册,禁止覆盖(§5.3)");
+            _sources[descriptor.Name] = source.Trim();
+        }
         Changed?.Invoke();
     }
 
@@ -28,23 +32,57 @@ public sealed class CommandRegistry
     /// </summary>
     public bool Unregister(string name)
     {
-        _sources.Remove(name);
-        var removed = _commands.Remove(name);
+        bool removed;
+        lock (_gate)
+        {
+            _sources.Remove(name);
+            removed = _commands.Remove(name);
+        }
         if (removed)
             Changed?.Invoke();
         return removed;
     }
 
     public bool TryGet(string name, out CommandDescriptor descriptor)
-        => _commands.TryGetValue(name, out descriptor!);
+    {
+        lock (_gate)
+            return _commands.TryGetValue(name, out descriptor!);
+    }
 
     /// <summary>返回注册来源：framework / app / module:&lt;name&gt;。</summary>
     public string GetSource(string name)
-        => _sources.GetValueOrDefault(name, "framework");
+    {
+        lock (_gate)
+            return _sources.GetValueOrDefault(name, "framework");
+    }
 
     /// <summary>全部指令,按名称排序(help 列表)。</summary>
     public IReadOnlyList<CommandDescriptor> All()
-        => _commands.Values.OrderBy(c => c.Name, StringComparer.Ordinal).ToList();
+    {
+        lock (_gate)
+            return _commands.Values.OrderBy(c => c.Name, StringComparer.Ordinal).ToList();
+    }
+
+    /// <summary>
+    /// 从完整命令名提取一级域。无点号命令本身也是保留域，避免模块以
+    /// <c>help.foo</c> 或 <c>future.list</c> 的形式绕过根命令/现有域冲突检查。
+    /// </summary>
+    public static IReadOnlySet<string> DomainsOf(IEnumerable<string> commandNames)
+    {
+        ArgumentNullException.ThrowIfNull(commandNames);
+        var domains = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in commandNames)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                continue;
+
+            var trimmed = name.Trim();
+            var dot = trimmed.IndexOf('.');
+            domains.Add(dot > 0 ? trimmed[..dot] : trimmed);
+        }
+
+        return domains;
+    }
 
     /// <summary>
     /// 未知指令时给出最接近的候选(§5.2 P1:“你是不是想输入…”)。
@@ -56,7 +94,7 @@ public sealed class CommandRegistry
         var dot = unknownName.IndexOf('.');
         var domain = dot > 0 ? unknownName[..(dot + 1)] : null;
 
-        foreach (var name in _commands.Keys)
+        foreach (var name in All().Select(command => command.Name))
         {
             var d = Levenshtein(unknownName.ToLowerInvariant(), name);
             if (d <= 2)

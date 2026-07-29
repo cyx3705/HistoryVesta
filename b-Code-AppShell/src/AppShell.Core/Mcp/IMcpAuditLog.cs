@@ -12,7 +12,7 @@ public interface IMcpAuditLog
     /// <summary>记录一次 MCP 调用结果。</summary>
     /// <param name="client">客户端标识。</param>
     /// <param name="tool">工具名；鉴权阶段的拒绝用 "(auth)"。</param>
-    /// <param name="arguments">调用参数文本（已截断）。</param>
+    /// <param name="arguments">已脱敏的调用参数文本；持久化实现可进一步截断。</param>
     /// <param name="result">结果：成功 / 拒绝 / 远程拒绝 / 确认超时 等。</param>
     /// <param name="elapsedMs">耗时毫秒；未执行记 0。</param>
     void RecordMcp(string client, string tool, string arguments, string result, long elapsedMs);

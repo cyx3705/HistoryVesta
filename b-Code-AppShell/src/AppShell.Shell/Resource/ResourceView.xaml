@@ -17,7 +17,7 @@
                 <Button Content="新建文件夹" Style="{StaticResource ToolButton}" Click="OnMkdirClick" />
                 <Button Content="重命名" Style="{StaticResource ToolButton}" Click="OnRenameClick" />
                 <Button Content="删除" Style="{StaticResource ToolButton}" Foreground="#C42525" Click="OnDeleteClick" />
-                <Button Content="刷新" Style="{StaticResource ToolButton}" Click="OnRefreshClick" />
+                <Button x:Name="RefreshButton" Content="刷新" Style="{StaticResource ToolButton}" Click="OnRefreshClick" />
             </StackPanel>
         </Border>
 
@@ -42,7 +42,7 @@
                     <MenuItem Header="删除(进回收站)" Click="OnDeleteClick" />
                     <Separator />
                     <MenuItem Header="复制完整路径" Click="OnCopyPathClick" />
-                    <MenuItem Header="刷新" Click="OnRefreshClick" />
+                    <MenuItem x:Name="RefreshMenuItem" Header="刷新" Click="OnRefreshClick" />
                     <Separator />
                     <MenuItem x:Name="OpenFolderMenuItem" Header="打开其他文件夹…" Click="OnOpenFolderClick" />
                     <MenuItem x:Name="ResetRootMenuItem" Header="恢复默认工作区" Click="OnResetRootClick" />

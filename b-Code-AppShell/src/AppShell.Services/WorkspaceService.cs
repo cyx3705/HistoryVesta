@@ -20,7 +20,7 @@ public sealed class WorkspaceService : IWorkspaceService, IDisposable
 
     public WorkspaceService(string rootPath)
     {
-        _root = Path.GetFullPath(rootPath);
+        _root = NormalizeRoot(rootPath);
         Directory.CreateDirectory(_root);
         StartWatcher();
     }
@@ -40,7 +40,7 @@ public sealed class WorkspaceService : IWorkspaceService, IDisposable
 
     public void SetRoot(string path)
     {
-        var full = Path.GetFullPath(path);
+        var full = NormalizeRoot(path);
         if (!Directory.Exists(full))
             throw new InvalidOperationException($"目录不存在: {full}");
 
@@ -115,16 +115,65 @@ public sealed class WorkspaceService : IWorkspaceService, IDisposable
     public string ResolveFull(string relativePath)
     {
         var root = Root;
-        var full = Path.GetFullPath(Path.Combine(root, relativePath ?? ""));
+        var full = NormalizeRoot(Path.Combine(root, relativePath ?? ""));
+        var rootPrefix = root.EndsWith(Path.DirectorySeparatorChar)
+            || root.EndsWith(Path.AltDirectorySeparatorChar)
+                ? root
+                : root + Path.DirectorySeparatorChar;
 
         // R-06:一切操作限制在根目录以内,拒绝越界(../、绝对路径逃逸等)
         if (!full.Equals(root, StringComparison.OrdinalIgnoreCase)
-            && !full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            && !full.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException($"路径越出工作区根目录,已拒绝: {relativePath}");
         }
 
+        RejectReparsePoints(root, full, relativePath);
         return full;
+    }
+
+    private static void RejectReparsePoints(string root, string full, string? relativePath)
+    {
+        if (full.Equals(root, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var current = root;
+        var pathWithinRoot = Path.GetRelativePath(root, full);
+        foreach (var segment in pathWithinRoot.Split(
+                     [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
+                     StringSplitOptions.RemoveEmptyEntries))
+        {
+            current = Path.Combine(current, segment);
+
+            FileAttributes attributes;
+            try
+            {
+                attributes = File.GetAttributes(current);
+            }
+            catch (FileNotFoundException)
+            {
+                break;
+            }
+            catch (DirectoryNotFoundException)
+            {
+                break;
+            }
+
+            if ((attributes & FileAttributes.ReparsePoint) != 0)
+            {
+                throw new InvalidOperationException(
+                    $"Workspace paths cannot traverse links: {relativePath}");
+            }
+        }
+    }
+
+    private static string NormalizeRoot(string path)
+    {
+        var full = Path.GetFullPath(path);
+        var volumeRoot = Path.GetPathRoot(full);
+        return volumeRoot != null && full.Length > volumeRoot.Length
+            ? full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            : full;
     }
 
     public void Dispose()

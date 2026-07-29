@@ -31,7 +31,6 @@ public partial class ShellWindow : Window
     private readonly CommandBus _bus;
     private readonly CommandHistory _history;
     private readonly ConsoleView _console;
-    private readonly Table.TableView? _tableView;
     private readonly Resource.ResourceView? _resourceView;
     private readonly Panels.PanelManager _panels;
 
@@ -47,6 +46,7 @@ public partial class ShellWindow : Window
     private readonly CommandSelectionState _commandSelection;
 
     private int _errorCount;
+    private bool _menusInitialized;
 
     public ShellWindow(
         ShellConfig config,
@@ -83,14 +83,7 @@ public partial class ShellWindow : Window
         _console = new ConsoleView(log, _bus, _history, settings.GetInt(ConsoleView.KeyBuffer, 50_000));
 
         // 控制台窗口内容由 Shell 接管(§4.4 标准窗口;描述符位置仍由派生应用决定)
-        TakeOverDescriptor("console", "控制台", DockSide.Bottom, 0.25, () => _console);
-
-        // 数据服务已配置时,表窗口(§4.3)同样由 Shell 提供(M3)
-        if (config.DataService != null)
-        {
-            _tableView = new Table.TableView(config.DataService, _bus, log);
-            TakeOverDescriptor("table", "表窗口", DockSide.Bottom, 0.28, () => _tableView);
-        }
+        TakeOverDescriptor(StandardWindowIds.Console, "控制台", DockSide.Bottom, 0.25, () => _console);
 
         // 工作区已配置时,资源窗口(§4.6)由 Shell 提供(M4)
         if (config.Workspace != null)
@@ -98,26 +91,26 @@ public partial class ShellWindow : Window
             _resourceView = new Resource.ResourceView(
                 config.Workspace, _bus, log, config.OnResourceOpen,
                 Services.AppPaths.GetWorkspaceDir(dataDirectory));
-            TakeOverDescriptor("resource", "资源窗口", DockSide.Left, 0.18, () => _resourceView);
+            TakeOverDescriptor(StandardWindowIds.Resource, "资源窗口", DockSide.Left, 0.18, () => _resourceView);
         }
 
         // 0.4.4:反哺能力自带的管理窗口。窗口内容工厂只依赖总线与选中状态(指令实际执行在 command.list/
         // mcp.status/module.list),故可在此(DockingHost 构建前)接管;网关/模块宿主的创建与指令注册
-        // 仍在 BuiltinCommands 之后完成。条件与指令注册一致:mcp 窗口还要求已配置数据服务。
+        // 仍在 BuiltinCommands 之后完成。条件与指令注册一致。
         // 用 TakeOverDescriptor:派生应用若在 config.ToolWindows 声明了同 Id 窗口的停靠位/标签目标,
         // 一律保留其布局,框架只注入内容——因此派生侧既有布局不变。
-        if ((config.EnableMcp && config.DataService != null) || config.EnableRemoteManagementViews)
+        if (config.EnableMcp || config.EnableRemoteManagementViews)
         {
-            TakeOverDescriptor("mcp", "命令集", DockSide.Right, 0.32,
-                () => new Views.McpToolsView(() => _bus, _commandSelection));
+            TakeOverDescriptor(StandardWindowIds.Mcp, "命令集", DockSide.Center, 1,
+                () => new Views.McpToolsView(() => _bus, _commandSelection), forcePlacement: true);
             // 指令详情窗口:命令集选中项的详情(参数/来源/MCP 映射/提示词状态),与 mcp 窗口共享选中状态
-            TakeOverDescriptor("commanddetail", "指令详情", DockSide.Right, 0.32,
+            TakeOverDescriptor(StandardWindowIds.CommandDetail, "指令详情", DockSide.Right, 0.32,
                 () => new Views.CommandDetailView(() => _bus, _commandSelection));
         }
 
         if (config.EnableModules || config.EnableRemoteManagementViews)
         {
-            TakeOverDescriptor("modules", "模块管理", DockSide.Right, 0.32,
+            TakeOverDescriptor(StandardWindowIds.Modules, "模块管理", DockSide.Right, 0.32,
                 () => new Views.ModulesView(() => _bus));
         }
 
@@ -133,7 +126,14 @@ public partial class ShellWindow : Window
         _shellUi = new Modules.ShellUiRegistrar(_docking, Dispatcher, log);
         _docking.WindowsChanged += (_, _) => Dispatcher.BeginInvoke(() =>
         {
-            BuildMenus();
+            try
+            {
+                BuildMenus();
+            }
+            catch (Exception ex)
+            {
+                _log.Error("menu", $"菜单重建失败，已保留上一版菜单: {ex.Message}");
+            }
             UpdateStatusRight();
         });
 
@@ -148,8 +148,6 @@ public partial class ShellWindow : Window
             Log = log,
             Bus = _bus,
             DataDirectory = dataDirectory,
-            Data = config.DataService,
-            Table = _tableView,
             Workspace = config.Workspace,
             Panels = _panels,
         });
@@ -179,31 +177,24 @@ public partial class ShellWindow : Window
 
         if (config.EnableMcp)
         {
-            if (config.DataService == null)
-            {
-                log.Warn("mcp", "EnableMcp=true 但未配置 DataService,MCP 服务已跳过(提示词治理与留痕都需要数据服务)");
-            }
-            else
-            {
-                var identity = config.Identity ?? Core.AppIdentity.Current;
-                _prompts = new Services.Mcp.PromptGovernanceStore(config.DataService, log);
-                var audit = config.McpAuditLog
-                            ?? new Services.Mcp.McpAuditRecorder(config.DataService, log);
-                Func<string, string, int, bool?> remoteConfirm = config.McpRemoteConfirm
-                    ?? ((_, prompt, timeout) =>
-                        AppShell.Shell.Mcp.RemoteConfirmDialog.Ask(this, prompt, timeout));
-                _mcp = new Services.Mcp.McpGateway(
-                    () => _bus, settings, log, audit, _prompts, identity, remoteConfirm);
+            var identity = config.Identity ?? Core.AppIdentity.Current;
+            _prompts = new Services.Mcp.PromptGovernanceStore(dataDirectory, log);
+            var audit = config.McpAuditLog
+                        ?? new Services.Mcp.McpAuditRecorder(dataDirectory, log);
+            Func<string, string, int, bool?> remoteConfirm = config.McpRemoteConfirm
+                ?? ((_, prompt, timeout) =>
+                    AppShell.Shell.Mcp.RemoteConfirmDialog.Ask(this, prompt, timeout));
+            _mcp = new Services.Mcp.McpGateway(
+                () => _bus, settings, log, audit, _prompts, identity, remoteConfirm);
 
-                // McpCommands.RegisterAll 是聚合入口:内部级联注册 prompt.*(提示词治理)与
-                // command.*(命令目录),不可在此重复调用 CommandCatalogCommands/PromptGovernanceCommands,
-                // 否则 command.list 等会二次注册,CommandRegistry 冲突即抛(§5.3)。
-                // 全限定:本类的 Mcp 只读属性会遮蔽 AppShell.Shell.Mcp 命名空间。
-                AppShell.Shell.Mcp.McpCommands.RegisterAll(registry, () => _bus, () => _mcp, settings, _prompts);
+            // McpCommands.RegisterAll 是聚合入口:内部级联注册 prompt.*(提示词治理)与
+            // command.*(命令目录),不可在此重复调用 CommandCatalogCommands/PromptGovernanceCommands,
+            // 否则 command.list 等会二次注册,CommandRegistry 冲突即抛(§5.3)。
+            // 全限定:本类的 Mcp 只读属性会遮蔽 AppShell.Shell.Mcp 命名空间。
+            AppShell.Shell.Mcp.McpCommands.RegisterAll(registry, () => _bus, () => _mcp, settings, _prompts);
 
-                // CX-03:MCP 中继预批准的执行直接放行,其余仍走 Shell 交互确认
-                _bus.Confirmation = new Core.Mcp.GatewayAwareConfirmation(_bus.Confirmation);
-            }
+            // CX-03:MCP 中继预批准的执行直接放行,其余仍走 Shell 交互确认
+            _bus.Confirmation = new Core.Mcp.GatewayAwareConfirmation(_bus.Confirmation);
         }
 
         config.ConfigureCommands?.Invoke(registry);
@@ -227,7 +218,6 @@ public partial class ShellWindow : Window
         {
             var summary = result.Message.Split('\n')[0];
             StatusLeft.Text = $"{(result.Success ? "✓" : "✗")} [{source}] {text} —— {summary}";
-            SyncRemoteTableResult(text, result);
             UpdateStatusRight();
         });
         log.EntryAdded += (_, entry) =>
@@ -267,7 +257,7 @@ public partial class ShellWindow : Window
     /// <summary>模块托管宿主(0.4.4);EnableModules=false 时为 null。</summary>
     public Services.Modules.ModuleHost? Modules => _modules;
 
-    /// <summary>MCP 网关(0.4.4);未启用或缺数据服务时为 null。默认随宿主启动自动监听。</summary>
+    /// <summary>MCP 网关；仅在 <see cref="ShellConfig.EnableMcp"/> 启用时创建，默认按 mcp.autostart 自动监听。</summary>
     public Services.Mcp.McpGateway? Mcp => _mcp;
 
     /// <summary>提示词治理存储(0.4.4);与 <see cref="Mcp"/> 同生命周期。</summary>
@@ -290,7 +280,12 @@ public partial class ShellWindow : Window
     /// 不得仅在一侧改名；新增窗口时须同步核对派生应用的 ToolWindows 表。
     /// </summary>
     private void TakeOverDescriptor(
-        string id, string fallbackTitle, DockSide fallbackSide, double fallbackRatio, Func<object> factory)
+        string id,
+        string fallbackTitle,
+        DockSide fallbackSide,
+        double fallbackRatio,
+        Func<object> factory,
+        bool forcePlacement = false)
     {
         var index = _config.ToolWindows.FindIndex(
             d => d.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
@@ -312,9 +307,9 @@ public partial class ShellWindow : Window
         {
             Id = d0.Id,
             Title = d0.Title,
-            DefaultSide = d0.DefaultSide,
-            DefaultRatio = d0.DefaultRatio,
-            DefaultTabTarget = d0.DefaultTabTarget,
+            DefaultSide = forcePlacement ? fallbackSide : d0.DefaultSide,
+            DefaultRatio = forcePlacement ? fallbackRatio : d0.DefaultRatio,
+            DefaultTabTarget = forcePlacement ? null : d0.DefaultTabTarget,
             DefaultVisible = d0.DefaultVisible,
             IsSingleton = d0.IsSingleton,
             ContentFactory = factory,
@@ -323,7 +318,7 @@ public partial class ShellWindow : Window
 
     private void FocusConsole()
     {
-        _docking.Show("console");
+        _docking.Show(StandardWindowIds.Console);
         _console.FocusInput();
     }
 
@@ -348,53 +343,6 @@ public partial class ShellWindow : Window
         else
             _docking.MaximizeWindow(id);
         e.Handled = true;
-    }
-
-    private void SyncRemoteTableResult(string text, CommandResult result)
-    {
-        if (_tableView == null || !result.Success)
-            return;
-        ParsedCommand parsed;
-        try
-        {
-            parsed = CommandParser.Parse(text);
-        }
-        catch (CommandSyntaxException)
-        {
-            return;
-        }
-
-        if (parsed.Name is "db.insert" or "db.update" or "db.delete" or "db.sql"
-            && _config.DataService is Services.Web.RemoteDataService remoteData)
-        {
-            remoteData.NotifyDataChanged(
-                parsed.Named.GetValueOrDefault("conn"),
-                parsed.Name == "db.sql"
-                    ? null
-                    : parsed.Named.GetValueOrDefault("table") ?? parsed.Positionals.FirstOrDefault());
-        }
-
-        if (result.Data is not Core.Data.QueryResult query)
-            return;
-
-        if (parsed.Name.Equals("db.query", StringComparison.OrdinalIgnoreCase))
-        {
-            var table = parsed.Named.GetValueOrDefault("table")
-                        ?? parsed.Positionals.FirstOrDefault();
-            if (table == null)
-                return;
-            _tableView.ShowResult(
-                parsed.Named.GetValueOrDefault("conn") ?? Core.Data.IDataService.DefaultConnection,
-                table,
-                parsed.Named.GetValueOrDefault("where"),
-                query);
-            _docking.Show("table");
-        }
-        else if (parsed.Name.Equals("db.sql", StringComparison.OrdinalIgnoreCase))
-        {
-            _tableView.ShowAdhoc(query);
-            _docking.Show("table");
-        }
     }
 
     private void UpdateErrorBadge()
@@ -530,16 +478,16 @@ public partial class ShellWindow : Window
 
     private void BuildMenus()
     {
-        MainMenu.Items.Clear();
+        var rebuilt = new List<object>();
 
         // 文件
         var file = new MenuItem { Header = "文件(_F)" };
         file.Items.Add(Item("退出(_X)", "app.exit"));
-        MainMenu.Items.Add(file);
+        rebuilt.Add(file);
 
         // 编辑(预留)
         var edit = new MenuItem { Header = "编辑(_E)", IsEnabled = false };
-        MainMenu.Items.Add(edit);
+        rebuilt.Add(edit);
 
         // 视图:全部窗口开关 + 重置布局(W-02)
         var view = new MenuItem { Header = "视图(_V)" };
@@ -558,7 +506,7 @@ public partial class ShellWindow : Window
         restore.IsEnabled = _docking.MaximizedId != null;
         view.Items.Add(restore);
         view.Items.Add(Item("重置默认布局", "layout.reset"));
-        MainMenu.Items.Add(view);
+        rebuilt.Add(view);
 
         // 工具
         var tools = new MenuItem { Header = "工具(_T)" };
@@ -567,11 +515,16 @@ public partial class ShellWindow : Window
             tools.Items.Add(new Separator());
         foreach (var action in _config.ToolMenuActions)
             tools.Items.Add(Item(action.Header, action.CommandText));
-        MainMenu.Items.Add(tools);
+        rebuilt.Add(tools);
 
         // 帮助:指令手册 = help 的图形化版本(S-01)
         var help = new MenuItem { Header = "帮助(_H)" };
         var manual = new MenuItem { Header = "指令手册(_M)" };
+        var helpError = _bus.Validate("help");
+        if (helpError != null && !_menusInitialized)
+            throw InvalidMenuCommand("help", helpError);
+        manual.IsEnabled = helpError == null;
+        manual.ToolTip = helpError == null ? null : $"指令当前不可用: {helpError}";
         manual.Click += async (_, _) =>
         {
             FocusConsole();
@@ -579,16 +532,33 @@ public partial class ShellWindow : Window
         };
         help.Items.Add(manual);
         help.Items.Add(Item("关于(_A)", "app.about"));
-        MainMenu.Items.Add(help);
+        rebuilt.Add(help);
+
+        MainMenu.Items.Clear();
+        foreach (var item in rebuilt)
+            MainMenu.Items.Add(item);
+        _menusInitialized = true;
     }
 
     /// <summary>菜单项点击同样是发指令(S-02):统一经总线分发、回显、留痕。</summary>
     private MenuItem Item(string header, string commandText)
     {
         var mi = new MenuItem { Header = header };
+        var validationError = _bus.Validate(commandText);
+        if (validationError != null)
+        {
+            if (!_menusInitialized)
+                throw InvalidMenuCommand(commandText, validationError);
+            mi.IsEnabled = false;
+            mi.ToolTip = $"指令当前不可用: {validationError}";
+            return mi;
+        }
         mi.Click += (_, _) => _ = _bus.ExecuteAsync(commandText, "UI");
         return mi;
     }
+
+    private static InvalidOperationException InvalidMenuCommand(string commandText, string validationError)
+        => new($"菜单引用了无效指令 [{commandText}]: {validationError}");
 
     private void UpdateStatusRight()
         => StatusRight.Text = _docking.MaximizedId == null

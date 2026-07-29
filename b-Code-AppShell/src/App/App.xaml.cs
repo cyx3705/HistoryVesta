@@ -1,7 +1,5 @@
 using System.Diagnostics;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
 using AppShell.Core;
 using AppShell.Core.Commands;
 using AppShell.Core.Docking;
@@ -15,7 +13,7 @@ namespace AppShell.App;
 /// AppShell 独立演示宿主(§9):用于验证框架脱离 OHS 仍可构建和运行。
 /// M2:控制台窗口由 Shell 提供真实实现;本层注册自定义指令示范
 /// (debug.logflood,兼作验收 8 的承压测试入口)。
-/// 表窗口(M3)、控制面板与资源窗口(M4)的占位内容将逐步替换。
+/// 控制面板与资源窗口由 Shell 提供，派生应用可继续注册自己的业务窗口。
 /// </summary>
 public partial class App : Application
 {
@@ -43,11 +41,6 @@ public partial class App : Application
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
             log.Log(ShellLogLevel.Fatal, "app", $"未处理异常(非 UI 线程): {args.ExceptionObject}");
 
-        // 数据服务(§9 流程第 5 条):注册 main 连接并准备演示数据
-        var dataService = new SqliteDataService(paths);
-        dataService.RegisterConnection("main", "main.db");
-        SeedDemoData(dataService, log);
-
         // 工作区(§9 流程第 6 条):根目录可经 res.root 指令更改并持久化
         var workspace = new WorkspaceService(
             settings.Get(WorkspaceService.KeyRoot) ?? paths.WorkspaceDir);
@@ -59,11 +52,10 @@ public partial class App : Application
         {
             AppName = identity.Name,
             AppVersion = identity.Version,
-            DataService = dataService,
             Workspace = workspace,
         };
 
-        // 默认布局按附录 A:资源(左 18%)| 主窗口 | 控制面板(右 22%),底部表窗口+控制台标签组(28%)
+        // 默认布局按附录 A:资源(左 18%)| 主窗口 | 控制面板(右 22%)，控制台位于底部(28%)
         config.ToolWindows.Add(new ToolWindowDescriptor
         {
             Id = "resource",
@@ -74,18 +66,9 @@ public partial class App : Application
         });
         config.ToolWindows.Add(new ToolWindowDescriptor
         {
-            Id = "table",
-            Title = "表窗口",
-            DefaultSide = DockSide.Bottom,
-            DefaultRatio = 0.28,
-            // 表窗口内容由 Shell 提供(DataService 已配置);此处只声明停靠位置
-        });
-        config.ToolWindows.Add(new ToolWindowDescriptor
-        {
             Id = "console",
             Title = "控制台",
-            DefaultSide = DockSide.Tab,
-            DefaultTabTarget = "table",
+            DefaultSide = DockSide.Bottom,
             DefaultRatio = 0.28,
             // 控制台内容由 Shell 提供(§4.4);此处只声明停靠位置
         });
@@ -96,7 +79,6 @@ public partial class App : Application
         config.ConfigureCommands = registry =>
         {
             registry.Register(BuildLogFloodCommand(log));
-            registry.Register(BuildSeedBenchCommand(dataService));
             RegisterMotorDemo(registry, log);
         };
 
@@ -108,10 +90,16 @@ public partial class App : Application
 
         // --exec "指令":启动后顺序执行(自动化/自测入口)
         var startupCommands = new List<string>();
-        for (var i = 0; i < e.Args.Length - 1; i++)
+        for (var i = 0; i < e.Args.Length; i++)
         {
-            if (e.Args[i] == "--exec")
-                startupCommands.Add(e.Args[++i]);
+            if (e.Args[i] != "--exec")
+                continue;
+            if (i + 1 >= e.Args.Length)
+            {
+                log.Warn("app", "启动参数 --exec 缺少后续指令，已忽略");
+                break;
+            }
+            startupCommands.Add(e.Args[++i]);
         }
 
         if (startupCommands.Count > 0)
@@ -284,143 +272,4 @@ public partial class App : Application
         });
     }
 
-    // ---------------------------------------------------------------- 演示数据
-
-    private static readonly string[] DemoNames =
-        ["张伟", "王芳", "李娜", "刘洋", "陈静", "杨磊", "赵敏", "黄强", "周杰", "吴丽"];
-
-    private static readonly string[] DemoCities =
-        ["北京", "上海", "广州", "深圳", "杭州", "成都", "武汉", "西安"];
-
-    /// <summary>首次启动建 users 演示表(约 1200 行,覆盖 3 页,验收 4 / 9 用)。</summary>
-    private static void SeedDemoData(SqliteDataService data, ShellLog log)
-    {
-        try
-        {
-            if (data.ListTables().Contains("users"))
-                return;
-
-            data.ExecuteSql(
-                """
-                CREATE TABLE users (
-                    id    INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name  TEXT    NOT NULL,
-                    city  TEXT,
-                    age   INTEGER,
-                    vip   INTEGER NOT NULL DEFAULT 0
-                )
-                """);
-
-            var rng = new Random(42);
-            var values = new List<string>();
-            for (var i = 0; i < 1200; i++)
-            {
-                values.Add(
-                    $"('{DemoNames[rng.Next(DemoNames.Length)]}{i:D4}'," +
-                    $"'{DemoCities[rng.Next(DemoCities.Length)]}'," +
-                    $"{rng.Next(18, 70)},{(rng.Next(10) == 0 ? 1 : 0)})");
-                if (values.Count == 400)
-                {
-                    data.ExecuteSql($"INSERT INTO users (name, city, age, vip) VALUES {string.Join(",", values)}");
-                    values.Clear();
-                }
-            }
-
-            if (values.Count > 0)
-                data.ExecuteSql($"INSERT INTO users (name, city, age, vip) VALUES {string.Join(",", values)}");
-
-            log.Info("app", "已创建演示表 users(1200 行)");
-        }
-        catch (Exception ex)
-        {
-            log.Error("app", $"演示数据初始化失败: {ex.Message}");
-        }
-    }
-
-    /// <summary>debug.seedbench:生成大表验证 10 万行分页流畅(N-04)。</summary>
-    private static CommandDescriptor BuildSeedBenchCommand(SqliteDataService data) => new()
-    {
-        Name = "debug.seedbench",
-        Summary = "生成 bench 大表(N-04 分页性能验证)",
-        Example = "debug.seedbench rows=100000",
-        Parameters =
-        [
-            new ParameterSpec
-            {
-                Name = "rows",
-                Description = "行数",
-                Type = ParamType.Int,
-                Default = "100000",
-                Position = 0,
-            },
-        ],
-        Handler = async ctx =>
-        {
-            var rows = Math.Clamp(ctx.GetInt("rows", 100_000), 1, 5_000_000);
-            var sw = Stopwatch.StartNew();
-
-            await Task.Run(() =>
-            {
-                data.ExecuteSql("DROP TABLE IF EXISTS bench");
-                data.ExecuteSql(
-                    """
-                    CREATE TABLE bench (
-                        id      INTEGER PRIMARY KEY AUTOINCREMENT,
-                        label   TEXT,
-                        value   REAL,
-                        stamp   TEXT
-                    )
-                    """);
-
-                var rng = new Random(7);
-                var values = new List<string>(1000);
-                var inserted = 0;
-                while (inserted < rows)
-                {
-                    values.Clear();
-                    var batch = Math.Min(1000, rows - inserted);
-                    for (var i = 0; i < batch; i++)
-                    {
-                        inserted++;
-                        values.Add(
-                            $"('条目-{inserted:D6}',{rng.NextDouble() * 1000:0.###}," +
-                            $"'2026-{rng.Next(1, 13):D2}-{rng.Next(1, 29):D2}')");
-                    }
-
-                    data.ExecuteSql($"INSERT INTO bench (label, value, stamp) VALUES {string.Join(",", values)}");
-                    if (inserted % 20_000 == 0)
-                        ctx.Progress?.Report($"已写入 {inserted}/{rows} 行");
-                }
-            });
-
-            return CommandResult.Ok($"bench 表已生成 {rows} 行,耗时 {sw.Elapsed.TotalSeconds:0.0}s");
-        },
-    };
-
-    /// <summary>占位内容:说明该窗口的职责与到位里程碑。</summary>
-    private static object Stub(string title, string body) => new Border
-    {
-        Padding = new Thickness(16),
-        Background = Brushes.White,
-        Child = new StackPanel
-        {
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = title,
-                    FontSize = 15,
-                    FontWeight = FontWeights.SemiBold,
-                    Margin = new Thickness(0, 0, 0, 8),
-                },
-                new TextBlock
-                {
-                    Text = body,
-                    TextWrapping = TextWrapping.Wrap,
-                    Foreground = Brushes.Gray,
-                    LineHeight = 20,
-                },
-            },
-        },
-    };
 }

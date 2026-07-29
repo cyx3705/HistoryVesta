@@ -64,7 +64,18 @@ public sealed class RemoteWorkspaceService : IWorkspaceService
 
     private CommandResult Execute(string command)
     {
-        var result = _client.ExecuteAsync(command, "Shell:Resource").GetAwaiter().GetResult();
+        var requestTimeout = _client.RemoteRequestTimeout;
+        using var timeout = new CancellationTokenSource(requestTimeout);
+        CommandResult result;
+        try
+        {
+            result = _client.ExecuteAsync(command, "Shell:Resource", timeout.Token)
+                .GetAwaiter().GetResult();
+        }
+        catch (OperationCanceledException) when (timeout.IsCancellationRequested)
+        {
+            throw new TimeoutException($"服务器工作区请求超过 {requestTimeout.TotalSeconds:0} 秒，已取消");
+        }
         if (!result.Success)
             throw new InvalidOperationException(result.Message);
         return result;

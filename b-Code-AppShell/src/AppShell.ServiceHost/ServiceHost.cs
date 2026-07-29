@@ -10,6 +10,8 @@ namespace AppShell.ServiceHost;
 /// <summary>无主窗口的用户会话 WPF 服务宿主。</summary>
 public static class ServiceHost
 {
+    private static readonly TimeSpan RestartMutexWait = TimeSpan.FromSeconds(10);
+
     public static int Run(
         ServiceComposition composition,
         string? executablePath = null,
@@ -17,8 +19,8 @@ public static class ServiceHost
     {
         ArgumentNullException.ThrowIfNull(composition);
         var mutexName = $"Local\\{Sanitize(composition.ServiceName)}.ServiceHost";
-        using var mutex = new Mutex(initiallyOwned: true, mutexName, out var ownsMutex);
-        if (!ownsMutex)
+        using var mutex = new Mutex(initiallyOwned: false, mutexName);
+        if (!WaitForSingleInstance(mutex, RestartMutexWait))
             return 2;
 
         var app = Application.Current ?? new Application();
@@ -153,4 +155,16 @@ public static class ServiceHost
 
     private static string Sanitize(string value)
         => string.Concat(value.Select(character => char.IsLetterOrDigit(character) ? character : '_'));
+
+    private static bool WaitForSingleInstance(Mutex mutex, TimeSpan timeout)
+    {
+        try
+        {
+            return mutex.WaitOne(timeout);
+        }
+        catch (AbandonedMutexException)
+        {
+            return true;
+        }
+    }
 }

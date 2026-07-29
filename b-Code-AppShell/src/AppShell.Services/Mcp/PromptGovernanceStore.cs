@@ -1,6 +1,6 @@
-﻿using AppShell.Core.Data;
-using AppShell.Core.Mcp;
+using System.Text.Json;
 using AppShell.Core.Logging;
+using AppShell.Core.Mcp;
 
 namespace AppShell.Services.Mcp;
 
@@ -56,68 +56,65 @@ public sealed record PromptIncident(
     string? LinkedCorrection);
 
 /// <summary>
-/// MCP 工具描述治理存储(V2.1.2):修订是生效真值，提案/勘误/事故为追加式审计记录。
-/// V2.1.1 mcp_descriptions 仅作为迁移来源和降级兼容镜像。
+/// MCP 提示词治理的文件存储。所有关联状态在同一份 JSON 文档内原子替换，
+/// 因而批准、应用、回滚仍保持单进程事务语义，但不再要求关系数据库。
 /// </summary>
 public sealed class PromptGovernanceStore
 {
+    // 仅保留常量名供旧调用方/迁移测试识别；运行时不再创建这些表。
     public const string TableDescriptions = "mcp_descriptions";
     public const string TableProposals = "mcp_prompt_proposals";
 
-    private readonly IDataService _data;
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
+    private readonly string _path;
     private readonly IShellLog _log;
     private readonly object _writeGate = new();
+    private State _state;
 
-    public PromptGovernanceStore(IDataService data, IShellLog log)
+    public PromptGovernanceStore(string dataDirectory, IShellLog log)
     {
-        _data = data;
+        _path = Path.Combine(dataDirectory, "state", "prompt-governance.json");
         _log = log;
-        Initialize();
+        _state = Load();
     }
 
     public IReadOnlyDictionary<string, string> AllEffectiveDescriptions()
     {
-        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        try
-        {
-            var result = Read(
-                "SELECT command, description FROM mcp_prompt_revisions " +
-                "WHERE applied=1 AND description IS NOT NULL");
-            if (result != null)
-            {
-                foreach (var row in result.Rows)
-                {
-                    var command = Text(row[0]);
-                    var description = Text(row[1]);
-                    if (!string.IsNullOrWhiteSpace(command) && description != null)
-                        map[command] = description;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _log.Warn("prompt", $"读取生效提示词失败: {ex.Message}");
-        }
-
-        return map;
+        lock (_writeGate)
+            return _state.Revisions
+                .Where(item => item.Applied && item.Description != null)
+                .GroupBy(item => item.Command, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.Last().Description!,
+                    StringComparer.OrdinalIgnoreCase);
     }
 
     public PromptRevision? GetCurrentRevision(string command)
-        => ReadRevisions(
-                "SELECT id,command,description,parent_revision,source,reason,created,created_by,applied,reverted_from " +
-                $"FROM mcp_prompt_revisions WHERE command={Sql(command)} AND applied=1 LIMIT 1")
-            .FirstOrDefault();
+    {
+        lock (_writeGate)
+            return CurrentRevision(command);
+    }
 
     public PromptRevision? GetRevision(string id)
-        => ReadRevisions(
-                "SELECT id,command,description,parent_revision,source,reason,created,created_by,applied,reverted_from " +
-                $"FROM mcp_prompt_revisions WHERE id={Sql(id)} LIMIT 1")
-            .FirstOrDefault();
+    {
+        lock (_writeGate)
+            return _state.Revisions.FirstOrDefault(item => item.Id == id);
+    }
 
     public IReadOnlyList<PromptRevision> GetRevisions(string command, int limit = 50)
-        => ReadRevisions(
-            "SELECT id,command,description,parent_revision,source,reason,created,created_by,applied,reverted_from " +
-            $"FROM mcp_prompt_revisions WHERE command={Sql(command)} ORDER BY created DESC LIMIT {ClampLimit(limit)}");
+    {
+        lock (_writeGate)
+            return _state.Revisions
+                .Where(item => item.Command.Equals(command, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(item => item.Created, StringComparer.Ordinal)
+                .ThenByDescending(item => item.Id, StringComparer.Ordinal)
+                .Take(ClampLimit(limit))
+                .ToList();
+    }
 
     public PromptRevision ApplyDirect(
         string command, string? description, string source, string reason,
@@ -128,82 +125,87 @@ public sealed class PromptGovernanceStore
 
         lock (_writeGate)
         {
-            var current = GetCurrentRevision(command);
+            var current = CurrentRevision(command);
+            ClearApplied(command);
             var revision = new PromptRevision(
                 NewId("rev"), command, description, current?.Id, source, reason,
                 Now(), createdBy ?? source, true, revertedFrom);
-
-            var mirror = description == null
-                ? $"DELETE FROM {TableDescriptions} WHERE command={Sql(command)};"
-                : $"INSERT OR REPLACE INTO {TableDescriptions} (command,description,updated) VALUES " +
-                  $"({Sql(command)},{Sql(description)},{Sql(revision.Created)});";
-
-            Execute(
-                "BEGIN IMMEDIATE;" +
-                $"UPDATE mcp_prompt_revisions SET applied=0 WHERE command={Sql(command)} AND applied=1;" +
-                InsertRevisionSql(revision) +
-                mirror +
-                "COMMIT;");
+            _state.Revisions.Add(revision);
+            Save();
             return revision;
         }
     }
 
     public PromptProposal CreateProposal(
-        string command, string oldText, string proposedText, string reason, string evidence, string sourceClient)
+        string command, string oldText, string proposedText, string reason,
+        string evidence, string sourceClient)
     {
         proposedText = PromptTextIntegrity.ValidateDescription(proposedText);
-        var proposal = new PromptProposal(
-            NewId("proposal"), command, GetCurrentRevision(command)?.Id,
-            oldText, proposedText, reason, evidence, sourceClient, Now(),
-            "pending", null, null, null, null);
-
-        Execute(
-            $"INSERT INTO {TableProposals} " +
-            "(id,command,base_revision,old_text,proposed_text,reason,evidence,source_client,created,status) VALUES " +
-            $"({Sql(proposal.Id)},{Sql(command)},{SqlNullable(proposal.BaseRevision)},{Sql(oldText)}," +
-            $"{Sql(proposedText)},{Sql(reason)},{Sql(evidence)},{Sql(sourceClient)},{Sql(proposal.Created)},'pending')");
-        return proposal;
+        lock (_writeGate)
+        {
+            var proposal = new PromptProposal(
+                NewId("proposal"), command, CurrentRevision(command)?.Id,
+                oldText, proposedText, reason, evidence, sourceClient, Now(),
+                "pending", null, null, null, null);
+            _state.Proposals.Add(proposal);
+            Save();
+            return proposal;
+        }
     }
 
     public PromptProposal? GetProposal(string id)
-        => ReadProposals(ProposalSelect + $" WHERE id={Sql(id)} LIMIT 1").FirstOrDefault();
+    {
+        lock (_writeGate)
+            return FindProposal(id);
+    }
 
     public IReadOnlyList<PromptProposal> ListProposals(
         string? command = null, bool openOnly = false, int limit = 100)
     {
-        var clauses = new List<string>();
-        if (!string.IsNullOrWhiteSpace(command))
-            clauses.Add($"command={Sql(command)}");
-        if (openOnly)
-            clauses.Add("status IN ('pending','approved')");
-        var where = clauses.Count == 0 ? "" : " WHERE " + string.Join(" AND ", clauses);
-        return ReadProposals(ProposalSelect + where + $" ORDER BY created DESC LIMIT {ClampLimit(limit)}");
+        lock (_writeGate)
+            return _state.Proposals
+                .Where(item => string.IsNullOrWhiteSpace(command)
+                               || item.Command.Equals(command, StringComparison.OrdinalIgnoreCase))
+                .Where(item => !openOnly || item.Status is "pending" or "approved")
+                .OrderByDescending(item => item.Created, StringComparer.Ordinal)
+                .ThenByDescending(item => item.Id, StringComparer.Ordinal)
+                .Take(ClampLimit(limit))
+                .ToList();
     }
 
     public PromptProposal ApproveProposal(string id, string reviewer)
     {
-        var proposal = RequireProposal(id);
-        if (!proposal.Status.Equals("pending", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException($"提案状态为 {proposal.Status}，只有 pending 可批准");
-        PromptTextIntegrity.ValidateDescription(proposal.ProposedText);
-
-        Execute(
-            $"UPDATE {TableProposals} SET status='approved'," +
-            $"reviewer={Sql(reviewer)},reviewed={Sql(Now())} WHERE id={Sql(id)} AND status='pending'");
-        return RequireProposal(id);
+        lock (_writeGate)
+        {
+            var proposal = RequireProposal(id);
+            if (!proposal.Status.Equals("pending", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"提案状态为 {proposal.Status}，只有 pending 可批准");
+            PromptTextIntegrity.ValidateDescription(proposal.ProposedText);
+            proposal = proposal with { Status = "approved", Reviewer = reviewer, Reviewed = Now() };
+            ReplaceProposal(proposal);
+            Save();
+            return proposal;
+        }
     }
 
     public PromptProposal RejectProposal(string id, string reviewer, string reason)
     {
-        var proposal = RequireProposal(id);
-        if (proposal.Status is not ("pending" or "approved"))
-            throw new InvalidOperationException($"提案状态为 {proposal.Status}，不能拒绝");
-
-        Execute(
-            $"UPDATE {TableProposals} SET status='rejected'," +
-            $"reviewer={Sql(reviewer)},reviewed={Sql(Now())},review_note={Sql(reason)} " +
-            $"WHERE id={Sql(id)} AND status IN ('pending','approved')");
-        return RequireProposal(id);
+        lock (_writeGate)
+        {
+            var proposal = RequireProposal(id);
+            if (proposal.Status is not ("pending" or "approved"))
+                throw new InvalidOperationException($"提案状态为 {proposal.Status}，不能拒绝");
+            proposal = proposal with
+            {
+                Status = "rejected",
+                Reviewer = reviewer,
+                Reviewed = Now(),
+                ReviewNote = reason,
+            };
+            ReplaceProposal(proposal);
+            Save();
+            return proposal;
+        }
     }
 
     public PromptRevision ApplyProposal(string id, string reviewer)
@@ -214,32 +216,33 @@ public sealed class PromptGovernanceStore
             if (!proposal.Status.Equals("approved", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException($"提案状态为 {proposal.Status}，必须先批准再应用");
             PromptTextIntegrity.ValidateDescription(proposal.ProposedText);
-
-            var current = GetCurrentRevision(proposal.Command);
+            var current = CurrentRevision(proposal.Command);
             if (!string.Equals(current?.Id, proposal.BaseRevision, StringComparison.Ordinal))
                 throw new InvalidOperationException(
                     $"提案基线冲突: 创建时={proposal.BaseRevision ?? "(默认)"}，当前={current?.Id ?? "(默认)"}");
 
+            ClearApplied(proposal.Command);
             var revision = new PromptRevision(
                 NewId("rev"), proposal.Command, proposal.ProposedText, current?.Id,
                 "proposal", proposal.Reason, Now(), reviewer, true, null);
-            Execute(
-                "BEGIN IMMEDIATE;" +
-                $"UPDATE mcp_prompt_revisions SET applied=0 WHERE command={Sql(proposal.Command)} AND applied=1;" +
-                InsertRevisionSql(revision) +
-                $"INSERT OR REPLACE INTO {TableDescriptions} (command,description,updated) VALUES " +
-                $"({Sql(proposal.Command)},{Sql(proposal.ProposedText)},{Sql(revision.Created)});" +
-                $"UPDATE {TableProposals} SET status='applied'," +
-                $"reviewer={Sql(reviewer)},reviewed={Sql(Now())},applied_revision={Sql(revision.Id)} " +
-                $"WHERE id={Sql(id)} AND status='approved';" +
-                "COMMIT;");
+            _state.Revisions.Add(revision);
+            ReplaceProposal(proposal with
+            {
+                Status = "applied",
+                Reviewer = reviewer,
+                Reviewed = Now(),
+                AppliedRevision = revision.Id,
+            });
+            Save();
             return revision;
         }
     }
 
     public PromptRevision RevertToRevision(string revisionId, string reviewer, string reason)
     {
-        var target = GetRevision(revisionId)
+        PromptRevision target;
+        lock (_writeGate)
+            target = _state.Revisions.FirstOrDefault(item => item.Id == revisionId)
                      ?? throw new InvalidOperationException($"修订不存在: {revisionId}");
         return ApplyDirect(target.Command, target.Description, "revert", reason, target.Id, reviewer);
     }
@@ -248,221 +251,122 @@ public sealed class PromptGovernanceStore
         string command, string claim, string correction, string evidence, string sourceClient,
         string? linkedProposal = null)
     {
-        var item = new PromptCorrection(
-            NewId("correction"), command, claim, correction, evidence,
-            sourceClient, Now(), "pending", linkedProposal);
-        Execute(
-            "INSERT INTO mcp_corrections " +
-            "(id,command,claim,correction,evidence,source_client,created,status,linked_proposal) VALUES " +
-            $"({Sql(item.Id)},{Sql(command)},{Sql(claim)},{Sql(correction)},{Sql(evidence)}," +
-            $"{Sql(sourceClient)},{Sql(item.Created)},'pending',{SqlNullable(linkedProposal)})");
-        return item;
+        lock (_writeGate)
+        {
+            var item = new PromptCorrection(
+                NewId("correction"), command, claim, correction, evidence,
+                sourceClient, Now(), "pending", linkedProposal);
+            _state.Corrections.Add(item);
+            Save();
+            return item;
+        }
     }
 
     public PromptCorrection? GetCorrection(string id)
-        => ReadCorrections(
-                "SELECT id,command,claim,correction,evidence,source_client,created,status,linked_proposal " +
-                $"FROM mcp_corrections WHERE id={Sql(id)} LIMIT 1")
-            .FirstOrDefault();
+    {
+        lock (_writeGate)
+            return _state.Corrections.FirstOrDefault(item => item.Id == id);
+    }
 
     public IReadOnlyList<PromptCorrection> ListCorrections(string? command = null, int limit = 100)
     {
-        var where = string.IsNullOrWhiteSpace(command) ? "" : $" WHERE command={Sql(command)}";
-        return ReadCorrections(
-            "SELECT id,command,claim,correction,evidence,source_client,created,status,linked_proposal " +
-            $"FROM mcp_corrections{where} ORDER BY created DESC LIMIT {ClampLimit(limit)}");
+        lock (_writeGate)
+            return _state.Corrections
+                .Where(item => string.IsNullOrWhiteSpace(command)
+                               || item.Command.Equals(command, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(item => item.Created, StringComparer.Ordinal)
+                .ThenByDescending(item => item.Id, StringComparer.Ordinal)
+                .Take(ClampLimit(limit))
+                .ToList();
     }
 
     public PromptIncident CreateIncident(
-        string command, string symptom, string expected, string actual, string evidence, string sourceClient,
-        string? linkedCorrection = null)
+        string command, string symptom, string expected, string actual, string evidence,
+        string sourceClient, string? linkedCorrection = null)
     {
-        var item = new PromptIncident(
-            NewId("incident"), command, symptom, expected, actual, evidence,
-            sourceClient, Now(), null, linkedCorrection);
-        Execute(
-            "INSERT INTO mcp_incidents " +
-            "(id,command,symptom,expected,actual,evidence,source_client,created,linked_correction) VALUES " +
-            $"({Sql(item.Id)},{Sql(command)},{Sql(symptom)},{Sql(expected)},{Sql(actual)}," +
-            $"{Sql(evidence)},{Sql(sourceClient)},{Sql(item.Created)},{SqlNullable(linkedCorrection)})");
-        return item;
+        lock (_writeGate)
+        {
+            var item = new PromptIncident(
+                NewId("incident"), command, symptom, expected, actual, evidence,
+                sourceClient, Now(), null, linkedCorrection);
+            _state.Incidents.Add(item);
+            Save();
+            return item;
+        }
     }
 
     public IReadOnlyList<PromptIncident> ListIncidents(string? command = null, int limit = 100)
     {
-        var where = string.IsNullOrWhiteSpace(command) ? "" : $" WHERE command={Sql(command)}";
-        var result = Read(
-            "SELECT id,command,symptom,expected,actual,evidence,source_client,created,resolution,linked_correction " +
-            $"FROM mcp_incidents{where} ORDER BY created DESC LIMIT {ClampLimit(limit)}");
-        return result?.Rows.Select(r => new PromptIncident(
-            Text(r[0])!, Text(r[1])!, Text(r[2])!, Text(r[3])!, Text(r[4])!, Text(r[5]) ?? "",
-            Text(r[6])!, Text(r[7])!, Text(r[8]), Text(r[9]))).ToList() ?? [];
+        lock (_writeGate)
+            return _state.Incidents
+                .Where(item => string.IsNullOrWhiteSpace(command)
+                               || item.Command.Equals(command, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(item => item.Created, StringComparer.Ordinal)
+                .ThenByDescending(item => item.Id, StringComparer.Ordinal)
+                .Take(ClampLimit(limit))
+                .ToList();
     }
 
-    private void Initialize()
+    private PromptRevision? CurrentRevision(string command)
+        => _state.Revisions.LastOrDefault(item => item.Applied
+            && item.Command.Equals(command, StringComparison.OrdinalIgnoreCase));
+
+    private void ClearApplied(string command)
+    {
+        for (var i = 0; i < _state.Revisions.Count; i++)
+            if (_state.Revisions[i].Applied
+                && _state.Revisions[i].Command.Equals(command, StringComparison.OrdinalIgnoreCase))
+                _state.Revisions[i] = _state.Revisions[i] with { Applied = false };
+    }
+
+    private PromptProposal? FindProposal(string id)
+        => _state.Proposals.FirstOrDefault(item => item.Id == id);
+
+    private PromptProposal RequireProposal(string id)
+        => FindProposal(id) ?? throw new InvalidOperationException($"提案不存在: {id}");
+
+    private void ReplaceProposal(PromptProposal proposal)
+    {
+        var index = _state.Proposals.FindIndex(item => item.Id == proposal.Id);
+        if (index < 0)
+            throw new InvalidOperationException($"提案不存在: {proposal.Id}");
+        _state.Proposals[index] = proposal;
+    }
+
+    private State Load()
     {
         try
         {
-            Execute(
-                $"""
-                CREATE TABLE IF NOT EXISTS {TableDescriptions} (
-                    command TEXT PRIMARY KEY,
-                    description TEXT NOT NULL,
-                    updated TEXT NOT NULL
-                )
-                """);
-            Execute(
-                """
-                CREATE TABLE IF NOT EXISTS mcp_prompt_revisions (
-                    id TEXT PRIMARY KEY,
-                    command TEXT NOT NULL,
-                    description TEXT,
-                    parent_revision TEXT,
-                    source TEXT NOT NULL,
-                    reason TEXT NOT NULL,
-                    created TEXT NOT NULL,
-                    created_by TEXT NOT NULL,
-                    applied INTEGER NOT NULL DEFAULT 0,
-                    reverted_from TEXT
-                )
-                """);
-            Execute(
-                """
-                CREATE UNIQUE INDEX IF NOT EXISTS ux_mcp_prompt_active
-                ON mcp_prompt_revisions(command) WHERE applied=1
-                """);
-            Execute(
-                $"""
-                CREATE TABLE IF NOT EXISTS {TableProposals} (
-                    id TEXT PRIMARY KEY,
-                    command TEXT NOT NULL,
-                    base_revision TEXT,
-                    old_text TEXT NOT NULL,
-                    proposed_text TEXT NOT NULL,
-                    reason TEXT NOT NULL,
-                    evidence TEXT NOT NULL DEFAULT '',
-                    source_client TEXT NOT NULL,
-                    created TEXT NOT NULL,
-                    status TEXT NOT NULL,
-                    reviewer TEXT,
-                    reviewed TEXT,
-                    review_note TEXT,
-                    applied_revision TEXT
-                )
-                """);
-            EnsureColumn(TableProposals, "review_note", "TEXT");
-            Execute($"CREATE INDEX IF NOT EXISTS ix_mcp_prompt_proposals_command ON {TableProposals}(command,created)");
-            Execute(
-                """
-                CREATE TABLE IF NOT EXISTS mcp_corrections (
-                    id TEXT PRIMARY KEY,
-                    command TEXT NOT NULL,
-                    claim TEXT NOT NULL,
-                    correction TEXT NOT NULL,
-                    evidence TEXT NOT NULL DEFAULT '',
-                    source_client TEXT NOT NULL,
-                    created TEXT NOT NULL,
-                    status TEXT NOT NULL,
-                    linked_proposal TEXT
-                )
-                """);
-            Execute(
-                """
-                CREATE TABLE IF NOT EXISTS mcp_incidents (
-                    id TEXT PRIMARY KEY,
-                    command TEXT NOT NULL,
-                    symptom TEXT NOT NULL,
-                    expected TEXT NOT NULL,
-                    actual TEXT NOT NULL,
-                    evidence TEXT NOT NULL DEFAULT '',
-                    source_client TEXT NOT NULL,
-                    created TEXT NOT NULL,
-                    resolution TEXT,
-                    linked_correction TEXT
-                )
-                """);
-
-            Execute(
-                $"""
-                INSERT INTO mcp_prompt_revisions
-                    (id,command,description,parent_revision,source,reason,created,created_by,applied)
-                SELECT 'rev_' || lower(hex(randomblob(16))), d.command, d.description, NULL,
-                       'migration', 'V2.1.1 覆盖迁移', d.updated, 'migration', 1
-                FROM {TableDescriptions} d
-                WHERE NOT EXISTS (
-                    SELECT 1 FROM mcp_prompt_revisions r WHERE r.command=d.command
-                )
-                """);
+            if (!File.Exists(_path))
+                return new State();
+            return JsonSerializer.Deserialize<State>(File.ReadAllText(_path), JsonOptions) ?? new State();
         }
         catch (Exception ex)
         {
-            _log.Error("prompt", $"提示词治理表初始化失败: {ex.Message}");
-            throw;
+            _log.Error("prompt", $"提示词治理文件读取失败，已使用空状态: {ex.Message}");
+            return new State();
         }
     }
 
-    private PromptProposal RequireProposal(string id)
-        => GetProposal(id) ?? throw new InvalidOperationException($"提案不存在: {id}");
-
-    private IReadOnlyList<PromptRevision> ReadRevisions(string sql)
+    private void Save()
     {
-        var result = Read(sql);
-        return result?.Rows.Select(r => new PromptRevision(
-            Text(r[0])!, Text(r[1])!, Text(r[2]), Text(r[3]), Text(r[4])!, Text(r[5])!,
-            Text(r[6])!, Text(r[7])!, Flag(r[8]), Text(r[9]))).ToList() ?? [];
+        var directory = Path.GetDirectoryName(_path)!;
+        Directory.CreateDirectory(directory);
+        var temp = _path + ".tmp";
+        File.WriteAllText(temp, JsonSerializer.Serialize(_state, JsonOptions));
+        File.Move(temp, _path, overwrite: true);
     }
 
-    private IReadOnlyList<PromptProposal> ReadProposals(string sql)
+    private static int ClampLimit(int limit) => Math.Clamp(limit, 1, 1000);
+    private static string Now() => DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+    private static string NewId(string prefix) => $"{prefix}-{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}";
+
+    private sealed class State
     {
-        var result = Read(sql);
-        return result?.Rows.Select(r => new PromptProposal(
-            Text(r[0])!, Text(r[1])!, Text(r[2]), Text(r[3])!, Text(r[4])!, Text(r[5])!,
-            Text(r[6]) ?? "", Text(r[7])!, Text(r[8])!, Text(r[9])!, Text(r[10]), Text(r[11]),
-            Text(r[12]), Text(r[13]))).ToList() ?? [];
+        public int FormatVersion { get; set; } = 1;
+        public List<PromptRevision> Revisions { get; set; } = [];
+        public List<PromptProposal> Proposals { get; set; } = [];
+        public List<PromptCorrection> Corrections { get; set; } = [];
+        public List<PromptIncident> Incidents { get; set; } = [];
     }
-
-    private IReadOnlyList<PromptCorrection> ReadCorrections(string sql)
-    {
-        var result = Read(sql);
-        return result?.Rows.Select(r => new PromptCorrection(
-            Text(r[0])!, Text(r[1])!, Text(r[2])!, Text(r[3])!, Text(r[4]) ?? "",
-            Text(r[5])!, Text(r[6])!, Text(r[7])!, Text(r[8]))).ToList() ?? [];
-    }
-
-    private QueryResult? Read(string sql) => _data.ExecuteSql(sql).Result;
-
-    private void Execute(string sql) => _data.ExecuteSql(sql);
-
-    private void EnsureColumn(string table, string column, string type)
-    {
-        if (_data.GetSchema(table).Any(c => c.Name.Equals(column, StringComparison.OrdinalIgnoreCase)))
-            return;
-        Execute($"ALTER TABLE {table} ADD COLUMN {column} {type}");
-    }
-
-    private static string InsertRevisionSql(PromptRevision revision)
-        => "INSERT INTO mcp_prompt_revisions " +
-           "(id,command,description,parent_revision,source,reason,created,created_by,applied,reverted_from) VALUES " +
-           $"({Sql(revision.Id)},{Sql(revision.Command)},{SqlNullable(revision.Description)}," +
-           $"{SqlNullable(revision.ParentRevision)},{Sql(revision.Source)},{Sql(revision.Reason)}," +
-           $"{Sql(revision.Created)},{Sql(revision.CreatedBy)},1,{SqlNullable(revision.RevertedFrom)});";
-
-    private const string ProposalSelect =
-        "SELECT id,command,base_revision,old_text,proposed_text,reason,evidence,source_client," +
-        "created,status,reviewer,reviewed,review_note,applied_revision FROM " + TableProposals;
-
-    private static string NewId(string prefix) => $"{prefix}_{Guid.NewGuid():N}";
-
-    private static string Now() => DateTimeOffset.Now.ToString("O");
-
-    private static int ClampLimit(int limit) => Math.Clamp(limit, 1, 500);
-
-    private static string Sql(string value) => SqlText.Quote(value); // R1:转义唯一实现
-
-    private static string SqlNullable(string? value) => value == null ? "NULL" : Sql(value);
-
-    private static string? Text(object? value) => value?.ToString();
-
-    private static bool Flag(object? value)
-        => value != null && long.TryParse(value.ToString(), out var number) && number != 0;
 }

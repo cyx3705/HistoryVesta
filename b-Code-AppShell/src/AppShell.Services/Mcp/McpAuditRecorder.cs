@@ -1,61 +1,72 @@
-using AppShell.Core.Data;
+using System.Text;
+using System.Text.Json;
 using AppShell.Core.Logging;
 using AppShell.Core.Mcp;
 
 namespace AppShell.Services.Mcp;
 
-/// <summary>
-/// MCP 调用留痕的框架缺省实现(0.4.4):写入 <c>mcp_history</c> 表。
-///
-/// **表结构、列名、时间戳格式与截断长度逐项沿用反哺来源 OneHistoryStudio 的既有定义**,
-/// 派生应用升级到 0.4.4 后既有 mcp_history 数据可直接继续使用,不需要迁移。
-/// 留痕失败只告警不阻断——记录是旁路,不是闸口。
-/// </summary>
+/// <summary>MCP 调用留痕的 JSONL 实现。单条追加失败只告警，不阻断调用。</summary>
 public sealed class McpAuditRecorder : IMcpAuditLog
 {
-    public const string TableName = "mcp_history";
+    private const int MaxClientLength = 256;
+    private const int MaxToolLength = 128;
+    private const int MaxArgumentsLength = 500;
+    private const int MaxResultLength = 100;
 
-    private readonly IDataService _data;
+    private readonly string _path;
     private readonly IShellLog _log;
+    private readonly object _gate = new();
 
-    public McpAuditRecorder(IDataService data, IShellLog log)
+    public McpAuditRecorder(string dataDirectory, IShellLog log)
     {
-        _data = data;
+        _path = Path.Combine(dataDirectory, "state", "mcp-history.jsonl");
         _log = log;
-        try
-        {
-            _data.ExecuteSql(
-                $"""
-                CREATE TABLE IF NOT EXISTS {TableName} (
-                    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                    time       TEXT    NOT NULL,
-                    client     TEXT    NOT NULL,
-                    tool       TEXT    NOT NULL,
-                    arguments  TEXT,
-                    result     TEXT    NOT NULL,
-                    elapsed_ms INTEGER NOT NULL DEFAULT 0
-                )
-                """);
-        }
-        catch (Exception ex)
-        {
-            _log.Error("mcp", $"MCP 留痕表初始化失败: {ex.Message}");
-        }
     }
 
     public void RecordMcp(string client, string tool, string arguments, string result, long elapsedMs)
     {
         try
         {
-            _data.ExecuteSql(
-                $"INSERT INTO {TableName} (time, client, tool, arguments, result, elapsed_ms) VALUES (" +
-                $"'{DateTime.Now:yyyy-MM-dd HH:mm:ss}',{SqlText.Quote(SqlText.Truncate(client, 100))}," +
-                $"{SqlText.Quote(tool)},{SqlText.Quote(SqlText.Truncate(arguments, 500))}," +
-                $"{SqlText.Quote(result)},{elapsedMs})");
+            var row = new AuditRow(
+                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                Bound(client, MaxClientLength),
+                Bound(tool, MaxToolLength),
+                Bound(arguments, MaxArgumentsLength),
+                Bound(result, MaxResultLength),
+                elapsedMs);
+            var line = JsonSerializer.Serialize(row) + Environment.NewLine;
+            lock (_gate)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+                File.AppendAllText(_path, line, new UTF8Encoding(false));
+            }
         }
         catch (Exception ex)
         {
-            _log.Warn("mcp", $"MCP 留痕写入失败(不影响调用本身): {ex.Message}");
+            _log.Warn("mcp", $"MCP 留痕写入失败(不影响调用本身): {ex.GetType().Name}");
         }
     }
+
+    void IMcpAuditLog.RecordMcp(
+        ClientSession session,
+        string tool,
+        string arguments,
+        string result,
+        long elapsedMs)
+        => RecordMcp($"{session.Id}/{session.Name}", tool, arguments, result, elapsedMs);
+
+    private static string Bound(string? value, int maxLength)
+    {
+        if (string.IsNullOrEmpty(value))
+            return "";
+        return value.Length <= maxLength ? value : value[..(maxLength - 1)] + "…";
+    }
+
+    private sealed record AuditRow(
+        string Time,
+        string Client,
+        string Tool,
+        string Arguments,
+        string Result,
+        long ElapsedMs);
 }

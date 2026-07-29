@@ -29,6 +29,7 @@ public partial class ConsoleView : UserControl
     private readonly int _bufferLimit;
 
     private readonly ConcurrentQueue<ShellLogEntry> _incoming = new();
+    private int _incomingCount;
     private readonly RingCollection<ConsoleRow> _all = new();
     private RingCollection<ConsoleRow> _visible = new();
     private readonly DispatcherTimer _flushTimer;
@@ -59,8 +60,13 @@ public partial class ConsoleView : UserControl
 
         // 已有历史补读 + 增量订阅
         foreach (var e in log.Snapshot())
-            _incoming.Enqueue(e);
-        log.EntryAdded += (_, e) => _incoming.Enqueue(e);
+            EnqueueIncoming(e);
+        log.EntryAdded += (_, e) =>
+        {
+            if (e.Category.Equals(CommandBus.EchoCategoryPrefix + "手动", StringComparison.OrdinalIgnoreCase))
+                _history.Add(e.Message);
+            EnqueueIncoming(e);
+        };
 
         _flushTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
@@ -110,6 +116,14 @@ public partial class ConsoleView : UserControl
 
     // ---------------------------------------------------------------- 输出区
 
+    private void EnqueueIncoming(ShellLogEntry entry)
+    {
+        _incoming.Enqueue(entry);
+        var count = Interlocked.Increment(ref _incomingCount);
+        while (count > _bufferLimit && _incoming.TryDequeue(out _))
+            count = Interlocked.Decrement(ref _incomingCount);
+    }
+
     private void FlushIncoming()
     {
         if (_incoming.IsEmpty)
@@ -119,6 +133,7 @@ public partial class ConsoleView : UserControl
         // 单次最多处理 8000 条,极端涌入时分帧消化,保 UI 响应(N-03)
         for (var i = 0; i < 8000 && _incoming.TryDequeue(out var entry); i++)
         {
+            Interlocked.Decrement(ref _incomingCount);
             foreach (var row in ConsoleRow.From(entry))
             {
                 _all.Add(row);
@@ -278,7 +293,6 @@ public partial class ConsoleView : UserControl
         if (text.Length == 0)
             return;
 
-        _history.Add(text);
         _historyIndex = -1;
         _draft = "";
         SetInputText("");
@@ -397,7 +411,6 @@ public partial class ConsoleView : UserControl
     {
         foreach (var line in lines)
         {
-            _history.Add(line);
             await _bus.ExecuteAsync(line, "手动");
         }
     }

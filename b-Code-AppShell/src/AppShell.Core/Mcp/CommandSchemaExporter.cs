@@ -75,7 +75,7 @@ public sealed partial class CommandSchemaExporter
                 descriptor.Name,
                 customized ? custom! : defaultDescription,
                 BuildInputSchema(descriptor),
-                Dangerous: descriptor.ConfirmPrompt != null,
+                Dangerous: descriptor.IsDangerous,
                 DefaultDescription: defaultDescription,
                 Customized: customized));
         }
@@ -146,6 +146,15 @@ public sealed partial class CommandSchemaExporter
             properties[p.Name] = prop;
             if (p.Required)
                 required.Add(JsonValue.Create(p.Name));
+        }
+
+        if (descriptor.ExecutionSite == CommandExecutionSite.Frontend)
+        {
+            properties["_frontend"] = new JsonObject
+            {
+                ["type"] = "string",
+                ["description"] = "目标前端的会话 ID 或应用名；多个前端在线时必须指定",
+            };
         }
 
         var schema = new JsonObject

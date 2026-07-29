@@ -123,6 +123,8 @@ public sealed class ShellLog : IShellLog, IDisposable
         catch (IOException)
         {
             // 单条写失败忽略;下一条重试建流
+            try { _writer?.Dispose(); }
+            catch (IOException) { }
             _writer = null;
         }
     }
