@@ -9,6 +9,7 @@
 **/bin/
 **/obj/
 TestResults/
+/artifacts/
 
 # Local package and deployment scratch
 *.tmp

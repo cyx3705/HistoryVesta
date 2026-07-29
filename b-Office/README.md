@@ -19,6 +19,7 @@
 
 - [AppShell 升级手册](maintenance/AppShell升级手册.md)：消费项目迁移、候选验证和回滚流程，不随消费合同发布。
 - [AppShell 版本记录](maintenance/AppShell版本记录.md)：完整开发史和维护者技术记录，不随消费合同发布。
+- [CI 流水线实施方案](maintenance/AppShell_CI流水线实施方案.md)：冻结门禁的自动化投影，本地门禁已通过，待首轮远端 CI，不随消费合同发布。
 - `release/consumer-docs.json`：发布消费文档清单。
 - `release/AppShell.reuse.template.md`：生成正式精简复用说明的模板。
 
