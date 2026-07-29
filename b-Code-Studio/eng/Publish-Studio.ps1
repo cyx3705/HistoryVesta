@@ -153,10 +153,10 @@ try {
         throw "Refusing to overwrite immutable build directory: $BuildRoot"
     }
 
-    $sourceStatus = (& git -C $RepoRoot status --porcelain -- b-Code-Studio b-Code-Studio.Service b-Office) -join "`n"
+    $sourceStatus = (& git -C $RepoRoot status --porcelain -- b-Code-Studio b-Office) -join "`n"
     $sourceDirty = -not [string]::IsNullOrWhiteSpace($sourceStatus)
     if ($Publish -and $sourceDirty) {
-        throw "Formal publish requires clean b-Code-Studio, b-Code-Studio.Service and b-Office source trees."
+        throw "Formal publish requires clean b-Code-Studio and b-Office source trees."
     }
 
     Invoke-Dotnet @( "restore", "OHS.sln", "--locked-mode", "-p:NuGetAudit=false" )

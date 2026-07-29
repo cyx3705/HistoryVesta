@@ -17,12 +17,8 @@ using OneHistoryStudio.Service;
 namespace OneHistoryStudio;
 
 /// <summary>
-/// OneHistoryStudio 装配点；V2.4.0 起直接引用 020 伞形项目中的 AppShell 唯一源码。
-///
-/// 模板 0.4.4 起,**模块托管与 MCP 网关(含提示词治理)已由框架自带并默认启用**,
-/// 本装配点不再自行创建它们——只组装应用专有的六件:数据服务、操作留痕、项目库、
-/// Git 文件规则、格式台账、自扩展飞轮,并登记应用专有的 MCP 只读指令。
-/// 一次性升级动作统一走 StartupMigrations。
+/// OneHistoryStudio 桌面装配点。AppShell 由固定版本包提供；业务命令、模块、MCP 与 Web
+/// 统一由常驻的 OneHistoryStudio.exe --service-host 组合，桌面只装配视图、连接能力和前端命令代理。
 /// </summary>
 public partial class App : Application
 {

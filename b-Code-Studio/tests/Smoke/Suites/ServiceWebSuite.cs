@@ -50,7 +50,8 @@ internal static class ServiceWebSuite
                 composition.Registry,
                 composition,
                 static () => { },
-                "OneHistoryStudio.Service.exe");
+                "OneHistoryStudio.exe",
+                serviceArguments: ["--service-host"]);
             SmokeKit.True(composition.Registry.All().Count > 0, "service command registry is non-empty");
             foreach (var name in new[]
                      {

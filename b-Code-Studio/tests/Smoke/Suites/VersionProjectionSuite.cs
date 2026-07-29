@@ -31,15 +31,9 @@ internal static class VersionProjectionSuite
         ]);
         AssertRuntimeAssemblies(studioVersion, [typeof(ProjectService).Assembly]);
 
-        foreach (var relativePath in new[]
-                 {
-                     "b-Code-Studio/Studio.csproj",
-                     "b-Code-Studio.Service/Studio.Service.csproj",
-                 })
-        {
-            var evaluated = await EvaluateAsync(Path.Combine(ParentDir, relativePath));
-            AssertEvaluatedVersion(evaluated, studioVersion, relativePath);
-        }
+        const string studioProject = "b-Code-Studio/Studio.csproj";
+        var evaluated = await EvaluateAsync(Path.Combine(ParentDir, studioProject));
+        AssertEvaluatedVersion(evaluated, studioVersion, studioProject);
 
         AssertPackageConsumers();
         await AssertPublishAreaGovernanceAsync();
@@ -149,21 +143,12 @@ internal static class VersionProjectionSuite
         True(studioPackages.All(item => (string?)item.Attribute("Version") == FrozenAppShellVersion),
             "package consumption: Studio AppShell references use the frozen version");
 
-        var serviceProject = XDocument.Load(Path.Combine(
-            ParentDir, "b-Code-Studio.Service", "Studio.Service.csproj"));
-        var serviceHost = serviceProject.Descendants("PackageReference").Single(item =>
-            ((string?)item.Attribute("Include"))?.Equals(
-                "OneHistory.AppShell.ServiceHost", StringComparison.OrdinalIgnoreCase) == true);
-        Equal(FrozenAppShellVersion, (string?)serviceHost.Attribute("Version"),
-            "package consumption: service host uses the frozen version");
-
-        foreach (var project in new[] { studioProject, serviceProject })
-        {
-            True(project.Descendants("ProjectReference").All(item =>
-                    !(((string?)item.Attribute("Include")) ?? "")
-                        .Contains("b-Code-AppShell", StringComparison.OrdinalIgnoreCase)),
-                "package consumption: no AppShell source project reference remains");
-        }
+        True(studioProject.Descendants("ProjectReference").All(item =>
+                !(((string?)item.Attribute("Include")) ?? "")
+                    .Contains("b-Code-AppShell", StringComparison.OrdinalIgnoreCase)),
+            "package consumption: no AppShell source project reference remains");
+        True(!Directory.Exists(Path.Combine(ParentDir, "b-Code-Studio.Service")),
+            "single entry: legacy Service project directory is removed");
 
         var nuget = XDocument.Load(Path.Combine(ParentDir, "nuget.config"));
         True(nuget.Descendants("add").Any(item =>
@@ -224,6 +209,17 @@ internal static class VersionProjectionSuite
             "version projection: ignored staging has no tracked LFS contract");
         True(Directory.Exists(Path.Combine(ParentDir, "z-Package")),
             "version projection: formal package root exists");
+        var formalPackageFiles = Directory.EnumerateFiles(
+                Path.Combine(ParentDir, "z-Package"), "*", SearchOption.AllDirectories)
+            .Select(Path.GetFileName)
+            .ToArray();
+        True(formalPackageFiles.All(name =>
+                name is not null
+                && !name.StartsWith("OneHistoryStudio.Service.", StringComparison.OrdinalIgnoreCase)
+                && !name.StartsWith("OneHistoryStudio.LegacyServiceHost.", StringComparison.OrdinalIgnoreCase)
+                && !name.StartsWith("LegacyServiceHost.", StringComparison.OrdinalIgnoreCase)
+                && !name.StartsWith("LegacyServiceProgram.", StringComparison.OrdinalIgnoreCase)),
+            "version projection: formal package contains no retired Service artifacts");
 
         var start = new ProcessStartInfo("git")
         {

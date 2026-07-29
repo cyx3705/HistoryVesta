@@ -8,15 +8,14 @@
 | 目录 | 职责 | 构建状态 |
 |---|---|---|
 | `b-Code-Studio` | OHS 产品源码、Contracts 与 Smoke | 纳入 `OHS.sln` |
-| `b-Code-Studio.Service` | OHS 常驻后台服务入口 | 独立构建 |
 | `b-Publish` | 本机构建、候选、历史归档与失败隔离区 | 生成物，不入 Git |
 | `z-Package` | 经 manifest/checksum 验证的正式可消费快照 | 不参与解决方案构建 |
 | `b-Code-OneHistory-V1` | OneHistory V1 历史组件 | 只读，不构建 |
 | `b-Office` | OHS 现行手册、版本记录与必要证据 | 不构建 |
 
 AppShell 权威源码、包仓和开发文档位于平级项目 `..\2026-023-AppShell`。当前消费基线为
-`OneHistory.AppShell.* 3.0.0`，包源由根目录 `nuget.config` 指向 023 的正式 feed；冻结审核期间使用
-023 的 `b-Publish\staging\3.0.0\packages` 候选源；`z-Package-AppShell\feed` 仅在正式提升后使用。
+`OneHistory.AppShell.* 3.0.3`，包源由根目录 `nuget.config` 指向 023 的正式 feed；冻结审核期间使用
+023 的对应 `b-Publish\staging\<版本>\packages` 候选源；`z-Package-AppShell\feed` 仅在正式提升后使用。
 
 OHS 只有两层发布区：`b-Publish` 保存本机构建、当前候选、历史版本和失败隔离，`z-Package` 只保存
 最新正式可消费快照。`C:\OneHistory\OneHistory-Push\OneHistoryStudio` 是部署运行位置，不是第三层发布区；

@@ -55,6 +55,7 @@ if (-not $Apply) {
     return
 }
 
+# Keep the retired process name for one compatibility cycle so an old deployment cannot be overwritten while running.
 $running = @(Get-Process -Name "OneHistoryStudio", "OneHistoryStudio.Service" -ErrorAction SilentlyContinue)
 if ($running.Count -ne 0) {
     $processes = ($running | ForEach-Object { "$($_.ProcessName)($($_.Id))" }) -join ", "

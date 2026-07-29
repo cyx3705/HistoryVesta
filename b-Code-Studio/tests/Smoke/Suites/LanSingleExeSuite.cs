@@ -438,8 +438,6 @@ internal static class LanSingleExeSuite
             SmokeKit.RepoRoot, "Views", "GitHubAccountView.xaml"));
         var connectionView = File.ReadAllText(Path.Combine(
             SmokeKit.RepoRoot, "Views", "ConnectionSettingsView.xaml"));
-        var legacy = File.ReadAllText(Path.Combine(
-            SmokeKit.ParentDir, "b-Code-Studio.Service", "Studio.Service.csproj"));
         SmokeKit.Contains(studio, "<StartupObject>OneHistoryStudio.Program</StartupObject>",
             "Studio explicit entrypoint");
         SmokeKit.Contains(program, "--service-host", "single EXE service mode");
@@ -448,8 +446,9 @@ internal static class LanSingleExeSuite
         SmokeKit.Contains(program, "--lan-remove", "single EXE LAN remove helper mode");
         SmokeKit.True(!solution.Contains("b-Code-Studio.Service", StringComparison.OrdinalIgnoreCase),
             "legacy Service project removed from product solution");
-        SmokeKit.Contains(legacy, "<OutputType>Library</OutputType>",
-            "legacy Service source is non-product library");
+        SmokeKit.True(!Directory.Exists(Path.Combine(
+                SmokeKit.ParentDir, "b-Code-Studio.Service")),
+            "legacy Service project directory removed from source tree");
         SmokeKit.Contains(app, "workspace = new RemoteWorkspaceService(_serviceClient)",
             "client composition uses remote workspace");
         SmokeKit.Contains(githubView, "服务器 GitHub 账号",

@@ -44,14 +44,14 @@ dotnet build .\OHS.sln -c Release -p:NuGetAudit=false
 Release 发布、运行时命令手册重生成、六份 Help 校验、版本校验、SHA-256 和 manifest，并写入新的
 `b-Publish\current` 当前候选；每次使用 `b-Publish\work\OneHistoryStudio` 中的同卷临时候选原子替换，
 不提交 Git。只有显式 `-Publish` 且
-`b-Code-Studio`、`b-Code-Studio.Service`、`b-Office` 都洁净时，才会继续把已验证暂存原子提升到
+`b-Code-Studio`、`b-Office` 都洁净时，才会继续把已验证暂存原子提升到
 `z-Package` 正式区。两个阶段都按 manifest 和 checksum 复验完整文件集合、大小与 SHA-256；旧暂存、
 旧正式包进入 `b-Publish\history\OneHistoryStudio`，失败候选进入
 `b-Publish\quarantine\OneHistoryStudio`。发布脚本不得创建仓库根 `stage`。
 
 ```powershell
-.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.9
-.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.9 -Publish
+.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.10
+.\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.10 -Publish
 ```
 
 不得用独立的 `dotnet publish` 或手工复制替代该入口；版本始终从 `StudioVersion.props` 求值。
