@@ -37,7 +37,8 @@
                 <ComboBoxItem Content="app" />
                 <ComboBoxItem Content="module" />
             </ComboBox>
-            <Button Grid.Column="8" Content="服务状态" Padding="10,3" Margin="10,0,0,0" Click="OnStatusClick" />
+            <Button Grid.Column="8" x:Name="McpStatusButton" Content="服务状态" Padding="10,3"
+                    Margin="10,0,0,0" Click="OnStatusClick" />
             <Button Grid.Column="9" x:Name="RefreshButton" Content="刷新" Padding="10,3" Margin="8,0,0,0"
                     Click="OnRefreshClick" />
         </Grid>

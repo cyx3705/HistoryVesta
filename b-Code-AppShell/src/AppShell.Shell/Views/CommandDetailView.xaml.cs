@@ -88,13 +88,25 @@ public partial class CommandDetailView : UserControl
                              $"{(detail.Command.PolicyVisible ? "是" : "否")} | " +
                              $"工具名: {detail.Command.McpToolName ?? "(无)"}{reason}";
         SchemaBox.Text = detail.McpInputSchema ?? "该指令没有 MCP 工具形态";
-        ShowSchemaButton.IsEnabled = detail.Command.McpToolName != null;
+        ShowSchemaButton.IsEnabled = detail.Command.McpToolName != null
+                                     && bus.Registry.TryGet("mcp.schema", out _);
 
         if (detail.Command.McpToolName == null)
         {
             RevisionStatusText.Text = "该指令被 MCP 硬排除，不参与提示词治理";
             DefaultDescBox.Text = detail.Command.Summary +
                                   (detail.Command.Example == null ? "" : $"\n示例: {detail.Command.Example}");
+            DescBox.Text = DefaultDescBox.Text;
+            SetGovernanceEnabled(false);
+            ClearGovernanceCollections();
+            return;
+        }
+
+        if (!bus.Registry.TryGet("prompt.get", out _))
+        {
+            RevisionStatusText.Text = "MCP 未启用，提示词治理未装配";
+            DefaultDescBox.Text = detail.Command.Summary
+                                  + (detail.Command.Example == null ? "" : $"\n示例: {detail.Command.Example}");
             DescBox.Text = DefaultDescBox.Text;
             SetGovernanceEnabled(false);
             ClearGovernanceCollections();

@@ -29,11 +29,13 @@ var config = new ShellConfig
 {
     AppName = "AppShellPackageSmoke",
     AppVersion = smokeIdentity.Version,
-    EnableModules = false,
-    EnableMcp = false,
 };
 
-if (config.AppVersion != smokeIdentity.Version || config.EnableModules || config.EnableMcp)
+if (config.AppVersion != smokeIdentity.Version
+    || config.EnableModules
+    || config.EnableUiModules
+    || config.EnableMcp
+    || config.EnableRemoteManagementViews)
     throw new InvalidOperationException("ShellConfig package surface is not usable");
 
 AppIdentity.Use(smokeAssembly);

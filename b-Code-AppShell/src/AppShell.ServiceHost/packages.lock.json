@@ -34,7 +34,7 @@
       "OneHistory.AppShell.Services": {
         "type": "Project",
         "dependencies": {
-          "OneHistory.AppShell.Core": "[3.0.0, )"
+          "OneHistory.AppShell.Core": "[3.0.1, )"
         }
       }
     }

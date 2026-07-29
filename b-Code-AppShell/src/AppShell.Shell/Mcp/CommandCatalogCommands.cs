@@ -51,12 +51,26 @@ public static class CommandCatalogCommands
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
+    internal static void RegisterCore(CommandRegistry registry, string source = "app")
+    {
+        var exporter = new CommandSchemaExporter(registry);
+        RegisterCatalog(registry, exporter, prompts: null, static () => null, source);
+    }
+
     public static void RegisterAll(
         CommandRegistry registry,
         CommandSchemaExporter exporter,
         PromptGovernanceStore prompts,
         Func<McpGateway?> gateway,
         string source = "app")
+        => RegisterCatalog(registry, exporter, prompts, gateway, source);
+
+    private static void RegisterCatalog(
+        CommandRegistry registry,
+        CommandSchemaExporter exporter,
+        PromptGovernanceStore? prompts,
+        Func<McpGateway?> gateway,
+        string source)
     {
         registry.Register(BuildList(registry, exporter, prompts, gateway), source);
         registry.Register(BuildShow(registry, exporter, prompts, gateway), source);
@@ -69,16 +83,28 @@ public static class CommandCatalogCommands
         CommandSchemaExporter exporter,
         PromptGovernanceStore prompts,
         string policy)
+        => SnapshotCore(registry, exporter, prompts, policy);
+
+    private static IReadOnlyList<CommandCatalogRow> SnapshotCore(
+        CommandRegistry registry,
+        CommandSchemaExporter exporter,
+        PromptGovernanceStore? prompts,
+        string policy)
     {
         var tools = exporter.ExportTools().ToDictionary(
             tool => tool.CommandName, StringComparer.OrdinalIgnoreCase);
-        var descriptions = prompts.AllEffectiveDescriptions();
-        var openProposals = prompts.ListProposals(openOnly: true, limit: 500)
-            .GroupBy(item => item.Command, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
-        var incidents = prompts.ListIncidents(limit: 500)
-            .GroupBy(item => item.Command, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
+        IReadOnlyDictionary<string, string> descriptions = prompts?.AllEffectiveDescriptions()
+            ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        IReadOnlyDictionary<string, int> openProposals = prompts == null
+            ? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+            : prompts.ListProposals(openOnly: true, limit: 500)
+                .GroupBy(item => item.Command, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
+        IReadOnlyDictionary<string, int> incidents = prompts == null
+            ? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+            : prompts.ListIncidents(limit: 500)
+                .GroupBy(item => item.Command, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
 
         return registry.All().Select(descriptor =>
         {
@@ -88,7 +114,7 @@ public static class CommandCatalogCommands
             var sourceName = module ? "module" : rawSource;
             var sourceDetail = module ? rawSource["module:".Length..] : null;
             var customized = descriptions.ContainsKey(descriptor.Name);
-            var revision = customized ? prompts.GetCurrentRevision(descriptor.Name)?.Id : null;
+            var revision = customized ? prompts?.GetCurrentRevision(descriptor.Name)?.Id : null;
 
             return new CommandCatalogRow(
                 descriptor.Name,
@@ -114,7 +140,7 @@ public static class CommandCatalogCommands
     private static CommandDescriptor BuildList(
         CommandRegistry registry,
         CommandSchemaExporter exporter,
-        PromptGovernanceStore prompts,
+        PromptGovernanceStore? prompts,
         Func<McpGateway?> gateway) => new()
         {
             Name = "command.list",
@@ -135,7 +161,7 @@ public static class CommandCatalogCommands
         ],
             Handler = CommandDescriptor.Sync(ctx =>
             {
-                IEnumerable<CommandCatalogRow> rows = Snapshot(
+                IEnumerable<CommandCatalogRow> rows = SnapshotCore(
                     registry, exporter, prompts, gateway()?.Policy ?? "readonly");
                 var domain = ctx.GetString("domain")?.Trim();
                 if (!string.IsNullOrWhiteSpace(domain))
@@ -170,7 +196,7 @@ public static class CommandCatalogCommands
     private static CommandDescriptor BuildShow(
         CommandRegistry registry,
         CommandSchemaExporter exporter,
-        PromptGovernanceStore prompts,
+        PromptGovernanceStore? prompts,
         Func<McpGateway?> gateway) => new()
         {
             Name = "command.show",
@@ -184,7 +210,7 @@ public static class CommandCatalogCommands
                 if (!registry.TryGet(name, out var descriptor))
                     return CommandResult.Fail($"指令不存在: {name}");
 
-                var row = Snapshot(registry, exporter, prompts, gateway()?.Policy ?? "readonly")
+                var row = SnapshotCore(registry, exporter, prompts, gateway()?.Policy ?? "readonly")
                     .First(item => item.CommandName.Equals(descriptor.Name, StringComparison.OrdinalIgnoreCase));
                 var parameters = descriptor.Parameters.Select(parameter => new CommandParameterInfo(
                     parameter.Name,

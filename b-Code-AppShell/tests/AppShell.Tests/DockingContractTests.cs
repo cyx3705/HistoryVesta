@@ -235,10 +235,7 @@ public sealed class DockingContractTests
                 new ShellConfig
                 {
                     AppName = "AppShell Center Test",
-                    AppVersion = "3.0.0",
-                    EnableMcp = false,
-                    EnableModules = false,
-                    EnableRemoteManagementViews = true,
+                    AppVersion = "3.0.1",
                 },
                 new MemoryLayoutStore(),
                 new NullLog(),
@@ -253,6 +250,11 @@ public sealed class DockingContractTests
 
             try
             {
+                Assert.Null(window.Mcp);
+                Assert.Null(window.Modules);
+                Assert.True(window.Commands.Registry.TryGet("command.list", out _));
+                Assert.False(window.Commands.Registry.TryGet("mcp.start", out _));
+                Assert.False(window.Commands.Registry.TryGet("module.list", out _));
                 window.Show();
                 PumpDispatcher();
                 var single = Assert.Single(FindVisualDescendants<LayoutDocumentPaneControl>(window));

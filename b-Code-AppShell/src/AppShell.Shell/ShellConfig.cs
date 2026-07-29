@@ -42,15 +42,15 @@ public sealed class ShellConfig
     /// </summary>
     public List<Core.Panels.PanelDefinition> Panels { get; } = new();
 
-    // ---------------------------------------------------------------- 0.4.4 反哺能力(默认启用)
+    // ---------------------------------------------------------------- 0.4.4 反哺能力(消费方显式启用)
 
     /// <summary>
     /// 模块托管(MD-01~08,0.4.4 由 OneHistoryStudio 反哺):
     /// &lt;数据目录&gt;\Modules 热重载,DLL 即指令域;module.* 指令组随之注册。
-    /// 默认启用——派生应用开箱即有模块注册器,无需自行装配。
-    /// 置 false 则完全不创建宿主、不注册 module.*。
+    /// 默认关闭；消费方明确需要模块扫描、热重载和 module.* 时置 true。
+    /// false 时完全不创建宿主、不扫描目录、不注册 module.*。
     /// </summary>
-    public bool EnableModules { get; set; } = true;
+    public bool EnableModules { get; set; }
 
     /// <summary>
     /// 在本进程加载声明了 ui=true 的模块界面。默认由 EnableModules 隐式启用;
@@ -63,11 +63,12 @@ public sealed class ShellConfig
 
     /// <summary>
     /// MCP 服务(0.4.4 由 OneHistoryStudio 反哺):元数据自描述层、网关、提示词治理,
-    /// 注册 mcp.* / command.* / prompt.* / correction.* / incident.* 指令组。
-    /// 默认启用并随宿主自动监听；mcp.autostart=false 可关闭自动监听，之后仍可 mcp.start。
+    /// 注册 mcp.* / prompt.* / correction.* / incident.* 指令组。
+    /// 默认关闭；消费方置 true 后才创建网关、治理存储和 mcp.*，并按 mcp.autostart 决定是否监听。
+    /// 本地 command.* 和命令集主窗口属于 Shell 核心能力，不依赖本开关。
     /// 提示词治理与留痕写入数据目录中的 JSON/JSONL 文件，不依赖数据服务。
     /// </summary>
-    public bool EnableMcp { get; set; } = true;
+    public bool EnableMcp { get; set; }
 
     /// <summary>
     /// 客户端模式下只创建命令集、指令详情和模块管理视图，不在本进程创建 MCP 或 ModuleHost。

@@ -18,7 +18,7 @@ namespace AppShell.Services.Mcp;
 /// MCP 网关(V2.1 §4/§6):HttpListener + JSON-RPC 2.0(Streamable HTTP 无状态子集),
 /// 仅监听 127.0.0.1。铁律 1:唯一上游是指令总线——本类只认识
 /// CommandSchemaExporter / CommandBus,不 import ModuleHost、不反射模块类型。
-/// 宿主启动时默认自动监听;mcp.autostart=false 可关闭,mcp.start 仍可手动恢复。
+/// 消费方显式装配网关后可调用 TryAutostart；mcp.autostart=false 可关闭自动监听，mcp.start 仍可手动恢复。
 /// 每次调用/拒绝均追加写入 state/mcp-history.jsonl(铁律 2 / MS-05)。
 /// </summary>
 public sealed class McpGateway : IDisposable

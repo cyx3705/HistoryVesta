@@ -79,6 +79,19 @@ public partial class McpToolsView : UserControl
         RefreshButton.IsEnabled = false;
         try
         {
+            var mcpEnabled = bus.Registry.TryGet("mcp.status", out _);
+            var governanceEnabled = bus.Registry.TryGet("prompt.get", out _);
+            McpStatusButton.IsEnabled = mcpEnabled;
+            CustomizedOnlyCheck.IsEnabled = governanceEnabled;
+            PendingOnlyCheck.IsEnabled = governanceEnabled;
+            IncidentOnlyCheck.IsEnabled = governanceEnabled;
+            if (!governanceEnabled)
+            {
+                CustomizedOnlyCheck.IsChecked = false;
+                PendingOnlyCheck.IsChecked = false;
+                IncidentOnlyCheck.IsChecked = false;
+            }
+
             var result = await bus.ExecuteAsync("command.list", "UI");
             if (!result.Success || result.Data is not IReadOnlyList<CommandCatalogRow> rows)
             {
@@ -168,7 +181,8 @@ public partial class McpToolsView : UserControl
         var standardCount = _allRows.Count(row => row.McpState == "standard");
         var dangerous = _allRows.Count(row => row.McpState == "dangerous");
         var modules = _allRows.Count(row => row.Source == "module");
-        StatusText.Text = $"显示 {list.Count}/{_allRows.Count} 条；硬排除 {hardExcluded}，" +
+        var serviceState = McpStatusButton.IsEnabled ? "MCP 已装配" : "MCP 未启用";
+        StatusText.Text = $"显示 {list.Count}/{_allRows.Count} 条；{serviceState}；硬排除 {hardExcluded}，" +
                           $"readonly {readonlyCount}，standard {standardCount}，危险拒绝 {dangerous}，模块 {modules}";
     }
 

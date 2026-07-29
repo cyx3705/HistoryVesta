@@ -23,10 +23,10 @@ dotnet build .\AppShell.sln -c Release --no-restore
 
 消费方通过固定版本的 `PackageReference` 使用 AppShell，不直接引用本目录源码。
 
-## 3.0.0 冻结包
+## 3.0.x 包
 
-3.0.0 是独立后的长期冻结契约，统一源码、程序集和四个包的版本号，并冻结公开 API、四类标准窗口、命令总线和服务端权威命令目录。桌面消费者引用 Shell，
-服务化消费者额外引用 ServiceHost：
+3.0.0 是当前正式发布基线但尚未标签冻结；源码当前为 3.0.1 默认最小能力整改候选。桌面消费者引用 Shell，
+服务化消费者额外引用 ServiceHost。正式切换前继续固定使用当前 Z 级快照声明的版本：
 
 ```xml
 <PackageReference Include="OneHistory.AppShell.Shell" Version="3.0.0" />
@@ -38,10 +38,10 @@ dotnet build .\AppShell.sln -c Release --no-restore
 
 ```powershell
 # 可覆盖 staging：构建、审计、隔离消费和演示发布
-.\eng\Publish-AppShell.ps1 -Version 3.0.0
+.\eng\Publish-AppShell.ps1 -Version 3.0.1
 
 # 完整归档不可覆盖；同时替换 z-Package-AppShell 的当前正式快照
-.\eng\Publish-AppShell.ps1 -Version 3.0.0 -Publish
+.\eng\Publish-AppShell.ps1 -Version 3.0.1 -Publish
 ```
 
 脚本不会执行 Git commit/tag/push，也不会推送 NuGet.org。包结构与许可边界见 `PACKAGE.md`。

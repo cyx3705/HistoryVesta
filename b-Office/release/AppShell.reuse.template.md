@@ -45,7 +45,8 @@
 
 ## 默认行为与约束
 
-- `ShellConfig.EnableModules` 和 `EnableMcp` 默认启用；不需要时应显式关闭。
+- `ShellConfig.EnableModules`、`EnableUiModules`、`EnableMcp` 和 `EnableRemoteManagementViews` 默认关闭；
+  消费方只显式启用实际需要的能力。本地 `command.*` 与命令集主窗口不依赖 MCP 网关。
 - 设置、布局、日志、模块和 MCP 治理数据写入当前应用身份对应的数据目录，不要硬编码其他产品目录。
 - 窗口使用 `ToolWindowDescriptor` 注册；不要恢复已删除的旧工作页/文档窗口接口。
 - 命令名必须唯一。远程或前端执行位置由命令元数据声明，不要在消费方复制一套命令目录。

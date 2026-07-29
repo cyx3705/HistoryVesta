@@ -17,7 +17,9 @@
 
 ## 模块宿主
 
-`ShellConfig.EnableModules` 默认为 `true`。模块目录默认是 `%AppData%/<应用名>/Modules`：根目录 DLL 走
+`ShellConfig.EnableModules` 默认为 `false`。消费方明确需要模块命令扫描和热重载时设置为 `true`；只需要
+加载声明了 `ui=true` 的模块界面时可单独设置 `EnableUiModules=true`。模块目录默认是
+`%AppData%/<应用名>/Modules`：根目录 DLL 走
 兼容装载；每个一级子目录是独立模块槽并拥有可回收的 `AssemblyLoadContext`。依赖优先从本槽解析，宿主
 不会把更深目录当作新模块槽。
 
@@ -42,7 +44,12 @@ UI 模块实现 `IUiModule`；需要注册宿主窗口时实现 UI 感知接口�
 
 ## MCP 网关
 
-MCP 默认端口为 `8737 + stableHash(appName) % 200`。显式 `mcp.port` 优先；端口占用时按
+`ShellConfig.EnableMcp` 默认为 `false`。默认 Shell 不创建 `McpGateway`、提示词治理存储或 MCP 审计器，
+不注册 `mcp.*` / `prompt.*` / `correction.*` / `incident.*`，也不监听端口。本地 `command.*` 与中央命令集
+仍可使用。消费方显式设置 `EnableMcp=true` 后才装配上述能力；若同时设置 `mcp.autostart=false`，启动时只装配
+不监听，之后可用 `mcp.start` 启动。
+
+MCP 启用后的默认端口为 `8737 + stableHash(appName) % 200`。显式 `mcp.port` 优先；端口占用时按
 `mcp.portretries` 有界顺延，默认尝试 20 次。网关停止时释放监听、会话和取消令牌。
 
 支持的协议版本为 `2025-06-18` 与 `2025-03-26`。工具结果同时保留文本 `content`，对象或数组结果通过

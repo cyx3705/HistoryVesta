@@ -9,6 +9,23 @@ namespace AppShell.Tests;
 public sealed class QualityRemediationTests
 {
     [Fact]
+    public void ShellConfigDefaultsToMinimalOptionalCapabilities()
+    {
+        var config = new ShellConfig
+        {
+            AppName = "Minimal",
+            AppVersion = "3.0.1",
+        };
+
+        Assert.False(config.EnableModules);
+        Assert.False(config.EnableUiModules);
+        Assert.False(config.EnableMcp);
+        Assert.False(config.EnableRemoteManagementViews);
+        Assert.Null(config.Workspace);
+        Assert.Empty(config.Panels);
+    }
+
+    [Fact]
     public void CorruptedSettingsArePreservedAndSubsequentWritesAreAtomic()
     {
         var appName = "AppShell.Tests." + Guid.NewGuid().ToString("N");

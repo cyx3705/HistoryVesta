@@ -99,14 +99,12 @@ public partial class ShellWindow : Window
         // 仍在 BuiltinCommands 之后完成。条件与指令注册一致。
         // 用 TakeOverDescriptor:派生应用若在 config.ToolWindows 声明了同 Id 窗口的停靠位/标签目标,
         // 一律保留其布局,框架只注入内容——因此派生侧既有布局不变。
-        if (config.EnableMcp || config.EnableRemoteManagementViews)
-        {
-            TakeOverDescriptor(StandardWindowIds.Mcp, "命令集", DockSide.Center, 1,
-                () => new Views.McpToolsView(() => _bus, _commandSelection), forcePlacement: true);
-            // 指令详情窗口:命令集选中项的详情(参数/来源/MCP 映射/提示词状态),与 mcp 窗口共享选中状态
-            TakeOverDescriptor(StandardWindowIds.CommandDetail, "指令详情", DockSide.Right, 0.32,
-                () => new Views.CommandDetailView(() => _bus, _commandSelection));
-        }
+        // 本地命令目录是 Shell 核心能力，不以启动 MCP 网络服务为前提。
+        TakeOverDescriptor(StandardWindowIds.Mcp, "命令集", DockSide.Center, 1,
+            () => new Views.McpToolsView(() => _bus, _commandSelection), forcePlacement: true);
+        // 指令详情窗口:命令集选中项的详情(参数/来源/MCP 映射/提示词状态),与命令集共享选中状态
+        TakeOverDescriptor(StandardWindowIds.CommandDetail, "指令详情", DockSide.Right, 0.32,
+            () => new Views.CommandDetailView(() => _bus, _commandSelection));
 
         if (config.EnableModules || config.EnableRemoteManagementViews)
         {
@@ -151,7 +149,7 @@ public partial class ShellWindow : Window
             Workspace = config.Workspace,
             Panels = _panels,
         });
-        // ---- 0.4.4 反哺能力:模块托管与 MCP 服务(默认启用,ShellConfig 可关)
+        // ---- 0.4.4 反哺能力:模块托管与 MCP 服务(默认关闭,ShellConfig 显式开启)
         //      注册次序在内置指令之后、派生自定义指令之前——派生应用因此可以在
         //      ConfigureCommands 里看到 module.*/mcp.* 已存在,并按需登记只读白名单。
         if (config.EnableModules || config.EnableUiModules)
@@ -195,6 +193,11 @@ public partial class ShellWindow : Window
 
             // CX-03:MCP 中继预批准的执行直接放行,其余仍走 Shell 交互确认
             _bus.Confirmation = new Core.Mcp.GatewayAwareConfirmation(_bus.Confirmation);
+        }
+        else
+        {
+            // command.* 与中央命令集不需要网关、提示词存储或审计器。
+            AppShell.Shell.Mcp.CommandCatalogCommands.RegisterCore(registry);
         }
 
         config.ConfigureCommands?.Invoke(registry);
@@ -257,7 +260,7 @@ public partial class ShellWindow : Window
     /// <summary>模块托管宿主(0.4.4);EnableModules=false 时为 null。</summary>
     public Services.Modules.ModuleHost? Modules => _modules;
 
-    /// <summary>MCP 网关；仅在 <see cref="ShellConfig.EnableMcp"/> 启用时创建，默认按 mcp.autostart 自动监听。</summary>
+    /// <summary>MCP 网关；仅在消费方显式启用 <see cref="ShellConfig.EnableMcp"/> 时创建。</summary>
     public Services.Mcp.McpGateway? Mcp => _mcp;
 
     /// <summary>提示词治理存储(0.4.4);与 <see cref="Mcp"/> 同生命周期。</summary>
