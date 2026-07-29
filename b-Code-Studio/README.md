@@ -9,7 +9,7 @@
 - `Git`、`Views`、`App.xaml*`：OHS 装配、项目管理与页面源码。
 - `tests/Smoke`：合并后的完整自动化冒烟套件。
 
-可覆盖的发布暂存快照位于平级 `..\b-Publish`，正式可消费快照位于 `..\z-Package`。
+本机构建、候选、历史和失败隔离数据位于平级 `..\b-Publish`，正式可消费快照位于 `..\z-Package`。
 
 ## 构建
 
@@ -42,10 +42,12 @@ dotnet build .\OHS.sln -c Release -p:NuGetAudit=false
 
 发布统一使用 `eng\Publish-Studio.ps1`。默认模式会执行锁定还原、Debug/Release 构建、两套 Smoke、
 Release 发布、运行时命令手册重生成、六份 Help 校验、版本校验、SHA-256 和 manifest，并写入新的
-`b-Publish` 暂存区；每次使用同卷临时候选原子替换，不提交 Git。只有显式 `-Publish` 且
+`b-Publish\current` 当前候选；每次使用 `b-Publish\work\OneHistoryStudio` 中的同卷临时候选原子替换，
+不提交 Git。只有显式 `-Publish` 且
 `b-Code-Studio`、`b-Code-Studio.Service`、`b-Office` 都洁净时，才会继续把已验证暂存原子提升到
 `z-Package` 正式区。两个阶段都按 manifest 和 checksum 复验完整文件集合、大小与 SHA-256；旧暂存、
-旧正式包及失败候选进入 `stage` 作为回滚或故障隔离。
+旧正式包进入 `b-Publish\history\OneHistoryStudio`，失败候选进入
+`b-Publish\quarantine\OneHistoryStudio`。发布脚本不得创建仓库根 `stage`。
 
 ```powershell
 .\b-Code-Studio\eng\Publish-Studio.ps1 -Version 2.7.6
@@ -54,7 +56,8 @@ Release 发布、运行时命令手册重生成、六份 Help 校验、版本校
 
 不得用独立的 `dotnet publish` 或手工复制替代该入口；版本始终从 `StudioVersion.props` 求值。
 
-部署只消费 `z-Package`，目标固定为 `C:\OneHistory\OneHistory-Push\OneHistoryStudio`。默认仅预览并
+部署只消费 `z-Package`，目标固定为 `C:\OneHistory\OneHistory-Push\OneHistoryStudio`；该目录是运行位置，
+不是第三层发布区。默认仅预览并
 验证正式包；`-Apply` 才执行数据库备份和整目录事务替换。脚本不会启动、停止或重启程序，也不修改自启动：
 
 ```powershell

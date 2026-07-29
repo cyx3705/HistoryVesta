@@ -42,7 +42,7 @@ internal static class VersionProjectionSuite
         }
 
         AssertPackageConsumers();
-        await AssertStageGovernanceAsync();
+        await AssertPublishAreaGovernanceAsync();
         await AssertPublishTransactionAsync(studioRoot);
         Console.WriteLine(
             $"VersionProjectionSmoke: PASS (OHS {studioVersion}, AppShell {FrozenAppShellVersion})");
@@ -186,7 +186,15 @@ internal static class VersionProjectionSuite
         Contains(publish, "Invoke-DirectoryPromotion",
             "publish governance: OHS uses the tested promotion transaction");
         Contains(publish, "\"b-Publish\"",
-            "publish governance: b-Publish is the generated staging root");
+            "publish governance: b-Publish is the local build and history root");
+        Contains(publish, "\"current\"",
+            "publish governance: b-Publish/current is the replaceable candidate");
+        Contains(publish, "history\\OneHistoryStudio",
+            "publish governance: prior releases stay under b-Publish history");
+        Contains(publish, "quarantine\\OneHistoryStudio",
+            "publish governance: failed releases stay under b-Publish quarantine");
+        True(!publish.Contains("Join-Path $RepoRoot \"stage\"", StringComparison.Ordinal),
+            "publish governance: the removed stage root is not recreated");
         Contains(publish, "\"z-Package\"",
             "publish governance: z-Package is the formal package root");
 
@@ -199,13 +207,13 @@ internal static class VersionProjectionSuite
             "deployment governance: deployment target remains OneHistory-Push");
     }
 
-    private static async Task AssertStageGovernanceAsync()
+    private static async Task AssertPublishAreaGovernanceAsync()
     {
         var gitIgnore = File.ReadAllLines(Path.Combine(ParentDir, ".gitignore"));
-        True(gitIgnore.Any(line => line.Trim().Equals("stage/", StringComparison.Ordinal)),
-            "version projection: the complete stage directory is ignored");
+        True(!gitIgnore.Any(line => line.Trim().Equals("stage/", StringComparison.Ordinal)),
+            "version projection: the retired stage directory is not part of current governance");
         True(gitIgnore.Any(line => line.Trim().Equals("b-Publish/", StringComparison.Ordinal)),
-            "version projection: generated b-Publish staging is ignored");
+            "version projection: local b-Publish build and history data is ignored");
 
         var gitAttributes = File.ReadAllLines(Path.Combine(ParentDir, ".gitattributes"));
         True(gitAttributes.Any(line => line.StartsWith("z-Package/**/*.dll ", StringComparison.Ordinal)),
@@ -224,18 +232,18 @@ internal static class VersionProjectionSuite
             CreateNoWindow = true,
         };
         start.ArgumentList.Add("ls-files");
-        start.ArgumentList.Add("stage");
+        start.ArgumentList.Add("b-Publish");
         using var process = Process.Start(start)
-                            ?? throw new InvalidOperationException("Unable to inspect tracked stage files");
+                            ?? throw new InvalidOperationException("Unable to inspect tracked b-Publish files");
         var stdoutTask = process.StandardOutput.ReadToEndAsync();
         var stderrTask = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();
         var stdout = await stdoutTask;
         var stderr = await stderrTask;
         True(process.ExitCode == 0,
-            $"version projection: git ls-files stage succeeds: {stderr}");
+            $"version projection: git ls-files b-Publish succeeds: {stderr}");
         True(string.IsNullOrWhiteSpace(stdout),
-            "version projection: stage contains no tracked files");
+            "version projection: b-Publish contains no tracked files");
     }
 
     private static async Task AssertPublishTransactionAsync(string studioRoot)

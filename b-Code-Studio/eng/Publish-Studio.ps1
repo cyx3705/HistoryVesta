@@ -10,8 +10,11 @@ Set-StrictMode -Version Latest
 
 $ComponentRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $RepoRoot = [IO.Path]::GetFullPath((Join-Path $ComponentRoot ".."))
-$StageParent = [IO.Path]::GetFullPath((Join-Path $RepoRoot "stage"))
-$StagingRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "b-Publish"))
+$PublishRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "b-Publish"))
+$StagingRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "current"))
+$WorkRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "work\OneHistoryStudio"))
+$HistoryRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "history\OneHistoryStudio"))
+$QuarantineRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "quarantine\OneHistoryStudio"))
 $PackageRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "z-Package"))
 
 function Invoke-Dotnet {
@@ -76,6 +79,29 @@ function Copy-DirectoryContents {
     }
 }
 
+function Get-ReleaseVersionTag {
+    param([string]$Root)
+
+    $metadataRoot = Join-Path $Root "release"
+    if (-not (Test-Path -LiteralPath $metadataRoot -PathType Container)) {
+        return "unknown"
+    }
+    $manifests = @(Get-ChildItem -LiteralPath $metadataRoot -Filter "*.json" -File)
+    if ($manifests.Count -ne 1) {
+        return "unknown"
+    }
+    try {
+        $version = [string](([IO.File]::ReadAllText($manifests[0].FullName) | ConvertFrom-Json).version)
+    }
+    catch {
+        return "unknown"
+    }
+    if ([string]::IsNullOrWhiteSpace($version)) {
+        return "unknown"
+    }
+    return [Text.RegularExpressions.Regex]::Replace($version, '[^A-Za-z0-9._-]', '_')
+}
+
 $VersionProperties = Get-StudioVersionProperties
 $SourceVersion = [string]$VersionProperties.OneHistoryStudioVersion
 $ExpectedFileVersion = [string]$VersionProperties.FileVersion
@@ -91,11 +117,12 @@ elseif ($Version -ne $SourceVersion) {
 }
 
 $transactionId = [Guid]::NewGuid().ToString("N")
-$StageRoot = Assert-UnderRoot `
-    (Join-Path $StageParent "ohs-$Version-$transactionId") $StageParent "candidate path"
-$AppRoot = Join-Path $StageRoot "app"
-$ManifestPath = Join-Path $StageRoot "$Version.json"
-$ChecksumPath = Join-Path $StageRoot "$Version.sha256"
+$archiveStamp = [DateTimeOffset]::UtcNow.ToString("yyyyMMdd-HHmmss")
+$BuildRoot = Assert-UnderRoot `
+    (Join-Path $WorkRoot "build-$Version-$transactionId") $WorkRoot "build path"
+$AppRoot = Join-Path $BuildRoot "app"
+$ManifestPath = Join-Path $BuildRoot "$Version.json"
+$ChecksumPath = Join-Path $BuildRoot "$Version.sha256"
 $mutexInput = [Text.Encoding]::UTF8.GetBytes($ComponentRoot.ToUpperInvariant())
 $sha256 = [Security.Cryptography.SHA256]::Create()
 try {
@@ -119,8 +146,11 @@ if (-not $mutexAcquired) {
 
 Push-Location $RepoRoot
 try {
-    if (Test-Path -LiteralPath $StageRoot) {
-        throw "Refusing to overwrite immutable staging directory: $StageRoot"
+    foreach ($directory in @($PublishRoot, $WorkRoot, $HistoryRoot, $QuarantineRoot)) {
+        New-Item -ItemType Directory -Force -Path $directory | Out-Null
+    }
+    if (Test-Path -LiteralPath $BuildRoot) {
+        throw "Refusing to overwrite immutable build directory: $BuildRoot"
     }
 
     $sourceStatus = (& git -C $RepoRoot status --porcelain -- b-Code-Studio b-Code-Studio.Service b-Office) -join "`n"
@@ -209,13 +239,15 @@ try {
     }
     [IO.File]::WriteAllText($ManifestPath, (($manifest | ConvertTo-Json -Depth 8) + "`n"), [Text.UTF8Encoding]::new($false))
 
-    $publishParent = Split-Path -Parent $StagingRoot
     $temporaryStaging = Assert-UnderRoot `
-        (Join-Path $publishParent "b-Publish.__new-$transactionId") $publishParent "temporary staging"
+        (Join-Path $WorkRoot "current-new-$transactionId") $WorkRoot "temporary staging"
+    $previousStagingVersion = Get-ReleaseVersionTag $StagingRoot
     $backupStaging = Assert-UnderRoot `
-        (Join-Path $StageParent "b-Publish-pre-$Version-$transactionId") $StageParent "backup staging"
+        (Join-Path $HistoryRoot "staging-$previousStagingVersion-$archiveStamp-$transactionId") `
+        $HistoryRoot "staging history"
     $quarantineStaging = Assert-UnderRoot `
-        (Join-Path $StageParent "b-Publish-failed-$Version-$transactionId") $StageParent "failed staging"
+        (Join-Path $QuarantineRoot "staging-failed-$Version-$archiveStamp-$transactionId") `
+        $QuarantineRoot "failed staging"
     try {
         Copy-DirectoryContents $AppRoot $temporaryStaging
         $temporaryMetadata = Join-Path $temporaryStaging "release"
@@ -232,7 +264,7 @@ try {
         if (Test-Path -LiteralPath $backupStaging) {
             Write-Host "Previous staging retained at $backupStaging"
         }
-        Remove-Item -LiteralPath $StageRoot -Recurse -Force
+        Remove-Item -LiteralPath $BuildRoot -Recurse -Force
     }
     catch {
         $stagingError = $_
@@ -250,11 +282,14 @@ try {
 
     if ($Publish) {
         $temporaryPackage = Assert-UnderRoot `
-            (Join-Path $publishParent "z-Package.__new-$transactionId") $publishParent "temporary package"
+            (Join-Path $WorkRoot "package-new-$transactionId") $WorkRoot "temporary package"
+        $previousPackageVersion = Get-ReleaseVersionTag $PackageRoot
         $backupPackage = Assert-UnderRoot `
-            (Join-Path $StageParent "z-Package-pre-$Version-$transactionId") $StageParent "backup package"
+            (Join-Path $HistoryRoot "package-$previousPackageVersion-$archiveStamp-$transactionId") `
+            $HistoryRoot "package history"
         $quarantinePackage = Assert-UnderRoot `
-            (Join-Path $StageParent "z-Package-failed-$Version-$transactionId") $StageParent "failed package"
+            (Join-Path $QuarantineRoot "package-failed-$Version-$archiveStamp-$transactionId") `
+            $QuarantineRoot "failed package"
         try {
             Copy-DirectoryContents $StagingRoot $temporaryPackage
             $packageManifestPath = Join-Path (Join-Path $temporaryPackage "release") "$Version.json"
@@ -291,6 +326,21 @@ try {
             throw $packageError
         }
     }
+}
+catch {
+    $publishError = $_
+    if (Test-Path -LiteralPath $BuildRoot) {
+        $failedBuild = Assert-UnderRoot `
+            (Join-Path $QuarantineRoot "build-failed-$Version-$archiveStamp-$transactionId") `
+            $QuarantineRoot "failed build"
+        try {
+            Move-Item -LiteralPath $BuildRoot -Destination $failedBuild
+        }
+        catch {
+            throw "Publish failed: $($publishError.Exception.Message); build quarantine failed: $($_.Exception.Message)"
+        }
+    }
+    throw $publishError
 }
 finally {
     & dotnet build-server shutdown | Out-Null

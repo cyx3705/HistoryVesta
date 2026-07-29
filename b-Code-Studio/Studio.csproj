@@ -27,7 +27,7 @@
   <ItemGroup>
     <!--
       产品文档位于 020 根级 b-Office；Link 一律保持 docs\，随程序发布的 Help 目录结构
-      (b-Publish\docs\*.md 暂存、z-Package\docs\*.md 正式包) 是面向使用者的产品界面，
+      (b-Publish\current\docs\*.md 候选、z-Package\docs\*.md 正式包) 是面向使用者的产品界面，
       不随源码目录调整而变。
     -->
     <Content Include="..\b-Office\meta\使用说明.md" Link="docs\README.md" CopyToPublishDirectory="PreserveNewest" />
