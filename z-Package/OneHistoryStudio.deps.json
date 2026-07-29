@@ -7,7 +7,7 @@
   "targets": {
     ".NETCoreApp,Version=v8.0": {},
     ".NETCoreApp,Version=v8.0/win-x64": {
-      "OneHistoryStudio/2.7.10": {
+      "OneHistoryStudio/2.7.11": {
         "dependencies": {
           "OneHistory.AppShell.Core": "3.0.3",
           "OneHistory.AppShell.ServiceHost": "3.0.3",
@@ -138,7 +138,7 @@
     }
   },
   "libraries": {
-    "OneHistoryStudio/2.7.10": {
+    "OneHistoryStudio/2.7.11": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
