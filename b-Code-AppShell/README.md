@@ -25,7 +25,7 @@ dotnet build .\AppShell.sln -c Release --no-restore
 
 ## 3.0.x 包
 
-3.0.2 是当前正式发布基线；源码当前为 3.0.3 Docking 主工作区比例收口候选。桌面消费者引用 Shell，
+3.0.3 是当前正式发布基线，已完成 Docking 主工作区比例收口。桌面消费者引用 Shell，
 服务化消费者额外引用 ServiceHost。正式切换前继续固定使用当前 Z 级快照声明的版本：
 
 ```xml

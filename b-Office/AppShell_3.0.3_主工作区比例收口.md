@@ -1,7 +1,7 @@
 # AppShell 3.0.3 主工作区比例收口
 
 > 日期：2026-07-29  
-> 修复版本：3.0.3 候选
+> 修复版本：3.0.3 正式
 
 ## 问题
 
@@ -30,5 +30,7 @@
 - [x] AppShell staging、漏洞审计和隔离 PackageSmoke 通过。
 - [x] OHS 2.7.9 从 3.0.3 staging 隔离还原；Debug/Release 均 0 warning / 0 error，22 次 Smoke 全部通过，
   运行时版本投影为 `OHS 2.7.9 / AppShell 3.0.3`。
+- [x] 正式 manifest 为 `channel=formal`、`sourceDirty=false`、`compatibilityValidated=true`，source commit 为
+  `dcfc56f9`；正式 feed 只保留四个 3.0.3 运行包。
 
-不执行开机自启动测试。正式发布与部署结果在发布完成后补充。
+不执行开机自启动测试。OHS 正式发布与部署结果由 OHS 2.7.9 发布记录承接。
