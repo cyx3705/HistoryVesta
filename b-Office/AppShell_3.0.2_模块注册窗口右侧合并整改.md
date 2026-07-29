@@ -3,7 +3,7 @@
 > 发现日期：2026-07-29
 > 影响版本：3.0.0 / 3.0.1 源码基线
 > 修复版本：3.0.2 候选
-> 状态：实现、全量门禁与 OHS 消费审核完成；未正式发布、未冻结
+> 状态：实现、全量门禁、OHS 消费审核与正式发布完成；未创建标签
 
 ## 1. 问题
 
@@ -46,5 +46,6 @@ Shell 建立默认布局时，会把同一 `DockSide` 的窗口合并进一个 `
 - [x] OHS 2.7.7 从 staging 独立还原 AppShell 3.0.2；Debug/Release 均 0 warning / 0 error，11 套
   Smoke 全部通过，运行时版本投影为 `OHS 2.7.7 / AppShell 3.0.2`。
 
-源码提交后须重新生成 `sourceDirty=false` 的 staging 并复核；正式审核通过前不执行
-`Publish-AppShell.ps1 -Version 3.0.2 -Publish`，不更新 Z 级正式快照，也不创建标签。
+源码提交 `8cf1bffb` 后已重新生成 `sourceDirty=false` 的 staging，并复用该审核候选正式提升到
+`z-Package-AppShell`；正式 feed 当前只保留四个 3.0.2 运行包，3.0.0 已进入 `b-Publish` 历史归档。
+本次未创建标签。
