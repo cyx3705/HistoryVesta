@@ -16,16 +16,13 @@ using static OneHistoryStudio.Smoke.SmokeKit;
 namespace OneHistoryStudio.Smoke.Suites;
 
 /// <summary>
-/// MCP 提示词治理、命令目录、网关与迁移。断言逐条搬自原 tests\PromptGovernanceSmoke\Program.cs。
+/// MCP 提示词治理、命令目录、网关与迁移。
 /// 本套用例同时覆盖文件存储的原子治理状态。
 /// </summary>
 internal static class PromptGovernanceSuite
 {
     public static async Task RunAsync(string[] args)
     {
-        // 合并前本套用例在仓库父目录下运行;command.manual 的相对路径判据依赖该语义。
-        Environment.CurrentDirectory = ParentDir;
-
         var testName = $"OneHistoryStudio.Tests.{Guid.NewGuid():N}";
         var paths = new AppPaths(testName);
         ShellLog? log = null;
@@ -203,11 +200,10 @@ internal static class PromptGovernanceSuite
                  && manual.Contains("### `sample.module`"),
                 "command manual matches registry and includes module source");
             var manualPreview = await bus.ExecuteAsync(
-                "command.manual file=b-Code-Studio/tests/manual-preview.md apply=false", "UI");
+                "command.manual file=tests/manual-preview.md apply=false", "UI");
             True(manualPreview.Success && manualPreview.Data is CommandManualPreview { Applied: false },
                 "command manual preview does not write");
-            True(!File.Exists(Path.Combine(Environment.CurrentDirectory,
-                "b-Code-Studio", "tests", "manual-preview.md")),
+            True(!File.Exists(Path.Combine(RepoRoot, "tests", "manual-preview.md")),
                 "command manual preview leaves filesystem unchanged");
             True(!(await bus.ExecuteAsync("command.manual file=../outside.md apply=false", "UI")).Success,
                 "command manual rejects boundary escape");
@@ -389,7 +385,6 @@ internal static class PromptGovernanceSuite
             True(registry.Unregister("sample.dynamic"), "dynamic command unloaded");
             True(store.GetProposal(dynamicProposal.Id) != null, "unloaded command proposal history retained");
 
-            Console.WriteLine("PromptGovernanceSmoke: PASS");
         }
         finally
         {

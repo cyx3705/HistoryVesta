@@ -40,8 +40,7 @@ internal static class VersionProjectionSuite
         AssertCurrentSourceAndDocumentation();
         await AssertPublishAreaGovernanceAsync();
         await AssertPublishTransactionAsync(studioRoot);
-        Console.WriteLine(
-            $"VersionProjectionSmoke: PASS (OHS {studioVersion}, AppShell {FrozenAppShellVersion})");
+        Console.WriteLine($"version projection: OHS {studioVersion}, AppShell {FrozenAppShellVersion}");
     }
 
     private static string ReadSingleVersion(string path, string propertyName)

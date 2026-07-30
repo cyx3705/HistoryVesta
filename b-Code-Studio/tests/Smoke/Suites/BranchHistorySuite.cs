@@ -6,8 +6,8 @@ using static OneHistoryStudio.Smoke.SmokeKit;
 
 namespace OneHistoryStudio.Smoke.Suites;
 
-/// <summary>V2.3.0 分支历史与安全回滚。断言逐条搬自原 tests\V230Smoke\Program.cs。</summary>
-internal static class V230Suite
+/// <summary>分支历史、恢复提交、本地重置与强推保护。</summary>
+internal static class BranchHistorySuite
 {
     private const string baseBranch = "0000-000-Template";
     private const string parentBranch = "2026-001-Parent";
@@ -15,9 +15,7 @@ internal static class V230Suite
 
     public static async Task RunAsync(string[] args)
     {
-        Environment.CurrentDirectory = RepoRoot;
-
-        var root = Path.Combine(Environment.CurrentDirectory, "tests", $".tmp-v230-{Guid.NewGuid():N}");
+        var root = TemporaryDirectory("branch-history");
         var seed = Path.Combine(root, "seed");
         var bare = Path.Combine(root, "projects.git");
         var remote = Path.Combine(root, "remote.git");
@@ -170,7 +168,6 @@ internal static class V230Suite
                  commands["proj.reset"].ConfirmPrompt != null &&
                  commands["proj.forcepush"].ConfirmPrompt != null, "history writes are dangerous commands");
 
-            Console.WriteLine("V230Smoke: PASS");
         }
         finally
         {
@@ -179,7 +176,7 @@ internal static class V230Suite
         }
     }
 
-    /// <summary>本套用例的 Sha 取 GitResult(与 V231/V232 取仓库路径的同名助手语义不同)。</summary>
+    /// <summary>读取 GitResult 的首行 SHA。</summary>
     private static string Sha(GitResult result)
     {
         Ensure(result, "resolve sha");
@@ -187,5 +184,5 @@ internal static class V230Suite
     }
 
     private static Task ConfigureIdentity(string repository)
-        => SmokeKit.ConfigureIdentity(repository, "V230 Smoke", "v230@example.invalid");
+        => SmokeKit.ConfigureIdentity(repository, "Branch History Smoke", "branch-history@example.invalid");
 }

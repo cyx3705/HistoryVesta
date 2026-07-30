@@ -6,8 +6,8 @@ using static OneHistoryStudio.Smoke.SmokeKit;
 
 namespace OneHistoryStudio.Smoke.Suites;
 
-/// <summary>V2.3.2 提交操作归位与四级范围。断言逐条搬自原 tests\V232Smoke\Program.cs。</summary>
-internal static class V232Suite
+/// <summary>父仓库、子模块与批量提交推送范围。</summary>
+internal static class RepositoryTargetsSuite
 {
     private const string parentBranch = "2026-232-Parent";
     private const string noChildBranch = "2026-233-NoChild";
@@ -16,9 +16,7 @@ internal static class V232Suite
 
     public static async Task RunAsync(string[] args)
     {
-        Environment.CurrentDirectory = RepoRoot;
-
-        var root = Path.Combine(Environment.CurrentDirectory, "tests", $".tmp-v232-{Guid.NewGuid():N}");
+        var root = TemporaryDirectory("repository-targets");
         var seed = Path.Combine(root, "seed");
         var bare = Path.Combine(root, "projects.git");
         var parentRemote = Path.Combine(root, "parent-remote.git");
@@ -158,7 +156,6 @@ internal static class V232Suite
             }
 
             VerifyXamlLayout();
-            Console.WriteLine("V232Smoke: PASS");
         }
         finally
         {
@@ -170,9 +167,9 @@ internal static class V232Suite
     private static void VerifyXamlLayout()
     {
         XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
-        var projectPath = Path.Combine(Environment.CurrentDirectory,
+        var projectPath = Path.Combine(RepoRoot,
             "Views", "ProjectOperationsView.xaml");
-        var overviewPath = Path.Combine(Environment.CurrentDirectory,
+        var overviewPath = Path.Combine(RepoRoot,
             "Views", "OverviewView.xaml");
         var project = XDocument.Load(projectPath);
         var overview = XDocument.Load(overviewPath);
@@ -212,5 +209,5 @@ internal static class V232Suite
     }
 
     private static Task ConfigureIdentity(string repository)
-        => SmokeKit.ConfigureIdentity(repository, "V232 Smoke", "v232@example.invalid");
+        => SmokeKit.ConfigureIdentity(repository, "Repository Targets Smoke", "repository-targets@example.invalid");
 }

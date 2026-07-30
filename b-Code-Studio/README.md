@@ -7,7 +7,8 @@
 
 - `Studio.csproj`：OHS 唯一产品工程与版本真值。
 - `Git`、`Views`、`App.xaml*`：OHS 装配、项目管理与页面源码。
-- `tests/Smoke`：合并后的完整自动化冒烟套件。
+- `tests/Contracts`：由 `dotnet test` 执行的编译期 API 与合同测试。
+- `tests/Smoke`：单一宿主承载的功能集成冒烟套件。
 
 本机构建、候选、历史和失败隔离数据位于平级 `..\b-Publish`，正式可消费快照位于 `..\z-Package`。
 
@@ -22,12 +23,26 @@ dotnet build .\OHS.sln -c Release -p:NuGetAudit=false
 
 ## Smoke
 
-完整 Smoke 默认不移动鼠标：
+Smoke 按用户可观察功能分组，不使用版本号命名。默认入口依次运行 `Wiring`、`VersionProjection`、
+`TestArchitecture`、`GitRules`、`PromptGovernance`、`BranchHistory`、`SubmoduleSafety`、
+`RepositoryTargets`、`ServiceWeb`、`Docking`、`GitHubAccount` 和 `LanSingleExe`；默认不移动鼠标：
 
 ```powershell
 .\b-Code-Studio\tests\Smoke\bin\Debug\net8.0-windows\Smoke.exe
 .\b-Code-Studio\tests\Smoke\bin\Release\net8.0-windows\Smoke.exe
 ```
+
+可按功能定向运行：
+
+```powershell
+.\b-Code-Studio\tests\Smoke\bin\Debug\net8.0-windows\Smoke.exe --suite GitRules
+.\b-Code-Studio\tests\Smoke\bin\Debug\net8.0-windows\Smoke.exe --suite RepositoryTargets
+```
+
+新增测试遵守以下结构：Suite 的 `RunAsync` 只编排同一功能的子场景；共享断言、临时目录和通用夹具集中到
+`SmokeKit` 或职责明确的 fixture；临时数据只进入系统临时目录；PASS/FAIL 只由 runner 输出。Suite 源文件
+不得超过 550 行，超出后以同功能 `partial` 文件拆分，不得按版本号另起 Suite。默认 Smoke 禁止真实鼠标、
+开机自启动、UAC、正式项目写入和需要第二台 LAN 设备的测试。
 
 停靠真实输入验收必须在可交互 Windows 桌面显式启用。它只创建标题为
 `OneHistoryStudio Docking Real-Mouse Smoke` 的隔离窗口，使用真实鼠标完成工具标签拖出、嵌入中央主窗口、

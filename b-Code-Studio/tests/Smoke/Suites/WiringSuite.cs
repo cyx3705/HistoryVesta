@@ -25,8 +25,6 @@ internal static class WiringSuite
     public static async Task RunAsync(string[] args)
     {
         await Task.CompletedTask;
-        Environment.CurrentDirectory = RepoRoot;
-
         var testName = $"OneHistoryStudio.Wiring.{Guid.NewGuid():N}";
         var paths = new AppPaths(testName);
         ShellLog? log = null;
@@ -120,8 +118,7 @@ internal static class WiringSuite
                 True(registry.TryGet(name, out _), $"wiring: {name} registered exactly once");
             }
 
-            // V2.4.4:只读性来自描述符自描述,不再来自名字白名单。
-            // 本断言由「查外部名单」升级为「查描述符真值 + 解释结果」,判据比原来更强。
+            // 只读性来自描述符自描述，而不是名字白名单。
             foreach (var name in new[] { "proj.list", "git.rule.list", "tool.list" })
             {
                 True(registry.TryGet(name, out var readonlyCommand)
@@ -133,9 +130,7 @@ internal static class WiringSuite
             // 名字白名单必须保持为空:任何往里补登记的行为都会让「一件事实两处声明」复活。
             // (模块清单的 mcpExposure=readonly 走 ModuleExposure 委托,不进本集合。)
             True(McpExposurePolicy.ReadonlyCommandNames.Count == 0,
-                "wiring: name-based readonly whitelist stays empty after V2.4.4");
-
-            Console.WriteLine("WiringSmoke: PASS");
+                "wiring: name-based readonly whitelist stays empty");
         }
         finally
         {

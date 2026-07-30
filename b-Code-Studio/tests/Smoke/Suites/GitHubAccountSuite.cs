@@ -14,7 +14,6 @@ internal static class GitHubAccountSuite
         await VerifyPreviewAndMutationsAsync();
         await VerifyLocalOnlyCommandsAsync();
         VerifyRedaction();
-        Console.WriteLine("GitHubAccountSmoke: PASS");
     }
 
     private static async Task VerifyOverviewAndPublicKeysAsync()

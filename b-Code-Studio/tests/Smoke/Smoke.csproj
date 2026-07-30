@@ -1,10 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!--
-    V2.3.3 QC-02:五套冒烟工程(PromptGovernanceSmoke / V213Smoke / V230Smoke /
-    V231Smoke / V232Smoke)合并为单一多 suite 宿主。
-    合并前每套各自 ProjectReference App.csproj,把整个应用输出复制 5 份 × 2 配置。
-    公共属性(TFM 之外)见解决方案根 Directory.Build.props。
-  -->
+  <!-- 单一多套件宿主；公共属性（TFM 之外）见解决方案根 Directory.Build.props。 -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>

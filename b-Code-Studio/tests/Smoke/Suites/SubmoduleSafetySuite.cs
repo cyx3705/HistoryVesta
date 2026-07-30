@@ -4,8 +4,8 @@ using static OneHistoryStudio.Smoke.SmokeKit;
 
 namespace OneHistoryStudio.Smoke.Suites;
 
-/// <summary>V2.3.1 子模块提交与推送。断言逐条搬自原 tests\V231Smoke\Program.cs。</summary>
-internal static class V231Suite
+/// <summary>子模块提交、推送、gitlink 与嵌套仓库安全边界。</summary>
+internal static class SubmoduleSafetySuite
 {
     private const string parentBranch = "2026-231-Parent";
     private const string standardBranch = "standard-main";
@@ -15,9 +15,7 @@ internal static class V231Suite
 
     public static async Task RunAsync(string[] args)
     {
-        Environment.CurrentDirectory = RepoRoot;
-
-        var root = Path.Combine(Environment.CurrentDirectory, "tests", $".tmp-v231-{Guid.NewGuid():N}");
+        var root = TemporaryDirectory("submodule-safety");
         var seed = Path.Combine(root, "seed");
         var bare = Path.Combine(root, "projects.git");
         var parentRemote = Path.Combine(root, "parent-remote.git");
@@ -221,7 +219,6 @@ internal static class V231Suite
             True(registry.TryGet("proj.commitall", out var commitAllCommand)
                  && commitAllCommand.Parameters.Any(item => item.Name == "submsg"), "proj.commitall submsg schema");
 
-            Console.WriteLine("V231Smoke: PASS");
         }
         finally
         {
@@ -246,5 +243,5 @@ internal static class V231Suite
     }
 
     private static Task ConfigureIdentity(string repository)
-        => SmokeKit.ConfigureIdentity(repository, "V231 Smoke", "v231@example.invalid");
+        => SmokeKit.ConfigureIdentity(repository, "Submodule Safety Smoke", "submodule-safety@example.invalid");
 }

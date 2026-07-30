@@ -5,24 +5,21 @@ using OneHistoryStudio.Git;
 
 namespace OneHistoryStudio.Smoke;
 
-/// <summary>
-/// V2.3.3 QC-02:五套冒烟工程合并后的共享断言与 Git 助手。
-/// 合并前 Ensure/True/Equal/Contains/BytesEqual/Throws/DeleteTree/FirstLine 等 9 类助手
-/// 在 3~5 个工程各写一遍;此处收敛为唯一实现,判据逐字保持不变。
-/// </summary>
+/// <summary>Smoke 套件共享的断言、临时目录与 Git 助手。</summary>
 internal static class SmokeKit
 {
-    /// <summary>
-    /// OHS 产品根(b-Code-Studio)。
-    /// 合并前各工程用 Environment.CurrentDirectory 拼临时目录,导致 V213/PromptGovernance
-    /// 必须在父目录下运行、V230~V232 必须在仓库根下运行,互相冲突。改为从程序集位置向上探测,
-    /// 宿主再按每套用例的历史语义显式设置 CurrentDirectory(见 Program.cs),
-    /// 单宿主因此可在任意工作目录启动。
-    /// </summary>
+    /// <summary>OHS 产品根（b-Code-Studio），从程序集位置向上发现。</summary>
     public static string RepoRoot { get; } = Path.Combine(DiscoverUmbrellaRoot(), "b-Code-Studio");
 
-    /// <summary>020 伞形根;V213 与 PromptGovernance 的历史相对路径基准。</summary>
+    /// <summary>020 项目根。</summary>
     public static string ParentDir { get; } = Directory.GetParent(RepoRoot)!.FullName;
+
+    public static string TemporaryDirectory(string feature)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ohs-smoke-{feature}-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(path);
+        return path;
+    }
 
     private static string DiscoverUmbrellaRoot()
     {
@@ -145,7 +142,7 @@ internal static class SmokeKit
     }
 }
 
-/// <summary>内存设置服务;合并前在 V213/V230/V231/V232 四处各写一遍。</summary>
+/// <summary>内存设置服务。</summary>
 internal sealed class MemorySettings : ISettingsService
 {
     private readonly Dictionary<string, string> _values = new(StringComparer.OrdinalIgnoreCase);

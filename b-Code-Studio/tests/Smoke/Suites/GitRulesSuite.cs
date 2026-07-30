@@ -7,16 +7,12 @@ using static OneHistoryStudio.Smoke.SmokeKit;
 
 namespace OneHistoryStudio.Smoke.Suites;
 
-/// <summary>V2.1.3 Git 文件规则。断言逐条搬自原 tests\V213Smoke\Program.cs。</summary>
-internal static class V213Suite
+/// <summary>Git 文件规则、LFS/LF 规范化与格式台账。</summary>
+internal static class GitRulesSuite
 {
     public static async Task RunAsync(string[] args)
     {
-        // 合并前本套用例在仓库父目录下运行,临时目录拼作 <父目录>\b-Code-Studio\tests\…
-        Environment.CurrentDirectory = ParentDir;
-
-        var root = Path.Combine(
-            Environment.CurrentDirectory, "b-Code-Studio", "tests", $".tmp-v213-{Guid.NewGuid():N}");
+        var root = TemporaryDirectory("git-rules");
         var seed = Path.Combine(root, "seed");
         var bare = Path.Combine(root, "projects.git");
         var worktree = Path.Combine(root, "sample");
@@ -25,8 +21,8 @@ internal static class V213Suite
         try
         {
             Ensure(await GitRunner.RunAsync(root, ["init", "-b", "main", seed]), "init seed");
-            Ensure(await GitRunner.RunAsync(seed, ["config", "user.name", "V213 Smoke"]), "git user name");
-            Ensure(await GitRunner.RunAsync(seed, ["config", "user.email", "v213@example.invalid"]), "git user email");
+            Ensure(await GitRunner.RunAsync(seed, ["config", "user.name", "Git Rules Smoke"]), "git user name");
+            Ensure(await GitRunner.RunAsync(seed, ["config", "user.email", "git-rules@example.invalid"]), "git user email");
             Ensure(await GitRunner.RunAsync(seed, ["lfs", "install", "--local"]), "git lfs local install");
 
             var attributes =
@@ -53,8 +49,8 @@ internal static class V213Suite
             Ensure(await GitRunner.RunAsync(root, ["clone", "--bare", seed, bare]), "clone bare");
             Ensure(await GitRunner.RunAsync(bare, ["worktree", "add", worktree, "main"]), "add worktree");
             Ensure(await GitRunner.RunAsync(worktree, ["lfs", "install", "--local"]), "worktree lfs install");
-            Ensure(await GitRunner.RunAsync(worktree, ["config", "user.name", "V213 Smoke"]), "worktree user name");
-            Ensure(await GitRunner.RunAsync(worktree, ["config", "user.email", "v213@example.invalid"]), "worktree user email");
+            Ensure(await GitRunner.RunAsync(worktree, ["config", "user.name", "Git Rules Smoke"]), "worktree user name");
+            Ensure(await GitRunner.RunAsync(worktree, ["config", "user.email", "git-rules@example.invalid"]), "worktree user email");
 
             var settings = new MemorySettings();
             settings.Set(ProjectService.KeyBareRepo, bare);
@@ -222,7 +218,6 @@ internal static class V213Suite
                     "template ignore unchanged by list");
             }
 
-            Console.WriteLine("V213Smoke: PASS");
         }
         finally
         {
