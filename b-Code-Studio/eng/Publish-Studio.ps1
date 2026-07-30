@@ -167,7 +167,7 @@ try {
     [string[]]$sourceStatusArguments = @(
         "-C", $RepoRoot, "status", "--porcelain", "--",
         "b-Code-Studio", "b-Code-Verify", "b-Office",
-        ":(exclude)b-Office/人工备忘录.txt"
+        ":(exclude,glob)b-Office/*.txt"
     )
     $sourceStatus = (& git @sourceStatusArguments) -join "`n"
     $sourceDirty = -not [string]::IsNullOrWhiteSpace($sourceStatus)
