@@ -12,9 +12,9 @@ $ComponentRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $RepoRoot = [IO.Path]::GetFullPath((Join-Path $ComponentRoot ".."))
 $PublishRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "b-Publish"))
 $StagingRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "current"))
-$WorkRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "work\OneHistoryStudio"))
-$HistoryRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "history\OneHistoryStudio"))
-$QuarantineRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "quarantine\OneHistoryStudio"))
+$WorkRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "work"))
+$HistoryRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "history"))
+$QuarantineRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "quarantine"))
 $PackageRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "z-Package"))
 
 function Invoke-Dotnet {
@@ -133,6 +133,7 @@ finally {
 }
 $publishMutex = [Threading.Mutex]::new($false, "Local\OneHistoryStudio.Publish.$mutexHash")
 $mutexAcquired = $false
+$publishSucceeded = $false
 try {
     $mutexAcquired = $publishMutex.WaitOne(0)
 }
@@ -146,6 +147,11 @@ if (-not $mutexAcquired) {
 
 Push-Location $RepoRoot
 try {
+    foreach ($transientRoot in @($WorkRoot, $QuarantineRoot)) {
+        if (Test-Path -LiteralPath $transientRoot) {
+            Remove-Item -LiteralPath $transientRoot -Recurse -Force
+        }
+    }
     foreach ($directory in @($PublishRoot, $WorkRoot, $HistoryRoot, $QuarantineRoot)) {
         New-Item -ItemType Directory -Force -Path $directory | Out-Null
     }
@@ -245,8 +251,8 @@ try {
         (Join-Path $WorkRoot "current-new-$transactionId") $WorkRoot "temporary staging"
     $previousStagingVersion = Get-ReleaseVersionTag $StagingRoot
     $backupStaging = Assert-UnderRoot `
-        (Join-Path $HistoryRoot "staging-$previousStagingVersion-$archiveStamp-$transactionId") `
-        $HistoryRoot "staging history"
+        (Join-Path $WorkRoot "staging-previous-$previousStagingVersion-$archiveStamp-$transactionId") `
+        $WorkRoot "staging rollback"
     $quarantineStaging = Assert-UnderRoot `
         (Join-Path $QuarantineRoot "staging-failed-$Version-$archiveStamp-$transactionId") `
         $QuarantineRoot "failed staging"
@@ -264,7 +270,8 @@ try {
             $temporaryStaging $StagingRoot $backupStaging $quarantineStaging $validateStaging
         Write-Host "Staged OneHistoryStudio $Version at $StagingRoot"
         if (Test-Path -LiteralPath $backupStaging) {
-            Write-Host "Previous staging retained at $backupStaging"
+            Remove-Item -LiteralPath $backupStaging -Recurse -Force
+            Write-Host "Previous staging discarded after successful replacement"
         }
         Remove-Item -LiteralPath $BuildRoot -Recurse -Force
     }
@@ -328,6 +335,7 @@ try {
             throw $packageError
         }
     }
+    $publishSucceeded = $true
 }
 catch {
     $publishError = $_
@@ -347,6 +355,13 @@ catch {
 finally {
     & dotnet build-server shutdown | Out-Null
     Pop-Location
+    if ($publishSucceeded) {
+        foreach ($transientRoot in @($WorkRoot, $QuarantineRoot)) {
+            if (Test-Path -LiteralPath $transientRoot) {
+                Remove-Item -LiteralPath $transientRoot -Recurse -Force
+            }
+        }
+    }
     if ($mutexAcquired) {
         $publishMutex.ReleaseMutex()
     }

@@ -57,12 +57,12 @@ Smoke 按用户可观察功能分组，不使用版本号命名。默认入口�
 
 发布统一使用 `eng\Publish-Studio.ps1`。默认模式会执行锁定还原、Debug/Release 构建、两套 Smoke、
 Release 发布、运行时命令手册重生成、六份 Help 校验、版本校验、SHA-256 和 manifest，并写入新的
-`b-Publish\current` 当前候选；每次使用 `b-Publish\work\OneHistoryStudio` 中的同卷临时候选原子替换，
+`b-Publish\current` 当前候选；每次使用 `b-Publish\work` 中的同卷临时候选原子替换，
 不提交 Git。只有显式 `-Publish` 且
 `b-Code-Studio`、`b-Office` 都洁净时，才会继续把已验证暂存原子提升到
-`z-Package` 正式区。两个阶段都按 manifest 和 checksum 复验完整文件集合、大小与 SHA-256；旧暂存、
-旧正式包进入 `b-Publish\history\OneHistoryStudio`，失败候选进入
-`b-Publish\quarantine\OneHistoryStudio`。发布脚本不得创建仓库根 `stage`。
+`z-Package` 正式区。两个阶段都按 manifest 和 checksum 复验完整文件集合、大小与 SHA-256。只有旧正式包
+直接进入 `b-Publish\history\package-*`；旧暂存候选在事务成功后删除。`work` 和 `quarantine` 只服务
+当前事务，下一次发布前清理，成功后也会移除。发布脚本不得创建仓库根 `stage`。
 
 ```powershell
 .\b-Code-Studio\eng\Publish-Studio.ps1

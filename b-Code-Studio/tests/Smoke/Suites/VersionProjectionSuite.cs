@@ -175,10 +175,12 @@ internal static class VersionProjectionSuite
             "publish governance: b-Publish is the local build and history root");
         Contains(publish, "\"current\"",
             "publish governance: b-Publish/current is the replaceable candidate");
-        Contains(publish, "history\\OneHistoryStudio",
-            "publish governance: prior releases stay under b-Publish history");
-        Contains(publish, "quarantine\\OneHistoryStudio",
-            "publish governance: failed releases stay under b-Publish quarantine");
+        Contains(publish, "Join-Path $PublishRoot \"history\"",
+            "publish governance: formal package history is flat under b-Publish/history");
+        True(!publish.Contains("staging-$previousStagingVersion", StringComparison.Ordinal),
+            "publish governance: staging candidates are not archived as history");
+        Contains(publish, "Previous staging discarded after successful replacement",
+            "publish governance: replaced staging is transient");
         True(!publish.Contains("Join-Path $RepoRoot \"stage\"", StringComparison.Ordinal),
             "publish governance: the removed stage root is not recreated");
         Contains(publish, "\"z-Package\"",
