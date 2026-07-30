@@ -1,15 +1,15 @@
 {
     "schemaVersion":  1,
     "product":  "OneHistoryStudio",
-    "version":  "2.7.11",
+    "version":  "2.7.12",
     "channel":  "package",
-    "sourceCommit":  "bda7dd2fb553e046922e638e2934e230c1a263ee",
+    "sourceCommit":  "e5bd0f7fe8ab4d695ba74888bf51626dbf68fec5",
     "sourceDirty":  false,
     "sdk":  "9.0.315",
     "targetFramework":  "net8.0-windows",
     "runtime":  "win-x64",
     "selfContained":  false,
-    "commandManualSha256":  "6ABFB8508B7CCCBEF03ED5C72FA2666C333B1D9756FD08E0ED05F123BBF656B2",
+    "commandManualSha256":  "85F0E693FC785509584018AEC6176551D0D3CFB761184998FED18C06EE3BAB77",
     "artifacts":  [
                       {
                           "file":  "AppShell.Core.dll",
@@ -68,13 +68,13 @@
                       },
                       {
                           "file":  "docs/发布与升级.md",
-                          "bytes":  48591,
-                          "sha256":  "EEB4E0578DE1AB299D680B0DE0C27B24B00593AD470672F13A9493951309F5A3"
+                          "bytes":  50133,
+                          "sha256":  "9848C935C77F6AB08CD0656D5E9CE799C787E34C304826D84ED75D2543E9D98C"
                       },
                       {
                           "file":  "docs/命令手册.md",
                           "bytes":  40326,
-                          "sha256":  "6ABFB8508B7CCCBEF03ED5C72FA2666C333B1D9756FD08E0ED05F123BBF656B2"
+                          "sha256":  "85F0E693FC785509584018AEC6176551D0D3CFB761184998FED18C06EE3BAB77"
                       },
                       {
                           "file":  "docs/模块开发手册.md",
@@ -124,22 +124,22 @@
                       {
                           "file":  "OneHistoryStudio.deps.json",
                           "bytes":  6680,
-                          "sha256":  "005C56DF8BE402B07F7887177B9192BB2B5CDA8BD6FEA0C93E88E7B0BF00DE0E"
+                          "sha256":  "4695CD3A9CE3175C347EDB7AB39EF8D2FCF51CCEE420D13AD00ACF4CDCDDE11A"
                       },
                       {
                           "file":  "OneHistoryStudio.dll",
                           "bytes":  739840,
-                          "sha256":  "2F52A8C7F7833BE6CCC4113A4E9B54C20213DD392F3A753AC7724A545D83CFC5"
+                          "sha256":  "FB63720CCB42A4EA7EF56D356EA254F5189E9D894C643A6A52D5B9BC113581B8"
                       },
                       {
                           "file":  "OneHistoryStudio.exe",
                           "bytes":  152064,
-                          "sha256":  "1F8C61C4191583093D0E998FB663FDAAFF4695F4AB1A03ED21BEB88D959B83F2"
+                          "sha256":  "05E8E259EFEA821D5DC48667E5B516D786CB9A513407F6B9CBE6CB4B71E432F0"
                       },
                       {
                           "file":  "OneHistoryStudio.pdb",
                           "bytes":  193624,
-                          "sha256":  "7529948BABD70C30FE4D74AD26AE68CF7992B9DA3A2EB75E2B690D3201C87BE3"
+                          "sha256":  "212AEB2C978B3CDDD11C755188C9294E36E7CC1ED337E9F564C09C282B75D5E9"
                       },
                       {
                           "file":  "OneHistoryStudio.runtimeconfig.json",
@@ -182,5 +182,5 @@
                           "sha256":  "E12491E16E77AF2130FE9B9D79AD12C64D5AEFAD62E8A181EEA7B0A23835A4EC"
                       }
                   ],
-    "packagedAtUtc":  "2026-07-29T15:57:15.2655370+00:00"
+    "packagedAtUtc":  "2026-07-30T04:03:57.1173135+00:00"
 }
