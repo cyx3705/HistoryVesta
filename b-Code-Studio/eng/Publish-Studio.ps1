@@ -189,8 +189,8 @@ try {
     Invoke-Dotnet @( "publish", "b-Code-Studio\Studio.csproj", "-c", "Release", "-r", "win-x64",
         "--self-contained", "false", "-o", $AppRoot, "--no-restore" )
 
-    $packageRoot = Join-Path $RepoRoot "b-Office\package"
-    $manualCandidates = @(Get-ChildItem -LiteralPath $packageRoot -Filter "*.md" -File | Where-Object {
+    $DocumentationPackageRoot = Join-Path $RepoRoot "b-Office\package"
+    $manualCandidates = @(Get-ChildItem -LiteralPath $DocumentationPackageRoot -Filter "*.md" -File | Where-Object {
         Select-String -LiteralPath $_.FullName -SimpleMatch "<!-- command-count:" -Quiet
     })
     if ($manualCandidates.Count -ne 1) {

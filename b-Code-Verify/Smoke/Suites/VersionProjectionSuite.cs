@@ -190,6 +190,13 @@ internal static class VersionProjectionSuite
             "publish governance: the removed stage root is not recreated");
         Contains(publish, "\"z-Package\"",
             "publish governance: z-Package is the formal package root");
+        Equal(1, Regex.Matches(
+                publish,
+                @"^\s*\$PackageRoot\s*=",
+                RegexOptions.Multiline | RegexOptions.IgnoreCase).Count,
+            "publish governance: formal PackageRoot is assigned exactly once");
+        Contains(publish, "$DocumentationPackageRoot",
+            "publish governance: consumer documentation uses a distinct variable");
 
         var developmentDeployPath = Path.Combine(
             ParentDir, "b-Code-Studio", "eng", "Test-Deploy-Studio.ps1");
