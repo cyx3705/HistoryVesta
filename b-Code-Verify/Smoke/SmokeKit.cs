@@ -8,11 +8,14 @@ namespace OneHistoryStudio.Smoke;
 /// <summary>Smoke 套件共享的断言、临时目录与 Git 助手。</summary>
 internal static class SmokeKit
 {
-    /// <summary>OHS 产品根（b-Code-Studio），从程序集位置向上发现。</summary>
-    public static string RepoRoot { get; } = Path.Combine(DiscoverUmbrellaRoot(), "b-Code-Studio");
-
     /// <summary>020 项目根。</summary>
-    public static string ParentDir { get; } = Directory.GetParent(RepoRoot)!.FullName;
+    public static string ParentDir { get; } = DiscoverUmbrellaRoot();
+
+    /// <summary>OHS 产品根。</summary>
+    public static string RepoRoot { get; } = Path.Combine(ParentDir, "b-Code-Studio");
+
+    /// <summary>OHS 验证组件根。</summary>
+    public static string VerifyRoot { get; } = Path.Combine(ParentDir, "b-Code-Verify");
 
     public static string TemporaryDirectory(string feature)
     {

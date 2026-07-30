@@ -7,7 +7,8 @@
 
 | 目录 | 职责 | 构建状态 |
 |---|---|---|
-| `b-Code-Studio` | OHS 产品源码、Contracts 与 Smoke | 纳入 `OHS.sln` |
+| `b-Code-Studio` | OHS 产品源码 | 纳入 `OHS.sln` |
+| `b-Code-Verify` | Contracts、功能 Smoke 与测试架构门禁 | 纳入 `OHS.sln` |
 | `b-Publish` | 本机构建、候选、历史归档与失败隔离区 | 生成物，不入 Git |
 | `z-Package` | 经 manifest/checksum 验证的正式可消费快照 | 不参与解决方案构建 |
 | `b-Code-OneHistory-V1` | OneHistory V1 历史组件 | 只读，不构建 |
@@ -31,8 +32,8 @@ OHS 只有两层发布区：`b-Publish` 保存本机构建、当前候选、历�
 dotnet restore .\OHS.sln
 dotnet build .\OHS.sln -c Debug --no-restore
 dotnet build .\OHS.sln -c Release --no-restore
-dotnet test .\b-Code-Studio\tests\Contracts\Contracts.csproj -c Debug --no-build
-dotnet run --project .\b-Code-Studio\tests\Smoke\Smoke.csproj -c Debug --no-build
+dotnet test .\b-Code-Verify\Contracts\Contracts.csproj -c Debug --no-build
+dotnet run --project .\b-Code-Verify\Smoke\Smoke.csproj -c Debug --no-build
 ```
 
 ## AI 工作边界

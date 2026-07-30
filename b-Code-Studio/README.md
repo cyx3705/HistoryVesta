@@ -1,14 +1,13 @@
 # OneHistoryStudio
 
-本目录只承载 OneHistoryStudio 产品源码和测试。产品文档位于 `..\b-Office`；AppShell 由平级
+本目录只承载 OneHistoryStudio 产品源码。验证组件位于 `..\b-Code-Verify`，产品文档位于 `..\b-Office`；AppShell 由平级
 `2026-023-AppShell` 独立维护，本项目只消费 `Studio.csproj` 中固定声明的正式包版本。
 
 ## 结构
 
 - `Studio.csproj`：OHS 唯一产品工程与版本真值。
 - `Git`、`Views`、`App.xaml*`：OHS 装配、项目管理与页面源码。
-- `tests/Contracts`：由 `dotnet test` 执行的编译期 API 与合同测试。
-- `tests/Smoke`：单一宿主承载的功能集成冒烟套件。
+- `..\b-Code-Verify`：Contracts、Smoke 与测试架构门禁。
 
 本机构建、候选、历史和失败隔离数据位于平级 `..\b-Publish`，正式可消费快照位于 `..\z-Package`。
 
@@ -21,37 +20,9 @@ dotnet build .\OHS.sln -c Debug -p:NuGetAudit=false
 dotnet build .\OHS.sln -c Release -p:NuGetAudit=false
 ```
 
-## Smoke
+## 验证
 
-Smoke 按用户可观察功能分组，不使用版本号命名。默认入口依次运行 `Wiring`、`VersionProjection`、
-`TestArchitecture`、`GitRules`、`PromptGovernance`、`BranchHistory`、`SubmoduleSafety`、
-`RepositoryTargets`、`ServiceWeb`、`Docking`、`GitHubAccount` 和 `LanSingleExe`；默认不移动鼠标：
-
-```powershell
-.\b-Code-Studio\tests\Smoke\bin\Debug\net8.0-windows\Smoke.exe
-.\b-Code-Studio\tests\Smoke\bin\Release\net8.0-windows\Smoke.exe
-```
-
-可按功能定向运行：
-
-```powershell
-.\b-Code-Studio\tests\Smoke\bin\Debug\net8.0-windows\Smoke.exe --suite GitRules
-.\b-Code-Studio\tests\Smoke\bin\Debug\net8.0-windows\Smoke.exe --suite RepositoryTargets
-```
-
-新增测试遵守以下结构：Suite 的 `RunAsync` 只编排同一功能的子场景；共享断言、临时目录和通用夹具集中到
-`SmokeKit` 或职责明确的 fixture；临时数据只进入系统临时目录；PASS/FAIL 只由 runner 输出。Suite 源文件
-不得超过 550 行，超出后以同功能 `partial` 文件拆分，不得按版本号另起 Suite。默认 Smoke 禁止真实鼠标、
-开机自启动、UAC、正式项目写入和需要第二台 LAN 设备的测试。
-
-停靠真实输入验收必须在可交互 Windows 桌面显式启用。它只创建标题为
-`OneHistoryStudio Docking Real-Mouse Smoke` 的隔离窗口，使用真实鼠标完成工具标签拖出、嵌入中央主窗口、
-从中央再次拖出并拖回右侧工具区，结束时释放按键、关闭测试窗口并恢复原鼠标位置；不读取或修改正式 OHS 布局：
-
-```powershell
-.\b-Code-Studio\tests\Smoke\bin\Debug\net8.0-windows\Smoke.exe --suite Docking --real-mouse
-.\b-Code-Studio\tests\Smoke\bin\Release\net8.0-windows\Smoke.exe --suite Docking --real-mouse
-```
+Contracts、功能 Smoke、定向 Suite 与真实鼠标规则统一见 [验证组件](../b-Code-Verify/README.md)。
 
 ## OHS 发布入口
 
@@ -59,7 +30,7 @@ Smoke 按用户可观察功能分组，不使用版本号命名。默认入口�
 Release 发布、运行时命令手册重生成、六份 Help 校验、版本校验、SHA-256 和 manifest，并写入新的
 `b-Publish\current` 当前候选；每次使用 `b-Publish\work` 中的同卷临时候选原子替换，
 不提交 Git。只有显式 `-Publish` 且
-`b-Code-Studio`、`b-Office` 都洁净时，才会继续把已验证暂存原子提升到
+`b-Code-Studio`、`b-Code-Verify`、`b-Office` 都洁净时，才会继续把已验证暂存原子提升到
 `z-Package` 正式区。两个阶段都按 manifest 和 checksum 复验完整文件集合、大小与 SHA-256。只有旧正式包
 直接进入 `b-Publish\history\package-*`；旧暂存候选在事务成功后删除。`work` 和 `quarantine` 只服务
 当前事务，下一次发布前清理，成功后也会移除。发布脚本不得创建仓库根 `stage`。

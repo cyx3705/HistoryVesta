@@ -11,7 +11,10 @@ internal static class TestArchitectureSuite
 
     public static Task RunAsync(string[] args)
     {
-        var smokeRoot = Path.Combine(RepoRoot, "tests", "Smoke");
+        True(Directory.Exists(VerifyRoot), "verification has a root-level b-Code component");
+        True(!Directory.Exists(Path.Combine(RepoRoot, "tests")),
+            "product component contains no nested test tree");
+        var smokeRoot = Path.Combine(VerifyRoot, "Smoke");
         var suitesRoot = Path.Combine(smokeRoot, "Suites");
         var suiteFiles = Directory.EnumerateFiles(suitesRoot, "*.cs").ToArray();
         True(suiteFiles.Length > 0, "test architecture discovers suite sources");

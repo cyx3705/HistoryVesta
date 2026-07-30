@@ -159,17 +159,17 @@ try {
         throw "Refusing to overwrite immutable build directory: $BuildRoot"
     }
 
-    $sourceStatus = (& git -C $RepoRoot status --porcelain -- b-Code-Studio b-Office) -join "`n"
+    $sourceStatus = (& git -C $RepoRoot status --porcelain -- b-Code-Studio b-Code-Verify b-Office) -join "`n"
     $sourceDirty = -not [string]::IsNullOrWhiteSpace($sourceStatus)
     if ($Publish -and $sourceDirty) {
-        throw "Formal publish requires clean b-Code-Studio and b-Office source trees."
+        throw "Formal publish requires clean b-Code-Studio, b-Code-Verify, and b-Office source trees."
     }
 
     Invoke-Dotnet @( "restore", "OHS.sln", "--locked-mode", "-p:NuGetAudit=false" )
     Invoke-Dotnet @( "build", "OHS.sln", "-c", "Debug", "--no-restore", "-p:NuGetAudit=false" )
     Invoke-Dotnet @( "build", "OHS.sln", "-c", "Release", "--no-restore", "-p:NuGetAudit=false" )
-    Invoke-Dotnet @( "run", "--project", "b-Code-Studio\tests\Smoke\Smoke.csproj", "-c", "Debug", "--no-build", "--no-restore", "--" )
-    Invoke-Dotnet @( "run", "--project", "b-Code-Studio\tests\Smoke\Smoke.csproj", "-c", "Release", "--no-build", "--no-restore", "--" )
+    Invoke-Dotnet @( "run", "--project", "b-Code-Verify\Smoke\Smoke.csproj", "-c", "Debug", "--no-build", "--no-restore", "--" )
+    Invoke-Dotnet @( "run", "--project", "b-Code-Verify\Smoke\Smoke.csproj", "-c", "Release", "--no-build", "--no-restore", "--" )
 
     New-Item -ItemType Directory -Force -Path $AppRoot | Out-Null
     Invoke-Dotnet @( "publish", "b-Code-Studio\Studio.csproj", "-c", "Release", "-r", "win-x64",
