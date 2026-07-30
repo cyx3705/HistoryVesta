@@ -169,7 +169,7 @@ internal static class VersionProjectionSuite
              && !publish.Contains("b-Code-AppShell", StringComparison.OrdinalIgnoreCase),
             "publish boundary: OHS publish does not build or publish AppShell");
         Contains(publish, "sourceDirty", "publish governance: OHS records source state");
-        Contains(publish, "b-Code-Studio b-Code-Verify b-Office",
+        Contains(publish, "\"b-Code-Studio\", \"b-Code-Verify\", \"b-Office\"",
             "publish governance: product, verification, and documentation must all be clean");
         Contains(publish, "Invoke-DirectoryPromotion",
             "publish governance: OHS uses the tested promotion transaction");
