@@ -164,7 +164,9 @@ try {
         throw "Refusing to overwrite immutable build directory: $BuildRoot"
     }
 
-    $sourceStatus = (& git -C $RepoRoot status --porcelain -- b-Code-Studio b-Code-Verify b-Office) -join "`n"
+    $sourceStatus = (& git -C $RepoRoot status --porcelain -- `
+        b-Code-Studio b-Code-Verify b-Office `
+        ':(exclude)b-Office/人工备忘录.txt') -join "`n"
     $sourceDirty = -not [string]::IsNullOrWhiteSpace($sourceStatus)
     if ($Publish -and $sourceDirty) {
         throw "Formal publish requires clean b-Code-Studio, b-Code-Verify, and b-Office source trees."
