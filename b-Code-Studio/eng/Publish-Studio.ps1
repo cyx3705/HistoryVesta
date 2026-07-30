@@ -169,12 +169,12 @@ try {
     Invoke-Dotnet @( "publish", "b-Code-Studio\Studio.csproj", "-c", "Release", "-r", "win-x64",
         "--self-contained", "false", "-o", $AppRoot, "--no-restore" )
 
-    $metaRoot = Join-Path $RepoRoot "b-Office\meta"
-    $manualCandidates = @(Get-ChildItem -LiteralPath $metaRoot -Filter "*.md" -File | Where-Object {
+    $packageRoot = Join-Path $RepoRoot "b-Office\package"
+    $manualCandidates = @(Get-ChildItem -LiteralPath $packageRoot -Filter "*.md" -File | Where-Object {
         Select-String -LiteralPath $_.FullName -SimpleMatch "<!-- command-count:" -Quiet
     })
     if ($manualCandidates.Count -ne 1) {
-        throw "Expected exactly one generated command manual in b-Office/meta; found $($manualCandidates.Count)"
+        throw "Expected exactly one generated command manual in b-Office/package; found $($manualCandidates.Count)"
     }
     $sourceManual = $manualCandidates[0].FullName
     $manualPath = Join-Path (Join-Path $AppRoot "docs") $manualCandidates[0].Name
@@ -185,7 +185,7 @@ try {
     $sourceManualHash = (Get-FileHash -LiteralPath $sourceManual -Algorithm SHA256).Hash
     $publishedManualHash = (Get-FileHash -LiteralPath $manualPath -Algorithm SHA256).Hash
     if ($sourceManualHash -ne $publishedManualHash) {
-        throw "Generated command manual differs from the current b-Office/meta source"
+        throw "Generated command manual differs from the b-Office/package source"
     }
 
     $exe = Join-Path $AppRoot "OneHistoryStudio.exe"
@@ -196,7 +196,9 @@ try {
     }
     [xml]$studioProject = Get-Content -LiteralPath (Join-Path $ComponentRoot "Studio.csproj") -Raw
     $documentMappings = @($studioProject.SelectNodes("/Project/ItemGroup/Content") | Where-Object {
-        $_.Include -like "*b-Office\meta\*.md" -and $_.Link -like "docs\*.md"
+        $_.Include -like "*b-Office\current\*.md" -or $_.Include -like "*b-Office\package\*.md"
+    } | Where-Object {
+        $_.Link -like "docs\*.md"
     })
     if ($documentMappings.Count -ne 6) {
         throw "Studio.csproj must publish exactly six current Help documents"

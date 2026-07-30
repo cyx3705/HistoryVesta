@@ -216,8 +216,32 @@ internal static class VersionProjectionSuite
                 $"current source contains no release-history narration: {Path.GetRelativePath(ParentDir, path)}");
         }
 
-        var metaRoot = Path.Combine(ParentDir, "b-Office", "meta");
-        foreach (var path in Directory.EnumerateFiles(metaRoot, "*.md"))
+        var officeRoot = Path.Combine(ParentDir, "b-Office");
+        var currentRoot = Path.Combine(officeRoot, "current");
+        var packageRoot = Path.Combine(officeRoot, "package");
+        var historyRoot = Path.Combine(officeRoot, "history");
+        True(Directory.Exists(currentRoot) && Directory.Exists(packageRoot) && Directory.Exists(historyRoot),
+            "documentation follows the current/package/history contract");
+        True(!Directory.Exists(Path.Combine(officeRoot, "meta"))
+             && !Directory.Exists(Path.Combine(officeRoot, "versions"))
+             && !Directory.Exists(Path.Combine(officeRoot, "evidence")),
+            "retired documentation directories are absent");
+        var currentDocuments = Directory.EnumerateFiles(currentRoot, "*.md")
+            .Select(Path.GetFileName)
+            .ToHashSet(StringComparer.Ordinal);
+        var packageDocuments = Directory.EnumerateFiles(packageRoot, "*.md")
+            .Select(Path.GetFileName)
+            .ToHashSet(StringComparer.Ordinal);
+        True(currentDocuments.SetEquals(["使用说明.md", "项目库与备份.md", "发布与升级.md"]),
+            "current contains the reviewed OHS-owned contracts");
+        True(packageDocuments.SetEquals(["命令手册.md", "模块开发手册.md", "MCP接入与安全.md"]),
+            "package contains the reviewed consumer contracts");
+        var readmes = Directory.EnumerateFiles(officeRoot, "README.md", SearchOption.AllDirectories).ToArray();
+        Equal(1, readmes.Length, "b-Office has one README");
+        Equal(Path.Combine(officeRoot, "README.md"), readmes[0], "b-Office README stays at the root");
+
+        foreach (var path in Directory.EnumerateFiles(currentRoot, "*.md")
+                     .Concat(Directory.EnumerateFiles(packageRoot, "*.md")))
         {
             True(!File.ReadAllLines(path).Any(line =>
                     line.StartsWith("> 适用版本：", StringComparison.Ordinal)
@@ -228,7 +252,7 @@ internal static class VersionProjectionSuite
         True(!officeReadme.Contains("> 当前版本：", StringComparison.Ordinal),
             "documentation center has no hand-synchronized current version");
 
-        var moduleManual = File.ReadAllText(Path.Combine(metaRoot, "模块开发手册.md"));
+        var moduleManual = File.ReadAllText(Path.Combine(packageRoot, "模块开发手册.md"));
         foreach (var forbidden in new[]
                  {
                      "计划为 4.0",
