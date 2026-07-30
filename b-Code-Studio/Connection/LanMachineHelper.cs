@@ -94,13 +94,13 @@ public static class LanMachineHelper
                     || operation.PreviousPort != operation.Port))
             {
                 RemoveEndpoint(operation.PreviousBindAddress, operation.PreviousPort.Value);
-                RemoveFirewall(operation.PreviousPort.Value);
+                RemoveHttpsFirewall(operation.PreviousPort.Value);
             }
 
             RemoveOwnedCertificate(operation.PreviousCertificateStoreThumbprint, except: thumbprint);
             return new LanMachineResult(
                 true,
-                operation.Action == "rotate" ? "LAN 证书已轮换" : "LAN HTTPS 与 Private 防火墙规则已配置",
+                operation.Action == "rotate" ? "LAN 证书已轮换" : "LAN HTTPS、UDP 自动发现与 Private 防火墙规则已配置",
                 Convert.ToHexString(certificate.GetCertHash(HashAlgorithmName.SHA256)),
                 certificate.NotAfter.ToUniversalTime(),
                 "private-rule-installed",
@@ -139,7 +139,7 @@ public static class LanMachineHelper
             RemoveOwnedCertificate(operation.PreviousCertificateStoreThumbprint, except: null);
             return new LanMachineResult(
                 true,
-                "LAN HTTPS、URLACL 与本版本 Private 防火墙规则已移除",
+                "LAN HTTPS、UDP 自动发现、URLACL 与本版本 Private 防火墙规则已移除",
                 FirewallStatus: "not-configured");
         }
         catch
@@ -235,12 +235,16 @@ public static class LanMachineHelper
 
     private static void ConfigureFirewall(int port)
     {
-        RunNetsh([
-            "advfirewall", "firewall", "delete", "rule", $"name={FirewallRule(port)}",
-        ], allowFailure: true);
+        RemoveHttpsFirewall(port);
         EnsureNetsh([
-            "advfirewall", "firewall", "add", "rule", $"name={FirewallRule(port)}",
+            "advfirewall", "firewall", "add", "rule", $"name={HttpsFirewallRule(port)}",
             "dir=in", "action=allow", "protocol=TCP", $"localport={port}",
+            "profile=private", "enable=yes", $"program={Environment.ProcessPath}",
+        ]);
+        RemoveDiscoveryFirewall();
+        EnsureNetsh([
+            "advfirewall", "firewall", "add", "rule", $"name={DiscoveryFirewallRule()}",
+            "dir=in", "action=allow", "protocol=UDP", $"localport={LanDiscoveryProtocol.Port}",
             "profile=private", "enable=yes", $"program={Environment.ProcessPath}",
         ]);
     }
@@ -256,8 +260,24 @@ public static class LanMachineHelper
     }
 
     private static void RemoveFirewall(int port)
+    {
+        RemoveHttpsFirewall(port);
+        RemoveDiscoveryFirewall();
+    }
+
+    private static void RemoveHttpsFirewall(int port)
+    {
+        RunNetsh([
+            "advfirewall", "firewall", "delete", "rule", $"name={HttpsFirewallRule(port)}",
+        ], allowFailure: true);
+        RunNetsh([
+            "advfirewall", "firewall", "delete", "rule", $"name={LegacyFirewallRule(port)}",
+        ], allowFailure: true);
+    }
+
+    private static void RemoveDiscoveryFirewall()
         => RunNetsh([
-            "advfirewall", "firewall", "delete", "rule", $"name={FirewallRule(port)}",
+            "advfirewall", "firewall", "delete", "rule", $"name={DiscoveryFirewallRule()}",
         ], allowFailure: true);
 
     private static void RestorePrevious(LanMachineOperation operation)
@@ -395,7 +415,11 @@ public static class LanMachineHelper
         return new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
     }
 
-    private static string FirewallRule(int port) => $"OneHistoryStudio LAN {port}";
+    private static string LegacyFirewallRule(int port) => $"OneHistoryStudio LAN {port}";
+
+    private static string HttpsFirewallRule(int port) => $"OneHistoryStudio LAN HTTPS {port}";
+
+    private static string DiscoveryFirewallRule() => $"OneHistoryStudio LAN Discovery {LanDiscoveryProtocol.Port}";
 
     private sealed record NetshResult(bool Success, string Output);
 }

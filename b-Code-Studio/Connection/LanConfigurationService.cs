@@ -120,8 +120,8 @@ public sealed class LanConfigurationService
             return new LanMachineResult(
                 true,
                 enabled
-                    ? $"预览：在 {request.BindAddress}:{request.Port} 启用 HTTPS LAN；需要 UAC"
-                    : "预览：关闭 LAN 并移除本版本的 HTTPS、URLACL 和 Private 防火墙规则");
+                    ? $"预览：在 {request.BindAddress}:{request.Port} 启用 HTTPS LAN 和 UDP 8739 自动发现；需要 UAC"
+                    : "预览：关闭 LAN 并移除本版本的 HTTPS、URLACL、TCP/UDP Private 防火墙规则");
 
         var before = Status();
         var operation = CreateOperation(

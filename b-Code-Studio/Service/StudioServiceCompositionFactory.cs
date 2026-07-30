@@ -85,8 +85,13 @@ public static class StudioServiceCompositionFactory
         web.ServerId = lanDevices.ServerId;
         web.DeviceAuthentication = lanDevices;
         web.DevicePairing = lanDevices;
+        var lanDiscovery = new LanDiscoveryResponder(
+            lanConfiguration,
+            lanDevices,
+            log,
+            identity.Name);
         WebCommands.RegisterAll(registry, web, settings);
-        LanCommands.RegisterAll(registry, lanDevices, web, lanConfiguration);
+        LanCommands.RegisterAll(registry, lanDevices, web, lanConfiguration, lanDiscovery);
 
         ProjectCommands.RegisterAll(registry, projects, history);
         BranchHistoryCommands.RegisterAll(registry, branchHistory, history);
@@ -114,8 +119,10 @@ public static class StudioServiceCompositionFactory
             Modules = modules,
             Mcp = mcp,
             Web = web,
+            DeferredWork = [lanDiscovery],
             RegisterAutostartOnFirstRun = registerAutostart,
             Autostart = new WindowsRunAutostartManager(),
+            DisposeApplicationServices = lanDiscovery.Dispose,
         };
     }
 }

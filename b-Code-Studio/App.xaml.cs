@@ -44,21 +44,23 @@ public partial class App : Application
             WebGateway.KeyPort, StudioServiceCompositionFactory.DefaultServicePort);
         var endpoint = BootstrapProfileStore.ResolveEndpoint(bootstrap, webPort);
         var secrets = new DpapiSecretStore(paths.Root);
-        _serviceClient = new ShellServiceClient(new ShellEndpointProfile(
-            endpoint,
-            bootstrap.DeviceId,
-            () =>
-            {
-                var current = bootstrapStore.Load();
-                return current.ServerId == null ? null : secrets.Read(current.ServerId);
-            },
-            bootstrap.CertificateFingerprint,
-            TimeSpan.FromSeconds(5),
-            bootstrap.ServerId), identity.Name);
-        _serviceClient.DataDeserializer = Service.StudioCommandDataDeserializer.Deserialize;
+        _serviceClient = CreateServiceClient(
+            bootstrapStore, secrets, bootstrap, endpoint, identity.Name);
+        var serviceReady = EnsureServiceAsync(_serviceClient, log, isServer).GetAwaiter().GetResult();
+        if (!isServer && !serviceReady
+            && ConnectionProfileService.RefreshSavedEndpointAsync(bootstrapStore)
+                .GetAwaiter().GetResult())
+        {
+            _serviceClient.Dispose();
+            bootstrap = bootstrapStore.Load();
+            endpoint = BootstrapProfileStore.ResolveEndpoint(bootstrap, webPort);
+            _serviceClient = CreateServiceClient(
+                bootstrapStore, secrets, bootstrap, endpoint, identity.Name);
+            serviceReady = EnsureServiceAsync(_serviceClient, log, allowLocalStart: false)
+                .GetAwaiter().GetResult();
+        }
         var connectionProfiles = new ConnectionProfileService(
             bootstrapStore, secrets, _serviceClient);
-        var serviceReady = EnsureServiceAsync(_serviceClient, log, isServer).GetAwaiter().GetResult();
 
         ShellWindow? window = null;
         ProjectService? projects = null;
@@ -104,7 +106,14 @@ public partial class App : Application
             "GitHub 账号(_G)", "win.show name=github.account"));
         window = new ShellWindow(config, new FileLayoutStore(paths), log, settings, paths.Root);
         MainWindow = window;
-        window.Commands.RemoteExecutor = _serviceClient.ExecuteAsync;
+        window.Commands.RemoteExecutor = async (text, source, cancellation) =>
+        {
+            var result = await _serviceClient.ExecuteAsync(text, source, cancellation);
+            return !isServer && !result.Success
+                   && result.Message.Contains("HTTP 403", StringComparison.Ordinal)
+                ? CommandResult.Fail("当前客户端为只读，等待服务器授权")
+                : result;
+        };
         window.Commands.ShouldUseRemote = source =>
             !source.StartsWith("Service:", StringComparison.OrdinalIgnoreCase);
         window.Commands.ShouldUseRemoteCommand = (text, source) =>
@@ -120,6 +129,28 @@ public partial class App : Application
         var startupCommands = CollectExecCommands(e.Args);
         if (startupCommands.Count > 0)
             _ = RunStartupCommandsAsync(window, startupCommands);
+    }
+
+    private static ShellServiceClient CreateServiceClient(
+        BootstrapProfileStore bootstrapStore,
+        DpapiSecretStore secrets,
+        BootstrapProfile bootstrap,
+        Uri endpoint,
+        string applicationName)
+    {
+        var client = new ShellServiceClient(new ShellEndpointProfile(
+            endpoint,
+            bootstrap.DeviceId,
+            () =>
+            {
+                var current = bootstrapStore.Load();
+                return current.ServerId == null ? null : secrets.Read(current.ServerId);
+            },
+            bootstrap.CertificateFingerprint,
+            TimeSpan.FromSeconds(5),
+            bootstrap.ServerId), applicationName);
+        client.DataDeserializer = Service.StudioCommandDataDeserializer.Deserialize;
+        return client;
     }
 
     private static async Task<bool> EnsureServiceAsync(

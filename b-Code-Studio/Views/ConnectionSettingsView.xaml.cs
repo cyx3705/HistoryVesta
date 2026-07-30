@@ -13,6 +13,8 @@ public partial class ConnectionSettingsView : UserControl
     private readonly ConnectionProfileService _profiles;
     private readonly Func<CommandBus?> _busAccessor;
     private bool _loaded;
+    private bool _suppressRoleChange;
+    private bool _discovering;
 
     public ConnectionSettingsView(
         ConnectionProfileService profiles,
@@ -32,8 +34,16 @@ public partial class ConnectionSettingsView : UserControl
     private async Task RefreshAsync()
     {
         var status = _profiles.Status();
-        ServerRole.IsChecked = status.Role == NodeRole.Server;
-        ClientRole.IsChecked = status.Role == NodeRole.Client;
+        _suppressRoleChange = true;
+        try
+        {
+            ServerRole.IsChecked = status.Role == NodeRole.Server;
+            ClientRole.IsChecked = status.Role == NodeRole.Client;
+        }
+        finally
+        {
+            _suppressRoleChange = false;
+        }
         EndpointBox.Text = status.Endpoint;
         FingerprintBox.Text = status.CertificateFingerprint ?? "";
         DeviceNameBox.Text = Environment.MachineName;
@@ -51,9 +61,14 @@ public partial class ConnectionSettingsView : UserControl
             var lan = await bus.ExecuteAsync("lan.status", "UI");
             if (lan.Data is LanServerStatus server)
             {
+                var discovery = server.DiscoveryRunning
+                    ? "发现已开启"
+                    : server.DiscoveryError == null
+                        ? "发现未开启"
+                        : "发现失败：" + server.DiscoveryError;
                 ServerStatusText.Text = server.Running
-                    ? $"运行中 · 客户端 {server.Clients} · Shell {server.Shells} · Server ID {server.ServerId}"
-                    : $"未运行 · Server ID {server.ServerId}";
+                    ? $"运行中 · {discovery} · 客户端 {server.Clients} · Shell {server.Shells} · Server ID {server.ServerId}"
+                    : $"未运行 · {discovery} · Server ID {server.ServerId}";
                 LanEnabledCheck.IsChecked = server.Configuration.Enabled;
                 LanBindBox.Text = server.Configuration.BindAddress;
                 LanPortBox.Text = server.Configuration.Port.ToString(
@@ -70,7 +85,12 @@ public partial class ConnectionSettingsView : UserControl
         }
     }
 
-    private void OnRoleChanged(object sender, RoutedEventArgs e) => UpdateRolePanels();
+    private async void OnRoleChanged(object sender, RoutedEventArgs e)
+    {
+        UpdateRolePanels();
+        if (!_suppressRoleChange && ClientRole.IsChecked == true)
+            await DiscoverAndMaybeConnectAsync(autoConnectSingle: true);
+    }
 
     private void UpdateRolePanels()
     {
@@ -82,6 +102,67 @@ public partial class ConnectionSettingsView : UserControl
     }
 
     private async void OnRefreshClick(object sender, RoutedEventArgs e) => await RefreshAsync();
+
+    private async void OnDiscoverClick(object sender, RoutedEventArgs e)
+        => await DiscoverAndMaybeConnectAsync(autoConnectSingle: true);
+
+    private async Task DiscoverAndMaybeConnectAsync(bool autoConnectSingle)
+    {
+        if (_discovering)
+            return;
+        _discovering = true;
+        ConnectDiscoveredButton.IsEnabled = false;
+        DiscoveryStatusText.Text = "正在查找局域网服务器...";
+        try
+        {
+            var servers = await _profiles.DiscoverAsync();
+            DiscoveredServersBox.ItemsSource = servers;
+            if (servers.Count == 0)
+            {
+                DiscoveryStatusText.Text = "未发现服务器，请重试或展开高级手工连接";
+                return;
+            }
+            if (servers.Count == 1 && autoConnectSingle)
+            {
+                DiscoveredServersBox.SelectedItem = servers[0];
+                await ConnectDiscoveredAsync(servers[0]);
+                return;
+            }
+            DiscoveryStatusText.Text = $"发现 {servers.Count} 台服务器，请选择一台";
+            ConnectDiscoveredButton.IsEnabled = true;
+        }
+        catch (Exception ex)
+        {
+            DiscoveryStatusText.Text = "查找失败：" + ex.Message;
+        }
+        finally
+        {
+            _discovering = false;
+        }
+    }
+
+    private async void OnConnectDiscoveredClick(object sender, RoutedEventArgs e)
+    {
+        if (DiscoveredServersBox.SelectedItem is LanDiscoveredServer server)
+            await ConnectDiscoveredAsync(server);
+        else
+            DiscoveryStatusText.Text = "请先选择服务器";
+    }
+
+    private async Task ConnectDiscoveredAsync(LanDiscoveredServer server)
+    {
+        ConnectDiscoveredButton.IsEnabled = false;
+        DiscoveryStatusText.Text = $"正在连接 {server.DisplayName}...";
+        var result = await _profiles.PairAutomaticallyAsync(server, Environment.MachineName);
+        if (!result.Success)
+        {
+            DiscoveryStatusText.Text = "连接失败：" + (result.Failure ?? "服务器拒绝配对");
+            ConnectDiscoveredButton.IsEnabled = true;
+            return;
+        }
+        DiscoveryStatusText.Text = "已连接；当前为只读，等待服务器授权。正在重启 OneHistoryStudio...";
+        RestartApplication();
+    }
 
     private void OnSaveClick(object sender, RoutedEventArgs e)
     {

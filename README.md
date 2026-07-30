@@ -44,7 +44,7 @@ dotnet build .\OHS.sln -c Debug --no-restore
 - 只以当前源码、运行时行为、`b-Office/current/` 和 `b-Office/package/` 为现行开发基线。
 - `b-Office/package/` 是模块及其他集成项目可直接消费的稳定文档合同。
 - `b-Office/history/` 中的版本文档是留存记录，不是需求、设计或实现依据。
-- AppShell 由平级 `2026-023-AppShell` 独立维护；本仓只消费冻结的 `OneHistory.AppShell.* 3.0.0` 包，
+- AppShell 由平级 `2026-023-AppShell` 独立维护；本仓只消费冻结的 `OneHistory.AppShell.* 3.0.3` 包，
   不得复制框架源码或权威文档。
 - `bin/`、`obj/`、`.vs/` 和 `b-Publish/` 不入库；正式 `z-Package` 快照通过 Git LFS 保留。
 

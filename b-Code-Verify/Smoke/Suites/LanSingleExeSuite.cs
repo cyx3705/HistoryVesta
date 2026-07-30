@@ -20,8 +20,11 @@ internal static partial class LanSingleExeSuite
     {
         VerifyBootstrapAndSecrets();
         VerifyPairingAndRevocation();
+        VerifyAutomaticPairingTickets();
         VerifyCertificatePin();
         VerifyMachinePayloadSecurity();
+        VerifyDiscoveryLifecycle();
+        await VerifyDiscoveryProtocolAsync();
         await VerifyLanConfigurationAsync();
         await VerifyCommandRedactionAsync();
         await VerifyScopeAndPairingHttpAsync();
@@ -64,7 +67,10 @@ internal static partial class LanSingleExeSuite
         var devicesRoot = Temporary("commands");
         try
         {
-            LanCommands.RegisterAll(registry, new LanDeviceStore(devicesRoot), web, configuration);
+            var devices = new LanDeviceStore(devicesRoot);
+            using var discovery = new LanDiscoveryResponder(
+                configuration, devices, new MemoryLog(), "Smoke");
+            LanCommands.RegisterAll(registry, devices, web, configuration, discovery);
             SmokeKit.True(registry.TryGet("lan.configure", out _)
                           && registry.TryGet("lan.cert.rotate", out _),
                 "LAN machine commands registered");
@@ -273,6 +279,10 @@ internal static partial class LanSingleExeSuite
             "legacy Service project directory removed from source tree");
         SmokeKit.Contains(app, "workspace = new RemoteWorkspaceService(_serviceClient)",
             "client composition uses remote workspace");
+        SmokeKit.Contains(app, "RefreshSavedEndpointAsync(bootstrapStore)",
+            "saved client retries discovery by original server identity");
+        SmokeKit.Contains(app, "当前客户端为只读，等待服务器授权",
+            "read-only client receives a user-facing authorization message");
         SmokeKit.Contains(githubView, "服务器 GitHub 账号",
             "GitHub view identifies server account ownership");
         foreach (var (name, xaml) in new[]
@@ -294,6 +304,22 @@ internal static partial class LanSingleExeSuite
             "LAN remove is idempotent when no owned configuration exists");
         SmokeKit.Contains(helper, "如已被其他应用占用则失败",
             "new LAN endpoint does not replace external binding");
+        SmokeKit.Contains(helper, "protocol=UDP",
+            "LAN machine helper installs a UDP discovery firewall rule");
+        SmokeKit.Contains(helper, "LanDiscoveryProtocol.Port",
+            "LAN machine helper uses the fixed discovery port");
+        SmokeKit.Contains(connectionView, "局域网服务器",
+            "connection view exposes discovery as the default client flow");
+        SmokeKit.Contains(connectionView, "Header=\"高级手工连接\"",
+            "manual address, fingerprint, and pair code are advanced controls");
+        SmokeKit.Contains(connectionView, "IsExpanded=\"False\"",
+            "manual connection controls are collapsed by default");
+        var composition = File.ReadAllText(Path.Combine(
+            SmokeKit.RepoRoot, "Service", "StudioServiceCompositionFactory.cs"));
+        SmokeKit.Contains(composition, "DeferredWork = [lanDiscovery]",
+            "discovery responder follows ServiceHost deferred startup");
+        SmokeKit.Contains(composition, "DisposeApplicationServices = lanDiscovery.Dispose",
+            "discovery responder follows ServiceHost disposal");
     }
 
     private static async Task VerifyCommandRedactionAsync()
@@ -377,6 +403,12 @@ internal static partial class LanSingleExeSuite
         var port = ((IPEndPoint)listener.LocalEndpoint).Port;
         listener.Stop();
         return port;
+    }
+
+    private static int FreeUdpPort()
+    {
+        using var listener = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+        return ((IPEndPoint)listener.Client.LocalEndPoint!).Port;
     }
 
     private static string Temporary(string suffix)

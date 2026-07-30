@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.IO;
+using System.Net;
 using AppShell.Services.Web;
 
 namespace OneHistoryStudio.Connection;
@@ -26,7 +27,7 @@ public sealed class LanDeviceStore : IDeviceAuthenticationProvider, IDevicePairi
 
     private readonly object _gate = new();
     private readonly string _path;
-    private readonly Dictionary<string, DateTimeOffset> _pairCodes = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, PairTicket> _pairCodes = new(StringComparer.Ordinal);
     private readonly Dictionary<string, FailureWindow> _pairFailures = new(StringComparer.OrdinalIgnoreCase);
     private LanDeviceState _state;
 
@@ -42,7 +43,36 @@ public sealed class LanDeviceStore : IDeviceAuthenticationProvider, IDevicePairi
     }
 
     public LanPairCode CreatePairCode(TimeSpan? lifetime = null)
+        => CreatePairCodeCore(null, null, null, lifetime ?? TimeSpan.FromMinutes(2));
+
+    public LanPairCode CreateAutomaticPairCode(
+        string deviceId,
+        string remoteAddress,
+        string nonce,
+        TimeSpan? lifetime = null)
     {
+        if (!ValidDeviceId(deviceId))
+            throw new ArgumentException("deviceId 无效", nameof(deviceId));
+        if (!IPAddress.TryParse(remoteAddress, out var address)
+            || (!LanConfigurationService.IsPrivate(address) && !IPAddress.IsLoopback(address)))
+            throw new ArgumentException("自动配对来源必须是 Private IPv4", nameof(remoteAddress));
+        if (!LanDiscoveryProtocol.ValidId(nonce))
+            throw new ArgumentException("自动配对 nonce 无效", nameof(nonce));
+        return CreatePairCodeCore(
+            deviceId,
+            address.ToString(),
+            nonce,
+            lifetime ?? LanDiscoveryProtocol.TicketLifetime);
+    }
+
+    private LanPairCode CreatePairCodeCore(
+        string? deviceId,
+        string? remoteAddress,
+        string? nonce,
+        TimeSpan lifetime)
+    {
+        if (lifetime <= TimeSpan.Zero || lifetime > TimeSpan.FromMinutes(2))
+            throw new ArgumentOutOfRangeException(nameof(lifetime));
         lock (_gate)
         {
             var now = DateTimeOffset.UtcNow;
@@ -53,8 +83,8 @@ public sealed class LanDeviceStore : IDeviceAuthenticationProvider, IDevicePairi
                 code = RandomNumberGenerator.GetInt32(0, 100_000_000)
                     .ToString("D8", System.Globalization.CultureInfo.InvariantCulture);
             } while (_pairCodes.ContainsKey(code));
-            var expires = now + (lifetime ?? TimeSpan.FromMinutes(2));
-            _pairCodes[code] = expires;
+            var expires = now + lifetime;
+            _pairCodes[code] = new PairTicket(expires, deviceId, remoteAddress, nonce);
             return new LanPairCode(code, expires);
         }
     }
@@ -158,8 +188,15 @@ public sealed class LanDeviceStore : IDeviceAuthenticationProvider, IDevicePairi
             if (!AllowPairAttempt(failureKey, now))
                 return RejectPairing();
             RemoveExpiredCodes(now);
-            if (!_pairCodes.Remove(code, out var expires) || expires <= now
+            if (!_pairCodes.Remove(code, out var ticket) || ticket.ExpiresAt <= now
                 || !ValidDeviceId(deviceId) || string.IsNullOrWhiteSpace(deviceName))
+            {
+                RecordPairFailure(failureKey, now);
+                return RejectPairing();
+            }
+            if (ticket.DeviceId != null
+                && (!ticket.DeviceId.Equals(deviceId, StringComparison.Ordinal)
+                    || !ticket.RemoteAddress!.Equals(remoteAddress, StringComparison.OrdinalIgnoreCase)))
             {
                 RecordPairFailure(failureKey, now);
                 return RejectPairing();
@@ -240,7 +277,7 @@ public sealed class LanDeviceStore : IDeviceAuthenticationProvider, IDevicePairi
 
     private void RemoveExpiredCodes(DateTimeOffset now)
     {
-        foreach (var code in _pairCodes.Where(pair => pair.Value <= now).Select(pair => pair.Key).ToList())
+        foreach (var code in _pairCodes.Where(pair => pair.Value.ExpiresAt <= now).Select(pair => pair.Key).ToList())
             _pairCodes.Remove(code);
     }
 
@@ -266,7 +303,7 @@ public sealed class LanDeviceStore : IDeviceAuthenticationProvider, IDevicePairi
             ? scope.ToLowerInvariant()
             : throw new ArgumentException("scope 只允许 read|operate|admin");
 
-    private static bool ValidDeviceId(string value)
+    internal static bool ValidDeviceId(string? value)
         => !string.IsNullOrWhiteSpace(value) && value.Length <= 128
            && value.All(character => char.IsLetterOrDigit(character)
                                      || character is '-' or '_' or '.');
@@ -288,4 +325,10 @@ public sealed class LanDeviceStore : IDeviceAuthenticationProvider, IDevicePairi
         DateTimeOffset? RevokedAt);
 
     private sealed record FailureWindow(DateTimeOffset Start, int Count);
+
+    private sealed record PairTicket(
+        DateTimeOffset ExpiresAt,
+        string? DeviceId,
+        string? RemoteAddress,
+        string? Nonce);
 }

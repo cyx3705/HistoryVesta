@@ -40,39 +40,51 @@
         </StackPanel>
 
         <Grid Grid.Row="2">
-            <Grid x:Name="ClientPanel">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="118" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <TextBlock Text="服务器地址" Style="{StaticResource FieldLabel}" />
-                <TextBox x:Name="EndpointBox" Grid.Column="1" Margin="0,0,0,8"
-                         ToolTip="非回环地址必须使用 https://host:port/" />
-                <TextBlock Grid.Row="1" Text="证书指纹" Style="{StaticResource FieldLabel}" />
-                <TextBox x:Name="FingerprintBox" Grid.Row="1" Grid.Column="1" Margin="0,0,0,8"
-                         ToolTip="服务器页面显示的 SHA-256 指纹，首次连接必须人工核对" />
-                <TextBlock Grid.Row="2" Text="设备名称" Style="{StaticResource FieldLabel}" />
-                <TextBox x:Name="DeviceNameBox" Grid.Row="2" Grid.Column="1" Margin="0,0,0,8" />
-                <TextBlock Grid.Row="3" Text="一次性配对码" Style="{StaticResource FieldLabel}" />
-                <PasswordBox x:Name="PairCodeBox" Grid.Row="3" Grid.Column="1" Margin="0,0,0,12"
-                             ToolTip="配对码不会写入日志或 bootstrap.json" />
-                <WrapPanel Grid.Row="4" Grid.Column="1">
-                    <Button Content="保存并重启" Click="OnSaveClick" />
-                    <Button Content="配对" Margin="8,0,0,0" Click="OnPairClick" />
-                    <Button Content="重连" Margin="8,0,0,0" Click="OnReconnectClick" />
+            <StackPanel x:Name="ClientPanel">
+                <TextBlock Text="局域网服务器" FontWeight="SemiBold" />
+                <TextBlock x:Name="DiscoveryStatusText" Margin="0,4,0,8"
+                           Foreground="#555B63" TextWrapping="Wrap" />
+                <ListBox x:Name="DiscoveredServersBox" MinHeight="72" MaxHeight="180"
+                         DisplayMemberPath="DisplayName" />
+                <WrapPanel Margin="0,8,0,0">
+                    <Button Content="重试" Click="OnDiscoverClick" />
+                    <Button x:Name="ConnectDiscoveredButton" Content="连接所选服务器"
+                            Margin="8,0,0,0" Click="OnConnectDiscoveredClick" />
                     <Button Content="断开并清除" Margin="8,0,0,0" Click="OnForgetClick" />
                 </WrapPanel>
-                <TextBlock x:Name="ClientIdentityText" Grid.Row="5" Grid.ColumnSpan="2"
-                           Margin="0,14,0,0" Foreground="#555B63" TextWrapping="Wrap" />
-            </Grid>
+                <TextBlock x:Name="ClientIdentityText" Margin="0,12,0,0"
+                           Foreground="#555B63" TextWrapping="Wrap" />
+
+                <Expander Header="高级手工连接" Margin="0,14,0,0" IsExpanded="False">
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="118" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="服务器地址" Style="{StaticResource FieldLabel}" />
+                        <TextBox x:Name="EndpointBox" Grid.Column="1" Margin="0,0,0,8"
+                                 ToolTip="非回环地址必须使用 https://host:port/" />
+                        <TextBlock Grid.Row="1" Text="证书指纹" Style="{StaticResource FieldLabel}" />
+                        <TextBox x:Name="FingerprintBox" Grid.Row="1" Grid.Column="1" Margin="0,0,0,8" />
+                        <TextBlock Grid.Row="2" Text="设备名称" Style="{StaticResource FieldLabel}" />
+                        <TextBox x:Name="DeviceNameBox" Grid.Row="2" Grid.Column="1" Margin="0,0,0,8" />
+                        <TextBlock Grid.Row="3" Text="一次性配对码" Style="{StaticResource FieldLabel}" />
+                        <PasswordBox x:Name="PairCodeBox" Grid.Row="3" Grid.Column="1" Margin="0,0,0,12" />
+                        <WrapPanel Grid.Row="4" Grid.Column="1">
+                            <Button Content="保存并重启" Click="OnSaveClick" />
+                            <Button Content="配对" Margin="8,0,0,0" Click="OnPairClick" />
+                            <Button Content="重连" Margin="8,0,0,0" Click="OnReconnectClick" />
+                        </WrapPanel>
+                    </Grid>
+                </Expander>
+            </StackPanel>
 
             <Grid x:Name="ServerPanel" Visibility="Collapsed">
                 <Grid.RowDefinitions>

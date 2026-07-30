@@ -11,6 +11,8 @@ public sealed record LanServerStatus(
     int Clients,
     int Shells,
     int DeviceCount,
+    bool DiscoveryRunning,
+    string? DiscoveryError,
     LanConfigurationStatus Configuration);
 
 public static class LanCommands
@@ -20,12 +22,13 @@ public static class LanCommands
         LanDeviceStore devices,
         WebGateway web,
         LanConfigurationService configuration,
+        LanDiscoveryResponder discovery,
         string source = "app")
     {
         registry.Register(new CommandDescriptor
         {
             Name = "lan.status",
-            Summary = "查看服务器 LAN、TLS、设备和会话状态",
+            Summary = "查看服务器 LAN、TLS、自动发现、设备和会话状态",
             Readonly = true,
             Handler = CommandDescriptor.Sync(_ => CommandResult.Ok(
                 "LAN 状态",
@@ -37,13 +40,15 @@ public static class LanCommands
                     web.ConnectedClients,
                     web.ConnectedShells,
                     devices.List().Count,
+                    discovery.IsRunning,
+                    discovery.LastError,
                     configuration.Status()))),
         }, source);
 
         registry.Register(new CommandDescriptor
         {
             Name = "lan.configure",
-            Summary = "预览或应用服务器 LAN 地址、端口和启用状态",
+            Summary = "预览或应用服务器 HTTPS LAN、UDP 自动发现和启用状态",
             Parameters =
             [
                 new ParameterSpec
