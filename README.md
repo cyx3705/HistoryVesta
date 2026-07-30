@@ -22,7 +22,7 @@ OHS 只有两层发布区：`b-Publish` 保存本机构建、当前候选、历�
 最新正式可消费快照。`C:\OneHistory\OneHistory-Push\OneHistoryStudio` 是部署运行位置，不是第三层发布区；
 部署只能消费 `z-Package`。
 
-文档入口：[OHS 文档中心](./b-Office/README.md) ｜
+文档入口：[OHS 文档中心](./b-Office/文档中心.md) ｜
 [发布与升级](./b-Office/current/发布与升级.md) ｜
 [AppShell 权威文档](../2026-023-AppShell/b-Office/README.md)
 

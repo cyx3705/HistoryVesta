@@ -240,9 +240,10 @@ internal static class VersionProjectionSuite
             "current contains the reviewed OHS-owned contracts");
         True(packageDocuments.SetEquals(["命令手册.md", "模块开发手册.md", "MCP接入与安全.md"]),
             "package contains the reviewed consumer contracts");
-        var readmes = Directory.EnumerateFiles(officeRoot, "README.md", SearchOption.AllDirectories).ToArray();
-        Equal(1, readmes.Length, "b-Office has one README");
-        Equal(Path.Combine(officeRoot, "README.md"), readmes[0], "b-Office README stays at the root");
+        var documentationCenter = Path.Combine(officeRoot, "文档中心.md");
+        True(File.Exists(documentationCenter), "b-Office has a root documentation center");
+        Equal(0, Directory.EnumerateFiles(officeRoot, "README.md", SearchOption.AllDirectories).Count(),
+            "b-Office subdirectories contain no independent README");
 
         foreach (var path in Directory.EnumerateFiles(currentRoot, "*.md")
                      .Concat(Directory.EnumerateFiles(packageRoot, "*.md")))
@@ -252,8 +253,8 @@ internal static class VersionProjectionSuite
                     || line.StartsWith("> 当前版本：", StringComparison.Ordinal)),
                 $"current manual has no hand-synchronized applicability version: {Path.GetFileName(path)}");
         }
-        var officeReadme = File.ReadAllText(Path.Combine(ParentDir, "b-Office", "README.md"));
-        True(!officeReadme.Contains("> 当前版本：", StringComparison.Ordinal),
+        var officeNavigation = File.ReadAllText(documentationCenter);
+        True(!officeNavigation.Contains("> 当前版本：", StringComparison.Ordinal),
             "documentation center has no hand-synchronized current version");
 
         var moduleManual = File.ReadAllText(Path.Combine(packageRoot, "模块开发手册.md"));
