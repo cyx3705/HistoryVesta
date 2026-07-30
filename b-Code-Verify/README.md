@@ -25,6 +25,16 @@ dotnet run --project .\b-Code-Verify\Smoke\Smoke.csproj -c Release
 .\b-Code-Verify\Smoke\bin\Debug\net8.0-windows\Smoke.exe --suite RepositoryTargets
 ```
 
+日常功能完成由产品脚本组合 Contracts、Debug 构建、定向 Smoke 和可运行测试部署：
+
+```powershell
+.\b-Code-Studio\eng\Test-Deploy-Studio.ps1 -Suite Wiring
+.\b-Code-Studio\eng\Test-Deploy-Studio.ps1 -Suite GitRules,RepositoryTargets
+```
+
+产物只覆盖 `b-Publish/candidate`，不保留版本历史。完整 Debug/Release Smoke 及正式发布校验只由
+`Publish-Studio.ps1` 在发布候选阶段执行。
+
 默认 Smoke 禁止真实鼠标、开机自启动、UAC、正式项目写入和第二台 LAN 设备。真实停靠输入只在可交互
 Windows 桌面显式执行：
 

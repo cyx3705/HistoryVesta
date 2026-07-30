@@ -9,7 +9,7 @@
 |---|---|---|
 | `b-Code-Studio` | OHS 产品源码 | 纳入 `OHS.sln` |
 | `b-Code-Verify` | Contracts、功能 Smoke 与测试架构门禁 | 纳入 `OHS.sln` |
-| `b-Publish` | 本机构建、候选、历史归档与失败隔离区 | 生成物，不入 Git |
+| `b-Publish` | 单槽测试候选、正式包历史与临时事务区 | 生成物，不入 Git |
 | `z-Package` | 经 manifest/checksum 验证的正式可消费快照 | 不参与解决方案构建 |
 | `b-Code-OneHistory-V1` | OneHistory V1 历史组件 | 只读，不构建 |
 | `b-Office` | OHS 现行合同、模块消费文档包与历史记录 | 不构建 |
@@ -18,7 +18,7 @@ AppShell 权威源码、包仓和开发文档位于平级项目 `..\2026-023-App
 固定的 `PackageReference` 消费正式包，包源由根目录 `nuget.config` 指向 023 的正式 feed；框架版本与
 演进计划不在 OHS 手册中维护平行文本。
 
-OHS 只有两层发布区：`b-Publish` 保存本机构建、当前候选、历史版本和失败隔离，`z-Package` 只保存
+OHS 只有两层发布区：`b-Publish` 保存最后一次测试候选、正式包历史和临时事务，`z-Package` 只保存
 最新正式可消费快照。`C:\OneHistory\OneHistory-Push\OneHistoryStudio` 是部署运行位置，不是第三层发布区；
 部署只能消费 `z-Package`。
 
@@ -31,10 +31,11 @@ OHS 只有两层发布区：`b-Publish` 保存本机构建、当前候选、历�
 ```powershell
 dotnet restore .\OHS.sln
 dotnet build .\OHS.sln -c Debug --no-restore
-dotnet build .\OHS.sln -c Release --no-restore
-dotnet test .\b-Code-Verify\Contracts\Contracts.csproj -c Debug --no-build
-dotnet run --project .\b-Code-Verify\Smoke\Smoke.csproj -c Debug --no-build
+.\b-Code-Studio\eng\Test-Deploy-Studio.ps1 -Suite Wiring
 ```
+
+日常功能完成只执行相关单测、Contracts、Debug 构建和定向 Smoke。完整 Debug/Release 门禁与正式发布物只在
+执行 `Publish-Studio.ps1` 形成发布候选时生成。
 
 ## AI 工作边界
 

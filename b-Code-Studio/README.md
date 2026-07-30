@@ -9,7 +9,8 @@
 - `Git`、`Views`、`App.xaml*`：OHS 装配、项目管理与页面源码。
 - `..\b-Code-Verify`：Contracts、Smoke 与测试架构门禁。
 
-本机构建、候选、历史和失败隔离数据位于平级 `..\b-Publish`，正式可消费快照位于 `..\z-Package`。
+本机单槽测试候选、正式包历史和临时事务数据位于平级 `..\b-Publish`，正式可消费快照位于
+`..\z-Package`。
 
 ## 构建
 
@@ -24,18 +25,22 @@ dotnet build .\OHS.sln -c Release -p:NuGetAudit=false
 
 Contracts、功能 Smoke、定向 Suite 与真实鼠标规则统一见 [验证组件](../b-Code-Verify/README.md)。
 
-## OHS 发布入口
+## OHS 验证与发布入口
 
-发布统一使用 `eng\Publish-Studio.ps1`。默认模式会执行锁定还原、Debug/Release 构建、两套 Smoke、
+日常功能完成使用 `eng\Test-Deploy-Studio.ps1`。它只执行 Contracts、Debug 构建、调用者指定的定向 Smoke，
+并把可运行 Debug 产物原子替换到 `b-Publish\candidate`；不执行完整发布门禁，也不保留测试部署历史。
+
+发布候选统一使用 `eng\Publish-Studio.ps1`。默认模式会执行锁定还原、Debug/Release 构建与 Contracts、两套完整 Smoke、
 Release 发布、运行时命令手册重生成、六份 Help 校验、版本校验、SHA-256 和 manifest，并写入新的
-`b-Publish\current` 当前候选；每次使用 `b-Publish\work` 中的同卷临时候选原子替换，
+`b-Publish\candidate` 当前候选；每次使用 `b-Publish\work` 中的同卷临时候选原子替换，
 不提交 Git。只有显式 `-Publish` 且
 `b-Code-Studio`、`b-Code-Verify`、`b-Office` 都洁净时，才会继续把已验证暂存原子提升到
 `z-Package` 正式区。两个阶段都按 manifest 和 checksum 复验完整文件集合、大小与 SHA-256。只有旧正式包
-直接进入 `b-Publish\history\package-*`；旧暂存候选在事务成功后删除。`work` 和 `quarantine` 只服务
-当前事务，下一次发布前清理，成功后也会移除。发布脚本不得创建仓库根 `stage`。
+直接进入 `b-Publish\history\package-*`；旧候选在事务成功后直接删除，不进入历史。
+`work` 和 `quarantine` 只服务当前事务，下一次测试或发布前清理，成功后也会移除。发布脚本不得创建仓库根 `stage`。
 
 ```powershell
+.\b-Code-Studio\eng\Test-Deploy-Studio.ps1 -Suite Wiring
 .\b-Code-Studio\eng\Publish-Studio.ps1
 .\b-Code-Studio\eng\Publish-Studio.ps1 -Publish
 ```

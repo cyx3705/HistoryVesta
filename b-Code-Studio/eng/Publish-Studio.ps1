@@ -11,7 +11,8 @@ Set-StrictMode -Version Latest
 $ComponentRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $RepoRoot = [IO.Path]::GetFullPath((Join-Path $ComponentRoot ".."))
 $PublishRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "b-Publish"))
-$StagingRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "current"))
+$CandidateRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "candidate"))
+$LegacyStagingRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "current"))
 $WorkRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "work"))
 $HistoryRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "history"))
 $QuarantineRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "quarantine"))
@@ -155,6 +156,10 @@ try {
     foreach ($directory in @($PublishRoot, $WorkRoot, $HistoryRoot, $QuarantineRoot)) {
         New-Item -ItemType Directory -Force -Path $directory | Out-Null
     }
+    if (Test-Path -LiteralPath $LegacyStagingRoot) {
+        Remove-Item -LiteralPath $LegacyStagingRoot -Recurse -Force
+        Write-Host "Removed legacy b-Publish/current staging slot"
+    }
     if (Test-Path -LiteralPath $BuildRoot) {
         throw "Refusing to overwrite immutable build directory: $BuildRoot"
     }
@@ -168,6 +173,10 @@ try {
     Invoke-Dotnet @( "restore", "OHS.sln", "--locked-mode", "-p:NuGetAudit=false" )
     Invoke-Dotnet @( "build", "OHS.sln", "-c", "Debug", "--no-restore", "-p:NuGetAudit=false" )
     Invoke-Dotnet @( "build", "OHS.sln", "-c", "Release", "--no-restore", "-p:NuGetAudit=false" )
+    Invoke-Dotnet @( "test", "b-Code-Verify\Contracts\Contracts.csproj", "-c", "Debug",
+        "--no-build", "--no-restore", "-p:NuGetAudit=false" )
+    Invoke-Dotnet @( "test", "b-Code-Verify\Contracts\Contracts.csproj", "-c", "Release",
+        "--no-build", "--no-restore", "-p:NuGetAudit=false" )
     Invoke-Dotnet @( "run", "--project", "b-Code-Verify\Smoke\Smoke.csproj", "-c", "Debug", "--no-build", "--no-restore", "--" )
     Invoke-Dotnet @( "run", "--project", "b-Code-Verify\Smoke\Smoke.csproj", "-c", "Release", "--no-build", "--no-restore", "--" )
 
@@ -235,7 +244,7 @@ try {
         schemaVersion = 1
         product = "OneHistoryStudio"
         version = $Version
-        channel = "staging"
+        channel = "candidate"
         sourceCommit = $sourceCommit
         sourceDirty = $sourceDirty
         sdk = (& dotnet --version).Trim()
@@ -247,46 +256,46 @@ try {
     }
     [IO.File]::WriteAllText($ManifestPath, (($manifest | ConvertTo-Json -Depth 8) + "`n"), [Text.UTF8Encoding]::new($false))
 
-    $temporaryStaging = Assert-UnderRoot `
-        (Join-Path $WorkRoot "current-new-$transactionId") $WorkRoot "temporary staging"
-    $previousStagingVersion = Get-ReleaseVersionTag $StagingRoot
-    $backupStaging = Assert-UnderRoot `
-        (Join-Path $WorkRoot "staging-previous-$previousStagingVersion-$archiveStamp-$transactionId") `
-        $WorkRoot "staging rollback"
-    $quarantineStaging = Assert-UnderRoot `
-        (Join-Path $QuarantineRoot "staging-failed-$Version-$archiveStamp-$transactionId") `
-        $QuarantineRoot "failed staging"
+    $temporaryCandidate = Assert-UnderRoot `
+        (Join-Path $WorkRoot "candidate-new-$transactionId") $WorkRoot "temporary candidate"
+    $previousCandidateVersion = Get-ReleaseVersionTag $CandidateRoot
+    $backupCandidate = Assert-UnderRoot `
+        (Join-Path $WorkRoot "candidate-previous-$previousCandidateVersion-$transactionId") `
+        $WorkRoot "candidate rollback"
+    $quarantineCandidate = Assert-UnderRoot `
+        (Join-Path $QuarantineRoot "candidate-failed-$transactionId") `
+        $QuarantineRoot "failed candidate"
     try {
-        Copy-DirectoryContents $AppRoot $temporaryStaging
-        $temporaryMetadata = Join-Path $temporaryStaging "release"
+        Copy-DirectoryContents $AppRoot $temporaryCandidate
+        $temporaryMetadata = Join-Path $temporaryCandidate "release"
         New-Item -ItemType Directory -Force -Path $temporaryMetadata | Out-Null
         Copy-Item -LiteralPath $ManifestPath -Destination (Join-Path $temporaryMetadata "$Version.json")
         Copy-Item -LiteralPath $ChecksumPath -Destination (Join-Path $temporaryMetadata "$Version.sha256")
-        $validateStaging = {
+        $validateCandidate = {
             param($Root)
-            Assert-ReleaseTree $Root $Version "staging"
+            Assert-ReleaseTree $Root $Version "candidate"
         }
         Invoke-DirectoryPromotion `
-            $temporaryStaging $StagingRoot $backupStaging $quarantineStaging $validateStaging
-        Write-Host "Staged OneHistoryStudio $Version at $StagingRoot"
-        if (Test-Path -LiteralPath $backupStaging) {
-            Remove-Item -LiteralPath $backupStaging -Recurse -Force
-            Write-Host "Previous staging discarded after successful replacement"
+            $temporaryCandidate $CandidateRoot $backupCandidate $quarantineCandidate $validateCandidate
+        Write-Host "Validated OneHistoryStudio $Version candidate at $CandidateRoot"
+        if (Test-Path -LiteralPath $backupCandidate) {
+            Remove-Item -LiteralPath $backupCandidate -Recurse -Force
+            Write-Host "Previous candidate discarded after successful replacement"
         }
         Remove-Item -LiteralPath $BuildRoot -Recurse -Force
     }
     catch {
-        $stagingError = $_
-        if ((Test-Path -LiteralPath $temporaryStaging) -and
-            (-not (Test-Path -LiteralPath $quarantineStaging))) {
+        $candidateError = $_
+        if ((Test-Path -LiteralPath $temporaryCandidate) -and
+            (-not (Test-Path -LiteralPath $quarantineCandidate))) {
             try {
-                Move-Item -LiteralPath $temporaryStaging -Destination $quarantineStaging
+                Move-Item -LiteralPath $temporaryCandidate -Destination $quarantineCandidate
             }
             catch {
-                throw "Staging failed: $($stagingError.Exception.Message); candidate quarantine failed: $($_.Exception.Message)"
+                throw "Candidate failed: $($candidateError.Exception.Message); candidate quarantine failed: $($_.Exception.Message)"
             }
         }
-        throw $stagingError
+        throw $candidateError
     }
 
     if ($Publish) {
@@ -300,7 +309,7 @@ try {
             (Join-Path $QuarantineRoot "package-failed-$Version-$archiveStamp-$transactionId") `
             $QuarantineRoot "failed package"
         try {
-            Copy-DirectoryContents $StagingRoot $temporaryPackage
+            Copy-DirectoryContents $CandidateRoot $temporaryPackage
             $packageManifestPath = Join-Path (Join-Path $temporaryPackage "release") "$Version.json"
             $packageManifest = [IO.File]::ReadAllText($packageManifestPath) | ConvertFrom-Json
             $packageManifest.channel = "package"

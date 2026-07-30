@@ -136,11 +136,11 @@ Invoke-PromotionCase 'release-tree' {
         $checksumLines += "$hash  $relative"
     }
     $manifest = [ordered]@{
-        schemaVersion = 1; product = 'OneHistoryStudio'; version = '2.7.5'; channel = 'staging'; artifacts = $artifacts
+        schemaVersion = 1; product = 'OneHistoryStudio'; version = '2.7.5'; channel = 'candidate'; artifacts = $artifacts
     }
     [IO.File]::WriteAllText((Join-Path $metadataRoot '2.7.5.json'), ($manifest | ConvertTo-Json -Depth 5))
     [IO.File]::WriteAllLines((Join-Path $metadataRoot '2.7.5.sha256'), $checksumLines)
-    Assert-ReleaseTree $releaseRoot '2.7.5' 'staging'
+    Assert-ReleaseTree $releaseRoot '2.7.5' 'candidate'
     try { Assert-ReleaseTree $releaseRoot '2.7.5' 'package'; throw 'expected channel failure' }
     catch { Assert-True ($_.Exception.Message -like '*expected package*') 'wrong channel is rejected' }
     [IO.File]::WriteAllText((Join-Path $releaseRoot 'docs.md'), 'tampered')

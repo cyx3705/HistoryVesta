@@ -175,18 +175,37 @@ internal static class VersionProjectionSuite
             "publish governance: OHS uses the tested promotion transaction");
         Contains(publish, "\"b-Publish\"",
             "publish governance: b-Publish is the local build and history root");
-        Contains(publish, "\"current\"",
-            "publish governance: b-Publish/current is the replaceable candidate");
+        Contains(publish, "\"candidate\"",
+            "publish governance: b-Publish/candidate is the replaceable release candidate");
+        Contains(publish, "Removed legacy b-Publish/current staging slot",
+            "publish governance: the retired current slot is cleaned during migration");
         Contains(publish, "Join-Path $PublishRoot \"history\"",
             "publish governance: formal package history is flat under b-Publish/history");
-        True(!publish.Contains("staging-$previousStagingVersion", StringComparison.Ordinal),
-            "publish governance: staging candidates are not archived as history");
-        Contains(publish, "Previous staging discarded after successful replacement",
-            "publish governance: replaced staging is transient");
+        True(!publish.Contains("history/candidate", StringComparison.OrdinalIgnoreCase)
+             && !publish.Contains("Join-Path $HistoryRoot \"candidate", StringComparison.Ordinal),
+            "publish governance: release candidates are never archived as history");
+        Contains(publish, "Previous candidate discarded after successful replacement",
+            "publish governance: only the latest release candidate is retained");
         True(!publish.Contains("Join-Path $RepoRoot \"stage\"", StringComparison.Ordinal),
             "publish governance: the removed stage root is not recreated");
         Contains(publish, "\"z-Package\"",
             "publish governance: z-Package is the formal package root");
+
+        var developmentDeployPath = Path.Combine(
+            ParentDir, "b-Code-Studio", "eng", "Test-Deploy-Studio.ps1");
+        True(File.Exists(developmentDeployPath),
+            "development governance: lightweight test deployment entry exists");
+        var developmentDeploy = File.ReadAllText(developmentDeployPath);
+        Contains(developmentDeploy, "\"candidate\"",
+            "development governance: lightweight verification writes the shared candidate slot");
+        True(!developmentDeploy.Contains("dev-current", StringComparison.OrdinalIgnoreCase),
+            "development governance: no extra development delivery layer exists");
+        Contains(developmentDeploy, "--suite",
+            "development governance: targeted Smoke is required");
+        True(!developmentDeploy.Contains("-c\", \"Release", StringComparison.Ordinal)
+             && !developmentDeploy.Contains("--generate-manual", StringComparison.Ordinal)
+             && !developmentDeploy.Contains("\"z-Package\"", StringComparison.Ordinal),
+            "development governance: lightweight verification does not cross release gates");
 
         var deployPath = Path.Combine(ParentDir, "b-Code-Studio", "eng", "Deploy-Studio.ps1");
         True(File.Exists(deployPath), "deployment governance: deployment entry exists");
@@ -283,7 +302,7 @@ internal static class VersionProjectionSuite
         True(gitAttributes.Any(line => line.StartsWith("z-Package/**/*.dll ", StringComparison.Ordinal)),
             "version projection: formal package binaries use Git LFS");
         True(!gitAttributes.Any(line => line.StartsWith("b-Publish/**/*.dll ", StringComparison.Ordinal)),
-            "version projection: ignored staging has no tracked LFS contract");
+            "version projection: ignored local publish area has no tracked LFS contract");
         True(Directory.Exists(Path.Combine(ParentDir, "z-Package")),
             "version projection: formal package root exists");
         var formalPackageFiles = Directory.EnumerateFiles(
