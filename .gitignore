@@ -1,3 +1,30 @@
+# OneHistoryStudio baseline begin
+*.bak
+*.buildwithskipanalyzers
+*.cache
+*.dwl
+*.dwl2
+*.elk
+*.eod
+*.eox
+*.flk
+*.idb
+*.ilk
+*.lck
+*.log
+*.lref
+*.obj
+*.pdb
+*.slk
+*.suo
+*.tlog
+*.tmp
+*.up2date
+*.user
+*.vsidx
+*.xlk
+# OneHistoryStudio baseline end
+
 # IDE state
 .vs/
 *.suo
@@ -14,10 +41,11 @@ TestResults/
 # Local package and deployment scratch
 *.tmp
 *.log
-b-Publish/staging/
+b-Publish/current/
+b-Publish/virtual/
 
 # Deployment databases and rollback archives are machine-local recovery assets.
 b-Office/evidence/**/*.db
 b-Office/evidence/**/*.zip
 
-# b-Publish archives formal release evidence; only its rebuildable staging area is ignored.
+# b-Publish archives formal release evidence; rebuildable candidate and virtual workspaces are ignored.

@@ -21,7 +21,7 @@ $PublishRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "b-Publish"))
 $FormalRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "z-Package-AppShell"))
 $OfficeRoot = Join-Path $RepoRoot "b-Office"
 $PackageDocumentRoot = Join-Path $OfficeRoot "package"
-$ReleaseDocumentRoot = Join-Path $OfficeRoot "release"
+$ReleaseDocumentRoot = Join-Path $ComponentRoot "eng\release"
 $ConsumerDocumentManifest = Join-Path $ReleaseDocumentRoot "consumer-docs.json"
 $ReuseDocumentTemplate = Join-Path $ReleaseDocumentRoot "AppShell.reuse.template.md"
 $CurrentSnapshotReadmeTemplate = Join-Path $ReleaseDocumentRoot "CurrentSnapshot.README.template.md"
@@ -77,10 +77,10 @@ if ($Version -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') {
     throw "Invalid semantic version: $Version"
 }
 
-$StageRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "staging\$Version"))
+$StageRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "current"))
 $publishRootPrefix = $PublishRoot.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
 if (-not $StageRoot.StartsWith($publishRootPrefix, [StringComparison]::OrdinalIgnoreCase)) {
-    throw "Staging path escaped the publish root: $StageRoot"
+    throw "Candidate path escaped the publish root: $StageRoot"
 }
 
 function Invoke-Dotnet {
@@ -106,9 +106,6 @@ Assert-File $CurrentSnapshotReadmeTemplate
 
 $ReleaseInputs = @(
     "b-Code-AppShell"
-    "b-Office/release/consumer-docs.json"
-    "b-Office/release/AppShell.reuse.template.md"
-    "b-Office/release/CurrentSnapshot.README.template.md"
     $ConsumerDocumentNames | ForEach-Object { "b-Office/package/$_" }
 )
 $sourceStatus = (& git -C $RepoRoot status --porcelain -- @ReleaseInputs) -join "`n"
@@ -118,19 +115,45 @@ if ($LASTEXITCODE -ne 0) {
 $sourceDirty = -not [string]::IsNullOrWhiteSpace($sourceStatus)
 if ($Publish -and $sourceDirty) {
     throw "Formal publish requires committed, clean code and consumer document inputs. " +
-        "Run staging without -Publish first."
+        "Build and review b-Publish/current without -Publish first."
 }
 
-function Publish-ImmutableFile {
+function Publish-ImmutableDirectory {
     param([string]$Source, [string]$Destination)
+
     if (Test-Path -LiteralPath $Destination) {
-        throw "Refusing to overwrite immutable release artifact: $Destination"
+        throw "Refusing to overwrite immutable release directory: $Destination"
     }
     $parent = Split-Path -Parent $Destination
     New-Item -ItemType Directory -Force -Path $parent | Out-Null
-    $temporary = "$Destination.tmp-$([Guid]::NewGuid().ToString('N'))"
-    Copy-Item -LiteralPath $Source -Destination $temporary
-    Move-Item -LiteralPath $temporary -Destination $Destination
+    $temporary = Join-Path $parent (".$([IO.Path]::GetFileName($Destination)).tmp-" +
+        [Guid]::NewGuid().ToString('N'))
+    try {
+        New-Item -ItemType Directory -Path $temporary | Out-Null
+        foreach ($item in Get-ChildItem -LiteralPath $Source -Force) {
+            Copy-Item -LiteralPath $item.FullName -Destination $temporary -Recurse
+        }
+        $sourceRoot = [IO.Path]::GetFullPath($Source)
+        $sourceFiles = @(Get-ChildItem -LiteralPath $sourceRoot -Recurse -File)
+        $temporaryFiles = @(Get-ChildItem -LiteralPath $temporary -Recurse -File)
+        if ($sourceFiles.Count -ne $temporaryFiles.Count) {
+            throw "Immutable release copy has a different file count"
+        }
+        foreach ($sourceFile in $sourceFiles) {
+            $relative = $sourceFile.FullName.Substring($sourceRoot.Length).TrimStart('\', '/')
+            $copiedFile = Join-Path $temporary $relative
+            if ((Get-FileHash -LiteralPath $sourceFile.FullName -Algorithm SHA256).Hash -ne
+                (Get-FileHash -LiteralPath $copiedFile -Algorithm SHA256).Hash) {
+                throw "Immutable release copy differs from its source: $relative"
+            }
+        }
+        Move-Item -LiteralPath $temporary -Destination $Destination
+    }
+    finally {
+        if (Test-Path -LiteralPath $temporary) {
+            Remove-Item -LiteralPath $temporary -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
 
 function Install-ZSnapshot {
@@ -256,7 +279,14 @@ function Publish-CurrentSnapshot {
         throw "The formal snapshot requires exactly four runtime .nupkg files"
     }
 
-    $snapshot = Join-Path $StageRoot "current-snapshot"
+    $historySnapshot = Join-Path $PublishRoot "history\$Version"
+    if (Test-Path -LiteralPath $historySnapshot) {
+        throw "Refusing to overwrite immutable release history: $historySnapshot"
+    }
+    $snapshot = Join-Path $StageRoot "release-snapshot"
+    if (Test-Path -LiteralPath $snapshot) {
+        Remove-Item -LiteralPath $snapshot -Recurse -Force
+    }
     $snapshotFeed = Join-Path $snapshot "feed"
     $snapshotDocs = Join-Path $snapshot "docs"
     New-Item -ItemType Directory -Force -Path $snapshotFeed, $snapshotDocs | Out-Null
@@ -324,9 +354,10 @@ function Publish-CurrentSnapshot {
         [Text.UTF8Encoding]::new($false))
 
     Install-ZSnapshot -SourceDirectory $snapshot
+    Publish-ImmutableDirectory -Source $snapshot -Destination $historySnapshot
 }
 
-function Assert-StagedCandidate {
+function Assert-CurrentCandidate {
     $packagesDirectory = Join-Path $StageRoot "packages"
     $documentsDirectory = Join-Path $StageRoot "docs"
     $reuseDocument = Join-Path $StageRoot "AppShell.reuse.md"
@@ -338,15 +369,15 @@ function Assert-StagedCandidate {
     }
     if (-not (Test-Path -LiteralPath $packagesDirectory -PathType Container) -or
         -not (Test-Path -LiteralPath $documentsDirectory -PathType Container)) {
-        throw "Staged candidate is missing packages or docs: $StageRoot"
+        throw "Current candidate is missing packages or docs: $StageRoot"
     }
 
     $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
     $currentCommit = (& git -C $RepoRoot rev-parse HEAD).Trim()
     if ([int]$manifest.schemaVersion -ne 1 -or [string]$manifest.product -ne "AppShell" -or
-        [string]$manifest.version -ne $Version -or [string]$manifest.channel -ne "staging" -or
+        [string]$manifest.version -ne $Version -or [string]$manifest.channel -ne "candidate" -or
         [bool]$manifest.sourceDirty -or [string]$manifest.sourceCommit -ne $currentCommit) {
-        throw "Staged candidate identity does not match clean HEAD $currentCommit"
+        throw "Current candidate identity does not match clean HEAD $currentCommit"
     }
 
     $artifactFiles = @(Get-ChildItem -LiteralPath $packagesDirectory -File | Sort-Object Name)
@@ -382,7 +413,7 @@ function Assert-StagedCandidate {
         if ($hash -ne (Get-FileHash -LiteralPath $sourceDocument -Algorithm SHA256).Hash) {
             throw "Staged consumer document differs from its source: $documentName"
         }
-        $expectedPayloads["docs/$Version/$documentName"] = [ordered]@{
+        $expectedPayloads["docs/$documentName"] = [ordered]@{
             bytes = (Get-Item -LiteralPath $stagedDocument).Length
             sha256 = $hash
         }
@@ -393,7 +424,7 @@ function Assert-StagedCandidate {
     if ($actualReuseText -cne $expectedReuseText) {
         throw "Staged reuse document differs from the current release template"
     }
-    $expectedPayloads["reuse/$Version/AppShell.reuse.md"] = [ordered]@{
+    $expectedPayloads["AppShell.reuse.md"] = [ordered]@{
         bytes = (Get-Item -LiteralPath $reuseDocument).Length
         sha256 = (Get-FileHash -LiteralPath $reuseDocument -Algorithm SHA256).Hash
     }
@@ -445,70 +476,19 @@ function Assert-StagedCandidate {
     }
 }
 
-function Publish-StagedCandidate {
-    $candidate = Assert-StagedCandidate
-    $formalManifestTemporary = Join-Path $StageRoot ".$Version.formal-manifest.tmp"
-    try {
-        $formalManifest = [ordered]@{
-            schemaVersion = [int]$candidate.Manifest.schemaVersion
-            product = [string]$candidate.Manifest.product
-            version = [string]$candidate.Manifest.version
-            channel = "local"
-            sourceCommit = [string]$candidate.Manifest.sourceCommit
-            sourceDirty = $false
-            sdk = [string]$candidate.Manifest.sdk
-            targetFrameworks = @($candidate.Manifest.targetFrameworks)
-            demoRid = [string]$candidate.Manifest.demoRid
-            selfContained = [bool]$candidate.Manifest.selfContained
-            artifacts = @($candidate.Manifest.artifacts)
-            documents = @($candidate.Manifest.documents)
-        }
-        [IO.File]::WriteAllText(
-            $formalManifestTemporary,
-            ($formalManifest | ConvertTo-Json -Depth 8) + "`n",
-            [Text.UTF8Encoding]::new($false))
-
-        $destinations = @(
-            $candidate.Artifacts | ForEach-Object { Join-Path $PublishRoot "feed\$($_.Name)" }
-            $ConsumerDocumentNames | ForEach-Object { Join-Path $PublishRoot "docs\$Version\$_" }
-            Join-Path $PublishRoot "reuse\$Version\AppShell.reuse.md"
-            Join-Path $PublishRoot "checksums\$Version.sha256"
-            Join-Path $PublishRoot "manifest\$Version.json"
-        )
-        $existing = @($destinations | Where-Object { Test-Path -LiteralPath $_ })
-        if ($existing.Count -ne 0) {
-            throw "Refusing partial/overwrite promotion; immutable destinations already exist: $($existing -join ', ')"
-        }
-
-        foreach ($file in $candidate.Artifacts) {
-            Publish-ImmutableFile $file.FullName (Join-Path $PublishRoot "feed\$($file.Name)")
-        }
-        foreach ($documentName in $ConsumerDocumentNames) {
-            Publish-ImmutableFile (Join-Path $candidate.DocumentsDirectory $documentName) `
-                (Join-Path $PublishRoot "docs\$Version\$documentName")
-        }
-        Publish-ImmutableFile $candidate.ReuseDocument `
-            (Join-Path $PublishRoot "reuse\$Version\AppShell.reuse.md")
-        Publish-ImmutableFile $candidate.ChecksumPath (Join-Path $PublishRoot "checksums\$Version.sha256")
-        Publish-ImmutableFile $formalManifestTemporary (Join-Path $PublishRoot "manifest\$Version.json")
-
-        Publish-CurrentSnapshot -Packages $candidate.RuntimePackages `
-            -ReuseDocument $candidate.ReuseDocument -DocumentsDirectory $candidate.DocumentsDirectory
-        Write-Host "Promoted the reviewed AppShell $Version candidate without rebuilding packages"
-        Write-Host "Archived AppShell $Version at $PublishRoot"
-        Write-Host "Published the expanded current snapshot to $FormalRoot"
-    }
-    finally {
-        if (Test-Path -LiteralPath $formalManifestTemporary) {
-            Remove-Item -LiteralPath $formalManifestTemporary -Force
-        }
-    }
+function Publish-CurrentCandidate {
+    $candidate = Assert-CurrentCandidate
+    Publish-CurrentSnapshot -Packages $candidate.RuntimePackages `
+        -ReuseDocument $candidate.ReuseDocument -DocumentsDirectory $candidate.DocumentsDirectory
+    Write-Host "Promoted the reviewed AppShell $Version candidate without rebuilding packages"
+    Write-Host "Published the expanded current snapshot to $FormalRoot"
+    Write-Host "Archived the same minimal snapshot at $(Join-Path $PublishRoot "history\$Version")"
 }
 
 function Publish-VirtualSnapshot {
     param([string]$VirtualVersion)
 
-    $sourceFeed = Join-Path $PublishRoot "feed"
+    $sourceFeed = Join-Path $PublishRoot "history\$VirtualVersion\feed"
     $virtualRoot = [IO.Path]::GetFullPath((Join-Path $PublishRoot "virtual"))
     $virtualPrefix = $virtualRoot.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
     $target = [IO.Path]::GetFullPath((Join-Path $virtualRoot $VirtualVersion))
@@ -725,7 +705,7 @@ if ($VirtualPublish) {
 
 if ($Publish) {
     try {
-        Publish-StagedCandidate
+        Publish-CurrentCandidate
     }
     finally {
         if ($mutexAcquired) {
@@ -932,10 +912,10 @@ try {
         foreach ($documentName in $ConsumerDocumentNames) {
             $documentPath = Join-Path $StageDocsDir $documentName
             $hash = (Get-FileHash -LiteralPath $documentPath -Algorithm SHA256).Hash
-            "$hash  docs/$Version/$documentName"
+            "$hash  docs/$documentName"
         }
         $reuseHash = (Get-FileHash -LiteralPath $ReuseDocumentPath -Algorithm SHA256).Hash
-        "$reuseHash  reuse/$Version/AppShell.reuse.md"
+        "$reuseHash  AppShell.reuse.md"
     )
     $checksumPath = Join-Path $StageRoot "$Version.sha256"
     [IO.File]::WriteAllLines($checksumPath, $checksumLines, [Text.UTF8Encoding]::new($false))
@@ -951,13 +931,13 @@ try {
     $manifestDocuments = foreach ($documentName in $ConsumerDocumentNames) {
         $documentPath = Join-Path $StageDocsDir $documentName
         [ordered]@{
-            file = "docs/$Version/$documentName"
+            file = "docs/$documentName"
             bytes = (Get-Item -LiteralPath $documentPath).Length
             sha256 = (Get-FileHash -LiteralPath $documentPath -Algorithm SHA256).Hash
         }
     }
     $manifestDocuments += [ordered]@{
-        file = "reuse/$Version/AppShell.reuse.md"
+        file = "AppShell.reuse.md"
         bytes = (Get-Item -LiteralPath $ReuseDocumentPath).Length
         sha256 = (Get-FileHash -LiteralPath $ReuseDocumentPath -Algorithm SHA256).Hash
     }
@@ -965,7 +945,7 @@ try {
         schemaVersion = 1
         product = "AppShell"
         version = $Version
-        channel = "staging"
+        channel = "candidate"
         sourceCommit = $sourceCommit
         sourceDirty = $sourceDirty
         sdk = (& dotnet --version).Trim()
@@ -979,7 +959,7 @@ try {
     $manifestJson = $manifest | ConvertTo-Json -Depth 8
     [IO.File]::WriteAllText($manifestPath, $manifestJson + "`n", [Text.UTF8Encoding]::new($false))
 
-    Write-Host "Staged AppShell $Version at $StageRoot"
+    Write-Host "Prepared AppShell $Version current candidate at $StageRoot"
     $PipelineSucceeded = $true
 }
 finally {

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "template": {
+    "isTemplate": false,
+    "source": "0000-001-AIReady",
+    "strictValidationArgument": "-Instantiation"
+  },
+  "project": {
+    "id": "2026-023",
+    "name": "AppShell",
+    "title": "OneHistory AppShell",
+    "kind": [
+      "framework",
+      "desktop",
+      "package"
+    ],
+    "status": "frozen",
+    "version": "3.0.3",
+    "branch": "2026-023-AppShell",
+    "freezeTag": "v3.0.3"
+  },
+  "paths": {
+    "activeRoots": [
+      "b-Code-AppShell/src",
+      "b-Code-AppShell/tests",
+      "b-Code-AppShell/eng",
+      "b-Code-Samples",
+      "b-Office/current",
+      "b-Office/package"
+    ],
+    "sourceRoots": [
+      "b-Code-AppShell/src",
+      "b-Code-Samples"
+    ],
+    "generatedRoots": [
+      "b-Publish/current",
+      "b-Publish/virtual"
+    ],
+    "archiveRoots": [
+      "b-Office/history",
+      "b-Publish"
+    ],
+    "releaseRoots": [
+      "z-Package-AppShell"
+    ],
+    "allowedRootDirectoryPrefixes": [
+      "a-",
+      "b-",
+      "z-"
+    ]
+  },
+  "documents": {
+    "center": "b-Office/文档中心.md",
+    "package": "b-Office/package/复用说明.md",
+    "structure": "b-Office/current/目录规范.md",
+    "overview": "b-Office/current/项目概览.md",
+    "technicalContract": "b-Office/current/技术合同.md",
+    "decisions": "b-Office/current/有效决策.md",
+    "verification": "b-Office/current/验证合同.md",
+    "upgradeAndRelease": "b-Office/current/升级与发布.md",
+    "historyBoundary": "b-Office/history/历史资料说明.md",
+    "apiManual": "b-Office/package/AppShell_API与指令手册.md",
+    "moduleAndMcp": "b-Office/package/AppShell_3.0_模块与MCP接入.md",
+    "runtimeLimits": "b-Office/package/AppShell_3.0_运行时约束与已知限制.md",
+    "consumerChanges": "b-Office/package/AppShell_3.0_消费变更摘要.md"
+  },
+  "commands": {
+    "setup": "dotnet restore .\\AppShell.sln --locked-mode",
+    "build": "dotnet build .\\AppShell.sln -c Release --no-restore",
+    "test": "dotnet test .\\b-Code-AppShell\\tests\\AppShell.Tests\\AppShell.Tests.csproj -c Release --no-build --no-restore",
+    "verify": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\b-Code-AppShell\\eng\\Test-ProjectContract.ps1 -Instantiation",
+    "run": "dotnet run --project .\\b-Code-AppShell\\src\\App\\App.csproj",
+    "package": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\b-Code-AppShell\\eng\\Publish-AppShell.ps1 -Version 3.0.3",
+    "publicApiGate": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\b-Code-AppShell\\eng\\Assert-PublicApiBaseline.ps1"
+  },
+  "externalDependencies": [
+    {
+      "name": ".NET SDK",
+      "version": "9.0.315",
+      "purpose": "构建 net8.0 与 net8.0-windows 目标"
+    },
+    {
+      "name": "Dirkster.AvalonDock",
+      "version": "4.72.1",
+      "purpose": "WPF 停靠布局实现，仅由 AppShell.Shell 封装"
+    }
+  ],
+  "contextExclusions": [
+    "b-Office/history/**",
+    "b-Publish/**",
+    "z-Package-AppShell/**",
+    "eng/**",
+    "Unused/**",
+    "**/bin/**",
+    "**/obj/**",
+    "**/.vs/**",
+    "artifacts/**"
+  ]
+}

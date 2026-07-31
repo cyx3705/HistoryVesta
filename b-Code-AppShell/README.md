@@ -9,8 +9,10 @@ AppShell 是独立维护的通用桌面应用框架，也是框架源码的唯�
 - `src/AppShell.ServiceHost`：无窗 WPF 服务宿主、确认通道和 `svc.*` 生命周期。
 - `src/AppShell.Shell`：WPF 主壳、停靠窗口和内置命令。
 - `src/App`：框架演示宿主，用于独立构建和 GUI 验收。
+- `eng`：发布、公开 API 冻结、TRX 失败摘要和 AI-ready 项目合同检查。
 - `../b-Office/package`：消费文档编辑源；`../b-Office` 根目录保留冻结合同和内部设计记录。
-- `../b-Publish`：候选构建、完整版本归档和发布证据。
+- `../b-Publish/current`：唯一一份当前候选和完整发布测试结果。
+- `../b-Publish/history`：按版本保存的 Z 级最小正式历史副本。
 - `../z-Package-AppShell`：当前正式四包、精简复用说明和同版本消费合同。
 
 ## 构建
@@ -33,18 +35,28 @@ dotnet build .\AppShell.sln -c Release --no-restore
 <PackageReference Include="OneHistory.AppShell.ServiceHost" Version="3.0.3" />
 ```
 
-审核候选写入仓库内 `b-Publish/staging`；审核通过后完整归档到 `b-Publish`，
-并用当前正式四包更新 `z-Package-AppShell/feed`。打包与验收入口：
+审核候选覆盖写入仓库内 `b-Publish/current`；审核通过后先整体更新
+`z-Package-AppShell`，再把同一最小快照归档到 `b-Publish/history/<版本>`。打包与验收入口：
 
 ```powershell
-# 可覆盖 staging：构建、审计、隔离消费和演示发布
+# 可覆盖 current：构建、审计、隔离消费和演示发布
 .\eng\Publish-AppShell.ps1 -Version 3.0.3
 
-# 完整归档不可覆盖；同时替换 z-Package-AppShell 的当前正式快照
+# 替换 Z 当前快照，并生成不可覆盖的最小历史副本
 .\eng\Publish-AppShell.ps1 -Version 3.0.3 -Publish
 ```
 
 脚本不会执行 Git commit/tag/push，也不会推送 NuGet.org。包结构与许可边界见 `PACKAGE.md`。
-完整消费文档由 `../b-Office/package` 生成，归档到 `../b-Publish/docs/<版本>`，并随当前正式快照写入
-`../z-Package-AppShell/docs/`，不再重复装入每个 NuGet 包；其他项目和 AI 先读
+完整消费文档由 `../b-Office/package` 生成，候选位于 `../b-Publish/current/docs/`，正式历史位于
+`../b-Publish/history/<版本>/docs/`，并随当前正式快照写入 `../z-Package-AppShell/docs/`；
+其他项目和 AI 先读
 `../z-Package-AppShell/AppShell.reuse.md`，再按需跟随其中的合同链接。
+
+## 维护门禁
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\eng\Assert-PublicApiBaseline.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\eng\Test-ProjectContract.ps1 -Instantiation
+```
+
+现行项目规则从 `../project.manifest.json` 和 `../b-Office/current/` 读取；历史施工与冻结证据默认不进入维护上下文。
