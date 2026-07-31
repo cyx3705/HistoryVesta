@@ -7,6 +7,7 @@ namespace OneHistoryStudio.Smoke.Suites;
 /// <summary>Smoke 套件的功能命名、文件体积、运行隔离与单宿主结构。</summary>
 internal static class TestArchitectureSuite
 {
+    private const int MaximumProductFileLines = 700;
     private const int MaximumSuiteFileLines = 550;
 
     public static Task RunAsync(string[] args)
@@ -14,6 +15,20 @@ internal static class TestArchitectureSuite
         True(Directory.Exists(VerifyRoot), "verification has a root-level b-Code component");
         True(!Directory.Exists(Path.Combine(RepoRoot, "tests")),
             "product component contains no nested test tree");
+        var separator = Path.DirectorySeparatorChar;
+        var productFiles = Directory.EnumerateFiles(RepoRoot, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !path.Contains($"{separator}bin{separator}", StringComparison.OrdinalIgnoreCase)
+                           && !path.Contains($"{separator}obj{separator}", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        True(productFiles.Length > 0, "test architecture discovers product sources");
+        foreach (var path in productFiles)
+        {
+            var lines = File.ReadLines(path).Count();
+            True(lines <= MaximumProductFileLines,
+                $"product source stays within {MaximumProductFileLines} lines: " +
+                $"{Path.GetRelativePath(RepoRoot, path)} ({lines})");
+        }
+
         var smokeRoot = Path.Combine(VerifyRoot, "Smoke");
         var suitesRoot = Path.Combine(smokeRoot, "Suites");
         var suiteFiles = Directory.EnumerateFiles(suitesRoot, "*.cs").ToArray();
