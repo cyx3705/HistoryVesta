@@ -1,15 +1,15 @@
 {
     "schemaVersion":  1,
     "product":  "OneHistoryStudio",
-    "version":  "2.8.0",
+    "version":  "2.8.1",
     "channel":  "package",
-    "sourceCommit":  "59bb028fa3258a1ab28d8eeb82abf0c0c61929d0",
+    "sourceCommit":  "eeb753cd72188d254ba1e212f9631acaea263e5e",
     "sourceDirty":  false,
     "sdk":  "9.0.315",
     "targetFramework":  "net8.0-windows",
     "runtime":  "win-x64",
     "selfContained":  false,
-    "commandManualSha256":  "9CC752EFD7FA030B0E580BD9024B3B5ECE782B808C5F28FA0A2BFD6896AB2BD2",
+    "commandManualSha256":  "A1DDCF28347CF1A39EFCDB1BCE363FC84C161051E1659AF22F07898AB91F775F",
     "artifacts":  [
                       {
                           "file":  "AppShell.Core.dll",
@@ -68,13 +68,13 @@
                       },
                       {
                           "file":  "docs/发布与升级.md",
-                          "bytes":  52329,
-                          "sha256":  "4DB1EE70B2A7B7A604180E5FAA630CA38F45042F627E19873CCD5E4FB18822BE"
+                          "bytes":  53047,
+                          "sha256":  "680BFDF16A8755457504B88D69E49718A2DA9FFBC70581A785F06B39A62725A9"
                       },
                       {
                           "file":  "docs/命令手册.md",
-                          "bytes":  40349,
-                          "sha256":  "9CC752EFD7FA030B0E580BD9024B3B5ECE782B808C5F28FA0A2BFD6896AB2BD2"
+                          "bytes":  41054,
+                          "sha256":  "A1DDCF28347CF1A39EFCDB1BCE363FC84C161051E1659AF22F07898AB91F775F"
                       },
                       {
                           "file":  "docs/模块开发手册.md",
@@ -83,8 +83,8 @@
                       },
                       {
                           "file":  "docs/项目库与备份.md",
-                          "bytes":  10477,
-                          "sha256":  "42ED2E580721CDDACEF7B183A59D5FEFBE36A45F8715458695A075E1DC013C95"
+                          "bytes":  11002,
+                          "sha256":  "F32826DB518B5D7D0DBC675244A76C5B30594546309FB9CE18F7ADDF2A90E5C2"
                       },
                       {
                           "file":  "es/AvalonDock.resources.dll",
@@ -124,22 +124,22 @@
                       {
                           "file":  "OneHistoryStudio.deps.json",
                           "bytes":  6678,
-                          "sha256":  "EC0D0577D9A80A94F78FC14FCF03F15EE46DB986642988E31020802313B44BF0"
+                          "sha256":  "30506DCAE6A9FC1D8688D1AC8FC6C164C5B004C4386223F0C3F4EACBBCC2ECED"
                       },
                       {
                           "file":  "OneHistoryStudio.dll",
-                          "bytes":  778752,
-                          "sha256":  "C5EB8B87DE14849B80DA15FC8751A56F7D0B010ACB5327ADB30F685625223129"
+                          "bytes":  841728,
+                          "sha256":  "78294AB2F46088708F5EB13E355578A771ECC000F5D99F9130ECD3F2CEC7A2D4"
                       },
                       {
                           "file":  "OneHistoryStudio.exe",
                           "bytes":  152064,
-                          "sha256":  "16352794CF90F8A8D6BC423C0A64DAAC400364019AB92BBCE321E1870CFE2791"
+                          "sha256":  "D4288C9788FB5D0C938B3CB1B7714021CA79814705C1E029BB6A89B1218821B3"
                       },
                       {
                           "file":  "OneHistoryStudio.pdb",
-                          "bytes":  201644,
-                          "sha256":  "A3E4851764F2CA919705A1B7D9CCA77C7D9F0E74D4E85B50A85CBD1B7B20384F"
+                          "bytes":  208168,
+                          "sha256":  "457B0B71A34EB3D80FB5D606E337E57E086173EECA45B54A4BF4F795D29B7C6B"
                       },
                       {
                           "file":  "OneHistoryStudio.runtimeconfig.json",
@@ -182,5 +182,5 @@
                           "sha256":  "E12491E16E77AF2130FE9B9D79AD12C64D5AEFAD62E8A181EEA7B0A23835A4EC"
                       }
                   ],
-    "packagedAtUtc":  "2026-07-30T10:37:11.3308923+00:00"
+    "packagedAtUtc":  "2026-07-31T04:08:22.7993576+00:00"
 }
