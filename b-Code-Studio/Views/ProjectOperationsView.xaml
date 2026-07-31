@@ -117,7 +117,7 @@
                 <TextBox Grid.Column="0" x:Name="PatternBox" Text="*.xlsx"
                          VerticalContentAlignment="Center"
                          ToolTip="文件格式如 *.xlsx；目录规则以 / 结尾如 Library/（只用于忽略）" />
-                <Button Grid.Column="1" Content="添加格式/目录" Padding="10,3" Margin="6,0,0,0"
+                <Button Grid.Column="1" x:Name="AddRuleButton" Content="添加格式/目录" Padding="10,3" Margin="6,0,0,0"
                         Click="OnAddRuleClick" />
             </Grid>
 
@@ -141,11 +141,12 @@
                 </DockPanel>
             </Border>
             <WrapPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
-                <Button x:Name="SaveRuleButton" Content="保存所选" Padding="10,3"
+                <Button x:Name="SaveRuleButton" Content="保存修改（0）" Padding="10,3"
                         IsEnabled="False" Click="OnSaveRuleClick" />
                 <Button x:Name="DeleteRuleButton" Content="删除规则" Padding="10,3" Margin="6,0,0,0"
                         IsEnabled="False" Click="OnDeleteRuleClick" />
-                <Button Content="重新读取" Padding="10,3" Margin="6,0,0,0" Click="OnReloadRulesClick" />
+                <Button x:Name="ReloadRulesButton" Content="重新读取" Padding="10,3" Margin="6,0,0,0"
+                        Click="OnReloadRulesClick" />
             </WrapPanel>
 
             <DataGrid x:Name="RuleGrid" AutoGenerateColumns="False" CanUserAddRows="False"

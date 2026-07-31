@@ -66,6 +66,59 @@ internal static class GitRulesSuite
             var invalidPattern = await service.SetAsync("main", "../*.txt", true, false, true, apply: false);
             True(!invalidPattern.Success, "path-bearing pattern rejected as a controlled failure");
 
+            var batchA = Path.Combine(worktree, "first.batcha");
+            var batchB = Path.Combine(worktree, "second.batchb");
+            var batchC = Path.Combine(worktree, "third.batchc");
+            await File.WriteAllTextAsync(batchA, "first\r\nline\r\n", new UTF8Encoding(false));
+            await File.WriteAllTextAsync(batchB, "keep locally", new UTF8Encoding(false));
+            await File.WriteAllTextAsync(batchC, "ordinary", new UTF8Encoding(false));
+            Ensure(await GitRunner.RunAsync(worktree, ["add", "--", "second.batchb"]),
+                "track batch ignore fixture before applying rules");
+            IReadOnlyList<GitFileRuleChange> batchChanges =
+            [
+                new("*.batcha", true, false, true),
+                new("*.batchb", false, false, false),
+                new("*.batchc", true, true, false),
+            ];
+            var batchPreview = await service.BatchSetAsync("main", batchChanges, apply: false);
+            True(batchPreview.Success && batchPreview.Preview is
+                {
+                    Changed: true,
+                    Applied: false,
+                    Items.Count: 3,
+                    AddToIndex: 2,
+                    RemoveFromIndex: 1,
+                }, "three rule changes produce one complete batch preview");
+            var invalidBatch = await service.BatchSetAsync("main",
+            [
+                new("*.never", true, false, false),
+                new("*.NEVER", false, false, false),
+            ], apply: true);
+            True(!invalidBatch.Success && invalidBatch.Message.Contains("重复"),
+                "duplicate batch pattern rejects the whole batch before writing");
+
+            var batchApplied = await service.BatchSetAsync("main", batchChanges, apply: true);
+            True(batchApplied.Success && batchApplied.Preview is { Applied: true, Items.Count: 3 },
+                $"three rule changes apply together: {batchApplied.Message}");
+            Ensure(await GitRunner.RunAsync(worktree, ["ls-files", "--error-unmatch", "--", "first.batcha"]),
+                "batch LF file added to index");
+            Ensure(await GitRunner.RunAsync(worktree, ["ls-files", "--error-unmatch", "--", "third.batchc"]),
+                "batch ordinary file added to index");
+            True(!(await GitRunner.RunAsync(
+                    worktree, ["ls-files", "--error-unmatch", "--", "second.batchb"])).Success,
+                "batch ignored file removed from index");
+            True(File.Exists(batchB), "batch ignore preserves working-tree file");
+            var batchRules = await service.ListAsync("main");
+            True(batchRules.Success
+                 && batchRules.Rules.Any(rule => rule.Pattern == "*.batcha" && rule.Track && rule.Lf)
+                 && batchRules.Rules.Any(rule => rule.Pattern == "*.batchb" && !rule.Track)
+                 && batchRules.Rules.Any(rule => rule.Pattern == "*.batchc" && rule.Track && rule.Lfs && !rule.Lf),
+                "all three batch rules persist after one apply");
+            var unchangedBatch = await service.BatchSetAsync("main", batchChanges, apply: false);
+            True(unchangedBatch.Success && unchangedBatch.Preview is
+                { Changed: false, AddToIndex: 0, RemoveFromIndex: 0, Renormalize: 0 },
+                "repeating an already converged batch is a no-op");
+
             var initialRules = await service.ListAsync("main");
             True(initialRules.Success, $"initial list: {initialRules.Message}");
             True(initialRules.Rules.Any(rule =>
@@ -152,7 +205,7 @@ internal static class GitRulesSuite
             GitRuleCommands.RegisterAll(registry, service, inventory, projects);
             var commandNames = registry.All().Select(command => command.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             True(commandNames.SetEquals([
-                    "git.rule.list", "git.rule.set", "git.rule.remove", "git.rule.scan",
+                    "git.rule.list", "git.rule.set", "git.rule.batch-set", "git.rule.remove", "git.rule.scan",
                     "git.rule.gaps", "git.rule.suggest", "git.rule.sync",
                 ]),
                 "command catalog contains the simplified rule commands and V2.2.1 inventory extensions");
@@ -165,6 +218,9 @@ internal static class GitRulesSuite
             True(registry.TryGet("git.rule.set", out var ruleSet) && !ruleSet.Readonly
                  && McpExposurePolicy.State(ruleSet) != "readonly",
                 "git.rule.set requires standard MCP policy");
+            True(registry.TryGet("git.rule.batch-set", out var batchSet) && !batchSet.Readonly
+                 && McpExposurePolicy.State(batchSet) != "readonly",
+                "git.rule.batch-set requires standard MCP policy");
             var commandLog = new MemoryLog();
             var commandBus = new CommandBus(registry, commandLog);
             var executed = false;
@@ -176,6 +232,16 @@ internal static class GitRulesSuite
             True(commandLog.Snapshot().Any(entry => entry.Category == "cmd:UI")
                  && commandLog.Snapshot().Any(entry => entry.Category == CommandBus.ResultCategory),
                 "automatic rule load produces normal echo and result logs");
+
+            var commandChanges = System.Text.Json.JsonSerializer.Serialize(new[]
+            {
+                new GitFileRuleChange("*.batcha", true, false, true),
+                new GitFileRuleChange("*.batchc", true, true, false),
+            });
+            var batchCommand = await commandBus.ExecuteAsync(
+                $"git.rule.batch-set name=main changes={CommandParser.QuoteArg(commandChanges)} apply=false", "UI");
+            True(batchCommand.Success && batchCommand.Data is GitFileRuleBatchPreview { Items.Count: 2 },
+                "batch JSON executes through CommandBus and returns typed preview");
 
             var scanCommand = await commandBus.ExecuteAsync("git.rule.scan name=main refresh=true", "UI");
             True(scanCommand.Success && scanCommand.Data is InventoryReport

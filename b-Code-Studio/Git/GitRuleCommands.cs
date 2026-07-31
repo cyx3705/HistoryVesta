@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using AppShell.Core.Commands;
 
 namespace OneHistoryStudio.Git;
@@ -14,6 +15,7 @@ public static class GitRuleCommands
     {
         registry.Register(BuildList(service), source);
         registry.Register(BuildSet(service), source);
+        registry.Register(BuildBatchSet(service), source);
         registry.Register(BuildRemove(service), source);
         registry.Register(BuildScan(inventory), source);
         registry.Register(BuildGaps(inventory), source);
@@ -147,6 +149,43 @@ public static class GitRuleCommands
             ctx.GetBool("apply"), ctx.Cancellation)),
     };
 
+    private static CommandDescriptor BuildBatchSet(GitFileRuleService service) => new()
+    {
+        Name = "git.rule.batch-set",
+        Summary = "一次预览、确认并保存多条 Git/LFS/LF 文件规则",
+        Example = "git.rule.batch-set name=demo changes=\"[{\\\"pattern\\\":\\\"*.xlsx\\\",\\\"track\\\":true,\\\"lfs\\\":true,\\\"lf\\\":false}]\" apply=false",
+        Parameters =
+        [
+            ProjectName(),
+            StringParam("changes", "1 至 500 条规则的 JSON 数组", required: true, position: 1),
+            BoolParam("apply", "false 仅预览；true 经一次确认后批量写入并同步索引", "false"),
+        ],
+        ConfirmPrompt = ctx => ctx.GetBool("apply")
+            ? $"确认批量设置 {ctx.GetString("name")} 的 {BatchCount(ctx.GetString("changes"))} 条文件规则并同步 Git 索引？" +
+              "不会删除本地文件、提交、推送或重写历史。"
+            : null,
+        Handler = async ctx =>
+        {
+            IReadOnlyList<GitFileRuleChange> changes;
+            try
+            {
+                changes = JsonSerializer.Deserialize<List<GitFileRuleChange>>(
+                              ctx.RequireString("changes"),
+                              new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                          ?? [];
+            }
+            catch (JsonException ex)
+            {
+                return CommandResult.Fail($"changes 不是有效的规则 JSON 数组: {ex.Message}");
+            }
+            var result = await service.BatchSetAsync(
+                ctx.RequireString("name"), changes, ctx.GetBool("apply"), ctx.Cancellation);
+            return result.Success
+                ? CommandResult.Ok(result.Message, result.Preview)
+                : CommandResult.Fail(result.Message);
+        },
+    };
+
     private static CommandDescriptor BuildRemove(GitFileRuleService service) => new()
     {
         Name = "git.rule.remove",
@@ -179,6 +218,19 @@ public static class GitRuleCommands
         Required = true,
         Position = 0,
     };
+
+    private static int BatchCount(string? json)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<List<GitFileRuleChange>>(
+                json ?? "[]", new JsonSerializerOptions { PropertyNameCaseInsensitive = true })?.Count ?? 0;
+        }
+        catch (JsonException)
+        {
+            return 0;
+        }
+    }
 
     private static ParameterSpec StringParam(
         string name, string description, bool required = false, int? position = null) => new()

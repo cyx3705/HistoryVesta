@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Windows;
 using System.Windows.Controls;
 using AppShell.Core.Commands;
 using OneHistoryStudio.Git;
@@ -15,6 +17,8 @@ public partial class ProjectOperationsView : UserControl
     private readonly ObservableCollection<RuleEditRow> _rules = [];
     private bool _suppressProjectSelection;
     private bool _projectOperationRunning;
+    private bool _ruleOperationRunning;
+    private string? _loadedRuleProject;
     private int _ruleLoadGeneration;
 
     public ProjectOperationsView(Func<CommandBus?> busAccessor, ProjectSelectionState selection)
@@ -77,10 +81,20 @@ public partial class ProjectOperationsView : UserControl
     {
         if (_suppressProjectSelection)
             return;
-        UpdateProjectActions();
-        if (CurrentProjectName() is { Length: > 0 } name)
+        var requested = CurrentProjectName();
+        if (_loadedRuleProject is { Length: > 0 } loaded
+            && !requested.Equals(loaded, StringComparison.OrdinalIgnoreCase)
+            && !await EnsureDirtyRulesHandledAsync("切换项目"))
         {
+            RestoreProjectSelection(loaded);
+            return;
+        }
+        UpdateProjectActions();
+        if (requested is { Length: > 0 } name)
+        {
+            _suppressProjectSelection = true;
             _selection.CurrentProjectName = name;
+            _suppressProjectSelection = false;
             await LoadRulesAsync(name);
         }
         else
@@ -101,6 +115,14 @@ public partial class ProjectOperationsView : UserControl
             ? names.FirstOrDefault(name => name.Equals(current, StringComparison.OrdinalIgnoreCase))
             : null;
 
+        if (_loadedRuleProject is { Length: > 0 } loaded
+            && !string.Equals(selected, loaded, StringComparison.OrdinalIgnoreCase)
+            && !await EnsureDirtyRulesHandledAsync("切换项目"))
+        {
+            RestoreProjectSelection(loaded);
+            return;
+        }
+
         _suppressProjectSelection = true;
         CurrentProjectBox.SelectedItem = selected;
         if (selected == null)
@@ -114,6 +136,16 @@ public partial class ProjectOperationsView : UserControl
             ClearRules();
     }
 
+    private void RestoreProjectSelection(string project)
+    {
+        _suppressProjectSelection = true;
+        CurrentProjectBox.SelectedItem = project;
+        CurrentProjectBox.Text = project;
+        _selection.CurrentProjectName = project;
+        _suppressProjectSelection = false;
+        UpdateProjectActions();
+    }
+
     private void OnNewProjectNameChanged(object sender, TextChangedEventArgs e)
         => UpdateProjectActions();
 
@@ -124,7 +156,10 @@ public partial class ProjectOperationsView : UserControl
         => UpdateProjectActions();
 
     private async void OnRefreshProjectsClick(object sender, System.Windows.RoutedEventArgs e)
-        => await RefreshProjectsAsync();
+    {
+        if (await EnsureDirtyRulesHandledAsync("刷新项目列表"))
+            await RefreshProjectsAsync();
+    }
 
     private async void OnCreateClick(object sender, System.Windows.RoutedEventArgs e)
     {
@@ -214,12 +249,16 @@ public partial class ProjectOperationsView : UserControl
 
         var scan = await scanTask;
         var list = await listTask;
-        _rules.Clear();
+        DetachRuleRows();
         if (scan.Success && scan.Data is InventoryReport report
             && list.Success && list.Data is IReadOnlyList<GitFileRuleInfo> declared)
         {
             foreach (var row in MergeRows(report, declared))
+            {
+                row.PropertyChanged += OnRuleRowChanged;
                 _rules.Add(row);
+            }
+            _loadedRuleProject = project;
             RulePanel.IsEnabled = true;
             CoverageText.Text =
                 $"格式覆盖 · {project}：覆盖率 {report.CoverageRate:P1}，未决 {report.UndecidedCount} 个" +
@@ -231,6 +270,7 @@ public partial class ProjectOperationsView : UserControl
             CoverageText.Text = "格式台账加载失败，详见控制台";
             StatusText.Text = !scan.Success ? ViewKit.ResultSummary(scan) : ViewKit.ResultSummary(list);
         }
+        UpdateRuleActions();
     }
 
     private static IEnumerable<RuleEditRow> MergeRows(
@@ -269,44 +309,80 @@ public partial class ProjectOperationsView : UserControl
             return;
         }
         var draft = new RuleEditRow(pattern);
+        draft.PropertyChanged += OnRuleRowChanged;
         _rules.Add(draft);
         RuleGrid.SelectedItem = draft;
         RuleGrid.ScrollIntoView(draft);
         StatusText.Text = "新规则尚未保存";
+        UpdateRuleActions();
     }
 
     private void OnRuleSelected(object sender, SelectionChangedEventArgs e)
-    {
-        var selected = RuleGrid.SelectedItem as RuleEditRow;
-        SaveRuleButton.IsEnabled = selected is { CanEdit: true };
-        DeleteRuleButton.IsEnabled = selected is { CanEdit: true }
-                                     && (selected.IsDeclared || selected.IsDraft);
-    }
+        => UpdateRuleActions();
 
     private async void OnSaveRuleClick(object sender, System.Windows.RoutedEventArgs e)
+        => _ = await SaveDirtyRulesAsync(_loadedRuleProject ?? CurrentProjectName(), refreshAfter: true);
+
+    private async Task<bool> SaveDirtyRulesAsync(string project, bool refreshAfter)
     {
-        if (RuleGrid.SelectedItem is not RuleEditRow rule || CurrentProjectName() is not { Length: > 0 } project
-            || _busAccessor() is not { } bus)
-            return;
-        if (!rule.CanEdit || rule.Track is not bool track
-            || rule.Lfs is not bool lfs || rule.Lf is not bool lf)
+        if (_busAccessor() is not { } bus || string.IsNullOrWhiteSpace(project))
+            return false;
+
+        RuleGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+        RuleGrid.CommitEdit(DataGridEditingUnit.Row, true);
+        var dirty = _rules.Where(row => row.CanEdit && row.IsDirty).ToList();
+        if (dirty.Count == 0)
+            return true;
+        var invalid = dirty.Where(row => !row.IsValid).Select(row => row.Pattern).ToList();
+        if (invalid.Count > 0)
         {
-            StatusText.Text = "请先明确选择 Git、LFS 指针与 LF 文本状态";
-            return;
+            StatusText.Text = $"请先明确这些规则的 Git、LFS 与 LF 状态：{string.Join("、", invalid)}";
+            return false;
         }
-        var command = $"git.rule.set name={CommandParser.QuoteArg(project)} " +
-                      $"pattern={CommandParser.QuoteArg(rule.Pattern)} track={Bool(track)} " +
-                      $"lfs={Bool(lfs)} lf={Bool(lf)}";
-        var preview = await bus.ExecuteAsync(command + " apply=false", "UI");
-        if (!preview.Success || preview.Data is not GitFileRulePreview { Changed: true })
+
+        var changes = dirty.Select(row => new GitFileRuleChange(
+            row.Pattern, row.Track!.Value, row.Lfs!.Value, row.Lf!.Value)).ToList();
+        var json = JsonSerializer.Serialize(changes, new JsonSerializerOptions
         {
-            StatusText.Text = preview.Success ? "规则无需变化" : "规则预览失败，详见控制台";
-            return;
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        });
+        var command = $"git.rule.batch-set name={CommandParser.QuoteArg(project)} " +
+                      $"changes={CommandParser.QuoteArg(json)}";
+
+        SetRuleOperationRunning(true);
+        try
+        {
+            var preview = await bus.ExecuteAsync(command + " apply=false", "UI");
+            if (!preview.Success || preview.Data is not GitFileRuleBatchPreview batch)
+            {
+                StatusText.Text = "批量规则预览失败，修改仍保留；详见控制台";
+                return false;
+            }
+            if (!batch.Changed)
+            {
+                foreach (var row in dirty)
+                    row.AcceptChanges();
+                StatusText.Text = $"{dirty.Count} 条规则已与仓库一致";
+                return true;
+            }
+
+            var applied = await bus.ExecuteAsync(command + " apply=true", "UI");
+            if (!applied.Success)
+            {
+                StatusText.Text = $"批量保存失败，{dirty.Count} 条修改仍保留；详见控制台";
+                return false;
+            }
+            foreach (var row in dirty)
+                row.AcceptChanges();
+            StatusText.Text = $"已保存 {dirty.Count} 条规则";
+            if (refreshAfter)
+                await LoadRulesAsync(project, refresh: true);
+            return true;
         }
-        var applied = await bus.ExecuteAsync(command + " apply=true", "UI");
-        StatusText.Text = applied.Success ? "规则与 Git 索引已更新" : "规则应用失败，详见控制台";
-        if (applied.Success)
-            await LoadRulesAsync(project, refresh: true);
+        finally
+        {
+            SetRuleOperationRunning(false);
+        }
     }
 
     private async void OnDeleteRuleClick(object sender, System.Windows.RoutedEventArgs e)
@@ -316,7 +392,9 @@ public partial class ProjectOperationsView : UserControl
             return;
         if (rule.IsDraft)
         {
+            rule.PropertyChanged -= OnRuleRowChanged;
             _rules.Remove(rule);
+            UpdateRuleActions();
             return;
         }
         if (!rule.IsDeclared)
@@ -324,6 +402,8 @@ public partial class ProjectOperationsView : UserControl
             StatusText.Text = "该格式由扫描发现，当前没有可删除的规则";
             return;
         }
+        if (!await EnsureDirtyRulesHandledAsync("删除规则"))
+            return;
         var command = $"git.rule.remove name={CommandParser.QuoteArg(project)} " +
                       $"pattern={CommandParser.QuoteArg(rule.Pattern)}";
         var preview = await bus.ExecuteAsync(command + " apply=false", "UI");
@@ -340,7 +420,8 @@ public partial class ProjectOperationsView : UserControl
 
     private async void OnReloadRulesClick(object sender, System.Windows.RoutedEventArgs e)
     {
-        if (CurrentProjectName() is { Length: > 0 } project)
+        if (CurrentProjectName() is { Length: > 0 } project
+            && await EnsureDirtyRulesHandledAsync("重新读取规则"))
             await LoadRulesAsync(project);
     }
 
@@ -350,6 +431,8 @@ public partial class ProjectOperationsView : UserControl
     private async void OnScanCoverageClick(object sender, System.Windows.RoutedEventArgs e)
     {
         if (_busAccessor() is not { } bus || CurrentProjectName() is not { Length: > 0 } project)
+            return;
+        if (!await EnsureDirtyRulesHandledAsync("重新扫描规则"))
             return;
 
         ScanCoverageButton.IsEnabled = false;
@@ -416,13 +499,87 @@ public partial class ProjectOperationsView : UserControl
         UpdateProjectActions();
     }
 
+    private async Task<bool> EnsureDirtyRulesHandledAsync(string action)
+    {
+        RuleGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+        RuleGrid.CommitEdit(DataGridEditingUnit.Row, true);
+        var count = _rules.Count(row => row.CanEdit && row.IsDirty);
+        if (count == 0)
+            return true;
+
+        var choice = MessageBox.Show(
+            $"当前有 {count} 条文件规则尚未保存。\n\n是：保存后{action}\n否：放弃修改后{action}\n取消：留在当前页面",
+            "未保存的文件规则",
+            MessageBoxButton.YesNoCancel,
+            MessageBoxImage.Warning);
+        if (choice == MessageBoxResult.Cancel)
+            return false;
+        if (choice == MessageBoxResult.Yes)
+            return await SaveDirtyRulesAsync(_loadedRuleProject ?? CurrentProjectName(), refreshAfter: false);
+
+        DiscardRuleChanges();
+        return true;
+    }
+
+    private void DiscardRuleChanges()
+    {
+        foreach (var draft in _rules.Where(row => row.IsDraft).ToList())
+        {
+            draft.PropertyChanged -= OnRuleRowChanged;
+            _rules.Remove(draft);
+        }
+        foreach (var row in _rules.Where(row => row.IsDirty))
+            row.ResetChanges();
+        UpdateRuleActions();
+    }
+
+    private void OnRuleRowChanged(object? sender, PropertyChangedEventArgs e)
+        => UpdateRuleActions();
+
+    private void UpdateRuleActions()
+    {
+        if (SaveRuleButton == null)
+            return;
+        var dirtyCount = _rules.Count(row => row.CanEdit && row.IsDirty);
+        SaveRuleButton.Content = $"保存修改（{dirtyCount}）";
+        SaveRuleButton.IsEnabled = !_ruleOperationRunning && dirtyCount > 0;
+        var selected = RuleGrid.SelectedItem as RuleEditRow;
+        DeleteRuleButton.IsEnabled = !_ruleOperationRunning && selected is { CanEdit: true }
+                                     && (selected.IsDeclared || selected.IsDraft);
+    }
+
+    private void SetRuleOperationRunning(bool running)
+    {
+        _ruleOperationRunning = running;
+        RuleGrid.IsEnabled = !running;
+        PatternBox.IsEnabled = !running;
+        AddRuleButton.IsEnabled = !running;
+        ReloadRulesButton.IsEnabled = !running;
+        ScanCoverageButton.IsEnabled = !running;
+        ShowGapsButton.IsEnabled = !running;
+        SuggestButton.IsEnabled = !running;
+        SyncBaselineButton.IsEnabled = !running;
+        CurrentProjectBox.IsEnabled = !running;
+        RefreshProjectsButton.IsEnabled = !running;
+        UpdateRuleActions();
+    }
+
+    private void DetachRuleRows()
+    {
+        foreach (var row in _rules)
+            row.PropertyChanged -= OnRuleRowChanged;
+        _rules.Clear();
+    }
+
     private void ClearRules()
     {
         _ruleLoadGeneration++;
-        _rules.Clear();
+        DetachRuleRows();
+        _loadedRuleProject = null;
         RulePanel.IsEnabled = false;
         RuleTitle.Text = "Git 文件规则";
         CoverageText.Text = "格式覆盖：选择项目后自动读取全部文件格式";
+        UpdateRuleActions();
     }
 
     private static string Bool(bool value) => value ? "true" : "false";
@@ -443,6 +600,11 @@ public partial class ProjectOperationsView : UserControl
         private bool? _track;
         private bool? _lfs;
         private bool? _lf;
+        private bool? _originalTrack;
+        private bool? _originalLfs;
+        private bool? _originalLf;
+        private bool _isDraft;
+        private bool _isDeclared;
 
         public RuleEditRow(FormatRow? format, GitFileRuleInfo? rule)
         {
@@ -452,10 +614,13 @@ public partial class ProjectOperationsView : UserControl
             Pattern = format?.Format ?? rule!.Pattern;
             IsScanned = format != null;
             IsReadOnly = Pattern.Equals(FormatInventoryService.NoExtension, StringComparison.OrdinalIgnoreCase);
-            IsDeclared = rule != null || format?.Track.HasValue == true;
+            _isDeclared = rule != null || format?.Track.HasValue == true;
             _track = rule?.Track ?? format?.Track;
             _lfs = rule?.Lfs ?? format?.Lfs;
             _lf = rule?.Lf ?? format?.Lf;
+            _originalTrack = _track;
+            _originalLfs = _lfs;
+            _originalLf = _lf;
             FileCount = format?.FileCount ?? rule?.FileCount ?? 0;
             UndecidedCount = format?.UndecidedCount ?? 0;
             IsMixed = format?.RuleState.StartsWith("混合", StringComparison.Ordinal) == true;
@@ -479,7 +644,7 @@ public partial class ProjectOperationsView : UserControl
             _lf = false;
             Source = "手动新增";
             Status = "新规则，尚未保存";
-            IsDraft = true;
+            _isDraft = true;
         }
 
         public string Pattern { get; }
@@ -487,13 +652,18 @@ public partial class ProjectOperationsView : UserControl
         public int FileCount { get; }
         public int UndecidedCount { get; }
         public string Status { get; }
-        public bool IsDraft { get; }
-        public bool IsDeclared { get; }
+        public bool IsDraft => _isDraft;
+        public bool IsDeclared => _isDeclared;
         public bool IsScanned { get; }
         public bool IsReadOnly { get; }
         public bool IsMixed { get; }
         public bool CanEdit => !IsReadOnly;
         public bool CanEditAttributes => CanEdit && Track == true;
+        public bool IsValid => Track.HasValue && Lfs.HasValue && Lf.HasValue
+                               && (Track.Value || !Lfs.Value && !Lf.Value)
+                               && !(Lfs.Value && Lf.Value);
+        public bool IsDirty => CanEdit && (_isDraft
+            || Track != _originalTrack || Lfs != _originalLfs || Lf != _originalLf);
         public int SortGroup => !IsDeclared && IsScanned ? 0
             : IsMixed ? 1
             : IsDeclared && FileCount > 0 ? 2
@@ -570,6 +740,29 @@ public partial class ProjectOperationsView : UserControl
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        public void AcceptChanges()
+        {
+            _originalTrack = Track;
+            _originalLfs = Lfs;
+            _originalLf = Lf;
+            _isDraft = false;
+            _isDeclared = true;
+            NotifyState();
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsDraft)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsDeclared)));
+        }
+
+        public void ResetChanges()
+        {
+            _track = _originalTrack;
+            _lfs = _originalLfs;
+            _lf = _originalLf;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Track)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Lfs)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Lf)));
+            NotifyState();
+        }
+
         private bool Set<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
             if (EqualityComparer<T>.Default.Equals(field, value))
@@ -583,6 +776,8 @@ public partial class ProjectOperationsView : UserControl
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanEditAttributes)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StorageResult)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsValid)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsDirty)));
         }
     }
 }

@@ -328,11 +328,18 @@ internal static class PromptGovernanceSuite
             var scannedRow = new ProjectOperationsView.RuleEditRow(scannedFormat, null);
             True(scannedRow.Track == null && scannedRow.Lfs == null && scannedRow.Lf == null,
                 "scanned undeclared format preserves nullable rule state");
+            True(!scannedRow.IsDirty, "loaded scanned row starts clean");
             Equal("未决（扫描发现，尚未声明规则）", scannedRow.StorageResult,
                 "scanned undeclared format is not disguised as ordinary Git");
             scannedRow.Track = true;
             True(scannedRow.Lfs == false && scannedRow.Lf == false,
                 "choosing Git makes both storage attributes explicit false");
+            True(scannedRow.IsDirty && scannedRow.IsValid,
+                "editing a complete scanned rule marks it valid and dirty");
+            scannedRow.ResetChanges();
+            True(!scannedRow.IsDirty && scannedRow.Track == null,
+                "resetting a row restores its load snapshot and clears dirty state");
+            scannedRow.Track = true;
             scannedRow.Lf = true;
             Equal("Git + LF（文本，非 LFS 指针）", scannedRow.StorageResult,
                 "LF storage result explicitly states that LFS pointers are not used");
@@ -344,6 +351,10 @@ internal static class PromptGovernanceSuite
                 lfRule);
             True(lfRow.IsDeclared && lfRow.Lfs == false && lfRow.Lf == true,
                 "declared LF row keeps explicit non-LFS state");
+            lfRow.Lf = false;
+            True(lfRow.IsDirty, "declared row change is tracked independently of selection");
+            lfRow.Lf = true;
+            True(!lfRow.IsDirty, "restoring original values automatically clears dirty state");
             Equal("Git + LF（文本，非 LFS 指针）", lfRow.StorageResult, "declared LF storage result");
 
             var noExtensionRow = new ProjectOperationsView.RuleEditRow(

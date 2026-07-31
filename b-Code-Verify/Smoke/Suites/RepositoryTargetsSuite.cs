@@ -177,6 +177,10 @@ internal static class RepositoryTargetsSuite
             .Select(element => element.Attribute(x + "Name")?.Value)
             .Where(name => name != null).ToList();
         Equal(1, named.Count(name => name == "SelectedCommitMessageBox"), "one commit message box");
+        Equal(1, named.Count(name => name == "SaveRuleButton"), "one batch rule save button");
+        True(project.Descendants().Any(element => element.Attribute(x + "Name")?.Value == "SaveRuleButton"
+            && element.Attribute("Content")?.Value == "保存修改（0）"),
+            "rule save button advertises whole dirty set instead of selected row");
         Equal(4, project.Descendants().Count(element => element.Name.LocalName == "RadioButton"
             && element.Attribute("GroupName")?.Value == "OperationMode"), "four operation segments");
         True(!overview.ToString().Contains("CommitAll", StringComparison.Ordinal)
