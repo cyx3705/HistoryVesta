@@ -262,8 +262,6 @@ internal static partial class LanSingleExeSuite
         var program = File.ReadAllText(Path.Combine(SmokeKit.RepoRoot, "Program.cs"));
         var solution = File.ReadAllText(Path.Combine(SmokeKit.ParentDir, "OHS.sln"));
         var app = File.ReadAllText(Path.Combine(SmokeKit.RepoRoot, "App.xaml.cs"));
-        var githubView = File.ReadAllText(Path.Combine(
-            SmokeKit.RepoRoot, "Views", "GitHubAccountView.xaml"));
         var connectionView = File.ReadAllText(Path.Combine(
             SmokeKit.RepoRoot, "Views", "ConnectionSettingsView.xaml"));
         SmokeKit.Contains(studio, "<StartupObject>OneHistoryStudio.Program</StartupObject>",
@@ -283,21 +281,12 @@ internal static partial class LanSingleExeSuite
             "saved client retries discovery by original server identity");
         SmokeKit.Contains(app, "当前客户端为只读，等待服务器授权",
             "read-only client receives a user-facing authorization message");
-        SmokeKit.Contains(githubView, "服务器 GitHub 账号",
-            "GitHub view identifies server account ownership");
-        foreach (var (name, xaml) in new[]
-                 {
-                     ("connection", connectionView),
-                     ("GitHub", githubView),
-                 })
-        {
-            var userControl = xaml[..xaml.IndexOf('>')];
-            SmokeKit.True(!userControl.Contains("MinWidth=", StringComparison.Ordinal)
-                          && !userControl.Contains("MinHeight=", StringComparison.Ordinal),
-                $"{name} docked view does not force the host minimum size");
-            SmokeKit.Contains(xaml, "<WrapPanel",
-                $"{name} docked view wraps narrow-width actions");
-        }
+        var userControl = connectionView[..connectionView.IndexOf('>')];
+        SmokeKit.True(!userControl.Contains("MinWidth=", StringComparison.Ordinal)
+                      && !userControl.Contains("MinHeight=", StringComparison.Ordinal),
+            "connection docked view does not force the host minimum size");
+        SmokeKit.Contains(connectionView, "<WrapPanel",
+            "connection docked view wraps narrow-width actions");
         var helper = File.ReadAllText(Path.Combine(
             SmokeKit.RepoRoot, "Connection", "LanMachineHelper.cs"));
         SmokeKit.Contains(helper, "LAN 机器配置原本未启用，无需移除",

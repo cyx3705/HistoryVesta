@@ -29,6 +29,8 @@ internal static class TestArchitectureSuite
                 $"{Path.GetRelativePath(RepoRoot, path)} ({lines})");
         }
 
+        VerifyGitHubModuleBoundary(separator);
+
         var smokeRoot = Path.Combine(VerifyRoot, "Smoke");
         var suitesRoot = Path.Combine(smokeRoot, "Suites");
         var suiteFiles = Directory.EnumerateFiles(suitesRoot, "*.cs").ToArray();
@@ -63,7 +65,7 @@ internal static class TestArchitectureSuite
         [
             "Wiring", "VersionProjection", "TestArchitecture", "GitRules",
             "PromptGovernance", "BranchHistory", "SubmoduleSafety", "RepositoryTargets",
-            "ServiceWeb", "Docking", "GitHubAccount", "LanSingleExe",
+            "ServiceWeb", "Docking", "LanSingleExe",
         ];
         True(registered.SequenceEqual(expected),
             "test runner registers the reviewed functional suite order");
@@ -80,5 +82,52 @@ internal static class TestArchitectureSuite
             "test architecture centralizes temporary data outside the source tree");
 
         return Task.CompletedTask;
+    }
+
+    private static void VerifyGitHubModuleBoundary(char separator)
+    {
+        True(!File.Exists(Path.Combine(VerifyRoot, "Smoke", "Suites", "GitHubAccountSuite.cs")),
+            "GitHub-specific Smoke moved to its owning module");
+
+        string[] removedFiles =
+        [
+            "Git/GitHubAccountModels.cs",
+            "Git/GitHubAccountService.cs",
+            "Git/GitHubAccountCommands.cs",
+            "Git/GitHubRedactor.cs",
+            "Git/ToolProcessRunner.cs",
+            "Views/GitHubAccountView.xaml",
+            "Views/GitHubAccountView.xaml.cs",
+        ];
+        foreach (var relativePath in removedFiles)
+            True(!File.Exists(Path.Combine(RepoRoot, relativePath.Replace('/', separator))),
+                $"GitHub-specific host source is removed: {relativePath}");
+
+        string[] prohibitedIdentifiers =
+        [
+            "GitHubAccount",
+            "GitHubRedactor",
+            "github.account",
+            "github.status",
+            "github.accounts",
+            "github.test",
+            "github.login",
+            "github.logout",
+            "github.identity",
+            "github.remote",
+        ];
+        var productionFiles = Directory.EnumerateFiles(RepoRoot, "*", SearchOption.AllDirectories)
+            .Where(path => new[] { ".cs", ".xaml", ".csproj" }
+                .Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))
+            .Where(path => !path.Contains($"{separator}bin{separator}", StringComparison.OrdinalIgnoreCase)
+                           && !path.Contains($"{separator}obj{separator}", StringComparison.OrdinalIgnoreCase));
+        foreach (var path in productionFiles)
+        {
+            var source = File.ReadAllText(path);
+            foreach (var identifier in prohibitedIdentifiers)
+                True(!source.Contains(identifier, StringComparison.OrdinalIgnoreCase),
+                    $"OHS host does not contain GitHub module identifier {identifier}: " +
+                    Path.GetRelativePath(RepoRoot, path));
+        }
     }
 }

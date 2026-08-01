@@ -94,16 +94,6 @@ app.set key=mcp.confirmtimeout value=60
 - `mcp.*`：防止客户端递归管理或关闭自身网关；
 - 清单声明 `mcpExposure=hidden` 的模块命令。
 
-### GitHub 账号命令边界（V2.7.2）
-
-`github.status`、`github.accounts` 和 `github.test` 是服务器端只读事实，可按当前 MCP 策略返回已经脱敏的
-提交身份、凭据账号名、origin 和连接诊断。`github.login`、`github.logout`、`github.identity` 和
-`github.remote` 只允许服务器本机 Shell；即使远程调用方持有 Web/MCP token，也不能启动 GCM、修改
-Git 配置或改写远端。
-
-OHS 不接受 PAT/密码参数，不读取 SSH 私钥正文。外部工具输出先经过 token、Bearer、URL userinfo、
-password/secret 赋值和私钥块脱敏，再进入命令结果、日志或 HTTP/MCP 响应。
-
 ### 只读性由命令自描述（V2.4.4）
 
 只读性是**命令自身的事实**，与 `ConfirmPrompt`（危险）、`SupportsUndo`、`RequiresUiThread` 同级，

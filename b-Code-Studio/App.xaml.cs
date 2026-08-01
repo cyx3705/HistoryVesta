@@ -102,8 +102,6 @@ public partial class App : Application
             connectionProfiles);
         config.ToolMenuActions.Add(new ShellMenuAction(
             "连接与端口(_C)", "win.show name=connection.settings"));
-        config.ToolMenuActions.Add(new ShellMenuAction(
-            "GitHub 账号(_G)", "win.show name=github.account"));
         window = new ShellWindow(config, new FileLayoutStore(paths), log, settings, paths.Root);
         MainWindow = window;
         window.Commands.RemoteExecutor = async (text, source, cancellation) =>
@@ -217,8 +215,6 @@ public partial class App : Application
                 () => new Views.BranchHistoryView(busAccessor, projectSelection, isProtected)),
             (StandardWindowIds.Resource, "资源窗口", DockSide.Left, null, 0.18, null),
             (StandardWindowIds.Console, "控制台", DockSide.Bottom, null, 0.28, null),
-            ("github.account", "GitHub 账号", DockSide.Right, null, 0.38,
-                () => new Views.GitHubAccountView(busAccessor)),
             ("connection.settings", "连接与端口", DockSide.Right, null, 0.38,
                 () => new Views.ConnectionSettingsView(connectionProfiles, busAccessor)),
         ];

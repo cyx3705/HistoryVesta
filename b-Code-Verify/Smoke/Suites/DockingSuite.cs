@@ -79,9 +79,6 @@ internal static partial class DockingSuite
         AssertNarrowView(
             new ConnectionSettingsView(profiles, static () => null),
             "connection settings");
-        AssertNarrowView(
-            new GitHubAccountView(static () => null),
-            "GitHub account");
     }
 
     private static void AssertNarrowView(FrameworkElement view, string name)

@@ -24,7 +24,6 @@ var suites = new (string Name, Func<string[], Task> Run)[]
     ("RepositoryTargets", RepositoryTargetsSuite.RunAsync),
     ("ServiceWeb", ServiceWebSuite.RunAsync),
     ("Docking", DockingSuite.RunAsync),
-    ("GitHubAccount", GitHubAccountSuite.RunAsync),
     ("LanSingleExe", LanSingleExeSuite.RunAsync),
 };
 

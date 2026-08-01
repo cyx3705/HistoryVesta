@@ -55,8 +55,6 @@ public static class StudioServiceCompositionFactory
             log,
             () => modules.ModulesDirectory,
             () => registry.All().Select(command => command.Name));
-        var githubAccounts = new GitHubAccountService(() => projects.BareRepo);
-
         ServiceBuiltinCommands.RegisterAll(registry, settings, paths.Root);
         ModuleCommands.RegisterAll(registry, modules, settings);
 
@@ -97,7 +95,6 @@ public static class StudioServiceCompositionFactory
         BranchHistoryCommands.RegisterAll(registry, branchHistory, history);
         GitRuleCommands.RegisterAll(registry, gitRules, formatInventory, projects);
         ToolCommands.RegisterAll(registry, tools);
-        GitHubAccountCommands.RegisterAll(registry, githubAccounts);
         DebugCommands.RegisterAll(registry, log);
 
         McpExposurePolicy.ModuleOfCommand = commandName =>
