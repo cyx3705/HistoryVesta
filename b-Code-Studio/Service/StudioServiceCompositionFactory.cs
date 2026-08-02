@@ -45,9 +45,10 @@ public static class StudioServiceCompositionFactory
         var gitRules = new GitFileRuleService(projects);
         var branchHistory = new BranchHistoryService(projects);
         var formatInventory = new FormatInventoryService(projects, log, paths.Root);
+        // 服务宿主承载自持窗口的模块界面(活动坞)。宿主不提供 ShellUi,停靠型模块据此自行弃权。
         var modules = new ModuleHost(paths.ModulesDir, log)
         {
-            EnableUiModules = false,
+            EnableUiModules = true,
         };
         var tools = new ToolSyncService(
             projects,
