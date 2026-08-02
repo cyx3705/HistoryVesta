@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using AppShell.Core.Modules;
 
 namespace ActiveDock;
@@ -18,16 +19,26 @@ namespace ActiveDock;
 public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
 {
     private static DockWindow? _window;
-    private bool _shellHosted;
+    private IShellUiRegistrar? _shellUi;
+    private IDisposable? _managerWindow;
 
     IShellUiRegistrar IShellUiAware.ShellUi
     {
-        set => _shellHosted = true;
+        set => _shellUi = value;
     }
 
     public void CreateUi()
     {
-        if (_shellHosted || _window != null)
+        ActiveDockState.StartWatching();
+
+        // 桌面 Shell 侧承载扩展坞管理页面，服务宿主侧承载活动坞本体。
+        if (_shellUi != null)
+        {
+            _managerWindow ??= _shellUi.RegisterToolWindow(DockManagerView.CreateDescriptor(), "ActiveDock");
+            return;
+        }
+
+        if (_window != null)
             return;
         _window = new DockWindow();
         _window.Show();
@@ -38,6 +49,8 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
 
     public void DestroyUi()
     {
+        _managerWindow?.Dispose();
+        _managerWindow = null;
         _window?.Close();
         _window = null;
     }
@@ -69,8 +82,8 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
 
             var border = new Border
             {
-                Background = new SolidColorBrush(Color.FromRgb(248, 249, 250)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(196, 201, 207)),
+                Background = DockTheme.PanelBackground,
+                BorderBrush = DockTheme.PanelBorder,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(8),
                 Padding = new Thickness(8),
@@ -187,20 +200,58 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
         private void RefreshItems()
         {
             _items.Children.Clear();
-            foreach (var project in ActiveDockState.Projects)
-                _items.Children.Add(ProjectButton(project));
-            if (_items.Children.Count == 0)
+            _items.Children.Add(OhsButton());
+
+            var projects = ActiveDockState.Projects;
+            // 光圈亮度按当前列表最大权重归一化，保证任何时候都有对比度。
+            var maximum = projects.Count == 0 ? 0 : projects.Max(item => item.Weight);
+            foreach (var project in projects)
+                _items.Children.Add(ProjectButton(project, maximum));
+            if (projects.Count == 0)
             {
                 _items.Children.Add(new TextBlock
                 {
                     Text = "暂无活动项目",
-                    Foreground = Brushes.DimGray,
+                    Foreground = DockTheme.Muted,
                     Margin = new Thickness(12),
                 });
             }
         }
 
-        private static Button ProjectButton(DockProject project)
+        /// <summary>OHS 入口：不参与排序、不发光、不可取消。</summary>
+        private static Button OhsButton()
+        {
+            var glyph = new Border
+            {
+                Width = 52,
+                Height = 52,
+                CornerRadius = new CornerRadius(10),
+                Background = new SolidColorBrush(Color.FromRgb(0x35, 0x5B, 0x7E)),
+                Child = new TextBlock
+                {
+                    Text = "OHS",
+                    FontSize = 15,
+                    FontWeight = FontWeights.SemiBold,
+                    Foreground = Brushes.White,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                },
+            };
+            var stack = new StackPanel { Width = 68 };
+            stack.Children.Add(glyph);
+            stack.Children.Add(new TextBlock
+            {
+                Text = "主界面",
+                FontSize = 11,
+                Foreground = DockTheme.Label,
+                HorizontalAlignment = HorizontalAlignment.Center,
+            });
+            var button = NakedButton(stack, "打开 OHS 主界面");
+            button.Click += (_, _) => OhsLauncher.Open();
+            return button;
+        }
+
+        private static Button ProjectButton(DockProject project, double maximum)
         {
             var image = new Image
             {
@@ -209,29 +260,38 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
                 Height = 52,
                 Stretch = Stretch.Uniform,
             };
+
+            var opacity = DockWeight.GlowOpacity(project.Weight, maximum);
+            var host = new Border { Child = image };
+            if (opacity > 0)
+            {
+                // ShadowDepth=0 即纯发光而非投影；权重越高越亮。
+                host.Effect = new DropShadowEffect
+                {
+                    Color = DockTheme.Glow,
+                    ShadowDepth = 0,
+                    Opacity = opacity,
+                    BlurRadius = DockWeight.GlowBlur(project.Weight, maximum),
+                };
+            }
+
             var label = new TextBlock
             {
                 Text = project.Number + (project.Pinned ? "  ·" : ""),
                 FontSize = 11,
-                Foreground = new SolidColorBrush(Color.FromRgb(42, 47, 52)),
+                Foreground = DockTheme.Label,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 TextTrimming = TextTrimming.CharacterEllipsis,
             };
             var stack = new StackPanel { Width = 68 };
-            stack.Children.Add(image);
+            stack.Children.Add(host);
             stack.Children.Add(label);
-            var button = new Button
+            var button = NakedButton(stack, project.Name);
+            button.Click += (_, _) =>
             {
-                Content = stack,
-                Width = 78,
-                Height = 82,
-                Margin = new Thickness(3),
-                Padding = new Thickness(4),
-                Background = Brushes.Transparent,
-                BorderBrush = Brushes.Transparent,
-                ToolTip = project.Name,
+                ActiveDockState.RecordOpen(project.Name);
+                Process.Start(new ProcessStartInfo(project.Path) { UseShellExecute = true });
             };
-            button.Click += (_, _) => Process.Start(new ProcessStartInfo(project.Path) { UseShellExecute = true });
             var menu = new ContextMenu();
             var pin = new MenuItem { Header = project.Pinned ? "取消置顶" : "置顶" };
             pin.Click += (_, _) => ActiveDockState.Pin(project.Name, !project.Pinned);
@@ -243,5 +303,29 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
             return button;
         }
 
+        /// <summary>无边框透明按钮，悬停时叠一层浅色半透明，深底上不会闪出白块。</summary>
+        private static Button NakedButton(object content, string tooltip)
+        {
+            var template = new ControlTemplate(typeof(Button));
+            var presenterHost = new FrameworkElementFactory(typeof(Border), "Surface");
+            presenterHost.SetValue(Border.BackgroundProperty, Brushes.Transparent);
+            presenterHost.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
+            presenterHost.SetValue(Border.PaddingProperty, new Thickness(4));
+            presenterHost.AppendChild(new FrameworkElementFactory(typeof(ContentPresenter)));
+            template.VisualTree = presenterHost;
+            var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            hover.Setters.Add(new Setter(Border.BackgroundProperty, DockTheme.Hover, "Surface"));
+            template.Triggers.Add(hover);
+
+            return new Button
+            {
+                Content = content,
+                Width = 78,
+                Height = 82,
+                Margin = new Thickness(3),
+                Template = template,
+                ToolTip = tooltip,
+            };
+        }
     }
 }

@@ -13,15 +13,15 @@ var moduleInfos = assembly.GetTypes()
 
 Equal(1, moduleInfos.Count, "独立程序集必须只有一个模块入口");
 Equal("dock", moduleInfos[0].ModuleName, "命令域必须沿用 dock");
-Equal("1.1.2", moduleInfos[0].Version, "模块版本");
+Equal("2.0.0", moduleInfos[0].Version, "模块版本");
 Equal(typeof(ActiveDockCommands), moduleInfos[0].MainClassType, "命令入口类型");
 
 Equal(
-    6,
+    12,
     moduleInfos[0].MainClassType!
         .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
         .Count(method => !method.IsSpecialName),
-    "dock 指令数必须与聚合期保持一致");
+    "dock 指令数(2.0.0 新增 open/usage/forget/exclude/include/policy)");
 
 var uiTypes = assembly.GetTypes()
     .Where(type => type.IsPublic && !type.IsAbstract && typeof(IUiModule).IsAssignableFrom(type))
@@ -29,14 +29,20 @@ var uiTypes = assembly.GetTypes()
 Equal(1, uiTypes.Count, "独立程序集必须只注册一个 UI 生命周期");
 Equal(typeof(ActiveDockUiModule), uiTypes[0], "UI 生命周期类型");
 
-// 宿主探针：注入过 ShellUi 即视为桌面 Shell 进程，此时必须弃权不建窗。
+// 宿主判据：注入过 ShellUi 即桌面 Shell 进程，2.0.0 起该侧注册扩展坞管理页面而不是活动坞窗口。
 True(
     typeof(IShellUiAware).IsAssignableFrom(typeof(ActiveDockUiModule)),
     "必须实现 IShellUiAware 才能被宿主注入并据此判定归属");
+var registrar = new RecordingRegistrar();
 var shellHosted = new ActiveDockUiModule();
-((IShellUiAware)shellHosted).ShellUi = new NullRegistrar();
+((IShellUiAware)shellHosted).ShellUi = registrar;
 shellHosted.CreateUi();
+Equal(1, registrar.Registered.Count, "桌面侧必须注册且只注册一次管理页面");
+Equal("dock.manager", registrar.Registered[0], "桌面侧注册的必须是管理页面");
+shellHosted.CreateUi();
+Equal(1, registrar.Registered.Count, "重复 CreateUi 不得重复注册");
 shellHosted.DestroyUi();
+Equal(1, registrar.Disposed, "DestroyUi 必须释放管理页面注册句柄");
 
 var cache = Path.Combine(Path.GetTempPath(), "activedock-icons-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(cache);
@@ -77,8 +83,30 @@ Equal(DockLayout.HitNone, DockLayout.HitTest(358, 100, 360, 200), "右边框不�
 Equal(DockLayout.HitNone, DockLayout.HitTest(100, 198, 360, 200), "下边框不可调");
 Equal(DockLayout.HitNone, DockLayout.HitTest(100, 100, 360, 200), "窗口体不可调");
 
+// V2.0.0 权重与光圈。
+var now = DateTimeOffset.UtcNow;
+Equal(1.0, DockWeight.Decay(1.0, now, now, 7), "未经过时间不衰减");
+True(Math.Abs(DockWeight.Decay(1.0, now.AddDays(-7), now, 7) - 0.5) < 1e-6, "一个半衰期衰减到一半");
+True(DockWeight.Decay(1.0, now.AddDays(-14), now, 7) < 0.26, "两个半衰期继续衰减");
+True(DockWeight.Accumulate(1.0, now.AddDays(-7), now, DockWeight.ClickWeight, 7) > 1.4, "衰减后再累加一次点击");
+Equal(0.0, DockWeight.GlowOpacity(0, 0), "无权重不发光");
+Equal(DockWeight.MaxGlowOpacity, DockWeight.GlowOpacity(5, 5), "最高权重光圈最亮");
+True(DockWeight.GlowOpacity(1, 5) < DockWeight.GlowOpacity(4, 5), "权重越高光圈越亮");
+Equal(DockWeight.MaxGlowBlur, DockWeight.GlowBlur(5, 5), "最高权重光圈最大");
+
+// 只统计项目主文件夹：子目录不得计入。
+True(RecentFolders.SamePath(@"C:\A\B", @"c:\a\b\"), "路径比较忽略大小写与尾斜杠");
+True(!RecentFolders.SamePath(@"C:\A\B", @"C:\A\B\sub"), "子文件夹不得视为项目主文件夹");
+Equal("2026-022-WBall", RecentFolders.StripCopySuffix("2026-022-WBall (2)"), "去掉重名副本后缀");
+
+var policy = new DockPolicy { MinItems = 0, MaxItems = 999, HalfLifeDays = 0 }.Normalized();
+True(policy.MinItems >= DockPolicy.LowestItems, "最少显示数下限");
+True(policy.MaxItems <= DockPolicy.HighestItems, "最多显示数上限");
+True(policy.HalfLifeDays >= DockPolicy.ShortestHalfLifeDays, "半衰期下限");
+Equal("dock.manager", DockManagerView.CreateDescriptor().Id, "管理页面窗口 ID");
+
 Console.WriteLine(
-    "ActiveDock.Smoke: PASS (1 module, 6 commands, 1 UI module, shell-hosted abstain, bottom-right layout)");
+    "ActiveDock.Smoke: PASS (1 module, 12 commands, 1 UI module, shell-hosted manager, bottom-right layout, weight+glow)");
 
 static void True(bool condition, string message)
 {
@@ -92,20 +120,33 @@ static void Equal<T>(T expected, T actual, string message)
         throw new InvalidOperationException($"{message}: expected={expected}, actual={actual}");
 }
 
-/// <summary>只用于探针断言；被调用即说明弃权逻辑失效。</summary>
-file sealed class NullRegistrar : IShellUiRegistrar
+/// <summary>记录注册行为，供宿主判据断言。</summary>
+file sealed class RecordingRegistrar : IShellUiRegistrar
 {
-    public bool IsUiThread => throw Fail();
+    public List<string> Registered { get; } = [];
 
-    public void Invoke(Action action) => throw Fail();
+    public int Disposed { get; private set; }
+
+    public bool IsUiThread => true;
+
+    public void Invoke(Action action) => action();
 
     public IDisposable RegisterToolWindow(AppShell.Core.Docking.ToolWindowDescriptor descriptor, string owner)
-        => throw Fail();
+    {
+        Registered.Add(descriptor.Id);
+        return new Handle(() => Disposed++);
+    }
 
-    public void UnregisterToolWindow(string id) => throw Fail();
+    public void UnregisterToolWindow(string id)
+    {
+    }
 
-    public void UnregisterOwner(string owner) => throw Fail();
+    public void UnregisterOwner(string owner)
+    {
+    }
 
-    private static InvalidOperationException Fail()
-        => new("桌面 Shell 进程中活动坞必须弃权，不得触碰宿主界面注册器");
+    private sealed class Handle(Action onDispose) : IDisposable
+    {
+        public void Dispose() => onDispose();
+    }
 }
