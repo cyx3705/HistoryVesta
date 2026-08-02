@@ -1,0 +1,9 @@
+{
+  "name": "StudioTools",
+  "version": "1.2.0",
+  "description": "Studio 基础工具合集：工作树巡检、文本工具和 MCP 动态转发",
+  "artifact": "b-Code-StudioTools/bin/Release/net8.0-windows/StudioTools.dll",
+  "docs": "b-Code-StudioTools/bin/Release/net8.0-windows/StudioTools.xml",
+  "mcpExposure": "standard",
+  "ui": false
+}

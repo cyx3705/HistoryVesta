@@ -6,12 +6,16 @@ namespace GitHubConnection;
 public sealed class GitHubConnectionUiModule : IUiModule, IShellUiAware
 {
     private IDisposable? _window;
+    private IShellUiRegistrar? _shellUi;
 
-    public IShellUiRegistrar ShellUi { private get; set; } = null!;
+    IShellUiRegistrar IShellUiAware.ShellUi { set => _shellUi = value; }
 
     public void CreateUi()
     {
-        _window ??= ShellUi.RegisterToolWindow(CreateDescriptor(), "GitHubConnection");
+        // 无窗服务宿主不注入注册器。此时没有可停靠的宿主窗口，弃权而不是空引用。
+        if (_shellUi == null)
+            return;
+        _window ??= _shellUi.RegisterToolWindow(CreateDescriptor(), "GitHubConnection");
     }
 
     public void DestroyUi()

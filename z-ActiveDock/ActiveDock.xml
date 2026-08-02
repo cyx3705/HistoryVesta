@@ -1,0 +1,176 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ActiveDock</name>
+    </assembly>
+    <members>
+        <member name="M:ActiveDock.ActiveDockCommands.list">
+            <summary>列出活动项目。</summary>
+        </member>
+        <member name="M:ActiveDock.ActiveDockCommands.pin(System.String)">
+            <summary>置顶活动项目。</summary>
+        </member>
+        <member name="M:ActiveDock.ActiveDockCommands.unpin(System.String)">
+            <summary>取消置顶活动项目。</summary>
+        </member>
+        <member name="M:ActiveDock.ActiveDockCommands.refresh">
+            <summary>重新扫描活动项目。</summary>
+        </member>
+        <member name="M:ActiveDock.ActiveDockCommands.hide">
+            <summary>持久化隐藏活动坞。</summary>
+        </member>
+        <member name="M:ActiveDock.ActiveDockCommands.show">
+            <summary>显示活动坞。</summary>
+        </member>
+        <member name="P:ActiveDock.ActiveDockState.Size">
+            <summary>用户调整后的尺寸；缺省回退到默认值。位置不再持久化，窗口恒定吸附右下角。</summary>
+        </member>
+        <member name="M:ActiveDock.ActiveDockState.ProjectNumber">
+            <remarks>
+            Pattern:<br/>
+            <code>\\d{4}-\\d{3}</code><br/>
+            Options:<br/>
+            <code>RegexOptions.CultureInvariant</code><br/>
+            Explanation:<br/>
+            <code>
+            ○ Match a Unicode digit exactly 4 times.<br/>
+            ○ Match '-'.<br/>
+            ○ Match a Unicode digit exactly 3 times.<br/>
+            </code>
+            </remarks>
+        </member>
+        <member name="T:ActiveDock.ActiveDockState.DockPreferences">
+            <summary>
+            1.0.0 的 Left/Top 字段已作废：窗口恒定吸附右下角，不再持久化位置。
+            反序列化默认忽略未知字段，旧 state.json 可直接读取，固定项不丢。
+            </summary>
+        </member>
+        <member name="T:ActiveDock.ActiveDockUiModule">
+            <summary>
+            活动坞界面生命周期。窗口自持、不依赖宿主窗口，因此只在无窗服务宿主中建窗。
+            </summary>
+            <remarks>
+            宿主判据：模块宿主只在 <c>ShellUi</c> 非空时给 <see cref="T:AppShell.Core.Modules.IShellUiAware"/> 实例注入注册器，
+            而注入发生在实例化阶段、早于 <see cref="M:ActiveDock.ActiveDockUiModule.CreateUi"/>。桌面 Shell 恒注入，无窗服务宿主恒不注入，
+            因此 setter 是否被调用可确定性地区分两侧，不依赖启动顺序。本模块不使用注册器本身。
+            </remarks>
+        </member>
+        <member name="M:ActiveDock.ActiveDockUiModule.DockWindow.ApplyAnchor">
+            <summary>把窗口吸附到主显示器工作区右下角。贴附到桌面层后坐标相对父窗口，必须换算。</summary>
+        </member>
+        <member name="T:ActiveDock.DesktopLayer">
+            <summary>
+            把活动坞压到桌面层，使其永不遮挡其他窗口。
+            </summary>
+            <remarks>
+            主路径是重定父到承载壁纸的 WorkerW，窗口因此成为桌面的一部分，Win+D 时随桌面一起露出。
+            WorkerW 的层次是 Explorer 的实现细节而非稳定契约，找不到时降级为"永远压在 z-order 最底"。
+            两条路径都满足"不遮挡其他页面"，差别只在 Win+D 行为。
+            </remarks>
+        </member>
+        <member name="F:ActiveDock.DesktopLayer.Mode.None">
+            <summary>尚未贴附。</summary>
+        </member>
+        <member name="F:ActiveDock.DesktopLayer.Mode.WorkerW">
+            <summary>已重定父到桌面 WorkerW。</summary>
+        </member>
+        <member name="F:ActiveDock.DesktopLayer.Mode.BottomMost">
+            <summary>未找到 WorkerW，降级为压底。</summary>
+        </member>
+        <member name="M:ActiveDock.DesktopLayer.Attach(System.IntPtr)">
+            <summary>贴附窗口到桌面层，返回实际生效的方式。</summary>
+        </member>
+        <member name="P:ActiveDock.DesktopLayer.Parent">
+            <summary>当前父窗口；未重定父时为 <see cref="F:System.IntPtr.Zero"/>。</summary>
+        </member>
+        <member name="M:ActiveDock.DesktopLayer.IsParentAlive">
+            <summary>父窗口是否仍然有效。Explorer 重启会让旧 WorkerW 句柄失效。</summary>
+        </member>
+        <member name="M:ActiveDock.DesktopLayer.ParentOrigin">
+            <summary>取父窗口左上角的屏幕物理坐标；未重定父时为 (0,0)。</summary>
+        </member>
+        <member name="M:ActiveDock.DesktopLayer.MoveTo(System.IntPtr,System.Int32,System.Int32)">
+            <summary>
+            用物理像素直接设置位置。重定父之后 WPF 的 Left/Top 会被解释为相对父窗口客户区，
+            因此贴附路径下的落位必须走这里，不能沿用 Left/Top。
+            </summary>
+        </member>
+        <member name="M:ActiveDock.DesktopLayer.PushToBottom(System.IntPtr)">
+            <summary>降级路径下把窗口压回 z-order 最底。</summary>
+        </member>
+        <member name="M:ActiveDock.DesktopLayer.FindDesktopWorkerW">
+            <summary>
+            促使 Progman 生成 WorkerW，再找出那个**不含** SHELLDLL_DefView 子窗口的 WorkerW——
+            含 DefView 的那个承载图标，它的兄弟才是承载壁纸、可供贴附的一层。
+            </summary>
+        </member>
+        <member name="T:ActiveDock.DockLayout">
+            <summary>
+            活动坞的纯布局规则：锚点、尺寸钳制与边框命中测试。
+            不依赖窗口实例，便于 Smoke 直接断言。
+            </summary>
+        </member>
+        <member name="F:ActiveDock.DockLayout.Margin">
+            <summary>距工作区右下角的留白。</summary>
+        </member>
+        <member name="F:ActiveDock.DockLayout.BorderWidth">
+            <summary>可拖拽调整的边框宽度。</summary>
+        </member>
+        <member name="F:ActiveDock.DockLayout.HitNone">
+            <summary>交回默认处理，即该点不可用于调整尺寸。</summary>
+        </member>
+        <member name="M:ActiveDock.DockLayout.Anchor(System.Windows.Rect,System.Double,System.Double)">
+            <summary>把窗口吸附到工作区右下角；右下角是锚点，尺寸变化只影响左上。</summary>
+        </member>
+        <member name="M:ActiveDock.DockLayout.HitTest(System.Double,System.Double,System.Double,System.Double,System.Double)">
+            <summary>
+            只在左边框、上边框和左上角返回调整代码；右边框、下边框与其余三角一律交回默认，
+            因此右下角在调整过程中天然不动，不需要补偿位置。
+            </summary>
+        </member>
+        <member name="T:BaseVariable.ModuleInfoBase">
+            <summary>AppShell 模块识别合同的兼容副本。</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.ProjectNumber_0">
+            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the ProjectNumber method.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.ProjectNumber_0.Instance">
+            <summary>Cached, thread-safe singleton instance.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.ProjectNumber_0.#ctor">
+            <summary>Initializes the instance.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.ProjectNumber_0.RunnerFactory">
+            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.ProjectNumber_0.RunnerFactory.CreateInstance">
+            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.ProjectNumber_0.RunnerFactory.Runner">
+            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.ProjectNumber_0.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
+            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.ProjectNumber_0.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if a possible match was found; false if no more matches are possible.</returns>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.ProjectNumber_0.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.Utilities">
+            <summary>Helper methods used by generated <see cref="T:System.Text.RegularExpressions.Regex"/>-derived implementations.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_defaultTimeout">
+            <summary>Default timeout value set in <see cref="T:System.AppContext"/>, or <see cref="F:System.Text.RegularExpressions.Regex.InfiniteMatchTimeout"/> if none was set.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_hasTimeout">
+            <summary>Whether <see cref="F:System.Text.RegularExpressions.Generated.Utilities.s_defaultTimeout"/> is non-infinite.</summary>
+        </member>
+    </members>
+</doc>

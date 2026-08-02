@@ -5,11 +5,22 @@
 
 ## 模块
 
-| 源码目录 | 注册目录 | 模块 | MCP 档位 | 功能 |
-|---|---|---|---|---|
-| `b-Code-ToolKit` | `z-Module` | `ToolKit` | `standard` | SHA-256、Base64、GUID 和时间戳 |
-| `b-Code-ProjectPulse` | `z-ProjectPulse` | `ProjectPulse` | `readonly` | 工作树概况、最近修改和大文件热点 |
-| `b-Code-ToolRelay` | `z-ToolRelay` | `ToolRelay` | `readonly` | 当前 Codex 任务动态发现并转发调用新 MCP 工具 |
+| 源码目录 | 注册目录 | 物理模块 | MCP 档位 | 承载进程 | 功能 |
+|---|---|---|---|---|---|
+| `b-Code-StudioTools` | `z-StudioTools` | `StudioTools` | `standard` | 服务 | 聚合 `ProjectPulse`、`ToolKit`、`ToolRelay` 三个逻辑模块 |
+| `b-Code-ActiveDock` | `z-ActiveDock` | `ActiveDock` | `standard` | 服务（自持窗口） | 桌面右下角活动项目坞，命令域 `dock` |
+| `b-Code-GitHubConnection` | `z-GitHubConnection` | `GitHubConnection` | `readonly` | 桌面（停靠窗口） | 服务器本机 GitHub、GCM、SSH 和 origin 连接治理 |
+| `b-Code-SE2SW` | `z-SE2SW` | `SE2SW` | `hidden` | 服务 | Solid Edge 零件/装配体转换为 SolidWorks |
+
+`StudioTools.dll` 使用 AppShell 支持的多 `ModuleInfoBase` 合同保留三个原逻辑命令域和 10 条命令，
+同时只占用一个源码项目、一份发布清单和一个正式模块槽。ActiveDock、GitHubConnection 与 SE2SW 因宿主归属、
+安全边界、依赖和发布节奏不同独立维护。四模块聚合期的源码和清单保存在
+`Unused/StudioTools-Merge-Legacy-20260802-0015`，不参与发现、构建或发布。
+
+带界面的模块分两类：**停靠型**（`IUiModule + IShellUiAware`，窗口停靠进 OHS 主窗口，由桌面进程承载）与
+**自持型**（`IUiModule`，模块自建顶层窗口，由无窗服务宿主承载，关闭主窗口不受影响）。两类模块被同一模块槽
+发现、在两个宿主进程都会实例化，因此各自必须对不属于自己的一侧弃权，判据是宿主是否注入 `IShellUiRegistrar`。
+详见 OHS `b-Office/package/模块开发手册.md`。
 
 每个注册目录包含一份固定名称的 `module.manifest.json`。OHS 的 `tool.scan` 沿项目库中的一级
 `z/Z` 元文件夹发现这些清单；`tool.sync` 将声明的 Release 产物复制到独立模块槽并记录来源、
@@ -18,18 +29,29 @@
 ## 构建与同步
 
 ```powershell
-dotnet build .\b-Code-ToolKit\ToolKit.csproj -c Release -p:NuGetAudit=false
-dotnet build .\b-Code-ProjectPulse\ProjectPulse.csproj -c Release -p:NuGetAudit=false
-dotnet build .\b-Code-ToolRelay\ToolRelay.csproj -c Release -p:NuGetAudit=false
+dotnet build .\b-Code-StudioTools\StudioTools.csproj -c Release -p:NuGetAudit=false
+dotnet run --project .\b-Code-StudioTools\tests\Smoke\Smoke.csproj -c Release -p:NuGetAudit=false
+dotnet build .\b-Code-ActiveDock\ActiveDock.csproj -c Release -p:NuGetAudit=false
+dotnet run --project .\b-Code-ActiveDock\tests\Smoke\Smoke.csproj -c Release -p:NuGetAudit=false
+dotnet build .\b-Code-GitHubConnection\GitHubConnection.csproj -c Release -p:NuGetAudit=false
+dotnet run --project .\b-Code-GitHubConnection\tests\Smoke\Smoke.csproj -c Release
+dotnet build .\b-Code-SE2SW\src\SE2SW\SE2SW.csproj -c Release --no-restore
+dotnet run --project .\b-Code-SE2SW\tests\SE2SW.Smoke\SE2SW.Smoke.csproj -c Release --no-restore
 ```
 
 ```text
 tool.scan
-tool.sync name=ToolKit
-tool.sync name=ProjectPulse
-tool.sync name=ToolRelay
+tool.sync name=StudioTools
+tool.sync name=ActiveDock
+tool.sync name=GitHubConnection
+tool.sync name=SE2SW
 module.list
 ```
 
-ProjectPulse 的 MCP 冒烟脚本位于 `z-ProjectPulse/mcp-smoke.txt`。新模块同步后，程序内指令立即
-可用；Codex 需要新建任务刷新 MCP 工具目录。
+同步顺序有硬约束：`StudioTools 1.2.0` 必须先于 `ActiveDock 1.0.0` 入槽。旧版 `StudioTools 1.1.0` 仍注册
+`dock` 命令域，顺序颠倒会导致两个模块争抢同一命令域而注册失败。
+
+设计与迁移记录：StudioTools 聚合见 `b-Code-StudioTools/docs/01-V1.1.0-四模块聚合迁移.md`，活动坞迁出见
+`b-Code-StudioTools/docs/02-V1.2.0-活动坞迁出.md` 与
+`b-Code-ActiveDock/docs/01-V1.0.0-活动坞独立模块.md`。新模块同步后程序内指令立即可用；Codex 需要新建任务
+刷新 MCP 工具目录。

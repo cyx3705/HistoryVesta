@@ -1,0 +1,85 @@
+<UserControl x:Class="SE2SW.SE2SWWorkspaceView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:SE2SW"
+        MinWidth="760" MinHeight="520"
+        Background="#F3F5F4"
+        FontFamily="Microsoft YaHei UI"
+        FontSize="13">
+    <UserControl.Resources>
+        <Style x:Key="ModeChoice" TargetType="RadioButton">
+            <Setter Property="Height" Value="38" />
+            <Setter Property="MinWidth" Value="132" />
+            <Setter Property="Padding" Value="18,0" />
+            <Setter Property="Foreground" Value="#34413F" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="ChoiceBorder"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ChoiceBorder" Property="Background" Value="#E2E8E5" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Foreground" Value="White" />
+                                <Setter TargetName="ChoiceBorder" Property="Background" Value="#14665C" />
+                                <Setter TargetName="ChoiceBorder" Property="BorderBrush" Value="#14665C" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="White" BorderBrush="#D7DDDA" BorderThickness="0,0,0,1">
+            <Grid Margin="20,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="SE2SW" FontSize="16" FontWeight="SemiBold" Foreground="#24312F" />
+                    <TextBlock Text="格式转换" Margin="0,1,0,0" FontSize="11" Foreground="#74807D" />
+                </StackPanel>
+                <Border Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Padding="2" Background="#EEF1F0" BorderBrush="#D7DDDA"
+                        BorderThickness="1" CornerRadius="6">
+                    <UniformGrid Rows="1" Columns="3">
+                        <RadioButton x:Name="PartModeButton" Content="零件转换" GroupName="WorkspaceMode"
+                                     Style="{StaticResource ModeChoice}" Click="OnPartModeClick" />
+                        <RadioButton x:Name="AssemblyModeButton" Content="装配转换" GroupName="WorkspaceMode"
+                                     Style="{StaticResource ModeChoice}" Click="OnAssemblyModeClick" />
+                        <RadioButton x:Name="OhsModeButton" Content="OHS 兼容" GroupName="WorkspaceMode"
+                                     Style="{StaticResource ModeChoice}" Click="OnOhsModeClick" />
+                    </UniformGrid>
+                </Border>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <local:SE2SWView x:Name="PartPage" />
+            <local:AssemblyView x:Name="AssemblyPage" Visibility="Collapsed" />
+        </Grid>
+    </Grid>
+</UserControl>

@@ -170,7 +170,7 @@ static void TestModuleContract()
 {
     var info = new ModuleInfo();
     Equal("github", info.ModuleName, "module command domain");
-    Equal("1.0.0", info.Version, "module version");
+    Equal("1.0.1", info.Version, "module version");
     Equal(typeof(GitHubCommands), info.MainClassType, "precise command class");
     False(info.Open, "module precise exposure");
 
@@ -198,6 +198,11 @@ static void TestUiDescriptor()
     True(descriptor.ContentFactory != null, "window content factory");
     True(typeof(IUiModule).IsAssignableFrom(typeof(GitHubConnectionUiModule)), "UI module contract");
     True(typeof(IShellUiAware).IsAssignableFrom(typeof(GitHubConnectionUiModule)), "UI registrar contract");
+
+    // 无窗服务宿主不注入注册器：此时 CreateUi 必须弃权，不得空引用。
+    var serviceHosted = new GitHubConnectionUiModule();
+    serviceHosted.CreateUi();
+    serviceHosted.DestroyUi();
 }
 
 static void TestSourceArchitecture(string root)
@@ -226,7 +231,7 @@ static void TestFormalPackage(string root)
         Path.Combine(z, "module.manifest.json")));
     var rootElement = manifest.RootElement;
     Equal("GitHubConnection", rootElement.GetProperty("name").GetString(), "manifest name");
-    Equal("1.0.0", rootElement.GetProperty("version").GetString(), "manifest version");
+    Equal("1.0.1", rootElement.GetProperty("version").GetString(), "manifest version");
     Equal("z-GitHubConnection/GitHubConnection.dll",
         rootElement.GetProperty("artifact").GetString(), "manifest artifact");
     Equal("z-GitHubConnection/GitHubConnection.xml",
@@ -235,7 +240,7 @@ static void TestFormalPackage(string root)
     True(rootElement.GetProperty("ui").GetBoolean(), "manifest UI flag");
 
     var assembly = AssemblyName.GetAssemblyName(Path.Combine(z, "GitHubConnection.dll"));
-    Equal(new Version(1, 0, 0, 0), assembly.Version, "formal assembly version");
+    Equal(new Version(1, 0, 1, 0), assembly.Version, "formal assembly version");
 }
 
 static string FindProjectRoot()

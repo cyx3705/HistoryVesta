@@ -1,0 +1,220 @@
+<UserControl x:Class="SE2SW.AssemblyView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:SE2SW"
+        MinWidth="760" MinHeight="460"
+        Background="#F3F5F4"
+        FontFamily="Microsoft YaHei UI"
+        FontSize="13">
+    <UserControl.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="#BBC5C1" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="#283431" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder" Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#E9EFEC" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#7B928B" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#DCE6E2" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#14665C" />
+            <Setter Property="BorderBrush" Value="#14665C" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="9,6" />
+            <Setter Property="BorderBrush" Value="#BBC5C1" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="White" />
+        </Style>
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#EEF1F0" />
+            <Setter Property="Foreground" Value="#40504C" />
+            <Setter Property="BorderBrush" Value="#DCE2DF" />
+            <Setter Property="BorderThickness" Value="0,0,1,1" />
+            <Setter Property="Padding" Value="10,0" />
+        </Style>
+        <HierarchicalDataTemplate DataType="{x:Type local:AssemblyTreeNode}" ItemsSource="{Binding Children}">
+            <StackPanel Orientation="Horizontal" ToolTip="{Binding SourcePath}">
+                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding StateText, StringFormat=  · {0}}" Foreground="#71807B" />
+            </StackPanel>
+        </HierarchicalDataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="22,16,22,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="74" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="装配文件" VerticalAlignment="Center" Foreground="#596762" />
+            <TextBox Grid.Column="1" Margin="0,0,8,0"
+                     Text="{Binding SourceAssemblyPath, UpdateSourceTrigger=PropertyChanged}"
+                     IsEnabled="{Binding CanEdit}" />
+            <Button Grid.Column="2" Content="选择 .asm" Click="OnChooseAssemblyClick" IsEnabled="{Binding CanEdit}" />
+        </Grid>
+
+        <Border Grid.Row="1" Margin="22,0,22,10" Padding="12,8" Background="White"
+                BorderBrush="#D7DDDA" BorderThickness="1" CornerRadius="4">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="58" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="58" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="XT 目录" Foreground="#71807B" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding XtDirectory}" TextTrimming="CharacterEllipsis"
+                           ToolTip="{Binding XtDirectory}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="SW 目录" Margin="12,0,0,0"
+                           Foreground="#71807B" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="3" Text="{Binding SolidWorksDirectory}" TextTrimming="CharacterEllipsis"
+                           ToolTip="{Binding SolidWorksDirectory}" VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="22,0,22,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button Content="解析装配体" MinWidth="118" Click="OnProbeClick" IsEnabled="{Binding CanProbe}" />
+            <Border Grid.Column="1" Margin="10,0,0,0" Padding="10,7" Background="#FFF8EA"
+                    BorderBrush="#E7C982" BorderThickness="1" CornerRadius="4">
+                <TextBlock Text="{Binding WarningSummary}" Foreground="#805313" TextWrapping="Wrap"
+                           ToolTip="{Binding WarningSummary}" MaxHeight="54" />
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="3" Margin="22,0,22,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" MinWidth="250" />
+                <ColumnDefinition Width="3*" MinWidth="350" />
+            </Grid.ColumnDefinitions>
+            <Border Background="White" BorderBrush="#D7DDDA" BorderThickness="1"
+                    CornerRadius="4" Margin="0,0,7,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="装配结构" Padding="11,9"
+                               FontWeight="SemiBold" Foreground="#34413F" Background="#EEF1F0" />
+                    <TreeView ItemsSource="{Binding AssemblyTree}" BorderThickness="0" Padding="8" />
+                </DockPanel>
+            </Border>
+            <Border Grid.Column="1" Background="White" BorderBrush="#D7DDDA" BorderThickness="1"
+                    CornerRadius="4" Margin="7,0,0,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="唯一零件" Padding="11,9"
+                               FontWeight="SemiBold" Foreground="#34413F" Background="#EEF1F0" />
+                    <DataGrid ItemsSource="{Binding Parts}" AutoGenerateColumns="False" CanUserAddRows="False"
+                              CanUserDeleteRows="False" CanUserResizeRows="False" IsReadOnly="True"
+                              HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                              HorizontalGridLinesBrush="#E5EAE7" BorderThickness="0" RowHeight="36"
+                              ColumnHeaderHeight="34">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Solid Edge 零件" Binding="{Binding FileName}" Width="2*" />
+                            <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="82" />
+                            <DataGridTextColumn Header="特征" Binding="{Binding FeatureText}" Width="68" />
+                            <DataGridTextColumn Header="草图" Binding="{Binding SketchText}" Width="68" />
+                            <DataGridTextColumn Header="结果" Binding="{Binding Detail}" Width="2.4*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="4" Margin="22,0,22,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Expander Header="转换选项" VerticalAlignment="Center" IsEnabled="{Binding CanEdit}">
+                <Border Margin="0,6,0,0" Padding="10,8" Background="White"
+                        BorderBrush="#D7DDDA" BorderThickness="1" CornerRadius="4">
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox Content="识别特征" IsChecked="{Binding RecognizeFeatures}" />
+                        <CheckBox Content="完全定义草图" Margin="16,0,0,0"
+                                  IsChecked="{Binding FullyDefineSketches}"
+                                  IsEnabled="{Binding CanFullyDefineSketches}" />
+                        <CheckBox Content="零件失败时继续" Margin="16,0,0,0"
+                                  IsChecked="{Binding ContinueWhenPartFails}" />
+                    </StackPanel>
+                </Border>
+            </Expander>
+            <Button Grid.Column="1" Content="转换装配体" MinWidth="138"
+                    Style="{StaticResource PrimaryButton}" Click="OnConvertClick"
+                    IsEnabled="{Binding CanConvert}" />
+        </Grid>
+
+        <Grid Grid.Row="5" Margin="22,0,22,9">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="{Binding StatusText}" Foreground="#45534F" TextTrimming="CharacterEllipsis"
+                           ToolTip="{Binding StatusText}" />
+                <ProgressBar Height="3" Margin="0,7,24,0" IsIndeterminate="True"
+                             Background="#D9E0DD" Foreground="#14665C">
+                    <ProgressBar.Style>
+                        <Style TargetType="ProgressBar">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ProgressBar.Style>
+                </ProgressBar>
+            </StackPanel>
+            <Button Grid.Column="1" Content="取消" MinWidth="82"
+                    Click="OnCancelClick" IsEnabled="{Binding IsBusy}" />
+        </Grid>
+    </Grid>
+</UserControl>

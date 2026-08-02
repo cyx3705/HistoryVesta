@@ -1,6 +1,6 @@
-{
+﻿{
   "name": "GitHubConnection",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "服务器本机 GitHub、GCM、SSH 和 origin 连接治理",
   "artifact": "z-GitHubConnection/GitHubConnection.dll",
   "docs": "z-GitHubConnection/GitHubConnection.xml",

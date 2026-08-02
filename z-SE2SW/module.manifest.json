@@ -1,0 +1,16 @@
+﻿{
+  "name": "SE2SW",
+  "version": "3.1.2",
+  "description": "Solid Edge 零件、装配与 OHS 兼容三模式转换界面",
+  "artifact": "b-Code-SE2SW/src/SE2SW/bin/Release/net8.0-windows/SE2SW.dll",
+  "docs": "b-Code-SE2SW/src/SE2SW/bin/Release/net8.0-windows/SE2SW.xml",
+  "deps": [
+    "b-Code-SE2SW/src/SE2SW/bin/Release/net8.0-windows/SE2SW.Contracts.dll",
+    "b-Code-SE2SW/src/SE2SW/bin/Release/net8.0-windows/SE2SW.Worker.exe",
+    "b-Code-SE2SW/src/SE2SW/bin/Release/net8.0-windows/SE2SW.Worker.dll",
+    "b-Code-SE2SW/src/SE2SW/bin/Release/net8.0-windows/SE2SW.Worker.deps.json",
+    "b-Code-SE2SW/src/SE2SW/bin/Release/net8.0-windows/SE2SW.Worker.runtimeconfig.json"
+  ],
+  "mcpExposure": "hidden",
+  "ui": true
+}

@@ -1,0 +1,180 @@
+using System.Security.Cryptography;
+using SE2SW.Contracts;
+
+namespace SE2SW.Worker;
+
+internal static class SolidEdgeExporter
+{
+    private const string ProgId = "SolidEdge.Application";
+    private const string ProcessName = "Edge";
+    private const int SaveBodyAsParasolidText = 2;
+    private const int ParasolidCurrentVersion = 0;
+
+    public static IReadOnlyList<ConversionJob> Export(
+        BatchRequest request,
+        WorkerReporter reporter,
+        CancellationToken cancellationToken)
+    {
+        var ownership = CadProcessOwnership.Capture(ProcessName);
+        object? applicationObject = null;
+        object? documentsObject = null;
+        bool? originalDisplayAlerts = null;
+        var exported = new List<ConversionJob>(request.Jobs.Count);
+
+        try
+        {
+            var applicationType = Type.GetTypeFromProgID(ProgId, throwOnError: false)
+                ?? throw new ClassifiedConversionException(
+                    ConversionErrorClass.ComNotRegistered,
+                    "未检测到 Solid Edge COM 注册。");
+            try
+            {
+                applicationObject = Activator.CreateInstance(applicationType)
+                    ?? throw new InvalidOperationException("COM 返回了空实例。");
+            }
+            catch (Exception ex)
+            {
+                throw new ClassifiedConversionException(
+                    ComErrorClassifier.Classify(ex, ConversionErrorClass.AppLaunchFailed),
+                    "Solid Edge COM 实例创建失败：" + ex.Message,
+                    ex);
+            }
+            dynamic application = applicationObject;
+            application.DoIdle();
+            ownership.Resolve(Convert.ToInt64(application.hWnd));
+            if (!ownership.OwnsInstance)
+            {
+                throw new ClassifiedConversionException(
+                    ConversionErrorClass.CadProcessOwnershipUnknown,
+                    "无法证明 Solid Edge 实例由本工作进程创建，已停止以保护用户会话。");
+            }
+
+            originalDisplayAlerts = Convert.ToBoolean(application.DisplayAlerts);
+            application.DisplayAlerts = false;
+            application.Visible = false;
+            application.DoIdle();
+            documentsObject = application.Documents;
+            dynamic documents = documentsObject;
+
+            foreach (var job in request.Jobs)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                reporter.Report(job.Id, ConversionStage.SolidEdgeExport, "正在导出 XT。");
+                object? documentObject = null;
+                string? temporaryPath = null;
+                try
+                {
+                    var sourceHash = ComputeSha256(job.SourcePath);
+                    temporaryPath = TemporaryOutput.For(job.XtPath);
+                    documentObject = documents.Open(job.SourcePath);
+                    dynamic document = documentObject;
+                    application.DoIdle();
+
+                    document.SaveBody(
+                        temporaryPath,
+                        SaveBodyAsParasolidText,
+                        ParasolidCurrentVersion,
+                        Type.Missing,
+                        Type.Missing);
+                    application.DoIdle();
+                    document.Close(false);
+                    application.DoIdle();
+                    ComRelease.Final(documentObject);
+                    documentObject = null;
+
+                    var output = FileProbe.VerifyParasolidText(temporaryPath, cancellationToken);
+                    if (!CryptographicOperations.FixedTimeEquals(sourceHash, ComputeSha256(job.SourcePath)))
+                        throw new InvalidDataException("Solid Edge 导出后源 .par 文件内容发生变化。");
+
+                    TemporaryOutput.Commit(temporaryPath, job.XtPath);
+                    temporaryPath = null;
+                    exported.Add(job);
+                    reporter.Report(
+                        job.Id,
+                        ConversionStage.SolidEdgeExport,
+                        $"XT 导出完成，{output.Length} 字节，FORMAT={output.ParasolidFormat}。");
+                }
+                catch (Exception ex) when (cancellationToken.IsCancellationRequested)
+                {
+                    TryClose(documentObject, applicationObject);
+                    throw new OperationCanceledException("Solid Edge 导出已取消。", ex, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    TryClose(documentObject, applicationObject);
+                    reporter.Report(
+                        job.Id,
+                        ConversionStage.Failed,
+                        "Solid Edge 导出失败：" + ex.Message,
+                        true,
+                        ex.HResult,
+                        errorClass: ClassifyExportError(ex));
+                }
+                finally
+                {
+                    TemporaryOutput.DeleteIfExists(temporaryPath);
+                    ComRelease.Final(documentObject);
+                }
+            }
+
+            return exported;
+        }
+        finally
+        {
+            if (applicationObject is not null)
+            {
+                dynamic application = applicationObject;
+                if (originalDisplayAlerts is bool alerts)
+                    TryRun(() => application.DisplayAlerts = alerts);
+                TryRun(() => application.DoIdle());
+                ComRelease.Final(documentsObject);
+                documentsObject = null;
+                if (ownership.OwnsInstance)
+                    TryRun(() => application.Quit());
+            }
+            ComRelease.Final(documentsObject);
+            ComRelease.Final(applicationObject);
+            if (ownership.OwnsInstance)
+                _ = ownership.WaitForOwnedExit(TimeSpan.FromSeconds(30));
+        }
+    }
+
+    private static byte[] ComputeSha256(string path)
+    {
+        using var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        return SHA256.HashData(stream);
+    }
+
+    private static ConversionErrorClass ClassifyExportError(Exception exception)
+    {
+        if (exception is FileNotFoundException missing)
+            return string.Equals(Path.GetExtension(missing.FileName), ".x_t", StringComparison.OrdinalIgnoreCase)
+                ? ConversionErrorClass.OutputEmpty
+                : ConversionErrorClass.InputMissing;
+        if (exception is TimeoutException)
+            return ConversionErrorClass.OutputUnstable;
+        if (exception is InvalidDataException invalid && invalid.Message.Contains("FORMAT=", StringComparison.Ordinal))
+            return ConversionErrorClass.OutputFormatInvalid;
+        return ComErrorClassifier.Classify(exception, ConversionErrorClass.ExportFailed);
+    }
+
+    private static void TryClose(object? documentObject, object? applicationObject)
+    {
+        if (documentObject is null)
+            return;
+        TryRun(() => ((dynamic)documentObject).Close(false));
+        if (applicationObject is not null)
+            TryRun(() => ((dynamic)applicationObject).DoIdle());
+    }
+
+    private static void TryRun(Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch
+        {
+        }
+    }
+}
