@@ -95,7 +95,7 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
         {
             _source = (HwndSource)PresentationSource.FromVisual(this)!;
             _source.AddHook(WindowProc);
-            DesktopLayer.Attach(_source.Handle);
+            DesktopLayer.Prepare(_source.Handle);
             ApplyAnchor();
         }
 
@@ -113,7 +113,7 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
         {
             const int WmNcHitTest = 0x0084;
             const int WmDisplayChange = 0x007E;
-            const int WmWindowPosChanged = 0x0047;
+            const int WmWindowPosChanging = 0x0046;
             const int WmEnterSizeMove = 0x0231;
             const int WmExitSizeMove = 0x0232;
 
@@ -155,9 +155,10 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
                     Dispatcher.BeginInvoke(ApplyAnchor);
                     return IntPtr.Zero;
 
-                case WmWindowPosChanged:
-                    // 降级路径下任何 z-order 变化都要把自己压回底部。
-                    DesktopLayer.PushToBottom(hwnd);
+                case WmWindowPosChanging:
+                    // 任何 z-order 变动都改写为插到最底，窗口因此永不遮挡其他页面，
+                    // 同时仍是普通顶层窗口，鼠标输入完整。
+                    DesktopLayer.PinToBottom(lParam);
                     return IntPtr.Zero;
 
                 default:
@@ -165,37 +166,12 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
             }
         }
 
-        /// <summary>把窗口吸附到主显示器工作区右下角。贴附到桌面层后坐标相对父窗口，必须换算。</summary>
+        /// <summary>把窗口吸附到主显示器工作区右下角。</summary>
         private void ApplyAnchor()
         {
-            if (_source == null)
-                return;
-
             var (left, top) = DockLayout.Anchor(SystemParameters.WorkArea, ActualWidth, ActualHeight);
-            if (DesktopLayer.Current != DesktopLayer.Mode.WorkerW)
-            {
-                Left = left;
-                Top = top;
-                return;
-            }
-
-            if (!DesktopLayer.IsParentAlive())
-            {
-                DesktopLayer.Attach(_source.Handle);
-                if (DesktopLayer.Current != DesktopLayer.Mode.WorkerW)
-                {
-                    Left = left;
-                    Top = top;
-                    return;
-                }
-            }
-
-            var transform = _source.CompositionTarget?.TransformToDevice ?? Matrix.Identity;
-            var (originX, originY) = DesktopLayer.ParentOrigin();
-            DesktopLayer.MoveTo(
-                _source.Handle,
-                (int)Math.Round((left * transform.M11) - originX),
-                (int)Math.Round((top * transform.M22) - originY));
+            Left = left;
+            Top = top;
         }
 
         private void OnChanged()

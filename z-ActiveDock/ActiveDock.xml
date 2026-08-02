@@ -56,59 +56,37 @@
             </remarks>
         </member>
         <member name="M:ActiveDock.ActiveDockUiModule.DockWindow.ApplyAnchor">
-            <summary>把窗口吸附到主显示器工作区右下角。贴附到桌面层后坐标相对父窗口，必须换算。</summary>
+            <summary>把窗口吸附到主显示器工作区右下角。</summary>
         </member>
         <member name="T:ActiveDock.DesktopLayer">
-            <summary>
-            把活动坞压到桌面层，使其永不遮挡其他窗口。
-            </summary>
-            <remarks>
-            主路径是重定父到承载壁纸的 WorkerW，窗口因此成为桌面的一部分，Win+D 时随桌面一起露出。
-            WorkerW 的层次是 Explorer 的实现细节而非稳定契约，找不到时降级为"永远压在 z-order 最底"。
-            两条路径都满足"不遮挡其他页面"，差别只在 Win+D 行为。
-            </remarks>
+             <summary>
+             让活动坞永不遮挡其他窗口：保持普通顶层窗口，但把 z-order 钉死在最底。
+             </summary>
+             <remarks>
+             1.1.0/1.1.1 曾把窗口重定父到承载壁纸的 WorkerW，视觉上确实成为桌面的一部分，
+             Win+D 时随桌面露出。但壁纸层位于 SHELLDLL_DefView(桌面图标层)之下，DefView 覆盖整屏并吞掉
+             桌面区域的全部鼠标输入，贴附后的窗口画得出来却收不到点击，项目图标与尺寸调整全部失效。
+             该限制是 Explorer 的层次决定的，无法在不放弃交互的前提下绕开，因此 1.1.2 起放弃重定父。
+            
+             现方案：WS_EX_NOACTIVATE 不抢焦点，并在每次 WM_WINDOWPOSCHANGING 时把 hwndInsertAfter
+             强制改为 HWND_BOTTOM。窗口因此始终位于所有普通窗口之下，同时保留完整的鼠标输入。
+             代价是 Win+D 时它跟普通窗口一起被隐藏。
+             </remarks>
         </member>
-        <member name="F:ActiveDock.DesktopLayer.Mode.None">
-            <summary>尚未贴附。</summary>
-        </member>
-        <member name="F:ActiveDock.DesktopLayer.Mode.WorkerW">
-            <summary>已重定父到桌面 WorkerW。</summary>
-        </member>
-        <member name="F:ActiveDock.DesktopLayer.Mode.BottomMost">
-            <summary>未找到 WorkerW，降级为压底。</summary>
-        </member>
-        <member name="M:ActiveDock.DesktopLayer.Attach(System.IntPtr)">
-            <summary>贴附窗口到桌面层，返回实际生效的方式。</summary>
-        </member>
-        <member name="P:ActiveDock.DesktopLayer.Parent">
-            <summary>当前父窗口；未重定父时为 <see cref="F:System.IntPtr.Zero"/>。</summary>
-        </member>
-        <member name="M:ActiveDock.DesktopLayer.IsParentAlive">
-            <summary>父窗口是否仍然有效。Explorer 重启会让旧 WorkerW 句柄失效。</summary>
-        </member>
-        <member name="M:ActiveDock.DesktopLayer.TryGetWindowRect(System.IntPtr,System.Double@,System.Double@,System.Double@,System.Double@)">
-            <summary>
-            取窗口自身的屏幕物理矩形。重定父之后 WPF 的 Left/Top 不再是屏幕坐标，
-            命中测试必须以这里的真实矩形为基准换算。
-            </summary>
-        </member>
-        <member name="M:ActiveDock.DesktopLayer.ParentOrigin">
-            <summary>取父窗口左上角的屏幕物理坐标；未重定父时为 (0,0)。</summary>
-        </member>
-        <member name="M:ActiveDock.DesktopLayer.MoveTo(System.IntPtr,System.Int32,System.Int32)">
-            <summary>
-            用物理像素直接设置位置。重定父之后 WPF 的 Left/Top 会被解释为相对父窗口客户区，
-            因此贴附路径下的落位必须走这里，不能沿用 Left/Top。
-            </summary>
+        <member name="M:ActiveDock.DesktopLayer.Prepare(System.IntPtr)">
+            <summary>准备窗口：不抢焦点、不进任务栏切换列表，并立即压到最底。</summary>
         </member>
         <member name="M:ActiveDock.DesktopLayer.PushToBottom(System.IntPtr)">
-            <summary>降级路径下把窗口压回 z-order 最底。</summary>
+            <summary>把窗口压回 z-order 最底。</summary>
         </member>
-        <member name="M:ActiveDock.DesktopLayer.FindDesktopWorkerW">
+        <member name="M:ActiveDock.DesktopLayer.PinToBottom(System.IntPtr)">
             <summary>
-            促使 Progman 生成 WorkerW，再找出那个**不含** SHELLDLL_DefView 子窗口的 WorkerW——
-            含 DefView 的那个承载图标，它的兄弟才是承载壁纸、可供贴附的一层。
+            在 WM_WINDOWPOSCHANGING 里把插入位置改写为 HWND_BOTTOM。
+            相比在 WM_WINDOWPOSCHANGED 里再调一次 SetWindowPos，这里不会引发递归。
             </summary>
+        </member>
+        <member name="M:ActiveDock.DesktopLayer.TryGetWindowRect(System.IntPtr,System.Double@,System.Double@,System.Double@,System.Double@)">
+            <summary>取窗口自身的屏幕物理矩形，命中测试以此为基准。</summary>
         </member>
         <member name="T:ActiveDock.DockLayout">
             <summary>
