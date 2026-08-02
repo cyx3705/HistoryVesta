@@ -96,7 +96,7 @@ public sealed class ToolSyncService
 
             var worktreeRoot = Path.GetDirectoryName(meta.FullPath)!;
             var entry = ToolManifestLoader.Load(
-                manifestPath, worktreeRoot, meta.ProjectName, _commandNames?.Invoke());
+                manifestPath, worktreeRoot, meta.ProjectName, _commandNames?.Invoke(), IsInstalled);
 
             if (entry.Manifest == null)
             {
@@ -135,6 +135,19 @@ public sealed class ToolSyncService
         sb.Append("\n部署状态: 未同步=从未入库 | 最新=产物哈希与溯源一致 | 已过期=产物已重建,tool.sync 可更新");
 
         return (true, sb.ToString(), rows);
+    }
+
+    /// <summary>同名工具是否已在模块槽内。已安装即视为自我更新，放行其自身占用的指令域。</summary>
+    private bool IsInstalled(string name)
+    {
+        try
+        {
+            return Directory.Exists(Path.Combine(Path.GetFullPath(_modulesDir()), name));
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     /// <summary>按产物 SHA-256 与 tool_registry 对比判定部署状态。</summary>
@@ -238,7 +251,7 @@ public sealed class ToolSyncService
             // 找回已通过路径校验的完整清单；name 经正则约束，槽路径必在 Modules 内。
             var worktreeRoot = Path.GetDirectoryName(Path.GetDirectoryName(row.ManifestPath)!)!;
             var entry = ToolManifestLoader.Load(
-                row.ManifestPath, worktreeRoot, row.SourceProject, _commandNames?.Invoke());
+                row.ManifestPath, worktreeRoot, row.SourceProject, _commandNames?.Invoke(), IsInstalled);
             if (entry.Manifest is not { } manifest)
                 return (false, $"清单重读失败: {entry.Error}");
 

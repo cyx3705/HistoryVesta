@@ -77,11 +77,17 @@ public static partial class ToolManifestLoader
             .ToList();
     }
 
+    /// <param name="isInstalled">
+    /// 判定同名工具是否已在模块槽内。已安装时本次是"自我更新"而非抢占，动态指令域检查必须跳过：
+    /// 模块加载后自己占着同名指令域，否则清单名与自身指令域同名的工具将永远无法更新自己。
+    /// 永久内置域(help/history/cls)任何情况下都不放行。
+    /// </param>
     public static ToolManifestEntry Load(
         string manifestPath,
         string worktreeRoot,
         string branch,
-        IEnumerable<string>? reservedCommandNames = null)
+        IEnumerable<string>? reservedCommandNames = null,
+        Func<string, bool>? isInstalled = null)
     {
         ManifestDto? dto;
         try
@@ -100,9 +106,11 @@ public static partial class ToolManifestLoader
         if (!NamePattern().IsMatch(name))
             return new ToolManifestEntry(null, branch, manifestPath,
                 $"模块名不合法(须 ^[A-Za-z_][A-Za-z0-9_-]{{0,63}}$): {name}");
-        var reservedDomains = CommandRegistry.DomainsOf(reservedCommandNames ?? [])
-            .Union(PermanentBuiltinDomains, StringComparer.OrdinalIgnoreCase)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var reservedDomains = isInstalled?.Invoke(name) == true
+            ? new HashSet<string>(PermanentBuiltinDomains, StringComparer.OrdinalIgnoreCase)
+            : CommandRegistry.DomainsOf(reservedCommandNames ?? [])
+                .Union(PermanentBuiltinDomains, StringComparer.OrdinalIgnoreCase)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (reservedDomains.Contains(name))
             return new ToolManifestEntry(null, branch, manifestPath, $"模块名与内置指令域冲突: {name}");
 
