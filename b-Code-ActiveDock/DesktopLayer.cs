@@ -85,6 +85,22 @@ public static class DesktopLayer
     public static bool IsParentAlive()
         => Current != Mode.WorkerW || (Parent != IntPtr.Zero && IsWindow(Parent));
 
+    /// <summary>
+    /// 取窗口自身的屏幕物理矩形。重定父之后 WPF 的 Left/Top 不再是屏幕坐标，
+    /// 命中测试必须以这里的真实矩形为基准换算。
+    /// </summary>
+    public static bool TryGetWindowRect(IntPtr hwnd, out double left, out double top, out double width, out double height)
+    {
+        left = top = width = height = 0;
+        if (hwnd == IntPtr.Zero || !GetWindowRect(hwnd, out var rect))
+            return false;
+        left = rect.Left;
+        top = rect.Top;
+        width = rect.Right - rect.Left;
+        height = rect.Bottom - rect.Top;
+        return true;
+    }
+
     /// <summary>取父窗口左上角的屏幕物理坐标；未重定父时为 (0,0)。</summary>
     public static (double X, double Y) ParentOrigin()
     {

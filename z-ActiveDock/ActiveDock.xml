@@ -86,6 +86,12 @@
         <member name="M:ActiveDock.DesktopLayer.IsParentAlive">
             <summary>父窗口是否仍然有效。Explorer 重启会让旧 WorkerW 句柄失效。</summary>
         </member>
+        <member name="M:ActiveDock.DesktopLayer.TryGetWindowRect(System.IntPtr,System.Double@,System.Double@,System.Double@,System.Double@)">
+            <summary>
+            取窗口自身的屏幕物理矩形。重定父之后 WPF 的 Left/Top 不再是屏幕坐标，
+            命中测试必须以这里的真实矩形为基准换算。
+            </summary>
+        </member>
         <member name="M:ActiveDock.DesktopLayer.ParentOrigin">
             <summary>取父窗口左上角的屏幕物理坐标；未重定父时为 (0,0)。</summary>
         </member>

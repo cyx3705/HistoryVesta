@@ -46,6 +46,7 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
     {
         private readonly WrapPanel _items = new() { Orientation = Orientation.Horizontal };
         private HwndSource? _source;
+        private bool _resizing;
 
         public DockWindow()
         {
@@ -100,6 +101,9 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
 
         private void OnSizeChanged(object? sender, SizeChangedEventArgs args)
         {
+            // 交互调整期间由系统的尺寸循环负责几何，结束时统一保存并贴合。
+            if (_resizing)
+                return;
             ActiveDockState.SaveSize(ActualWidth, ActualHeight);
             // 右下角是锚点：尺寸变了要按新尺寸重新贴合，左上角随之移动。
             ApplyAnchor();
@@ -110,20 +114,42 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
             const int WmNcHitTest = 0x0084;
             const int WmDisplayChange = 0x007E;
             const int WmWindowPosChanged = 0x0047;
+            const int WmEnterSizeMove = 0x0231;
+            const int WmExitSizeMove = 0x0232;
 
             switch (message)
             {
                 case WmNcHitTest:
                 {
-                    var point = PointFromScreen(new Point(
-                        unchecked((short)(lParam.ToInt64() & 0xFFFF)),
-                        unchecked((short)((lParam.ToInt64() >> 16) & 0xFFFF))));
-                    var code = DockLayout.HitTest(point.X, point.Y, ActualWidth, ActualHeight);
+                    // 重定父之后 WPF 的 Left/Top 不再是屏幕坐标，PointFromScreen 会算错，
+                    // 因此一律以窗口真实屏幕矩形为基准，全程用物理像素。
+                    if (!DesktopLayer.TryGetWindowRect(hwnd, out var left, out var top, out var width, out var height))
+                        return IntPtr.Zero;
+                    var screenX = unchecked((short)(lParam.ToInt64() & 0xFFFF));
+                    var screenY = unchecked((short)((lParam.ToInt64() >> 16) & 0xFFFF));
+                    var scale = _source?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
+                    var code = DockLayout.HitTest(
+                        screenX - left,
+                        screenY - top,
+                        width,
+                        height,
+                        DockLayout.BorderWidth * scale);
                     if (code == DockLayout.HitNone)
                         return IntPtr.Zero;
                     handled = true;
                     return new IntPtr(code);
                 }
+
+                case WmEnterSizeMove:
+                    // 调整期间交给系统的尺寸循环，自己不要再 SetWindowPos，否则会和拖拽打架。
+                    _resizing = true;
+                    return IntPtr.Zero;
+
+                case WmExitSizeMove:
+                    _resizing = false;
+                    ActiveDockState.SaveSize(ActualWidth, ActualHeight);
+                    ApplyAnchor();
+                    return IntPtr.Zero;
 
                 case WmDisplayChange:
                     Dispatcher.BeginInvoke(ApplyAnchor);

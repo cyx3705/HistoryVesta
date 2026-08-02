@@ -1,6 +1,6 @@
 ﻿{
   "name": "ActiveDock",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "桌面右下角活动项目坞，由 OHS 服务宿主承载",
   "artifact": "z-ActiveDock/ActiveDock.dll",
   "docs": "z-ActiveDock/ActiveDock.xml",

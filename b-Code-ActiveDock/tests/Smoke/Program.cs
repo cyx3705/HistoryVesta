@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Reflection;
 using ActiveDock;
 using AppShell.Core.Modules;
@@ -13,7 +13,7 @@ var moduleInfos = assembly.GetTypes()
 
 Equal(1, moduleInfos.Count, "独立程序集必须只有一个模块入口");
 Equal("dock", moduleInfos[0].ModuleName, "命令域必须沿用 dock");
-Equal("1.1.0", moduleInfos[0].Version, "模块版本");
+Equal("1.1.1", moduleInfos[0].Version, "模块版本");
 Equal(typeof(ActiveDockCommands), moduleInfos[0].MainClassType, "命令入口类型");
 
 Equal(
@@ -51,7 +51,7 @@ finally
     Directory.Delete(cache, recursive: true);
 }
 
-// V1.1.0 布局规则：右下角锚定、尺寸钳制、只开左/上/左上的调整命中区。
+// V1.1.1 布局规则：右下角锚定、尺寸钳制、只开左/上/左上的调整命中区。
 var work = new System.Windows.Rect(0, 0, 1920, 1040);
 var (anchorLeft, anchorTop) = DockLayout.Anchor(work, 360, 200);
 Equal(1920 - 360 - DockLayout.Margin, anchorLeft, "锚点左边界");
