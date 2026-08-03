@@ -10,6 +10,7 @@ var root = Path.Combine(Path.GetTempPath(), "se2sw-smoke-" + Guid.NewGuid().ToSt
 Directory.CreateDirectory(root);
 try
 {
+    TestSharedContractsAndVersion();
     TestOhsLayoutAndScan(root);
     TestViewModelDirectorySelection(root);
     TestMissingUnusedPreflight(root);
@@ -24,6 +25,15 @@ try
     TestAssemblyTemplateFallback(root);
     TestAssemblyMatrixMapping();
     TestAssemblyTree();
+    TestAssemblyGraphTopology();
+    TestAssemblyGraphSharedAndRepeated();
+    TestAssemblyGraphCycleAndMissing();
+    TestAssemblyGraphLocalTransformComposition();
+    TestAssemblyTransformVerifierWithRotation();
+    TestAssemblyTransformVerifierCatchesWrongFrame();
+    TestAssemblyPlannerNesting(root);
+    TestAssemblyPlannerRejectsBrokenGraph(root);
+    TestAssemblyNodeReuse(root);
     TestAssemblyViewModelState(root);
     TestAssemblyActiveRunDisposal(root);
     TestWorkspaceModes();
@@ -38,6 +48,41 @@ try
 finally
 {
     Directory.Delete(root, recursive: true);
+}
+
+static void TestSharedContractsAndVersion()
+{
+    Equal("3.3.1", typeof(ModuleInfo).Assembly.GetName().Version?.ToString(3), "UI 程序集版本必须来自唯一版本源");
+    Equal("3.3.1", typeof(ConversionJob).Assembly.GetName().Version?.ToString(3), "Contracts 程序集版本必须来自唯一版本源");
+    Equal("3.3.1", typeof(WorkerRequestValidator).Assembly.GetName().Version?.ToString(3), "Worker 程序集版本必须来自唯一版本源");
+    Equal("3.3.1", new ModuleInfo().Version, "模块运行时版本不得另存字符串副本");
+
+    True(WorkerProtocol.IsKnownVerb(WorkerProtocol.PartsRequestVerb), "零件 Worker 动词必须由共享合同认可");
+    True(WorkerProtocol.IsKnownVerb(WorkerProtocol.AssemblyProbeVerb), "装配探查动词必须由共享合同认可");
+    True(WorkerProtocol.IsKnownVerb(WorkerProtocol.AssemblyBuildVerb), "装配构建动词必须由共享合同认可");
+    True(!WorkerProtocol.IsKnownVerb("--unknown"), "未知 Worker 动词必须被拒绝");
+
+    var directories = ConversionPathLayout.ResolveExternalDirectories(@"C:\fixture");
+    Equal(@"C:\fixture\XT", directories.XtDirectory, "外界 XT 目录必须由共享路径合同解析");
+    Equal(@"C:\fixture\SW", directories.SolidWorksDirectory, "外界 SW 目录必须由共享路径合同解析");
+    var paths = ConversionPathLayout.ResolvePartPaths(@"C:\fixture\Part.par", directories.XtDirectory, directories.SolidWorksDirectory, directories.RootDirectory);
+    Equal(@"C:\fixture\XT\Part.x_t", paths.XtPath, "XT 路径必须由共享路径合同解析");
+    Equal(@"C:\fixture\SW\Part.SLDPRT", paths.SolidWorksPath, "SLDPRT 路径必须由共享路径合同解析");
+    Equal(@"C:\fixture\Part.x_t", paths.LegacyXtPath, "旧平铺 XT 候选必须由共享路径合同解析");
+    Equal(@"C:\fixture\Part.SLDPRT", paths.LegacySolidWorksPath, "旧平铺 SLDPRT 候选必须由共享路径合同解析");
+    Equal(@"C:\fixture\SW\Top.SLDASM", ConversionPathLayout.ResolveAssemblyOutputPath(@"C:\fixture\Top.asm", directories.SolidWorksDirectory),
+        "SLDASM 路径必须由共享路径合同解析");
+
+    var row = new ConversionFileRow(new ScanCandidate(@"C:\fixture\Part.par", paths.XtPath, paths.SolidWorksPath, false));
+    var reuseEvent = new WorkerEvent("smoke", row.Id, ConversionStage.Skipped, "消息文本不应参与复用类别判断：XT", ReuseKind: ReuseKind.ExistingSolidWorksPart);
+    Equal("复用 SW", ConversionProgressPresenter.GetRowStatus(reuseEvent, "排队"), "UI 必须使用结构化复用类别，不得解析消息文本");
+    ConversionProgressPresenter.ApplyFeatureOutcome(row, new FeatureOutcome(2, true, 1, 1, [], false, 1));
+    Equal("2", row.FeatureText, "共享进度呈现必须更新特征结果");
+    Equal("1/1", row.SketchText, "共享进度呈现必须更新草图结果");
+
+    var json = JsonSerializer.Serialize(reuseEvent, WorkerProtocol.CreateJsonOptions());
+    var roundTrip = JsonSerializer.Deserialize<WorkerEvent>(json, WorkerProtocol.CreateJsonOptions());
+    Equal(ReuseKind.ExistingSolidWorksPart, roundTrip?.ReuseKind, "结构化复用类别必须可经 Worker JSON 往返");
 }
 
 static void TestOhsLayoutAndScan(string root)
@@ -455,6 +500,366 @@ static void TestAssemblyTree()
     Equal(1, rootNode.Children.Count, "装配树应有一个顶层子装配");
     Equal(1, rootNode.Children[0].Children.Count, "ParentId 必须还原真实子层级");
     Equal("Part:1", rootNode.Children[0].Children[0].DisplayName, "树节点应显示 occurrence 名称");
+}
+
+// ---- V3.3 装配嵌套：装配图构建 ----------------------------------------------
+
+/// <summary>16 元素行主序矩阵，旋转为单位阵，平移放在 12..14，与 V3.0 的口径一致。</summary>
+static double[] Translation(double x, double y, double z) =>
+[
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    x, y, z, 1,
+];
+
+static AssemblyChild Part(string name, string path, double x, double y, double z)
+    => new(name, path, false, false, Translation(x, y, z));
+
+static AssemblyChild Sub(string name, string path, double x, double y, double z)
+    => new(name, path, true, false, Translation(x, y, z));
+
+static string SwOutput(string assemblyPath)
+    => Path.Combine(@"C:\fixture\SW", Path.GetFileNameWithoutExtension(assemblyPath) + ".SLDASM");
+
+/// <summary>三层嵌套：拓扑序必须是子级在前、顶层在最后，且深度逐层递增。</summary>
+static void TestAssemblyGraphTopology()
+{
+    var graph = AssemblyGraphBuilder.Build(
+        @"C:\fixture\Top.asm",
+        [
+            new AssemblyDocumentReading(@"C:\fixture\Top.asm",
+                [Part("P1:1", @"C:\fixture\P1.par", 0, 0, 0), Sub("Mid:1", @"C:\fixture\Mid.asm", 0, 0.238, 0)], []),
+            new AssemblyDocumentReading(@"C:\fixture\Mid.asm",
+                [Part("P2:1", @"C:\fixture\P2.par", 0, 0, 0), Sub("Leaf:1", @"C:\fixture\Leaf.asm", 0, 0.244, 0)], []),
+            new AssemblyDocumentReading(@"C:\fixture\Leaf.asm",
+                [Part("P3:1", @"C:\fixture\P3.par", 0, -0.03, 0)], []),
+        ],
+        SwOutput);
+
+    True(graph.IsValid, "三层装配图应当有效");
+    Equal(3, graph.Nodes.Count, "三层嵌套应产出三个装配节点");
+    Equal(3, graph.MaxDepth, "最大层数应为 3");
+    Equal("Leaf.asm", Path.GetFileName(graph.Nodes[0].SourceAssemblyPath), "拓扑序必须把最深的子装配排在最前");
+    Equal("Mid.asm", Path.GetFileName(graph.Nodes[1].SourceAssemblyPath), "中间层排在叶层之后");
+    Equal("Top.asm", Path.GetFileName(graph.Nodes[2].SourceAssemblyPath), "顶层必须最后生成——父级要插入子级的 .SLDASM 文件");
+    True(graph.Nodes[2].IsRoot, "顶层节点必须标为 IsRoot");
+    True(!graph.Nodes[0].IsRoot, "子装配不得标为 IsRoot");
+    Equal(1, graph.Nodes[2].Depth, "顶层深度为 1");
+    Equal(3, graph.Nodes[0].Depth, "最深子装配深度为 3");
+    Equal(@"C:\fixture\SW\Mid.SLDASM", graph.Nodes[1].OutputPath, "输出路径由调用方的解析器决定");
+
+    // 依赖闭包用于 §3.7 的复用过期判定：任一后代更新，产物即过期。
+    var rootDependencies = graph.Nodes[2].Dependencies;
+    Equal(5, rootDependencies.Count, "顶层依赖闭包应含全部后代文件");
+    True(rootDependencies.Any(path => path.EndsWith("P3.par", StringComparison.OrdinalIgnoreCase)),
+        "闭包必须穿透到第三层的叶零件");
+}
+
+/// <summary>同一子装配被多处引用只生成一次；被多次引用的实例由各自的父级插入矩阵承担姿态。</summary>
+static void TestAssemblyGraphSharedAndRepeated()
+{
+    var graph = AssemblyGraphBuilder.Build(
+        @"C:\fixture\Top.asm",
+        [
+            new AssemblyDocumentReading(@"C:\fixture\Top.asm",
+                [
+                    Sub("Shared:1", @"C:\fixture\Shared.asm", 0, 0, 0),
+                    Sub("Shared:2", @"C:\fixture\Shared.asm", 0.1, 0, 0),
+                    Sub("Mid:1", @"C:\fixture\Mid.asm", 0, 0.5, 0),
+                ], []),
+            new AssemblyDocumentReading(@"C:\fixture\Mid.asm",
+                [Sub("Shared:1", @"C:\fixture\Shared.asm", 0, 0.05, 0)], []),
+            new AssemblyDocumentReading(@"C:\fixture\Shared.asm",
+                [Part("P:1", @"C:\fixture\P.par", 0, 0, 0)], []),
+        ],
+        SwOutput);
+
+    True(graph.IsValid, "跨层复用的装配图应当有效");
+    Equal(3, graph.Nodes.Count, "同一子装配被三处引用仍只生成一个节点");
+    Equal(1, graph.Nodes.Count(node => Path.GetFileName(node.SourceAssemblyPath) == "Shared.asm"),
+        "跨层复用不产生副本节点");
+
+    var names = graph.Nodes.Select(node => Path.GetFileName(node.SourceAssemblyPath)).ToList();
+    var shared = graph.Nodes.Single(node => Path.GetFileName(node.SourceAssemblyPath) == "Shared.asm");
+    Equal(3, shared.Depth, "被多处引用时深度取最深的一条路径");
+    True(names.IndexOf("Shared.asm") < names.IndexOf("Mid.asm"), "共享子装配必须排在它的每个父级之前");
+    True(names.IndexOf("Mid.asm") < names.IndexOf("Top.asm"), "中间层必须排在顶层之前");
+
+    var top = graph.Nodes.Single(node => node.IsRoot);
+    Equal(3, top.Children.Count, "顶层的两个 Shared 实例各占一个组件位");
+    Equal(0.1, top.Children[1].LocalTransform[12], "重复实例的姿态由父级的插入矩阵承担，互不干扰");
+}
+
+/// <summary>成环必须被截断并报错，引用缺失必须单列。</summary>
+static void TestAssemblyGraphCycleAndMissing()
+{
+    var cyclic = AssemblyGraphBuilder.Build(
+        @"C:\fixture\A.asm",
+        [
+            new AssemblyDocumentReading(@"C:\fixture\A.asm", [Sub("B:1", @"C:\fixture\B.asm", 0, 0, 0)], []),
+            new AssemblyDocumentReading(@"C:\fixture\B.asm", [Sub("A:1", @"C:\fixture\A.asm", 0, 0, 0)], []),
+        ],
+        SwOutput);
+    True(!cyclic.IsValid, "成环的装配图不可转换");
+    Equal(1, cyclic.Cycles.Count, "应报出一条环路");
+    True(cyclic.Cycles[0].Contains("A.asm") && cyclic.Cycles[0].Contains("B.asm"), "环路文案要列出参与的文档");
+    Equal(0, cyclic.Nodes.Count, "成环时不得产出任何节点");
+
+    var missing = AssemblyGraphBuilder.Build(
+        @"C:\fixture\Top.asm",
+        [
+            new AssemblyDocumentReading(@"C:\fixture\Top.asm", [Sub("Gone:1", @"C:\fixture\Gone.asm", 0, 0, 0)], []),
+        ],
+        SwOutput);
+    True(!missing.IsValid, "缺读数的装配图不可转换");
+    Equal(1, missing.MissingDocuments.Count, "缺失的子装配文档必须单列");
+
+    var noRoot = AssemblyGraphBuilder.Build(@"C:\fixture\Top.asm", [], SwOutput);
+    True(!noRoot.IsValid, "连顶层读数都没有时不可转换");
+    Equal(1, noRoot.MissingDocuments.Count, "缺顶层读数应报为缺失文档");
+}
+
+/// <summary>
+/// 逐层复合验算：子装配内组件的世界位置 = 各级局部矩阵依次复合。
+/// 这条锁死 §6.1 第 1 条的算法，用纯数值验，不依赖 CAD。数据取自真实三层样件。
+/// </summary>
+static void TestAssemblyGraphLocalTransformComposition()
+{
+    var graph = AssemblyGraphBuilder.Build(
+        @"C:\fixture\风滚子.asm",
+        [
+            new AssemblyDocumentReading(@"C:\fixture\风滚子.asm",
+                [Sub("测试装配1:1", @"C:\fixture\测试装配1.asm", 0, 0.238, 0)], []),
+            new AssemblyDocumentReading(@"C:\fixture\测试装配1.asm",
+                [Sub("测试装配3:1", @"C:\fixture\测试装配3.asm", 0.0007, 0.244, -0.025)], []),
+            new AssemblyDocumentReading(@"C:\fixture\测试装配3.asm",
+                [Part("测试零件6:1", @"C:\fixture\测试零件6.par", 0, -0.03, 0)], []),
+        ],
+        SwOutput);
+
+    True(graph.IsValid, "真实三层样件的装配图应当有效");
+
+    // 纯平移链，逐级相加即可；旋转参与时用矩阵乘，此处只验参考系口径。
+    var world = new double[3];
+    foreach (var node in graph.Nodes.OrderBy(item => item.Depth))
+    {
+        var child = node.Children[0];
+        world[0] += child.LocalTransform[12];
+        world[1] += child.LocalTransform[13];
+        world[2] += child.LocalTransform[14];
+    }
+
+    // 探针实测：测试零件6 在顶层世界系下的 Y = 0.452。
+    True(Math.Abs(world[1] - 0.452) < 1e-9, $"三层复合后的世界 Y 应为 0.452，实得 {world[1]}");
+    True(Math.Abs(world[0] - 0.0007) < 1e-9, "三层复合后的世界 X 应为 0.0007");
+}
+
+/// <summary>
+/// 带旋转的两层复合。子装配绕 Z 轴转 90°，叶零件在子装配里沿 +X 偏 0.1。
+/// 正确的复合结果是世界 (0, 0.338, 0)——那 0.1 被旋进了 +Y。
+/// 若把"复合"错写成平移相加，会得到 (0.1, 0.238, 0)，本用例当场失败。
+/// </summary>
+static void TestAssemblyTransformVerifierWithRotation()
+{
+    double[] subLocal =
+    [
+        0, 1, 0, 0,
+        -1, 0, 0, 0,
+        0, 0, 1, 0,
+        0, 0.238, 0, 1,
+    ];
+    double[] leafLocal = Translation(0.1, 0, 0);
+    double[] leafWorld =
+    [
+        0, 1, 0, 0,
+        -1, 0, 0, 0,
+        0, 0, 1, 0,
+        0, 0.338, 0, 1,
+    ];
+
+    var probe = MakeProbe(subLocal, leafLocal, subWorld: subLocal, leafWorld: leafWorld);
+    var result = AssemblyTransformVerifier.Verify(probe);
+    Equal(2, result.CheckedCount, "两层各一个实例，应核验两条");
+    True(result.IsConsistent, $"带旋转的复合应当一致，最大偏差 {result.MaxDeviation}");
+    True(result.MaxDeviation <= AssemblyTransformVerifier.Tolerance, "偏差必须在 1e-9 以内");
+}
+
+/// <summary>参考系用错时必须当场超差——这正是本版唯一的静默错误源。</summary>
+static void TestAssemblyTransformVerifierCatchesWrongFrame()
+{
+    double[] subLocal = Translation(0, 0.238, 0);
+    double[] leafLocal = Translation(0, 0.244, 0);
+    // 叶零件的世界矩阵被写成了它的局部矩阵——典型的"拿局部当世界"错误。
+    var probe = MakeProbe(subLocal, leafLocal, subWorld: subLocal, leafWorld: leafLocal);
+
+    var result = AssemblyTransformVerifier.Verify(probe);
+    True(!result.IsConsistent, "参考系用错必须被检出");
+    Equal(1, result.Mismatches.Count, "应当只有叶零件那一条超差");
+    True(Math.Abs(result.MaxDeviation - 0.238) < 1e-9, $"偏差应等于漏掉的父级平移，实得 {result.MaxDeviation}");
+}
+
+static AssemblyProbeResult MakeProbe(double[] subLocal, double[] leafLocal, double[] subWorld, double[] leafWorld)
+    => new(
+        @"C:\fixture\Top.asm",
+        [
+            new AssemblyOccurrence("Sub:1", null, @"C:\fixture\Sub.asm", true, false, false, subWorld, null),
+            new AssemblyOccurrence("Sub:1/Leaf:1", "Sub:1", @"C:\fixture\Leaf.par", false, false, false, leafWorld, null),
+        ],
+        [@"C:\fixture\Leaf.par"],
+        0, 0, 1, 0, [],
+        [
+            new AssemblyDocumentReading(@"C:\fixture\Top.asm",
+                [new AssemblyChild("Sub:1", @"C:\fixture\Sub.asm", true, false, subLocal)], []),
+            new AssemblyDocumentReading(@"C:\fixture\Sub.asm",
+                [new AssemblyChild("Leaf:1", @"C:\fixture\Leaf.par", false, false, leafLocal)], []),
+        ]);
+
+/// <summary>三层真实结构走完整规划：节点、输出落位、装配树标注、请求校验。</summary>
+static void TestAssemblyPlannerNesting(string root)
+{
+    var directory = Path.Combine(root, "assembly-nested");
+    Directory.CreateDirectory(directory);
+    string F(string name)
+    {
+        var path = Path.Combine(directory, name);
+        File.WriteAllText(path, name);
+        return path;
+    }
+
+    var top = F("Top.asm");
+    var mid = F("Mid.asm");
+    var leaf = F("Leaf.asm");
+    var partA = F("A.par");
+    var partB = F("B.par");
+
+    var probe = new AssemblyProbeResult(
+        top,
+        [
+            new AssemblyOccurrence("A:1", null, partA, false, false, false, Translation(0, 0, 0), null),
+            new AssemblyOccurrence("Mid:1", null, mid, true, false, false, Translation(0, 0.238, 0), null),
+            new AssemblyOccurrence("Mid:1/Leaf:1", "Mid:1", leaf, true, false, false, Translation(0, 0.482, 0), null),
+            new AssemblyOccurrence("Mid:1/Leaf:1/B:1", "Mid:1/Leaf:1", partB, false, false, false, Translation(0, 0.452, 0), null),
+        ],
+        [partA, partB],
+        0, 0, 2, 0, [],
+        [
+            new AssemblyDocumentReading(top,
+                [Part("A:1", partA, 0, 0, 0), Sub("Mid:1", mid, 0, 0.238, 0)], []),
+            new AssemblyDocumentReading(mid, [Sub("Leaf:1", leaf, 0, 0.244, 0)], []),
+            new AssemblyDocumentReading(leaf, [Part("B:1", partB, 0, -0.03, 0)], []),
+        ]);
+
+    var plan = AssemblyPlanner.Create(probe);
+    True(plan.CanConvert, "三层装配应通过规划门禁：" + string.Join("；", plan.BlockingIssues.Select(i => i.Message)));
+    True(plan.IsNested, "有逐文档读数时必须走嵌套");
+    Equal(3, plan.Nodes!.Count, "三层应产出三个装配节点");
+    Equal(2, plan.SubAssemblyCount, "顶层之外还有两个子装配");
+    Equal(3, plan.MaxDepth, "最大层数为 3");
+    Equal(Path.Combine(directory, "SW", "Leaf.SLDASM"), plan.Nodes[0].OutputPath, "子装配产物必须落在 SW 目录");
+    True(plan.Nodes[^1].IsRoot, "拓扑序最后一个必须是顶层");
+    True(plan.Warnings.Any(item => item.Contains("嵌套装配体", StringComparison.Ordinal)),
+        "必须告知用户本版按层级生成，而不是展平");
+    True(!plan.Warnings.Any(item => item.Contains("展平", StringComparison.Ordinal)),
+        "嵌套模式下不得再出现 V3.0 的展平文案");
+
+    var tree = AssemblyTreeNode.Build(probe, plan.Nodes);
+    var midNode = tree.Children.Single(node => node.DisplayName == "Mid:1");
+    True(midNode.StateText.Contains("生成 Mid.SLDASM", StringComparison.Ordinal),
+        $"子装配节点要标注它生成哪个文件，实得：{midNode.StateText}");
+    Equal(1, midNode.Children.Count, "装配树必须保留真实层级");
+
+    // 请求校验：节点输出逐个查，顶层必须恰好一个。
+    Directory.CreateDirectory(Path.Combine(directory, "XT"));
+    Directory.CreateDirectory(Path.Combine(directory, "SW"));
+    var request = new AssemblyBatchRequest(
+        "batch", ConversionMode.External, top, plan.AssemblyOutputPath,
+        plan.Parts.Select(p => new ConversionJob(p.SourcePath, p.SourcePath, p.XtPath, p.SolidWorksPath)).ToArray(),
+        plan.Occurrences, Nodes: plan.Nodes);
+    PreflightValidator.ValidateAssemblyRequest(request);
+    Throws<InvalidDataException>(() => PreflightValidator.ValidateAssemblyRequest(
+        request with { Nodes = plan.Nodes.Select(n => n with { IsRoot = true }).ToArray() }));
+}
+
+/// <summary>成环与参考系错乱都必须在碰 CAD 之前被拦下。</summary>
+static void TestAssemblyPlannerRejectsBrokenGraph(string root)
+{
+    var directory = Path.Combine(root, "assembly-broken");
+    Directory.CreateDirectory(directory);
+    string F(string name)
+    {
+        var path = Path.Combine(directory, name);
+        File.WriteAllText(path, name);
+        return path;
+    }
+
+    var top = F("Top.asm");
+    var sub = F("Sub.asm");
+    var part = F("P.par");
+
+    var cyclic = new AssemblyProbeResult(
+        top,
+        [
+            new AssemblyOccurrence("Sub:1", null, sub, true, false, false, Translation(0, 0, 0), null),
+            new AssemblyOccurrence("Sub:1/P:1", "Sub:1", part, false, false, false, Translation(0, 0, 0), null),
+        ],
+        [part], 0, 0, 1, 0, [],
+        [
+            new AssemblyDocumentReading(top, [Sub("Sub:1", sub, 0, 0, 0)], []),
+            new AssemblyDocumentReading(sub, [Sub("Top:1", top, 0, 0, 0), Part("P:1", part, 0, 0, 0)], []),
+        ]);
+    var cyclicPlan = AssemblyPlanner.Create(cyclic);
+    True(!cyclicPlan.CanConvert, "成环必须阻断转换");
+    True(cyclicPlan.BlockingIssues.Any(issue => issue.ErrorClass == ConversionErrorClass.SubAssemblyCycleDetected),
+        "成环必须报 SubAssemblyCycleDetected");
+
+    // 叶零件的世界矩阵故意漏掉父级平移——典型的"拿局部当世界"。
+    var wrongFrame = new AssemblyProbeResult(
+        top,
+        [
+            new AssemblyOccurrence("Sub:1", null, sub, true, false, false, Translation(0, 0.238, 0), null),
+            new AssemblyOccurrence("Sub:1/P:1", "Sub:1", part, false, false, false, Translation(0, 0.244, 0), null),
+        ],
+        [part], 0, 0, 1, 0, [],
+        [
+            new AssemblyDocumentReading(top, [Sub("Sub:1", sub, 0, 0.238, 0)], []),
+            new AssemblyDocumentReading(sub, [Part("P:1", part, 0, 0.244, 0)], []),
+        ]);
+    var wrongPlan = AssemblyPlanner.Create(wrongFrame);
+    True(!wrongPlan.CanConvert, "参考系不一致必须阻断转换");
+    True(wrongPlan.BlockingIssues.Any(issue => issue.ErrorClass == ConversionErrorClass.ComponentTransformFailed),
+        "参考系不一致必须报 ComponentTransformFailed");
+}
+
+/// <summary>§3.7：装配产物必须比它递归依赖的每一个文件都新，否则拒绝复用。</summary>
+static void TestAssemblyNodeReuse(string root)
+{
+    var directory = Path.Combine(root, "assembly-reuse");
+    Directory.CreateDirectory(directory);
+    var source = Path.Combine(directory, "Sub.asm");
+    var dependency = Path.Combine(directory, "Dep.par");
+    var output = Path.Combine(directory, "Sub.SLDASM");
+    File.WriteAllText(source, "asm");
+    File.WriteAllText(dependency, "par");
+
+    var node = new AssemblyNode(source, output, false, 2,
+        [Part("Dep:1", dependency, 0, 0, 0)], [dependency]);
+
+    True(!AssemblyNodeReusePlanner.CanReuse(node), "产物不存在时必须重新生成");
+
+    File.WriteAllText(output, "sldasm");
+    var future = DateTime.UtcNow.AddMinutes(5);
+    File.SetLastWriteTimeUtc(output, future);
+    True(AssemblyNodeReusePlanner.CanReuse(node), "产物比全部依赖都新时可以复用");
+
+    // .asm 没动，但里面的零件改了——V3.0 的"比源文件新"规则会漏掉这种情况。
+    File.SetLastWriteTimeUtc(dependency, future.AddMinutes(1));
+    Throws<ClassifiedConversionException>(() => AssemblyNodeReusePlanner.CanReuse(node));
+
+    File.SetLastWriteTimeUtc(dependency, future.AddMinutes(-1));
+    File.WriteAllText(output, string.Empty);
+    File.SetLastWriteTimeUtc(output, future);
+    Throws<ClassifiedConversionException>(() => AssemblyNodeReusePlanner.CanReuse(node));
 }
 
 static void TestUiModuleRegistration()

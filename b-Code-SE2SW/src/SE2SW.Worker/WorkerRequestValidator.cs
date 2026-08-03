@@ -12,9 +12,9 @@ internal static class WorkerRequestValidator
         var outputs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var job in request.Jobs)
         {
-            ValidatePath(job.SourcePath, ".par", mustExist: true);
-            ValidatePath(job.XtPath, ".x_t", mustExist: false);
-            ValidatePath(job.SolidWorksPath, ".SLDPRT", mustExist: false);
+            ValidatePath(job.SourcePath, ConversionPathLayout.SolidEdgePartExtension, mustExist: true);
+            ValidatePath(job.XtPath, ConversionPathLayout.GetExtension(ConversionArtifactKind.Xt), mustExist: false);
+            ValidatePath(job.SolidWorksPath, ConversionPathLayout.GetExtension(ConversionArtifactKind.SolidWorksPart), mustExist: false);
             if (!outputs.Add(Path.GetFullPath(job.XtPath)) || !outputs.Add(Path.GetFullPath(job.SolidWorksPath)))
                 throw new InvalidDataException($"批次中存在重复输出：{job.Id}");
             if (!request.Overwrite && (File.Exists(job.XtPath) || File.Exists(job.SolidWorksPath)))
@@ -26,7 +26,7 @@ internal static class WorkerRequestValidator
     {
         if (string.IsNullOrWhiteSpace(request.BatchId))
             throw new InvalidDataException("装配探查批次编号无效。");
-        ValidatePath(request.SourceAssemblyPath, ".asm", mustExist: true);
+        ValidatePath(request.SourceAssemblyPath, ConversionPathLayout.SolidEdgeAssemblyExtension, mustExist: true);
         if (!Path.IsPathFullyQualified(request.ResultPath))
             throw new InvalidDataException("探查结果路径必须是绝对路径。");
         var parent = Path.GetDirectoryName(request.ResultPath);
@@ -38,8 +38,8 @@ internal static class WorkerRequestValidator
     {
         if (string.IsNullOrWhiteSpace(request.BatchId) || request.Mode != ConversionMode.External)
             throw new InvalidDataException("V3.0 装配转换仅支持外界模式。");
-        ValidatePath(request.SourceAssemblyPath, ".asm", mustExist: true);
-        ValidatePath(request.AssemblyOutputPath, ".SLDASM", mustExist: false);
+        ValidatePath(request.SourceAssemblyPath, ConversionPathLayout.SolidEdgeAssemblyExtension, mustExist: true);
+        ValidatePath(request.AssemblyOutputPath, ConversionPathLayout.GetExtension(ConversionArtifactKind.SolidWorksAssembly), mustExist: false);
         if (!request.Overwrite && File.Exists(request.AssemblyOutputPath))
             throw new IOException($"装配输出已经存在：{request.AssemblyOutputPath}");
         if (request.PartJobs.Count == 0)
@@ -50,9 +50,9 @@ internal static class WorkerRequestValidator
         };
         foreach (var job in request.PartJobs)
         {
-            ValidatePath(job.SourcePath, ".par", mustExist: true);
-            ValidatePath(job.XtPath, ".x_t", mustExist: false);
-            ValidatePath(job.SolidWorksPath, ".SLDPRT", mustExist: false);
+            ValidatePath(job.SourcePath, ConversionPathLayout.SolidEdgePartExtension, mustExist: true);
+            ValidatePath(job.XtPath, ConversionPathLayout.GetExtension(ConversionArtifactKind.Xt), mustExist: false);
+            ValidatePath(job.SolidWorksPath, ConversionPathLayout.GetExtension(ConversionArtifactKind.SolidWorksPart), mustExist: false);
             if (!outputs.Add(Path.GetFullPath(job.XtPath)) || !outputs.Add(Path.GetFullPath(job.SolidWorksPath)))
                 throw new InvalidDataException($"装配批次中存在重复输出：{job.Id}");
         }
@@ -77,7 +77,7 @@ internal static class WorkerRequestValidator
             }
             if (!occurrence.IsSubAssembly
                 && !occurrence.IsSuppressed
-                && string.Equals(Path.GetExtension(occurrence.SourcePath), ".par", StringComparison.OrdinalIgnoreCase)
+                && ConversionPathLayout.HasExtension(occurrence.SourcePath, ConversionPathLayout.SolidEdgePartExtension)
                 && !supportedPartPaths.Contains(Path.GetFullPath(occurrence.SourcePath)))
             {
                 throw new InvalidDataException($"实例没有对应的唯一零件任务：{occurrence.OccurrenceId}");
@@ -89,7 +89,7 @@ internal static class WorkerRequestValidator
     {
         if (!Path.IsPathFullyQualified(path))
             throw new InvalidDataException($"路径必须是绝对路径：{path}");
-        if (!string.Equals(Path.GetExtension(path), extension, StringComparison.OrdinalIgnoreCase))
+        if (!ConversionPathLayout.HasExtension(path, extension))
             throw new InvalidDataException($"路径扩展名必须是 {extension}：{path}");
         if (mustExist && !File.Exists(path))
             throw new FileNotFoundException("源文件不存在。", path);

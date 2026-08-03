@@ -5,11 +5,7 @@ namespace SE2SW.Worker;
 
 internal static class Program
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-    };
+    private static readonly JsonSerializerOptions JsonOptions = WorkerProtocol.CreateJsonOptions();
 
     [STAThread]
     private static int Main(string[] args)
@@ -17,7 +13,9 @@ internal static class Program
         var paths = ReadPaths(args);
         if (paths is null)
         {
-            Console.Error.WriteLine("Usage: SE2SW.Worker --request|--probe-assembly|--assembly <absolute-json-path> --cancel <absolute-signal-path>");
+            Console.Error.WriteLine(
+                $"Usage: SE2SW.Worker {WorkerProtocol.PartsRequestVerb}|{WorkerProtocol.AssemblyProbeVerb}|{WorkerProtocol.AssemblyBuildVerb} "
+                + $"<absolute-json-path> {WorkerProtocol.CancellationArgument} <absolute-signal-path>");
             return 2;
         }
 
@@ -34,9 +32,9 @@ internal static class Program
             using var messageFilter = OleMessageFilter.Register(TimeSpan.FromSeconds(60), cancellation.Token);
             return paths.Value.Verb.ToLowerInvariant() switch
             {
-                "--request" => RunParts(Read<BatchRequest>(paths.Value.RequestPath), cancellation.Token),
-                "--probe-assembly" => RunProbe(Read<AssemblyProbeRequest>(paths.Value.RequestPath), cancellation.Token),
-                "--assembly" => RunAssembly(Read<AssemblyBatchRequest>(paths.Value.RequestPath), cancellation.Token),
+                WorkerProtocol.PartsRequestVerb => RunParts(Read<BatchRequest>(paths.Value.RequestPath), cancellation.Token),
+                WorkerProtocol.AssemblyProbeVerb => RunProbe(Read<AssemblyProbeRequest>(paths.Value.RequestPath), cancellation.Token),
+                WorkerProtocol.AssemblyBuildVerb => RunAssembly(Read<AssemblyBatchRequest>(paths.Value.RequestPath), cancellation.Token),
                 _ => 2,
             };
         }
@@ -140,8 +138,8 @@ internal static class Program
     private static (string Verb, string RequestPath, string CancellationPath)? ReadPaths(IReadOnlyList<string> args)
     {
         if (args.Count != 4 ||
-            args[0] is not ("--request" or "--probe-assembly" or "--assembly") ||
-            !string.Equals(args[2], "--cancel", StringComparison.OrdinalIgnoreCase))
+            !WorkerProtocol.IsKnownVerb(args[0]) ||
+            !string.Equals(args[2], WorkerProtocol.CancellationArgument, StringComparison.OrdinalIgnoreCase))
             return null;
         return Path.IsPathFullyQualified(args[1]) && File.Exists(args[1]) && Path.IsPathFullyQualified(args[3])
             ? (args[0], args[1], args[3])

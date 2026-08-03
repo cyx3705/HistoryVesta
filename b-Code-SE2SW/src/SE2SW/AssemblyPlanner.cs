@@ -16,9 +16,17 @@ public sealed record AssemblyConversionPlan(
     IReadOnlyList<ScanCandidate> Parts,
     IReadOnlyList<AssemblyOccurrence> Occurrences,
     IReadOnlyList<AssemblyPlanIssue> BlockingIssues,
-    IReadOnlyList<string> Warnings)
+    IReadOnlyList<string> Warnings,
+    // V3.3：拓扑序的装配节点。为空表示退化到 V3.0 的展平行为。
+    IReadOnlyList<AssemblyNode>? Nodes = null,
+    int MaxDepth = 1)
 {
     public bool CanConvert => BlockingIssues.Count == 0 && Parts.Count > 0;
+
+    /// <summary>本版是否按嵌套生成。为 false 时按 V3.0 展平。</summary>
+    public bool IsNested => Nodes is { Count: > 0 };
+
+    public int SubAssemblyCount => Nodes is null ? 0 : Nodes.Count(node => !node.IsRoot);
 }
 
 public static class AssemblyPlanner
@@ -27,7 +35,7 @@ public static class AssemblyPlanner
     {
         ArgumentNullException.ThrowIfNull(probe);
         if (!Path.IsPathFullyQualified(probe.SourceAssemblyPath)
-            || !string.Equals(Path.GetExtension(probe.SourceAssemblyPath), ".asm", StringComparison.OrdinalIgnoreCase))
+            || !ConversionPathLayout.HasExtension(probe.SourceAssemblyPath, ConversionPathLayout.SolidEdgeAssemblyExtension))
         {
             throw new InvalidDataException("装配探查结果中的源路径不是绝对 .asm 路径。");
         }
@@ -35,10 +43,10 @@ public static class AssemblyPlanner
         var sourceAssemblyPath = Path.GetFullPath(probe.SourceAssemblyPath);
         var sourceDirectory = Path.GetDirectoryName(sourceAssemblyPath)
             ?? throw new InvalidDataException("无法解析装配体所在目录。");
-        var (xtDirectory, swDirectory) = ExternalOutputLayout.Resolve(sourceDirectory);
-        var assemblyOutputPath = Path.Combine(
-            swDirectory,
-            Path.GetFileNameWithoutExtension(sourceAssemblyPath) + ".SLDASM");
+        var directories = ExternalOutputLayout.Resolve(sourceDirectory);
+        var xtDirectory = directories.XtDirectory;
+        var swDirectory = directories.SolidWorksDirectory;
+        var assemblyOutputPath = ConversionPathLayout.ResolveAssemblyOutputPath(sourceAssemblyPath, swDirectory);
         var issues = new List<AssemblyPlanIssue>();
         var warnings = probe.Warnings.Distinct(StringComparer.Ordinal).ToList();
 
@@ -55,7 +63,7 @@ public static class AssemblyPlanner
         var supportedParts = probe.Occurrences
             .Where(item => !item.IsSubAssembly && !item.IsSuppressed)
             .Select(item => Path.GetFullPath(item.SourcePath))
-            .Where(path => string.Equals(Path.GetExtension(path), ".par", StringComparison.OrdinalIgnoreCase))
+            .Where(path => ConversionPathLayout.HasExtension(path, ConversionPathLayout.SolidEdgePartExtension))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(path => path, StringComparer.CurrentCultureIgnoreCase)
             .ToArray();
@@ -63,7 +71,7 @@ public static class AssemblyPlanner
         var unsupported = probe.Occurrences
             .Where(item => !item.IsSubAssembly && !item.IsSuppressed)
             .Select(item => item.SourcePath)
-            .Where(path => !string.Equals(Path.GetExtension(path), ".par", StringComparison.OrdinalIgnoreCase))
+            .Where(path => !ConversionPathLayout.HasExtension(path, ConversionPathLayout.SolidEdgePartExtension))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
         foreach (var path in unsupported)
@@ -83,26 +91,20 @@ public static class AssemblyPlanner
 
         var parts = supportedParts.Select(path =>
         {
-            var name = Path.GetFileNameWithoutExtension(path);
-            var xtPath = Path.Combine(xtDirectory, name + ".x_t");
-            var swPath = Path.Combine(swDirectory, name + ".SLDPRT");
-            var legacyXt = Path.Combine(sourceDirectory, name + ".x_t");
-            var legacySw = Path.Combine(sourceDirectory, name + ".SLDPRT");
-            var exists = File.Exists(xtPath) || File.Exists(swPath)
-                || File.Exists(legacyXt) || File.Exists(legacySw);
-            var reusableXt = File.Exists(xtPath)
-                ? xtPath
-                : File.Exists(legacyXt) ? legacyXt : xtPath;
-            var reusableSw = File.Exists(swPath)
-                ? swPath
-                : File.Exists(legacySw) ? legacySw : swPath;
+            var paths = ConversionPathLayout.ResolvePartPaths(path, xtDirectory, swDirectory, sourceDirectory);
+            var exists = File.Exists(paths.XtPath) || File.Exists(paths.SolidWorksPath)
+                || File.Exists(paths.LegacyXtPath) || File.Exists(paths.LegacySolidWorksPath);
+            var reusableXt = File.Exists(paths.XtPath)
+                ? paths.XtPath
+                : File.Exists(paths.LegacyXtPath) ? paths.LegacyXtPath : paths.XtPath;
+            var reusableSw = File.Exists(paths.SolidWorksPath)
+                ? paths.SolidWorksPath
+                : File.Exists(paths.LegacySolidWorksPath) ? paths.LegacySolidWorksPath : paths.SolidWorksPath;
             return new ScanCandidate(path, reusableXt, reusableSw, exists);
         }).ToArray();
 
         if (parts.Any(item => item.HasExistingOutput))
             warnings.Add("检测到已有零件产物；转换时会校验时间与格式，安全复用有效的分层或旧平铺 XT/SLDPRT，不覆盖用户文件。");
-        if (File.Exists(assemblyOutputPath))
-            issues.Add(new AssemblyPlanIssue(ConversionErrorClass.OutputExists, $"装配输出已经存在：{assemblyOutputPath}"));
         if (parts.Length == 0)
             issues.Add(new AssemblyPlanIssue(ConversionErrorClass.InputInvalid, "装配体中没有可转换的 .par 零件。"));
 
@@ -111,7 +113,15 @@ public static class AssemblyPlanner
         var hiddenCount = probe.Occurrences.Count(item => item.IsHidden && !item.IsSuppressed && !item.IsSubAssembly);
         if (hiddenCount > 0)
             warnings.Add($"{hiddenCount} 个隐藏实例仍会插入，并保持普通可见组件。");
-        warnings.Add("V3.0 将展平装配树、固定全部组件，不翻译配合。");
+
+        var graph = BuildGraph(probe, sourceAssemblyPath, swDirectory, issues);
+        VerifyTransforms(probe, issues);
+        CheckAssemblyNameConflicts(graph, issues);
+        ReportExistingAssemblyOutputs(graph, assemblyOutputPath, warnings);
+        warnings.Add(graph is { Nodes.Count: > 0 }
+            ? $"按源装配的层级生成嵌套装配体：{graph.Nodes.Count} 个装配文件、最大 {graph.MaxDepth} 层；"
+                + "全部组件固定，不含配合。"
+            : "本次未取到逐文档读数，将退回 V3.0 的展平方式组装。");
 
         return new AssemblyConversionPlan(
             sourceAssemblyPath,
@@ -122,7 +132,95 @@ public static class AssemblyPlanner
             parts,
             probe.Occurrences,
             issues,
-            warnings.Distinct(StringComparer.Ordinal).ToArray());
+            warnings.Distinct(StringComparer.Ordinal).ToArray(),
+            graph?.Nodes,
+            graph?.MaxDepth ?? 1);
+    }
+
+    /// <summary>V3.3：把逐文档读数组装成拓扑序的装配节点；读数缺失时返回 null，由调用方退回展平。</summary>
+    private static AssemblyGraph? BuildGraph(
+        AssemblyProbeResult probe,
+        string sourceAssemblyPath,
+        string swDirectory,
+        ICollection<AssemblyPlanIssue> issues)
+    {
+        if (probe.Documents is not { Count: > 0 })
+            return null;
+
+        var graph = AssemblyGraphBuilder.Build(
+            sourceAssemblyPath,
+            probe.Documents,
+            path => ConversionPathLayout.ResolveAssemblyOutputPath(path, swDirectory));
+
+        foreach (var cycle in graph.Cycles)
+            issues.Add(new AssemblyPlanIssue(
+                ConversionErrorClass.SubAssemblyCycleDetected,
+                $"装配引用成环，拒绝递归：{cycle}"));
+        foreach (var missing in graph.MissingDocuments)
+            issues.Add(new AssemblyPlanIssue(
+                ConversionErrorClass.OccurrenceUnresolved,
+                $"子装配缺少可读的一级读数：{missing}"));
+        return graph;
+    }
+
+    /// <summary>
+    /// V3.3 §3.3.1：用世界矩阵与局部矩阵互相印证。参考系用错不会抛异常，只会静默错位，
+    /// 所以必须在触碰 CAD 之前把它拦住。
+    /// </summary>
+    private static void VerifyTransforms(AssemblyProbeResult probe, ICollection<AssemblyPlanIssue> issues)
+    {
+        var verification = AssemblyTransformVerifier.Verify(probe);
+        if (verification.CheckedCount == 0 || verification.IsConsistent)
+            return;
+        var detail = verification.Mismatches.Count > 0
+            ? string.Join("；", verification.Mismatches
+                .Take(5)
+                .Select(item => $"{item.OccurrenceId} 偏差 {item.MaxDeviation:G6}"))
+            : string.Join("；", verification.Unmatched.Take(5));
+        issues.Add(new AssemblyPlanIssue(
+            ConversionErrorClass.ComponentTransformFailed,
+            $"局部矩阵与世界矩阵不一致（{verification.Mismatches.Count} 处超差、"
+                + $"{verification.Unmatched.Count} 处未匹配）：{detail}"));
+    }
+
+    /// <summary>§3.6：装配之间的同名冲突。两个同名不同路径的 .asm 会写到同一个 .SLDASM。</summary>
+    private static void CheckAssemblyNameConflicts(AssemblyGraph? graph, ICollection<AssemblyPlanIssue> issues)
+    {
+        if (graph is null)
+            return;
+        foreach (var group in graph.Nodes.GroupBy(
+                     node => Path.GetFileNameWithoutExtension(node.SourceAssemblyPath),
+                     StringComparer.OrdinalIgnoreCase))
+        {
+            var paths = group
+                .Select(node => node.SourceAssemblyPath)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            if (paths.Length < 2)
+                continue;
+            issues.Add(new AssemblyPlanIssue(
+                ConversionErrorClass.DuplicateOutputName,
+                $"同名不同路径装配体会映射到同一输出“{group.Key}.SLDASM”：{string.Join("；", paths)}"));
+        }
+    }
+
+    /// <summary>
+    /// 已有装配产物不再是硬阻断。与 V3.0.2 的零件口径一致：转换时校验时间，
+    /// 安全的直接复用，过期或为空的报错让用户自己移走，从不覆盖用户文件。
+    /// </summary>
+    private static void ReportExistingAssemblyOutputs(
+        AssemblyGraph? graph,
+        string assemblyOutputPath,
+        ICollection<string> warnings)
+    {
+        var outputs = graph is { Nodes.Count: > 0 }
+            ? graph.Nodes.Select(node => node.OutputPath).ToArray()
+            : [assemblyOutputPath];
+        var existing = outputs.Where(File.Exists).ToArray();
+        if (existing.Length == 0)
+            return;
+        warnings.Add($"检测到 {existing.Length} 个已有装配产物；转换时会核验它是否比全部依赖都新，"
+            + "过期或为空会报错而不是覆盖。");
     }
 
     private static void CheckDirectoryNameConflict(string path, ICollection<AssemblyPlanIssue> issues)

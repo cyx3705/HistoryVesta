@@ -23,7 +23,7 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
     private string _solidWorksDirectory = string.Empty;
     private string _assemblyOutputPath = string.Empty;
     private string _statusText = "请选择 Solid Edge .asm 装配体";
-    private string _warningSummary = "输出会展平并固定全部组件。";
+    private string _warningSummary = "输出按源装配的层级生成嵌套装配体，全部组件固定，不含配合。";
     private bool _isBusy;
     private bool _isProbing;
     private bool _recognizeFeatures;
@@ -131,7 +131,7 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
     public bool IsOhsModeAvailable => false;
     public bool CanEdit => !IsBusy;
     public bool CanProbe => CanEdit && File.Exists(SourceAssemblyPath)
-        && string.Equals(Path.GetExtension(SourceAssemblyPath), ".asm", StringComparison.OrdinalIgnoreCase);
+        && ConversionPathLayout.HasExtension(SourceAssemblyPath, ConversionPathLayout.SolidEdgeAssemblyExtension);
     public bool CanConvert => CanEdit && !_conversionCompleted && _plan?.CanConvert == true;
     public bool CanFullyDefineSketches => CanEdit && RecognizeFeatures;
     public string OperationText => IsProbing ? "正在解析装配体" : "正在转换装配体";
@@ -270,16 +270,16 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (!File.Exists(SourceAssemblyPath)
-            || !string.Equals(Path.GetExtension(SourceAssemblyPath), ".asm", StringComparison.OrdinalIgnoreCase))
+            || !ConversionPathLayout.HasExtension(SourceAssemblyPath, ConversionPathLayout.SolidEdgeAssemblyExtension))
             throw new InvalidOperationException("请选择存在的 Solid Edge .asm 文件。");
         _validateEnvironment();
 
         var batchId = Guid.NewGuid().ToString("N");
         var resultDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "OneHistoryStudio",
-            "SE2SW",
-            "probes");
+            SE2SWIdentity.HostApplicationDataDirectoryName,
+            SE2SWIdentity.ModuleApplicationDataDirectoryName,
+            SE2SWIdentity.ProbesDirectoryName);
         Directory.CreateDirectory(resultDirectory);
         var resultPath = Path.Combine(resultDirectory, batchId + ".result.json");
         try
@@ -327,7 +327,8 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
             Overwrite: false,
             RecognizeFeatures: RecognizeFeatures,
             FullyDefineSketches: RecognizeFeatures && FullyDefineSketches,
-            ContinueWhenPartFails: ContinueWhenPartFails);
+            ContinueWhenPartFails: ContinueWhenPartFails,
+            Nodes: plan.Nodes);
         PreflightValidator.ValidateAssemblyRequest(request);
 
         foreach (var row in Parts)
@@ -369,7 +370,7 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
         XtDirectory = plan.XtDirectory;
         SolidWorksDirectory = plan.SolidWorksDirectory;
         AssemblyOutputPath = plan.AssemblyOutputPath;
-        AssemblyTree.Add(AssemblyTreeNode.Build(result));
+        AssemblyTree.Add(AssemblyTreeNode.Build(result, plan.Nodes));
         foreach (var candidate in plan.Parts)
             Parts.Add(new ConversionFileRow(candidate));
 
@@ -379,7 +380,10 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
         WarningSummary = string.Join("；", plan.Warnings.Concat(
             string.IsNullOrWhiteSpace(issueText) ? [] : new[] { issueText }));
         StatusText = plan.CanConvert
-            ? $"解析完成：{result.Occurrences.Count} 个实例、{plan.Parts.Count} 个唯一零件；最终输出会展平"
+            ? plan.IsNested
+                ? $"解析完成：{result.Occurrences.Count} 个实例、{plan.Parts.Count} 个唯一零件、"
+                    + $"{plan.SubAssemblyCount} 个子装配，最大 {plan.MaxDepth} 层；按层级生成嵌套装配"
+                : $"解析完成：{result.Occurrences.Count} 个实例、{plan.Parts.Count} 个唯一零件；最终输出会展平"
             : $"解析完成，但有 {plan.BlockingIssues.Count} 个前置错误";
         OnPropertyChanged(nameof(CanConvert));
     }
@@ -388,44 +392,15 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
     {
         if (workerEvent.JobId is null)
         {
-            StatusText = FormatWorkerMessage(workerEvent);
+            StatusText = ConversionProgressPresenter.FormatMessage(workerEvent);
             return;
         }
         var row = Parts.FirstOrDefault(item => item.Id == workerEvent.JobId);
         if (row is null)
             return;
-        row.Status = workerEvent.Stage switch
-        {
-            ConversionStage.SolidEdgeExport => "导出 XT",
-            ConversionStage.SolidWorksImport => "生成 SW",
-            ConversionStage.FeatureRecognition => "识别特征",
-            ConversionStage.SketchFullyDefine => "定义草图",
-            ConversionStage.Completed => "完成",
-            ConversionStage.Skipped when workerEvent.Message.Contains("SLDPRT", StringComparison.OrdinalIgnoreCase) => "复用 SW",
-            ConversionStage.Skipped when workerEvent.Message.Contains("XT", StringComparison.OrdinalIgnoreCase) => "复用 XT",
-            ConversionStage.Skipped => "跳过",
-            ConversionStage.Failed => "失败",
-            ConversionStage.Cancelled => "已取消",
-            _ => row.Status,
-        };
-        row.Detail = FormatWorkerMessage(workerEvent);
-        ApplyFeatureOutcome(row, workerEvent.Feature);
-    }
-
-    private static void ApplyFeatureOutcome(ConversionFileRow row, FeatureOutcome? outcome)
-    {
-        if (outcome is null)
-            return;
-        if (outcome.DegradedToDumbSolid)
-        {
-            row.FeatureText = outcome.RecognizedFeatureCount == 0 ? "未识别" : $"{outcome.RecognizedFeatureCount} 未生成";
-            row.SketchText = "—";
-            row.HasFeatureWarning = true;
-            return;
-        }
-        row.FeatureText = outcome.RecognizedFeatureCount.ToString();
-        row.SketchText = $"{outcome.SketchFullyDefined}/{outcome.SketchTotal}";
-        row.HasFeatureWarning = outcome.SketchFullyDefined < outcome.SketchTotal;
+        row.Status = ConversionProgressPresenter.GetRowStatus(workerEvent, row.Status);
+        row.Detail = ConversionProgressPresenter.FormatMessage(workerEvent);
+        ConversionProgressPresenter.ApplyFeatureOutcome(row, workerEvent.Feature);
     }
 
     private void UpdateOutputPaths()
@@ -436,12 +411,10 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
                 throw new InvalidDataException();
             var fullPath = Path.GetFullPath(SourceAssemblyPath.Trim());
             var directory = Path.GetDirectoryName(fullPath) ?? throw new InvalidDataException();
-            var layout = ExternalOutputLayout.Resolve(directory);
-            XtDirectory = layout.XtDirectory;
-            SolidWorksDirectory = layout.SolidWorksDirectory;
-            AssemblyOutputPath = Path.Combine(
-                layout.SolidWorksDirectory,
-                Path.GetFileNameWithoutExtension(fullPath) + ".SLDASM");
+            var directories = ConversionPathLayout.ResolveExternalDirectories(directory);
+            XtDirectory = directories.XtDirectory;
+            SolidWorksDirectory = directories.SolidWorksDirectory;
+            AssemblyOutputPath = ConversionPathLayout.ResolveAssemblyOutputPath(fullPath, directories.SolidWorksDirectory);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidDataException or NotSupportedException)
         {
@@ -458,7 +431,7 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
         _conversionCompleted = false;
         AssemblyTree.Clear();
         Parts.Clear();
-        WarningSummary = "输出会展平并固定全部组件。";
+        WarningSummary = "输出按源装配的层级生成嵌套装配体，全部组件固定，不含配合。";
         OnPropertyChanged(nameof(CanConvert));
     }
 
@@ -495,11 +468,6 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
             update();
         }
     }
-
-    private static string FormatWorkerMessage(WorkerEvent workerEvent)
-        => workerEvent.ErrorClass == ConversionErrorClass.None
-            ? workerEvent.Message
-            : $"[{workerEvent.ErrorClass}] {workerEvent.Message}";
 
     private static string ComputeSha256(string path)
     {

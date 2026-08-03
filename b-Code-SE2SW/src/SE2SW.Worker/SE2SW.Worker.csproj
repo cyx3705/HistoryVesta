@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\build\SE2SW.Version.props" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -8,7 +9,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SE2SW.Worker</AssemblyName>
     <RootNamespace>SE2SW.Worker</RootNamespace>
-    <Version>3.1.1</Version>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\SE2SW.Contracts\SE2SW.Contracts.csproj" />

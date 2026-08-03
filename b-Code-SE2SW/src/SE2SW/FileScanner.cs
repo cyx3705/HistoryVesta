@@ -9,7 +9,7 @@ public static class FileScanner
     {
         var workingDirectory = NormalizeExistingDirectory(selectedDirectory);
         return Directory.EnumerateFiles(workingDirectory, "*", SearchOption.TopDirectoryOnly)
-            .Any(path => string.Equals(Path.GetExtension(path), ".par", StringComparison.OrdinalIgnoreCase));
+            .Any(path => ConversionPathLayout.HasExtension(path, ConversionPathLayout.SolidEdgePartExtension));
     }
 
     public static IReadOnlyList<ScanCandidate> Scan(
@@ -21,22 +21,22 @@ public static class FileScanner
         var sourceDirectory = mode == ConversionMode.Ohs
             ? layout?.SourceDirectory ?? throw new ArgumentNullException(nameof(layout))
             : workingDirectory;
-        var xtDirectory = mode == ConversionMode.Ohs ? layout!.XtDirectory : Path.Combine(workingDirectory, "XT");
-        var swDirectory = mode == ConversionMode.Ohs ? layout!.SolidWorksDirectory : Path.Combine(workingDirectory, "SW");
+        var externalDirectories = mode == ConversionMode.External
+            ? ConversionPathLayout.ResolveExternalDirectories(workingDirectory)
+            : null;
+        var xtDirectory = mode == ConversionMode.Ohs ? layout!.XtDirectory : externalDirectories!.XtDirectory;
+        var swDirectory = mode == ConversionMode.Ohs ? layout!.SolidWorksDirectory : externalDirectories!.SolidWorksDirectory;
 
         return Directory.EnumerateFiles(sourceDirectory, "*", SearchOption.TopDirectoryOnly)
-            .Where(path => string.Equals(Path.GetExtension(path), ".par", StringComparison.OrdinalIgnoreCase))
+            .Where(path => ConversionPathLayout.HasExtension(path, ConversionPathLayout.SolidEdgePartExtension))
             .OrderBy(path => Path.GetFileName(path), StringComparer.CurrentCultureIgnoreCase)
             .Select(path =>
             {
-                var name = Path.GetFileNameWithoutExtension(path);
-                var xtPath = Path.Combine(xtDirectory, name + ".x_t");
-                var swPath = Path.Combine(swDirectory, name + ".SLDPRT");
-                var legacyXt = Path.Combine(workingDirectory, name + ".x_t");
-                var legacySw = Path.Combine(workingDirectory, name + ".SLDPRT");
-                var exists = File.Exists(xtPath) || File.Exists(swPath)
-                    || mode == ConversionMode.External && (File.Exists(legacyXt) || File.Exists(legacySw));
-                return new ScanCandidate(path, xtPath, swPath, exists);
+                var paths = ConversionPathLayout.ResolvePartPaths(path, xtDirectory, swDirectory, workingDirectory);
+                var exists = File.Exists(paths.XtPath) || File.Exists(paths.SolidWorksPath)
+                    || mode == ConversionMode.External
+                    && (File.Exists(paths.LegacyXtPath) || File.Exists(paths.LegacySolidWorksPath));
+                return new ScanCandidate(path, paths.XtPath, paths.SolidWorksPath, exists);
             })
             .ToArray();
     }

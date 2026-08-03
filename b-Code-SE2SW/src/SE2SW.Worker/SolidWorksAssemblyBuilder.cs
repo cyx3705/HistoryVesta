@@ -40,7 +40,11 @@ internal static class SolidWorksAssemblyBuilder
 
         try
         {
-            reporter.Report(null, ConversionStage.AssemblyBuild, "正在创建 SolidWorks 装配体。");
+            reporter.Report(
+                null,
+                ConversionStage.AssemblyBuild,
+                "正在创建 SolidWorks 装配体。",
+                artifact: ConversionArtifactKind.SolidWorksAssembly);
             var applicationType = Type.GetTypeFromProgID(ProgId, throwOnError: false)
                 ?? throw new ClassifiedConversionException(ConversionErrorClass.ComNotRegistered, "未检测到 SolidWorks COM 注册。");
             applicationObject = Activator.CreateInstance(applicationType)

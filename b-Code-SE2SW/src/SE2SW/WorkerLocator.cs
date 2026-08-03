@@ -1,13 +1,12 @@
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
+using SE2SW.Contracts;
 
 namespace SE2SW;
 
 public static class WorkerLocator
 {
-    private const string WorkerFileName = "SE2SW.Worker.exe";
-
     public static string Locate()
     {
         foreach (var candidate in Candidates())
@@ -24,21 +23,21 @@ public static class WorkerLocator
         var candidates = new List<string>();
         var assemblyLocation = Assembly.GetExecutingAssembly().Location;
         if (!string.IsNullOrWhiteSpace(assemblyLocation))
-            candidates.Add(Path.Combine(Path.GetDirectoryName(assemblyLocation)!, WorkerFileName));
+            candidates.Add(Path.Combine(Path.GetDirectoryName(assemblyLocation)!, SE2SWIdentity.WorkerFileName));
 
         var appDataRoot = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "OneHistoryStudio");
+            SE2SWIdentity.HostApplicationDataDirectoryName);
         var configuredModules = ReadConfiguredModulesDirectory(Path.Combine(appDataRoot, "settings.json"));
         if (!string.IsNullOrWhiteSpace(configuredModules) && Path.IsPathFullyQualified(configuredModules))
         {
-            candidates.Add(Path.Combine(configuredModules, "SE2SW", WorkerFileName));
-            candidates.Add(Path.Combine(configuredModules, WorkerFileName));
+            candidates.Add(Path.Combine(configuredModules, SE2SWIdentity.ModuleSlotName, SE2SWIdentity.WorkerFileName));
+            candidates.Add(Path.Combine(configuredModules, SE2SWIdentity.WorkerFileName));
         }
 
         var defaultModules = Path.Combine(appDataRoot, "Modules");
-        candidates.Add(Path.Combine(defaultModules, "SE2SW", WorkerFileName));
-        candidates.Add(Path.Combine(defaultModules, WorkerFileName));
+        candidates.Add(Path.Combine(defaultModules, SE2SWIdentity.ModuleSlotName, SE2SWIdentity.WorkerFileName));
+        candidates.Add(Path.Combine(defaultModules, SE2SWIdentity.WorkerFileName));
         return candidates.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
     }
 

@@ -109,7 +109,11 @@ internal static class SolidWorksImporter
             {
                 var job = exported[jobIndex];
                 cancellationToken.ThrowIfCancellationRequested();
-                reporter.Report(job.Id, ConversionStage.SolidWorksImport, "正在生成 SolidWorks 零件。");
+                reporter.Report(
+                    job.Id,
+                    ConversionStage.SolidWorksImport,
+                    "正在生成 SolidWorks 零件。",
+                    artifact: ConversionArtifactKind.SolidWorksPart);
                 object? importData = null;
                 object? modelObject = null;
                 object? extensionObject = null;
@@ -257,7 +261,8 @@ internal static class SolidWorksImporter
                             && outcome.SketchFullyDefined < outcome.SketchTotal
                                 ? ConversionErrorClass.SketchNotFullyDefined
                                 : ConversionErrorClass.None,
-                        feature: featureOutcome);
+                        feature: featureOutcome,
+                        artifact: ConversionArtifactKind.SolidWorksPart);
                 }
                 catch (Exception ex) when (cancellationToken.IsCancellationRequested)
                 {
@@ -346,7 +351,7 @@ internal static class SolidWorksImporter
     private static ConversionErrorClass ClassifyImportError(Exception exception)
     {
         if (exception is FileNotFoundException missing)
-            return string.Equals(Path.GetExtension(missing.FileName), ".SLDPRT", StringComparison.OrdinalIgnoreCase)
+            return ConversionPathLayout.HasExtension(missing.FileName ?? string.Empty, ConversionArtifactKind.SolidWorksPart)
                 ? ConversionErrorClass.OutputEmpty
                 : ConversionErrorClass.InputMissing;
         if (exception is TimeoutException)

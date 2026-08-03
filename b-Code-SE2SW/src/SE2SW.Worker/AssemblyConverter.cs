@@ -25,14 +25,18 @@ internal static class AssemblyConverter
             reporter.Report(
                 job.Id,
                 ConversionStage.Skipped,
-                $"复用已有 SLDPRT，不再重复转换：{job.SolidWorksPath}");
+                $"复用已有 SLDPRT，不再重复转换：{job.SolidWorksPath}",
+                artifact: ConversionArtifactKind.SolidWorksPart,
+                reuseKind: ReuseKind.ExistingSolidWorksPart);
         }
         foreach (var job in reusePlan.ImportFromExistingXt)
         {
             reporter.Report(
                 job.Id,
                 ConversionStage.Skipped,
-                $"复用已有 XT，跳过 Solid Edge 导出：{job.XtPath}");
+                $"复用已有 XT，跳过 Solid Edge 导出：{job.XtPath}",
+                artifact: ConversionArtifactKind.Xt,
+                reuseKind: ReuseKind.ExistingXt);
         }
 
         var exported = reusePlan.NeedsExport.Count == 0
@@ -68,27 +72,44 @@ internal static class AssemblyConverter
             return 1;
         }
 
-        var buildOccurrences = request.Occurrences
-            .Where(item => item.IsSubAssembly || item.IsSuppressed || successfulJobs.ContainsKey(Path.GetFullPath(item.SourcePath)))
+        var failedPartPaths = request.PartJobs
+            .Where(job => !successfulJobs.ContainsKey(Path.GetFullPath(job.SourcePath)))
+            .Select(job => job.SourcePath)
             .ToArray();
-        var outcome = SolidWorksAssemblyBuilder.Build(
-            request.AssemblyOutputPath,
-            buildOccurrences,
-            successfulJobs,
-            request.Overwrite,
-            request.PartJobs.Count - partFailed,
-            partFailed,
-            reporter,
-            cancellationToken,
-            request.PartJobs
-                .Where(job => !successfulJobs.ContainsKey(Path.GetFullPath(job.SourcePath)))
-                .Select(job => job.SourcePath)
-                .ToArray());
+
+        // V3.3：拿到拓扑序的装配节点就走嵌套；拿不到（旧协议）退回 V3.0 的展平。
+        var outcome = request.Nodes is { Count: > 0 } nodes
+            ? SolidWorksNestedAssemblyBuilder.Build(
+                nodes,
+                successfulJobs,
+                request.PartJobs.Count - partFailed,
+                partFailed,
+                reporter,
+                cancellationToken,
+                failedPartPaths)
+            : SolidWorksAssemblyBuilder.Build(
+                request.AssemblyOutputPath,
+                request.Occurrences
+                    .Where(item => item.IsSubAssembly || item.IsSuppressed
+                        || successfulJobs.ContainsKey(Path.GetFullPath(item.SourcePath)))
+                    .ToArray(),
+                successfulJobs,
+                request.Overwrite,
+                request.PartJobs.Count - partFailed,
+                partFailed,
+                reporter,
+                cancellationToken,
+                failedPartPaths);
+
         reporter.Report(
             null,
             ConversionStage.Completed,
-            $"装配转换完成：插入 {outcome.ComponentInserted}/{outcome.ComponentTotal}，固定 {outcome.ComponentFixed}。",
-            assembly: outcome);
+            outcome.SubAssemblyTotal > 0
+                ? $"装配转换完成：{outcome.SubAssemblyBuilt + 1} 个装配文件、最大 {outcome.MaxDepth} 层，"
+                    + $"插入 {outcome.ComponentInserted}/{outcome.ComponentTotal}，固定 {outcome.ComponentFixed}。"
+                : $"装配转换完成：插入 {outcome.ComponentInserted}/{outcome.ComponentTotal}，固定 {outcome.ComponentFixed}。",
+            assembly: outcome,
+            artifact: ConversionArtifactKind.SolidWorksAssembly);
         return partFailed == 0 ? 0 : 1;
     }
 }

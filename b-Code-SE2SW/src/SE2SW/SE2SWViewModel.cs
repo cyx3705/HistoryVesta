@@ -189,8 +189,9 @@ public sealed class SE2SWViewModel : INotifyPropertyChanged, IDisposable
             {
                 _layout = null;
                 SourceDirectory = Path.GetFullPath(SelectedDirectory.Trim());
-                XtDirectory = Path.Combine(SourceDirectory, "XT");
-                SolidWorksDirectory = Path.Combine(SourceDirectory, "SW");
+                var directories = ConversionPathLayout.ResolveExternalDirectories(SourceDirectory);
+                XtDirectory = directories.XtDirectory;
+                SolidWorksDirectory = directories.SolidWorksDirectory;
             }
 
             foreach (var candidate in FileScanner.Scan(Mode, SelectedDirectory, _layout))
@@ -414,49 +415,16 @@ public sealed class SE2SWViewModel : INotifyPropertyChanged, IDisposable
     {
         if (workerEvent.JobId is null)
         {
-            StatusText = FormatWorkerMessage(workerEvent);
+            StatusText = ConversionProgressPresenter.FormatMessage(workerEvent);
             return;
         }
         var row = Files.FirstOrDefault(item => item.Id == workerEvent.JobId);
         if (row is null)
             return;
-        row.Status = workerEvent.Stage switch
-        {
-            ConversionStage.SolidEdgeExport => "导出 XT",
-            ConversionStage.SolidWorksImport => "生成 SW",
-            ConversionStage.FeatureRecognition => "识别特征",
-            ConversionStage.SketchFullyDefine => "定义草图",
-            ConversionStage.Completed => "完成",
-            ConversionStage.Skipped => "跳过",
-            ConversionStage.Failed => "失败",
-            ConversionStage.Cancelled => "已取消",
-            _ => row.Status,
-        };
-        row.Detail = FormatWorkerMessage(workerEvent);
-        ApplyFeatureOutcome(row, workerEvent.Feature);
+        row.Status = ConversionProgressPresenter.GetRowStatus(workerEvent, row.Status);
+        row.Detail = ConversionProgressPresenter.FormatMessage(workerEvent);
+        ConversionProgressPresenter.ApplyFeatureOutcome(row, workerEvent.Feature);
     }
-
-    private static void ApplyFeatureOutcome(ConversionFileRow row, FeatureOutcome? outcome)
-    {
-        if (outcome is null)
-            return;
-        if (outcome.DegradedToDumbSolid)
-        {
-            row.FeatureText = outcome.RecognizedFeatureCount == 0 ? "未识别" : $"{outcome.RecognizedFeatureCount} 未生成";
-            row.SketchText = "—";
-            row.HasFeatureWarning = true;
-            return;
-        }
-
-        row.FeatureText = outcome.RecognizedFeatureCount.ToString();
-        row.SketchText = $"{outcome.SketchFullyDefined}/{outcome.SketchTotal}";
-        row.HasFeatureWarning = outcome.SketchFullyDefined < outcome.SketchTotal;
-    }
-
-    private static string FormatWorkerMessage(WorkerEvent workerEvent)
-        => workerEvent.ErrorClass == ConversionErrorClass.None
-            ? workerEvent.Message
-            : $"[{workerEvent.ErrorClass}] {workerEvent.Message}";
 
     private void ScanAfterRun()
     {

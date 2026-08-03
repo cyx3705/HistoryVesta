@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
+using SE2SW;
 using SE2SW.Contracts;
 using SolidWorks.Interop.sldworks;
 using SolidWorks.Interop.swconst;
@@ -220,6 +221,31 @@ internal static class Program
                 .Where(File.Exists)
                 .ToDictionary(path => path, ComputeSha256, StringComparer.OrdinalIgnoreCase)
             : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        // V3.3：按逐文档读数构图，走嵌套；读数缺失时退回 V3.0 的展平，门禁两条路都要能跑。
+        var graph = probe.Documents is { Count: > 0 }
+            ? AssemblyGraphBuilder.Build(
+                options.SourceAssembly,
+                probe.Documents,
+                path => Path.Combine(swDirectory, Path.GetFileNameWithoutExtension(path) + ".SLDASM"))
+            : null;
+        if (graph is not null)
+        {
+            if (!graph.IsValid)
+                throw new InvalidDataException(
+                    "装配图不可用：环=" + string.Join("/", graph.Cycles)
+                        + "，缺失=" + string.Join("/", graph.MissingDocuments));
+            var verification = AssemblyTransformVerifier.Verify(probe);
+            result.TransformSelfCheckCount = verification.CheckedCount;
+            result.TransformSelfCheckDeviation = verification.MaxDeviation;
+            if (!verification.IsConsistent)
+                throw new InvalidDataException(
+                    $"局部矩阵与世界矩阵不一致：超差 {verification.Mismatches.Count} 处、未匹配 {verification.Unmatched.Count} 处。");
+            result.AssemblyNodeCount = graph.Nodes.Count;
+            result.MaxDepth = graph.MaxDepth;
+            foreach (var node in graph.Nodes.Where(item => File.Exists(item.OutputPath)))
+                throw new IOException($"装配输出已经存在，门禁不会覆盖：{node.OutputPath}");
+        }
+
         var assemblyRequest = new AssemblyBatchRequest(
             "gate-build-" + Guid.NewGuid().ToString("N"),
             ConversionMode.External,
@@ -229,7 +255,8 @@ internal static class Program
             probe.Occurrences,
             RecognizeFeatures: false,
             FullyDefineSketches: false,
-            ContinueWhenPartFails: false);
+            ContinueWhenPartFails: false,
+            Nodes: graph?.Nodes);
 
         ISldWorks? application = null;
         string? originalTemplate = null;
@@ -267,7 +294,7 @@ internal static class Program
             result.WorkerExitCode = buildRun.ExitCode;
             if (buildRun.ExitCode != 0)
                 throw new InvalidOperationException($"生产 Worker 装配构建失败，exit={buildRun.ExitCode}：{buildRun.StandardError}");
-            VerifyAssembly(application, assemblyOutput, probe.Occurrences, jobs, result);
+            VerifyAssembly(application, assemblyOutput, probe.Occurrences, jobs, result, graph);
         }
         finally
         {
@@ -328,13 +355,161 @@ internal static class Program
         }
     }
 
+    /// <summary>
+    /// V3.3 嵌套核验。两件事：
+    ///   1. 每个装配文件的一级组件数 == 该节点的直接子项数（层级结构与 SE 同构）；
+    ///   2. 顶层里每个叶组件的 <c>GetTotalTransform</c> 与 SE 的世界矩阵一致（&lt; 1e-6 m）。
+    ///
+    /// 第 2 条是 20 号文档 §6.1 判据 1 的端到端形式：由 SolidWorks 自己把各层变换复合出来，
+    /// 不采信我们自己的复合算法——两条独立路径得到同一个数才算数。
+    /// </summary>
+    private static void VerifyNestedAssembly(
+        ISldWorks application,
+        IReadOnlyList<AssemblyOccurrence> occurrences,
+        IReadOnlyList<ConversionJob> jobs,
+        GateResult result,
+        AssemblyGraph graph)
+    {
+        result.AssemblyNodeCount = graph.Nodes.Count;
+        result.MaxDepth = graph.MaxDepth;
+
+        foreach (var node in graph.Nodes)
+        {
+            if (!File.Exists(node.OutputPath))
+                throw new FileNotFoundException("装配节点没有产出文件。", node.OutputPath);
+            var (model, assembly) = OpenAssembly(application, node.OutputPath);
+            try
+            {
+                var top = (assembly.GetComponents(true) as Array ?? Array.Empty<object>())
+                    .Cast<object>().OfType<Component2>().ToArray();
+                result.AssemblyNodes.Add(new NodeFact(
+                    node.OutputPath, node.Depth, node.IsRoot, node.Children.Count, top.Length));
+                if (top.Length != node.Children.Count)
+                {
+                    throw new InvalidDataException(
+                        $"{Path.GetFileName(node.OutputPath)} 一级组件数不一致：{top.Length}/{node.Children.Count}");
+                }
+
+                foreach (var component in top)
+                {
+                    if (!component.IsFixed())
+                        throw new InvalidDataException($"组件未固定：{node.OutputPath} → {component.Name2}");
+                }
+            }
+            finally
+            {
+                CloseModel(application, model);
+            }
+        }
+
+        var root = graph.Nodes.Single(node => node.IsRoot);
+        var (rootModel, rootAssembly) = OpenAssembly(application, root.OutputPath);
+        try
+        {
+            var leaves = (rootAssembly.GetComponents(false) as Array ?? Array.Empty<object>())
+                .Cast<object>().OfType<Component2>()
+                .Where(component => (component.GetChildren() as Array)?.Length is null or 0)
+                .Select(component => new ActualComponent(
+                    component.GetPathName(),
+                    ReadTotalTransform(component),
+                    component.IsFixed()))
+                .ToList();
+
+            var bySource = jobs.ToDictionary(
+                job => Path.GetFullPath(job.SourcePath),
+                job => Path.GetFullPath(job.SolidWorksPath),
+                StringComparer.OrdinalIgnoreCase);
+            var expected = occurrences
+                .Where(item => !item.IsSubAssembly && !item.IsSuppressed)
+                .Where(item => bySource.ContainsKey(Path.GetFullPath(item.SourcePath)))
+                .Select(item => new ExpectedComponent(
+                    bySource[Path.GetFullPath(item.SourcePath)],
+                    ToSolidWorksTransform(item.WorldTransform)))
+                .ToList();
+
+            result.ComponentExpected = expected.Count;
+            result.ComponentActual = leaves.Count;
+            if (leaves.Count != expected.Count)
+                throw new InvalidDataException($"顶层展开后的叶组件数不一致：{leaves.Count}/{expected.Count}");
+
+            var maxTranslation = 0d;
+            var maxRotation = 0d;
+            foreach (var item in expected)
+            {
+                var matched = leaves
+                    .Where(actual => string.Equals(
+                        Path.GetFullPath(actual.Path), item.Path, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(actual => MaxTransformDeviation(item.Transform, actual.Transform))
+                    .FirstOrDefault()
+                    ?? throw new FileNotFoundException("嵌套装配里找不到对应的叶组件。", item.Path);
+                leaves.Remove(matched);
+                maxRotation = Math.Max(maxRotation, MaxRotationDeviation(item.Transform, matched.Transform));
+                maxTranslation = Math.Max(maxTranslation, MaxTranslationDeviation(item.Transform, matched.Transform));
+            }
+
+            result.LeafComponentsVerified = expected.Count;
+            result.ComponentFixed = expected.Count;
+            result.MaxRotationDeviation = maxRotation;
+            result.MaxTranslationDeviationMeters = maxTranslation;
+            result.MaxTotalTransformDeviationMeters = maxTranslation;
+            if (maxRotation >= 1e-9 || maxTranslation >= 1e-6)
+            {
+                throw new InvalidDataException(
+                    $"逐层复合后的世界变换超差：rotation={maxRotation:G6}, translation={maxTranslation:G6}m");
+            }
+        }
+        finally
+        {
+            CloseModel(application, rootModel);
+        }
+    }
+
+    private static (ModelDoc2 Model, AssemblyDoc Assembly) OpenAssembly(ISldWorks application, string path)
+    {
+        var errors = 0;
+        var warnings = 0;
+        var model = application.OpenDoc6(
+            path,
+            (int)swDocumentTypes_e.swDocASSEMBLY,
+            (int)swOpenDocOptions_e.swOpenDocOptions_Silent,
+            string.Empty,
+            ref errors,
+            ref warnings);
+        if (model is null || errors != 0)
+            throw new InvalidDataException($"独立重开 SLDASM 失败：{path}，errors={errors}, warnings={warnings}");
+        return (model, (AssemblyDoc)model);
+    }
+
+    private static void CloseModel(ISldWorks application, ModelDoc2? model)
+    {
+        if (model is null)
+            return;
+        try { application.CloseDoc(model.GetTitle()); } catch { }
+    }
+
+    /// <summary>相对顶层装配的总变换。由 SolidWorks 自己复合，不采信本项目的算法。</summary>
+    private static double[] ReadTotalTransform(Component2 component)
+    {
+        var transform = component.GetTotalTransform(true)
+            ?? throw new InvalidDataException($"组件没有 GetTotalTransform：{component.Name2}");
+        return (transform.ArrayData as double[])
+            ?? throw new InvalidDataException($"组件总变换数据无效：{component.Name2}");
+    }
+
     private static void VerifyAssembly(
         ISldWorks application,
         string outputPath,
         IReadOnlyList<AssemblyOccurrence> occurrences,
         IReadOnlyList<ConversionJob> jobs,
-        GateResult result)
+        GateResult result,
+        AssemblyGraph? graph = null)
     {
+        if (graph is not null)
+        {
+            VerifyNestedAssembly(application, occurrences, jobs, result, graph);
+            return;
+        }
+
         var errors = 0;
         var warnings = 0;
         ModelDoc2? model = null;
@@ -614,6 +789,14 @@ internal sealed class GateResult
     public double MaxTranslationDeviationMeters { get; set; }
     public bool SourceHashesUnchanged { get; set; }
     public bool TemplateRestored { get; set; }
+    // V3.3 嵌套。
+    public int AssemblyNodeCount { get; set; }
+    public int MaxDepth { get; set; } = 1;
+    public int TransformSelfCheckCount { get; set; }
+    public double TransformSelfCheckDeviation { get; set; }
+    public List<NodeFact> AssemblyNodes { get; set; } = [];
+    public int LeafComponentsVerified { get; set; }
+    public double MaxTotalTransformDeviationMeters { get; set; }
     public List<WorkerEvent> WorkerEvents { get; } = [];
     public List<OutputFact> OutputFiles { get; set; } = [];
     public int[] EdgeProcessesAfter { get; set; } = [];
@@ -624,3 +807,4 @@ internal sealed record WorkerRun(int ExitCode, IReadOnlyList<WorkerEvent> Events
 internal sealed record ExpectedComponent(string Path, double[] Transform);
 internal sealed record ActualComponent(string Path, double[] Transform, bool IsFixed);
 internal sealed record OutputFact(string Path, long Length, string Sha256);
+internal sealed record NodeFact(string Output, int Depth, bool IsRoot, int ExpectedChildren, int ActualComponents);

@@ -28,14 +28,47 @@ public static class PreflightValidator
             throw new InvalidDataException("V3.0 装配转换仅支持外界模式。");
         if (!Path.IsPathFullyQualified(request.SourceAssemblyPath)
             || !File.Exists(request.SourceAssemblyPath)
-            || !string.Equals(Path.GetExtension(request.SourceAssemblyPath), ".asm", StringComparison.OrdinalIgnoreCase))
+            || !ConversionPathLayout.HasExtension(request.SourceAssemblyPath, ConversionPathLayout.SolidEdgeAssemblyExtension))
         {
             throw new FileNotFoundException("源装配体不存在或不是绝对 .asm 路径。", request.SourceAssemblyPath);
         }
 
         var outputs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         ValidateJobs(request.PartJobs, request.Overwrite, outputs, allowExistingOutputs: true);
-        ValidateOutput(request.AssemblyOutputPath, ".SLDASM", request.Overwrite, outputs);
+
+        // V3.3：嵌套时每个装配节点都有自己的输出，逐个校验；已存在不再是硬阻断，
+        // 由 Worker 的复用判定核验它是否比全部依赖都新（与零件同口径）。
+        if (request.Nodes is { Count: > 0 })
+        {
+            var rootCount = 0;
+            foreach (var node in request.Nodes)
+            {
+                if (!Path.IsPathFullyQualified(node.SourceAssemblyPath)
+                    || !File.Exists(node.SourceAssemblyPath)
+                    || !ConversionPathLayout.HasExtension(node.SourceAssemblyPath, ConversionPathLayout.SolidEdgeAssemblyExtension))
+                {
+                    throw new FileNotFoundException("装配节点的源文件不存在或不是绝对 .asm 路径。", node.SourceAssemblyPath);
+                }
+                if (node.Children.Count == 0)
+                    throw new InvalidDataException($"装配节点没有任何子项：{node.SourceAssemblyPath}");
+                foreach (var child in node.Children)
+                {
+                    if (child.LocalTransform.Length != 16 || child.LocalTransform.Any(value => !double.IsFinite(value)))
+                        throw new InvalidDataException($"子项局部矩阵无效：{node.SourceAssemblyPath} → {child.Name}");
+                }
+                if (node.IsRoot)
+                    rootCount++;
+                ValidateOutput(node.OutputPath, ConversionArtifactKind.SolidWorksAssembly, request.Overwrite, outputs, allowExisting: true);
+            }
+
+            if (rootCount != 1)
+                throw new InvalidDataException($"装配节点必须恰好有一个顶层，实得 {rootCount} 个。");
+        }
+        else
+        {
+            ValidateOutput(request.AssemblyOutputPath, ConversionArtifactKind.SolidWorksAssembly, request.Overwrite, outputs);
+        }
+
         if (request.Occurrences.Count == 0)
             throw new InvalidDataException("装配实例清单为空。");
 
@@ -66,10 +99,10 @@ public static class PreflightValidator
             count++;
             if (!Path.IsPathFullyQualified(job.SourcePath) || !File.Exists(job.SourcePath))
                 throw new FileNotFoundException("源文件不存在或不是绝对路径。", job.SourcePath);
-            if (!string.Equals(Path.GetExtension(job.SourcePath), ".par", StringComparison.OrdinalIgnoreCase))
+            if (!ConversionPathLayout.HasExtension(job.SourcePath, ConversionPathLayout.SolidEdgePartExtension))
                 throw new InvalidDataException($"输入不是 Solid Edge .par 文件：{job.SourcePath}");
-            ValidateOutput(job.XtPath, ".x_t", overwrite, outputs, allowExistingOutputs);
-            ValidateOutput(job.SolidWorksPath, ".SLDPRT", overwrite, outputs, allowExistingOutputs);
+            ValidateOutput(job.XtPath, ConversionArtifactKind.Xt, overwrite, outputs, allowExistingOutputs);
+            ValidateOutput(job.SolidWorksPath, ConversionArtifactKind.SolidWorksPart, overwrite, outputs, allowExistingOutputs);
         }
         if (count == 0)
             throw new InvalidOperationException("没有选中可转换文件。");
@@ -77,15 +110,15 @@ public static class PreflightValidator
 
     private static void ValidateOutput(
         string path,
-        string extension,
+        ConversionArtifactKind artifact,
         bool overwrite,
         ISet<string> outputs,
         bool allowExisting = false)
     {
         if (!Path.IsPathFullyQualified(path))
             throw new InvalidDataException($"输出不是绝对路径：{path}");
-        if (!string.Equals(Path.GetExtension(path), extension, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidDataException($"输出扩展名必须是 {extension}：{path}");
+        if (!ConversionPathLayout.HasExtension(path, artifact))
+            throw new InvalidDataException($"输出扩展名必须是 {ConversionPathLayout.GetExtension(artifact)}：{path}");
         if (!outputs.Add(Path.GetFullPath(path)))
             throw new InvalidDataException($"批次中存在重复输出：{path}");
         if (!allowExisting && !overwrite && File.Exists(path))

@@ -8,11 +8,7 @@ namespace SE2SW;
 public sealed class WorkerClient
 {
     private static readonly TimeSpan StageInactivityTimeout = TimeSpan.FromSeconds(180);
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-    };
+    private static readonly JsonSerializerOptions JsonOptions = WorkerProtocol.CreateJsonOptions();
 
     public static string WorkerPath
         => WorkerLocator.Locate();
@@ -22,7 +18,7 @@ public sealed class WorkerClient
         Action<WorkerEvent> progress,
         CancellationToken cancellationToken)
         => await RunWorkerAsync(
-            "--request",
+            WorkerProtocol.PartsRequestVerb,
             request.BatchId,
             request,
             progress,
@@ -37,7 +33,7 @@ public sealed class WorkerClient
         ArgumentNullException.ThrowIfNull(progress);
 
         var exitCode = await RunWorkerAsync(
-            "--probe-assembly",
+            WorkerProtocol.AssemblyProbeVerb,
             request.BatchId,
             request,
             progress,
@@ -60,7 +56,7 @@ public sealed class WorkerClient
         Action<WorkerEvent> progress,
         CancellationToken cancellationToken)
         => await RunWorkerAsync(
-            "--assembly",
+            WorkerProtocol.AssemblyBuildVerb,
             request.BatchId,
             request,
             progress,
@@ -81,9 +77,9 @@ public sealed class WorkerClient
 
         var requestDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "OneHistoryStudio",
-            "SE2SW",
-            "requests");
+            SE2SWIdentity.HostApplicationDataDirectoryName,
+            SE2SWIdentity.ModuleApplicationDataDirectoryName,
+            SE2SWIdentity.RequestsDirectoryName);
         Directory.CreateDirectory(requestDirectory);
         var requestPath = Path.Combine(requestDirectory, batchId + ".json");
         var cancellationPath = Path.Combine(requestDirectory, batchId + ".cancel");
@@ -109,7 +105,7 @@ public sealed class WorkerClient
             };
             process.StartInfo.ArgumentList.Add(verb);
             process.StartInfo.ArgumentList.Add(requestPath);
-            process.StartInfo.ArgumentList.Add("--cancel");
+            process.StartInfo.ArgumentList.Add(WorkerProtocol.CancellationArgument);
             process.StartInfo.ArgumentList.Add(cancellationPath);
             if (!process.Start())
                 throw new InvalidOperationException("无法启动 SE2SW 工作进程。");

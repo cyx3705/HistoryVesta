@@ -59,7 +59,11 @@ internal static class SolidEdgeExporter
             foreach (var job in request.Jobs)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                reporter.Report(job.Id, ConversionStage.SolidEdgeExport, "正在导出 XT。");
+                reporter.Report(
+                    job.Id,
+                    ConversionStage.SolidEdgeExport,
+                    "正在导出 XT。",
+                    artifact: ConversionArtifactKind.Xt);
                 object? documentObject = null;
                 string? temporaryPath = null;
                 try
@@ -92,7 +96,8 @@ internal static class SolidEdgeExporter
                     reporter.Report(
                         job.Id,
                         ConversionStage.SolidEdgeExport,
-                        $"XT 导出完成，{output.Length} 字节，FORMAT={output.ParasolidFormat}。");
+                        $"XT 导出完成，{output.Length} 字节，FORMAT={output.ParasolidFormat}。",
+                        artifact: ConversionArtifactKind.Xt);
                 }
                 catch (Exception ex) when (cancellationToken.IsCancellationRequested)
                 {
@@ -148,7 +153,7 @@ internal static class SolidEdgeExporter
     private static ConversionErrorClass ClassifyExportError(Exception exception)
     {
         if (exception is FileNotFoundException missing)
-            return string.Equals(Path.GetExtension(missing.FileName), ".x_t", StringComparison.OrdinalIgnoreCase)
+            return ConversionPathLayout.HasExtension(missing.FileName ?? string.Empty, ConversionArtifactKind.Xt)
                 ? ConversionErrorClass.OutputEmpty
                 : ConversionErrorClass.InputMissing;
         if (exception is TimeoutException)

@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
+using SE2SW.Contracts;
 
 namespace SE2SW.Worker;
 
@@ -150,9 +151,26 @@ internal sealed class SolidWorksInteropBridge : IDisposable
 
     public string InstallDirectory => _installDirectory;
 
+    // swDocumentTypes_e
+    private const int DocumentTypePart = 1;
+    private const int DocumentTypeAssembly = 2;
+
     public object? OpenPart(string path, out int errors, out int warnings)
+        => OpenDocument(path, DocumentTypePart, out errors, out warnings);
+
+    /// <summary>V3.3：嵌套装配要把子装配 .SLDASM 也打开，文档类型不能再写死为零件。</summary>
+    public object? OpenComponentDocument(string path, out int errors, out int warnings)
+        => OpenDocument(
+            path,
+            ConversionPathLayout.HasExtension(path, ConversionArtifactKind.SolidWorksAssembly)
+                ? DocumentTypeAssembly
+                : DocumentTypePart,
+            out errors,
+            out warnings);
+
+    private object? OpenDocument(string path, int documentType, out int errors, out int warnings)
     {
-        object?[] parameters = [path, 1, 1, string.Empty, 0, 0];
+        object?[] parameters = [path, documentType, 1, string.Empty, 0, 0];
         var model = Invoke(_applicationInterface, _application, "OpenDoc6", parameters);
         errors = Convert.ToInt32(parameters[4]);
         warnings = Convert.ToInt32(parameters[5]);

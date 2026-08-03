@@ -42,6 +42,7 @@ internal static class SolidEdgeAssemblyExplorer
             var occurrences = new List<AssemblyOccurrence>();
             var warnings = new List<string>();
             var modelingModes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var rootChildren = new List<AssemblyChild>();
             dynamic top = document.Occurrences;
             try
             {
@@ -51,6 +52,8 @@ internal static class SolidEdgeAssemblyExplorer
                     dynamic occurrence = top.Item(index);
                     try
                     {
+                        // 顶层的参考系就是世界系，所以顶层的一级子项局部矩阵 == 世界矩阵，直接取。
+                        rootChildren.Add(ReadChild(occurrence, Path.GetDirectoryName(sourceAssemblyPath)!));
                         ReadOccurrence(
                             occurrence,
                             null,
@@ -85,6 +88,26 @@ internal static class SolidEdgeAssemblyExplorer
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(path => path, StringComparer.CurrentCultureIgnoreCase)
                 .ToArray();
+
+            // V3.3 方案 A：把每个唯一子装配作为**独立顶层文档**打开，读到的矩阵天然就是
+            // 该文档坐标系下的局部矩阵，不需要拿父级世界矩阵求逆换算。
+            var documentReadings = new List<AssemblyDocumentReading>
+            {
+                new(Path.GetFullPath(sourceAssemblyPath), rootChildren, []),
+            };
+            var subAssemblyPaths = occurrences
+                .Where(item => item.IsSubAssembly && !item.IsSuppressed && File.Exists(item.SourcePath))
+                .Select(item => Path.GetFullPath(item.SourcePath))
+                .Where(path => ConversionPathLayout.HasExtension(path, ConversionPathLayout.SolidEdgeAssemblyExtension))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(path => path, StringComparer.CurrentCultureIgnoreCase)
+                .ToArray();
+            foreach (var path in subAssemblyPaths)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                documentReadings.Add(ReadDocument(application, documents, path, warnings, cancellationToken));
+            }
+
             return new AssemblyProbeResult(
                 Path.GetFullPath(sourceAssemblyPath),
                 occurrences,
@@ -93,7 +116,8 @@ internal static class SolidEdgeAssemblyExplorer
                 occurrences.Count(item => item.Diagnostic?.Contains("引用不存在", StringComparison.Ordinal) == true),
                 uniqueParts.Count(path => modelingModes.GetValueOrDefault(path) == 2),
                 uniqueParts.Count(path => modelingModes.GetValueOrDefault(path) == 1),
-                warnings);
+                warnings,
+                documentReadings);
         }
         catch (ClassifiedConversionException)
         {
@@ -123,6 +147,111 @@ internal static class SolidEdgeAssemblyExplorer
             if (ownership.OwnsInstance)
                 _ = ownership.WaitForOwnedExit(TimeSpan.FromSeconds(30));
         }
+    }
+
+    /// <summary>
+    /// V3.3：把一个子装配 <c>.asm</c> 作为独立顶层文档打开，只读它的**一级** occurrence。
+    ///
+    /// 这里刻意不递归：每层只关心本层的直接子项，更深的层由它自己那一次读取负责。
+    /// 需要祖先信息才能算出的结果，一定是把世界矩阵当成了局部矩阵。
+    /// </summary>
+    private static AssemblyDocumentReading ReadDocument(
+        dynamic application,
+        dynamic documents,
+        string assemblyPath,
+        List<string> warnings,
+        CancellationToken cancellationToken)
+    {
+        var hash = ComputeSha256(assemblyPath);
+        var directory = Path.GetDirectoryName(assemblyPath)!;
+        var children = new List<AssemblyChild>();
+        var local = new List<string>();
+        object? documentObject = null;
+        try
+        {
+            documentObject = documents.Open(assemblyPath);
+            dynamic document = documentObject;
+            application.DoIdle();
+
+            dynamic top = document.Occurrences;
+            try
+            {
+                for (var index = 1; index <= Convert.ToInt32(top.Count); index++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    dynamic occurrence = top.Item(index);
+                    try
+                    {
+                        children.Add(ReadChild(occurrence, directory));
+                    }
+                    finally
+                    {
+                        ComRelease.Final(occurrence);
+                    }
+                }
+            }
+            finally
+            {
+                ComRelease.Final(top);
+            }
+
+            document.Close(false);
+            application.DoIdle();
+            ComRelease.Final(documentObject);
+            documentObject = null;
+            if (!CryptographicOperations.FixedTimeEquals(hash, ComputeSha256(assemblyPath)))
+                throw new InvalidDataException($"读取子装配后源文件内容发生变化：{assemblyPath}");
+        }
+        catch (ClassifiedConversionException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new ClassifiedConversionException(
+                ComErrorClassifier.Classify(ex, ConversionErrorClass.AssemblyOpenFailed),
+                $"打开子装配失败：{assemblyPath}：{ex.Message}",
+                ex);
+        }
+        finally
+        {
+            if (documentObject is not null)
+            {
+                TryRun(() => ((dynamic)documentObject).Close(false));
+                ComRelease.Final(documentObject);
+            }
+        }
+
+        if (children.Count == 0)
+            warnings.Add($"子装配没有可读的一级实例：{assemblyPath}");
+        return new AssemblyDocumentReading(assemblyPath, children, local);
+    }
+
+    /// <summary>把一个一级 occurrence 读成 <see cref="AssemblyChild"/>。矩阵取值不做任何换算。</summary>
+    private static AssemblyChild ReadChild(dynamic occurrence, string parentDirectory)
+    {
+        var name = Convert.ToString(occurrence.Name) ?? "Occurrence";
+        var sourcePath = NormalizePath(Convert.ToString(occurrence.PartFileName) ?? string.Empty, parentDirectory);
+        var isSubAssembly = TryGet(() => Convert.ToBoolean(occurrence.Subassembly), false);
+        var hidden = !TryGet(() => Convert.ToBoolean(occurrence.Visible), true);
+        var diagnostics = new List<string>();
+        if (!File.Exists(sourcePath))
+            diagnostics.Add("引用不存在");
+        if (TryGet(() => Convert.ToBoolean(occurrence.IsPatternItem), false))
+            diagnostics.Add("阵列成员");
+        if (TryGet(() => Convert.ToBoolean(occurrence.IsAdjustablePart), false)
+            || TryGet(() => Convert.ToBoolean(occurrence.Adjustable), false))
+            diagnostics.Add("可调件");
+        if (hidden)
+            diagnostics.Add("隐藏件");
+
+        return new AssemblyChild(
+            name,
+            sourcePath,
+            isSubAssembly,
+            hidden,
+            ReadMatrix(occurrence),
+            diagnostics.Count == 0 ? null : string.Join("；", diagnostics));
     }
 
     private static void ReadOccurrence(
@@ -185,7 +314,7 @@ internal static class SolidEdgeAssemblyExplorer
         }
         if (!isSubAssembly)
         {
-            if (!string.Equals(Path.GetExtension(sourcePath), ".par", StringComparison.OrdinalIgnoreCase))
+            if (!ConversionPathLayout.HasExtension(sourcePath, ConversionPathLayout.SolidEdgePartExtension))
             {
                 warnings.Add($"跳过 V3.0 不支持的引用：{sourcePath}");
                 return;
