@@ -22,6 +22,7 @@ internal static class SolidWorksNestedAssemblyBuilder
         IReadOnlyDictionary<string, ConversionJob> successfulJobs,
         int partConverted,
         int partFailed,
+        int skippedSuppressed,
         WorkerReporter reporter,
         CancellationToken cancellationToken,
         IReadOnlyList<string>? failedPartPaths = null)
@@ -31,9 +32,7 @@ internal static class SolidWorksNestedAssemblyBuilder
         object? applicationObject = null;
         SolidWorksInteropBridge? interop = null;
 
-        var componentTotal = 0;
-        var componentInserted = 0;
-        var componentFixed = 0;
+        var metrics = new NestedAssemblyBuildMetrics(skippedSuppressed);
         var subAssemblyBuilt = 0;
         var maxOriginDeviation = 0d;
         var maxRotationDeviation = 0d;
@@ -72,7 +71,7 @@ internal static class SolidWorksNestedAssemblyBuilder
             foreach (var node in nodes)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                componentTotal += node.Children.Count;
+                metrics.AddPlannedNode(node);
 
                 if (AssemblyNodeReusePlanner.CanReuse(node))
                 {
@@ -81,8 +80,7 @@ internal static class SolidWorksNestedAssemblyBuilder
                         $"复用已有装配产物，不再重复生成：{node.OutputPath}",
                         artifact: ConversionArtifactKind.SolidWorksAssembly,
                         reuseKind: ReuseKind.ExistingSolidWorksAssembly);
-                    componentInserted += node.Children.Count;
-                    componentFixed += node.Children.Count;
+                    metrics.AddReusedNode(node);
                     if (!node.IsRoot)
                         subAssemblyBuilt++;
                     continue;
@@ -97,8 +95,7 @@ internal static class SolidWorksNestedAssemblyBuilder
                     reporter,
                     cancellationToken,
                     skippedChildren);
-                componentInserted += result.Inserted;
-                componentFixed += result.Fixed;
+                metrics.AddBuiltNode(result.Inserted, result.Fixed);
                 maxOriginDeviation = Math.Max(maxOriginDeviation, result.MaxOriginDeviation);
                 maxRotationDeviation = Math.Max(maxRotationDeviation, result.MaxRotationDeviation);
                 if (!node.IsRoot)
@@ -106,18 +103,20 @@ internal static class SolidWorksNestedAssemblyBuilder
             }
 
             return new AssemblyOutcome(
-                componentTotal,
-                componentInserted,
-                componentFixed,
+                metrics.ComponentTotal,
+                metrics.ComponentInserted,
+                metrics.ComponentFixed,
                 partConverted,
                 partFailed,
-                0,
+                metrics.SkippedSuppressed,
                 maxOriginDeviation,
                 stopwatch.ElapsedMilliseconds,
                 BuildDiagnostic(nodes, maxRotationDeviation, reused, skippedChildren, failedPartPaths),
                 SubAssemblyTotal: nodes.Count(node => !node.IsRoot),
                 SubAssemblyBuilt: subAssemblyBuilt,
-                MaxDepth: nodes.Count == 0 ? 1 : nodes.Max(node => node.Depth));
+                MaxDepth: nodes.Count == 0 ? 1 : nodes.Max(node => node.Depth),
+                ReusedAssemblyCount: metrics.ReusedAssemblyCount,
+                ReusedAssemblyPlannedComponentCount: metrics.ReusedAssemblyPlannedComponentCount);
         }
         finally
         {

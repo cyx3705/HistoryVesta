@@ -25,7 +25,7 @@ public static class PreflightValidator
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.Mode != ConversionMode.External)
-            throw new InvalidDataException("V3.0 装配转换仅支持外界模式。");
+            throw new InvalidDataException("当前装配转换仅支持外界模式。");
         if (!Path.IsPathFullyQualified(request.SourceAssemblyPath)
             || !File.Exists(request.SourceAssemblyPath)
             || !ConversionPathLayout.HasExtension(request.SourceAssemblyPath, ConversionPathLayout.SolidEdgeAssemblyExtension))

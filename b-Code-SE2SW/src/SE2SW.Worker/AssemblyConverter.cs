@@ -84,6 +84,7 @@ internal static class AssemblyConverter
                 successfulJobs,
                 request.PartJobs.Count - partFailed,
                 partFailed,
+                request.Occurrences.Count(item => item.IsSuppressed),
                 reporter,
                 cancellationToken,
                 failedPartPaths)
@@ -101,13 +102,20 @@ internal static class AssemblyConverter
                 cancellationToken,
                 failedPartPaths);
 
+        var completionMessage = outcome.SubAssemblyTotal > 0
+            ? $"装配转换完成：{outcome.SubAssemblyBuilt + 1} 个装配文件、最大 {outcome.MaxDepth} 层，"
+                + $"插入 {outcome.ComponentInserted}/{outcome.ComponentTotal}，固定 {outcome.ComponentFixed}。"
+            : $"装配转换完成：插入 {outcome.ComponentInserted}/{outcome.ComponentTotal}，固定 {outcome.ComponentFixed}。";
+        if (outcome.ReusedAssemblyCount > 0)
+        {
+            completionMessage += $" 本次复用 {outcome.ReusedAssemblyCount} 个已有装配；"
+                + $"其中按计划含 {outcome.ReusedAssemblyPlannedComponentCount} 个直接组件，未在本次运行中重新打开核验。";
+        }
+
         reporter.Report(
             null,
             ConversionStage.Completed,
-            outcome.SubAssemblyTotal > 0
-                ? $"装配转换完成：{outcome.SubAssemblyBuilt + 1} 个装配文件、最大 {outcome.MaxDepth} 层，"
-                    + $"插入 {outcome.ComponentInserted}/{outcome.ComponentTotal}，固定 {outcome.ComponentFixed}。"
-                : $"装配转换完成：插入 {outcome.ComponentInserted}/{outcome.ComponentTotal}，固定 {outcome.ComponentFixed}。",
+            completionMessage,
             assembly: outcome,
             artifact: ConversionArtifactKind.SolidWorksAssembly);
         return partFailed == 0 ? 0 : 1;

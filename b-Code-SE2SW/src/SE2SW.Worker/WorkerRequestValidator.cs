@@ -37,7 +37,7 @@ internal static class WorkerRequestValidator
     public static void Validate(AssemblyBatchRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.BatchId) || request.Mode != ConversionMode.External)
-            throw new InvalidDataException("V3.0 装配转换仅支持外界模式。");
+            throw new InvalidDataException("当前装配转换仅支持外界模式。");
         ValidatePath(request.SourceAssemblyPath, ConversionPathLayout.SolidEdgeAssemblyExtension, mustExist: true);
         ValidatePath(request.AssemblyOutputPath, ConversionPathLayout.GetExtension(ConversionArtifactKind.SolidWorksAssembly), mustExist: false);
         if (!request.Overwrite && File.Exists(request.AssemblyOutputPath))

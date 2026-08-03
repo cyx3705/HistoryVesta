@@ -206,4 +206,7 @@ public sealed record AssemblyOutcome(
     // V3.3 装配嵌套。
     int SubAssemblyTotal = 0,
     int SubAssemblyBuilt = 0,
-    int MaxDepth = 1);
+    int MaxDepth = 1,
+    // V3.3.2: Reused assemblies are not reopened, inserted, or fixed during this run.
+    int ReusedAssemblyCount = 0,
+    int ReusedAssemblyPlannedComponentCount = 0);

@@ -34,6 +34,8 @@ try
     TestAssemblyPlannerNesting(root);
     TestAssemblyPlannerRejectsBrokenGraph(root);
     TestAssemblyNodeReuse(root);
+    TestNestedAssemblyMetrics();
+    TestAssemblyModeValidationText();
     TestAssemblyViewModelState(root);
     TestAssemblyActiveRunDisposal(root);
     TestWorkspaceModes();
@@ -52,10 +54,10 @@ finally
 
 static void TestSharedContractsAndVersion()
 {
-    Equal("3.3.1", typeof(ModuleInfo).Assembly.GetName().Version?.ToString(3), "UI 程序集版本必须来自唯一版本源");
-    Equal("3.3.1", typeof(ConversionJob).Assembly.GetName().Version?.ToString(3), "Contracts 程序集版本必须来自唯一版本源");
-    Equal("3.3.1", typeof(WorkerRequestValidator).Assembly.GetName().Version?.ToString(3), "Worker 程序集版本必须来自唯一版本源");
-    Equal("3.3.1", new ModuleInfo().Version, "模块运行时版本不得另存字符串副本");
+    Equal("3.3.2", typeof(ModuleInfo).Assembly.GetName().Version?.ToString(3), "UI 程序集版本必须来自唯一版本源");
+    Equal("3.3.2", typeof(ConversionJob).Assembly.GetName().Version?.ToString(3), "Contracts 程序集版本必须来自唯一版本源");
+    Equal("3.3.2", typeof(WorkerRequestValidator).Assembly.GetName().Version?.ToString(3), "Worker 程序集版本必须来自唯一版本源");
+    Equal("3.3.2", new ModuleInfo().Version, "模块运行时版本不得另存字符串副本");
 
     True(WorkerProtocol.IsKnownVerb(WorkerProtocol.PartsRequestVerb), "零件 Worker 动词必须由共享合同认可");
     True(WorkerProtocol.IsKnownVerb(WorkerProtocol.AssemblyProbeVerb), "装配探查动词必须由共享合同认可");
@@ -862,6 +864,81 @@ static void TestAssemblyNodeReuse(string root)
     Throws<ClassifiedConversionException>(() => AssemblyNodeReusePlanner.CanReuse(node));
 }
 
+static void TestNestedAssemblyMetrics()
+{
+    var identity = new[]
+    {
+        1d, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1,
+    };
+    var reusedNode = new AssemblyNode(
+        @"C:\fixture\Reused.asm",
+        @"C:\fixture\Reused.SLDASM",
+        false,
+        2,
+        [
+            new AssemblyChild("A:1", @"C:\fixture\A.par", false, false, identity),
+            new AssemblyChild("B:1", @"C:\fixture\B.par", false, false, identity),
+        ],
+        []);
+    var builtNode = new AssemblyNode(
+        @"C:\fixture\Top.asm",
+        @"C:\fixture\Top.SLDASM",
+        true,
+        1,
+        [new AssemblyChild("Reused:1", reusedNode.SourceAssemblyPath, true, false, identity)],
+        [reusedNode.SourceAssemblyPath]);
+
+    var metrics = new NestedAssemblyBuildMetrics(skippedSuppressed: 3);
+    metrics.AddPlannedNode(reusedNode);
+    metrics.AddReusedNode(reusedNode);
+    metrics.AddPlannedNode(builtNode);
+    metrics.AddBuiltNode(inserted: 1, fixedCount: 1);
+
+    Equal(3, metrics.ComponentTotal, "嵌套组件总数必须覆盖构建与复用节点的计划直接子项");
+    Equal(1, metrics.ComponentInserted, "复用节点不得伪造为本次已插入组件");
+    Equal(1, metrics.ComponentFixed, "复用节点不得伪造为本次已固定组件");
+    Equal(1, metrics.ReusedAssemblyCount, "复用装配数必须单列");
+    Equal(2, metrics.ReusedAssemblyPlannedComponentCount, "复用装配内的计划直接子项必须单列为非实测数据");
+    Equal(3, metrics.SkippedSuppressed, "嵌套路径的抑制件数不得静默归零");
+
+    var outcome = new AssemblyOutcome(
+        metrics.ComponentTotal,
+        metrics.ComponentInserted,
+        metrics.ComponentFixed,
+        0,
+        0,
+        metrics.SkippedSuppressed,
+        0,
+        0,
+        null,
+        ReusedAssemblyCount: metrics.ReusedAssemblyCount,
+        ReusedAssemblyPlannedComponentCount: metrics.ReusedAssemblyPlannedComponentCount);
+    var json = JsonSerializer.Serialize(outcome, WorkerProtocol.CreateJsonOptions());
+    var roundTrip = JsonSerializer.Deserialize<AssemblyOutcome>(json, WorkerProtocol.CreateJsonOptions());
+    Equal(1, roundTrip?.ComponentInserted, "实测插入计数必须可经 Worker JSON 往返");
+    Equal(1, roundTrip?.ReusedAssemblyCount, "复用装配计数必须可经 Worker JSON 往返");
+    Equal(2, roundTrip?.ReusedAssemblyPlannedComponentCount, "复用装配计划组件数必须可经 Worker JSON 往返");
+    Equal(3, roundTrip?.SkippedSuppressed, "抑制件数必须可经 Worker JSON 往返");
+}
+
+static void TestAssemblyModeValidationText()
+{
+    var request = new AssemblyBatchRequest(
+        "mode-smoke",
+        ConversionMode.Ohs,
+        @"C:\fixture\Top.asm",
+        @"C:\fixture\SW\Top.SLDASM",
+        [],
+        []);
+    var preflight = Capture<InvalidDataException>(() => PreflightValidator.ValidateAssemblyRequest(request));
+    var worker = Capture<InvalidDataException>(() => WorkerRequestValidator.Validate(request));
+    True(preflight.Message.Contains("当前装配转换", StringComparison.Ordinal), "UI 预检不得继续暴露 V3.0 过时文案");
+    True(worker.Message.Contains("当前装配转换", StringComparison.Ordinal), "Worker 预检不得继续暴露 V3.0 过时文案");
+}
+
 static void TestUiModuleRegistration()
 {
     var registrar = new RecordingShellUiRegistrar();
@@ -1185,6 +1262,19 @@ static void Throws<T>(Action action) where T : Exception
     catch (T)
     {
         return;
+    }
+    throw new InvalidOperationException($"Expected exception {typeof(T).Name}");
+}
+
+static T Capture<T>(Action action) where T : Exception
+{
+    try
+    {
+        action();
+    }
+    catch (T exception)
+    {
+        return exception;
     }
     throw new InvalidOperationException($"Expected exception {typeof(T).Name}");
 }

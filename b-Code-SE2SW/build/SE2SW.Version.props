@@ -1,7 +1,7 @@
 <Project>
-  <!-- V3.3.1 唯一可编辑的发布版本源。 -->
+  <!-- V3.3.2 唯一可编辑的发布版本源。 -->
   <PropertyGroup>
-    <SE2SWVersion>3.3.1</SE2SWVersion>
+    <SE2SWVersion>3.3.2</SE2SWVersion>
     <Version>$(SE2SWVersion)</Version>
     <AssemblyVersion>$(SE2SWVersion).0</AssemblyVersion>
     <FileVersion>$(SE2SWVersion).0</FileVersion>
