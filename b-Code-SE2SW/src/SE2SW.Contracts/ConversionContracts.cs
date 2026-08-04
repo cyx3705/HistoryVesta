@@ -65,6 +65,7 @@ public enum ConversionErrorClass
     MateRejected,
     MateTypeUnsupported,
     FeatureRecognitionTimeout,
+    FeatureRecognitionSemanticMismatch,
 }
 
 public static class FeatureRecognitionPolicy
@@ -124,7 +125,10 @@ public sealed record FeatureOutcome(
     bool GeometryChanged = false,
     // FeatureWorks 的 COM 服务器已故障。调用方必须重建会话，
     // 否则后续每个零件都会对着同一个死对象重试到批次结束。
-    bool SessionFaulted = false);
+    bool SessionFaulted = false,
+    // FeatureWorks 返回成功，但特征树包含钣金类型或仍只有导入体。
+    // 几何可能未改变，调用方仍必须丢弃该文档并重新导入为哑实体。
+    bool SemanticMismatch = false);
 
 public sealed record WorkerEvent(
     string BatchId,

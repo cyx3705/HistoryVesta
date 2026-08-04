@@ -27,28 +27,38 @@ internal sealed class FeatureRecognizer : IDisposable
     // 否则会生成带重建错误的特征，宁可整体降级为哑实体。
     private const short FwAddConstraintsToSketch = 1;
 
-    // fwAutomaticRecognitionOptions_e 的全部 10 位。
-    // 实测：只传实体类选项（1|4|8|16|32 = 61）恒返回 0，必须传满 0x3FF。
-    private const int AutomaticRecognitionAllOptions = 0x3FF;
-
+    // 普通 .par 只允许机械特征：拉伸、体积、旋转、孔、倒角/圆角、筋。
+    // 0x3FF 还会打开 BaseFlange/Bend/EdgeFlange/Hem，实测会把普通零件误识别成钣金。
+    internal const int ExtrudeRecognitionOption = 0x01;
+    internal const int VolumeRecognitionOption = 0x02;
+    internal const int RevolveRecognitionOption = 0x04;
+    internal const int HoleRecognitionOption = 0x08;
+    internal const int ChamferAndFilletRecognitionOption = 0x10;
+    internal const int RibRecognitionOption = 0x20;
+    internal const int StandardPartRecognitionOptions =
+        ExtrudeRecognitionOption
+        | VolumeRecognitionOption
+        | RevolveRecognitionOption
+        | HoleRecognitionOption
+        | ChamferAndFilletRecognitionOption
+        | RibRecognitionOption;
+    internal const int SheetMetalRecognitionOptions = 0x3C0;
     // swSketchFullyDefineRelationType_e 全部关系类型
     private const int AllSketchRelations = 1 | 2 | 4 | 8 | 16 | 32 | 64 | 128 | 256 | 512;
 
     // swConstrainedStatus_e
     private const int SwFullyConstrained = 3;
 
-    private const int SeedFaceAttempts = 5;
-    private const int SeedFaceRetryDelayMilliseconds = 400;
     private const int DocumentActivationAttempts = 5;
     private const int DocumentActivationDelayMilliseconds = 250;
     private const int RecognitionAttempts = 10;
     private const int RecognitionRetryDelayMilliseconds = 300;
 
     /// <summary>
-    /// 识别前后允许的体积相对偏差。特征识别**重建**实体，正确的重建体积应当逐位相同，
-    /// 这里留的余量只为浮点噪声，不为"差不多"。
+    /// FeatureWorks 会按识别结果重建实体，实测有效结果仍可能产生约 1.42e-5 的体积偏差。
+    /// 此上限覆盖已验收样件，同时继续拒绝明显改变零件形状的错误识别。
     /// </summary>
-    private const double VolumeRelativeTolerance = 1e-9;
+    internal const double MaximumFeatureWorksVolumeRelativeDeviation = 2e-5;
 
     /// <summary>
     /// COM 服务器已死的 HRESULT。实测事故：FeatureWorks 在批次中途故障后，
@@ -243,46 +253,13 @@ internal sealed class FeatureRecognizer : IDisposable
             var baselineGeometry = _interop.MeasureSolidGeometry(model);
 
             step = "RecognizeFeatureAutomatic";
-            SeedFaceSelection? seedSelection = null;
-            RecognitionAttemptResult recognition;
-            try
-            {
-                recognition = RunRecognitionAttempts(
-                    () =>
-                    {
-                        seedSelection?.Dispose();
-                        seedSelection = SelectSeedFaceWithRetry(model, cancellationToken);
-                        return seedSelection.Failure;
-                    },
-                    () =>
-                    {
-                        try
-                        {
-                            return _interop.RecognizeFeatureAutomatic(
-                                _featureWorks!,
-                                AutomaticRecognitionAllOptions);
-                        }
-                        finally
-                        {
-                            // FeatureWorks consumes the current face selection during this call.
-                            // Keep the face/body RCWs alive until it returns, then release them.
-                            seedSelection?.Dispose();
-                            seedSelection = null;
-                        }
-                    },
-                    () => StaMessagePump.PumpAndWait(RecognitionRetryDelayMilliseconds, cancellationToken),
-                    cancellationToken);
-            }
-            finally
-            {
-                seedSelection?.Dispose();
-            }
-            if (recognition.SeedFailure is not null)
-            {
-                return Degraded(0, false, stopwatch, statuses,
-                    $"无法预选种子面：{recognition.SeedFailure}；标题={documentTitle}；" +
-                    $"活动文档={_interop.GetActiveDocumentTitle()}");
-            }
+            var recognition = RunRecognitionAttempts(
+                () => _interop.ClearSelection(model),
+                () => _interop.RecognizeFeatureAutomatic(
+                    _featureWorks!,
+                    StandardPartRecognitionOptions),
+                () => StaMessagePump.PumpAndWait(RecognitionRetryDelayMilliseconds, cancellationToken),
+                cancellationToken);
 
             recognized = recognition.RecognizedFeatureCount;
             if (recognized <= 0)
@@ -295,23 +272,81 @@ internal sealed class FeatureRecognizer : IDisposable
                     $"RecognizeFeatureAutomatic 连续 {recognition.Attempts} 次返回 0。");
             }
 
+            step = "VerifyRecognitionSideEffects";
+            IReadOnlyList<FeatureTreeEntry> recognizedTree;
+            try
+            {
+                recognizedTree = _interop.ReadTopLevelFeatureTree(model);
+            }
+            catch (Exception ex)
+            {
+                return Degraded(
+                    recognized,
+                    false,
+                    stopwatch,
+                    statuses,
+                    "FeatureWorks 调用后无法确认特征树未被污染：" + ex.Message) with
+                {
+                    SemanticMismatch = true,
+                };
+            }
+            var recognitionSideEffect = DescribeSemanticMismatch(recognized, false, recognizedTree);
+            if (recognitionSideEffect is not null)
+            {
+                return Degraded(recognized, false, stopwatch, statuses, recognitionSideEffect) with
+                {
+                    SemanticMismatch = true,
+                };
+            }
+
             cancellationToken.ThrowIfCancellationRequested();
             step = "CreateFeatures";
             created = _interop.CreateFeatures(_featureWorks!, FwAddConstraintsToSketch);
             if (!created)
             {
-                return Degraded(recognized, false, stopwatch, statuses, "CreateFeatures 返回 false。");
+                return Degraded(
+                    recognized,
+                    false,
+                    stopwatch,
+                    statuses,
+                    "CreateFeatures 返回 false。");
             }
 
             step = "VerifyGeometry";
             var mismatch = DescribeGeometryMismatch(baselineGeometry, _interop.MeasureSolidGeometry(model));
             if (mismatch is not null)
             {
-                // 几何被改变了。特征树再漂亮也没有意义——交付一个形状不对的零件
-                // 比交付一个哑实体坏得多，因为用户看不出来。
-                // 标记 GeometryChanged：此刻文档里已经是错的几何，调用方必须重新导入。
                 return Degraded(recognized, true, stopwatch, statuses, mismatch) with { GeometryChanged = true };
             }
+
+            step = "VerifyFeatureTree";
+            IReadOnlyList<FeatureTreeEntry> featureTree;
+            try
+            {
+                featureTree = _interop.ReadTopLevelFeatureTree(model);
+            }
+            catch (Exception ex)
+            {
+                return Degraded(
+                    recognized,
+                    true,
+                    stopwatch,
+                    statuses,
+                    "FeatureWorks 报告识别成功，但无法读取结果特征树：" + ex.Message) with
+                {
+                    SemanticMismatch = true,
+                };
+            }
+            var semanticMismatch = DescribeSemanticMismatch(recognized, created, featureTree);
+            if (semanticMismatch is not null)
+            {
+                return Degraded(recognized, true, stopwatch, statuses, semanticMismatch) with
+                {
+                    SemanticMismatch = true,
+                };
+            }
+
+            statuses.Add($"FeatureWorks 创建 {recognized} 个特征。");
         }
         catch (OperationCanceledException)
         {
@@ -343,30 +378,6 @@ internal sealed class FeatureRecognizer : IDisposable
             statuses,
             false,
             stopwatch.ElapsedMilliseconds);
-    }
-
-    /// <summary>
-    /// 种子面必须选中，否则 RecognizeFeatureAutomatic 会静默返回 0。
-    /// 实测刚导入完就选会偶发返回 false（视图尚未就绪），因此做有界重试。
-    /// </summary>
-    private SeedFaceSelection SelectSeedFaceWithRetry(object model, CancellationToken cancellationToken)
-    {
-        var failure = "未知选择失败";
-        for (var attempt = 0; attempt < SeedFaceAttempts; attempt++)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (attempt > 0)
-                StaMessagePump.PumpAndWait(SeedFaceRetryDelayMilliseconds, cancellationToken);
-
-            _interop.ClearSelection(model);
-            var selection = _interop.SelectSeedFace(model);
-            if (selection.Failure is null)
-                return selection;
-            failure = selection.Failure;
-            selection.Dispose();
-        }
-
-        return SeedFaceSelection.Failed(failure);
     }
 
     private string? ActivateExpectedDocument(string documentTitle, CancellationToken cancellationToken)
@@ -426,10 +437,10 @@ internal sealed class FeatureRecognizer : IDisposable
 
     /// <summary>
     /// FeatureWorks 首次识别会异步初始化，同一文档前几次可能静默返回 0。
-    /// 每次调用前必须重新选择种子面，并在失败后泵送 STA 消息再等待。
+    /// 每次调用前必须清空“本地识别实体”选择，并在失败后泵送 STA 消息再等待。
     /// </summary>
     internal static RecognitionAttemptResult RunRecognitionAttempts(
-        Func<string?> selectSeedFace,
+        Action clearSelection,
         Func<int> recognize,
         Action waitBetweenAttempts,
         CancellationToken cancellationToken)
@@ -437,25 +448,21 @@ internal sealed class FeatureRecognizer : IDisposable
         for (var attempt = 1; attempt <= RecognitionAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var seedFailure = selectSeedFace();
-            if (seedFailure is not null)
-                return new RecognitionAttemptResult(0, attempt - 1, seedFailure);
-
+            clearSelection();
             var recognized = recognize();
             if (recognized > 0)
-                return new RecognitionAttemptResult(recognized, attempt, null);
+                return new RecognitionAttemptResult(recognized, attempt);
 
             if (attempt < RecognitionAttempts)
                 waitBetweenAttempts();
         }
 
-        return new RecognitionAttemptResult(0, RecognitionAttempts, null);
+        return new RecognitionAttemptResult(0, RecognitionAttempts);
     }
 
     internal readonly record struct RecognitionAttemptResult(
         int RecognizedFeatureCount,
-        int Attempts,
-        string? SeedFailure);
+        int Attempts);
 
     private static FeatureOutcome Degraded(
         int recognized,
@@ -621,7 +628,7 @@ internal sealed class FeatureRecognizer : IDisposable
             return null;
 
         var deviation = Math.Abs(result.Volume - baseline.Volume) / baseline.Volume;
-        if (deviation > VolumeRelativeTolerance)
+        if (deviation > MaximumFeatureWorksVolumeRelativeDeviation)
         {
             return $"特征识别改变了零件几何：体积 {baseline.Volume:G6} → {result.Volume:G6}"
                 + $"（相对偏差 {deviation:G3}），面数 {baseline.FaceCount} → {result.FaceCount}；已降级为哑实体。";
@@ -629,6 +636,51 @@ internal sealed class FeatureRecognizer : IDisposable
 
         return null;
     }
+
+    internal static string? DescribeSemanticMismatch(
+        int recognized,
+        bool created,
+        IReadOnlyList<FeatureTreeEntry> features)
+    {
+        var sheetMetal = features.FirstOrDefault(IsSheetMetalFeature);
+        if (!string.IsNullOrWhiteSpace(sheetMetal.TypeName))
+        {
+            return $"普通零件被误识别为钣金特征：{sheetMetal.Name} [{sheetMetal.TypeName}]；"
+                + "已丢弃错误特征树并降级为哑实体。";
+        }
+
+        if (recognized <= 0 || !created)
+            return null;
+        if (features.Count == 0)
+            return "FeatureWorks 报告识别成功，但无法读取结果特征树；已降级为哑实体。";
+
+        var imported = features.FirstOrDefault(feature => IsImportedBodyFeature(feature.TypeName));
+        if (!string.IsNullOrWhiteSpace(imported.TypeName))
+        {
+            return $"FeatureWorks 报告识别成功，但结果仍包含未识别导入体：{imported.Name} [{imported.TypeName}]；"
+                + "该特征树不等价于手工识别，已降级为哑实体。";
+        }
+
+        return null;
+    }
+
+    private static bool IsSheetMetalFeature(FeatureTreeEntry feature)
+        => IsSheetMetalFeature(feature.TypeName)
+           || feature.TypeName.Equals("CutListFolder", StringComparison.OrdinalIgnoreCase)
+           && feature.Name.StartsWith("Sheet<", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsSheetMetalFeature(string typeName)
+        => typeName.Contains("SheetMetal", StringComparison.OrdinalIgnoreCase)
+           || typeName.Contains("BaseFlange", StringComparison.OrdinalIgnoreCase)
+           || typeName.Contains("Bend", StringComparison.OrdinalIgnoreCase)
+           || typeName.Contains("EdgeFlange", StringComparison.OrdinalIgnoreCase)
+           || typeName.Contains("MiterFlange", StringComparison.OrdinalIgnoreCase)
+           || typeName.Contains("Hem", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsImportedBodyFeature(string typeName)
+        => typeName.Equals("BaseBody", StringComparison.OrdinalIgnoreCase)
+           || typeName.Contains("ImportedBody", StringComparison.OrdinalIgnoreCase)
+           || typeName.Equals("Imported", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// FeatureWorks 的 COM 服务器故障后重建会话。

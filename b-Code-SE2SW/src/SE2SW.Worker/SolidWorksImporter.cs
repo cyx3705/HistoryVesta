@@ -155,7 +155,7 @@ internal static class SolidWorksImporter
                     temporaryPath = TemporaryOutput.For(job.SolidWorksPath);
                     var importAttempt = 0;
                     var recognitionDisabled = featureWorksLost;
-                    string? geometryFailureDiagnostic = null;
+                    FeatureOutcome? rejectedRecognition = null;
                     while (true)
                     {
                         try
@@ -246,17 +246,21 @@ internal static class SolidWorksImporter
                             continue;
                         }
 
-                        // 识别把几何改坏了：文档里现在是错的形状，光报降级没用，必须重新导入。
-                        // 重试时关掉识别，拿回干净的哑实体——宁可没有特征树，也不能形状不对。
-                        if (featureOutcome is { GeometryChanged: true } && !recognitionDisabled)
+                        // 几何改变或特征树语义错误都不能交付。丢弃当前文档，关闭本件识别，
+                        // 从同一 XT 重新导入完整哑实体。
+                        if (featureOutcome is { } rejected
+                            && ShouldReimportRejectedRecognition(rejected)
+                            && !recognitionDisabled)
                         {
-                            geometryFailureDiagnostic = featureOutcome.Diagnostic;
+                            rejectedRecognition = rejected;
                             recognitionDisabled = true;
                             reporter.Report(
                                 job.Id,
                                 ConversionStage.FeatureRecognition,
-                                "特征识别改变了零件几何，正在丢弃并重新导入为哑实体。",
-                                errorClass: ConversionErrorClass.FeatureCreationFailed);
+                                rejected.SemanticMismatch
+                                    ? "特征识别结果类型错误，正在丢弃并重新导入为哑实体。"
+                                    : "特征识别改变了零件几何，正在丢弃并重新导入为哑实体。",
+                                errorClass: ClassifyRejectedRecognition(rejected));
                             TryClose(interop, modelObject);
                             ComRelease.Final(modelObject);
                             modelObject = null;
@@ -300,20 +304,20 @@ internal static class SolidWorksImporter
                         StaMessagePump.PumpAndWait(750, cancellationToken);
                     }
 
-                    if (geometryFailureDiagnostic is not null)
+                    if (rejectedRecognition is not null)
                     {
                         featureOutcome = new FeatureOutcome(
                             0, false, 0, 0, [], true, 0,
-                            "已重新导入为哑实体。原因：" + geometryFailureDiagnostic);
+                            "已重新导入为哑实体。原因：" + rejectedRecognition.Diagnostic,
+                            GeometryChanged: rejectedRecognition.GeometryChanged,
+                            SemanticMismatch: rejectedRecognition.SemanticMismatch);
                     }
 
                     if (featureOutcome is { DegradedToDumbSolid: true }
                         && !request.ContinueWhenRecognitionFails)
                     {
                         throw new ClassifiedConversionException(
-                            featureOutcome.RecognizedFeatureCount == 0
-                                ? ConversionErrorClass.FeatureRecognitionEmpty
-                                : ConversionErrorClass.FeatureCreationFailed,
+                            ClassifyRejectedRecognition(featureOutcome),
                             "特征识别未产生结果，且当前设置不允许降级为哑实体。");
                     }
 
@@ -362,10 +366,7 @@ internal static class SolidWorksImporter
                         $"转换完成，SolidWorks 零件 {output.Length} 字节。{DescribeFeatures(featureOutcome)}",
                         nativeError: saveErrors,
                         nativeWarning: saveWarnings,
-                        errorClass: featureOutcome is { SketchTotal: > 0 } outcome
-                            && outcome.SketchFullyDefined < outcome.SketchTotal
-                                ? ConversionErrorClass.SketchNotFullyDefined
-                                : ConversionErrorClass.None,
+                        errorClass: ClassifyCompletedFeatureOutcome(featureOutcome),
                         feature: featureOutcome,
                         artifact: ConversionArtifactKind.SolidWorksPart);
                 }
@@ -445,6 +446,26 @@ internal static class SolidWorksImporter
 
     internal static bool ShouldResetFeatureWorksSession(bool resetRequested, bool ownsFreshInstance)
         => resetRequested && !ownsFreshInstance;
+
+    internal static bool ShouldReimportRejectedRecognition(FeatureOutcome? outcome)
+        => outcome is { GeometryChanged: true } or { SemanticMismatch: true };
+
+    internal static ConversionErrorClass ClassifyRejectedRecognition(FeatureOutcome outcome)
+        => outcome switch
+        {
+            { SemanticMismatch: true } => ConversionErrorClass.FeatureRecognitionSemanticMismatch,
+            { RecognizedFeatureCount: 0 } => ConversionErrorClass.FeatureRecognitionEmpty,
+            _ => ConversionErrorClass.FeatureCreationFailed,
+        };
+
+    internal static ConversionErrorClass ClassifyCompletedFeatureOutcome(FeatureOutcome? outcome)
+        => outcome switch
+        {
+            { SemanticMismatch: true } => ConversionErrorClass.FeatureRecognitionSemanticMismatch,
+            { SketchTotal: > 0 } value when value.SketchFullyDefined < value.SketchTotal
+                => ConversionErrorClass.SketchNotFullyDefined,
+            _ => ConversionErrorClass.None,
+        };
 
     private static string DescribeFeatures(FeatureOutcome? outcome)
     {

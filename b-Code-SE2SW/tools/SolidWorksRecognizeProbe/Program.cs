@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -18,6 +19,7 @@ internal static class Program
     private const string ProgId = "SldWorks.Application";
     private const string FeatureWorksProgId = "FeatureWorks.FeatureWorksApp";
     private const string SolidWorksProcessName = "SLDWORKS";
+    private const int AutomaticRecognitionSelectionMark = 8;
 
     [STAThread]
     private static int Main(string[] args)
@@ -28,8 +30,23 @@ internal static class Program
         string? output = null;
         bool visible = false;
         bool skipRecognize = false;
+        bool skipFullyDefine = false;
+        bool isolatedInstance = false;
+        bool importDiagnosis = false;
+        bool nativeRecognitionCommand = false;
+        int? attachPid = null;
+        int recognizeOptions = 0x3FF;
+        int advancedOptions = (int)(fwAdvancedOptions_e.fwAdvAddConstraintsToSketch
+                                  | fwAdvancedOptions_e.fwAdvAllowWizardHoleRecognition);
+        short performanceOptions = 0;
+        short createOptions = (short)fwFeatureCreationOptions_e.fwAddConstraintsToSketch;
+        int recognitionPasses = 1;
+        int[]? recognitionSequence = null;
+        string? interactiveFeature = null;
+        string selectionMode = "first-mark8";
         string? prepareFrom = null;
         string? inspect = null;
+        string[]? expectedCoreSignature = null;
         int? exitOwnedPid = null;
 
         for (int i = 0; i < args.Length; i++)
@@ -40,8 +57,30 @@ internal static class Program
                 case "--output": output = args[++i]; break;
                 case "--visible": visible = true; break;
                 case "--skip-recognize": skipRecognize = true; break;
+                case "--skip-fully-define": skipFullyDefine = true; break;
+                case "--isolated": isolatedInstance = true; break;
+                case "--import-diagnosis": importDiagnosis = true; break;
+                case "--native-recognition-command": nativeRecognitionCommand = true; break;
+                case "--attach-pid": attachPid = int.Parse(args[++i]); break;
+                case "--options": recognizeOptions = ParseInteger(args[++i]); break;
+                case "--advanced-options": advancedOptions = ParseInteger(args[++i]); break;
+                case "--performance-options": performanceOptions = checked((short)ParseInteger(args[++i])); break;
+                case "--create-options": createOptions = checked((short)ParseInteger(args[++i])); break;
+                case "--recognition-passes": recognitionPasses = int.Parse(args[++i]); break;
+                case "--recognition-sequence":
+                    recognitionSequence = args[++i]
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .Select(ParseInteger)
+                        .ToArray();
+                    break;
+                case "--interactive-feature": interactiveFeature = args[++i]; break;
+                case "--selection": selectionMode = args[++i].ToLowerInvariant(); break;
                 case "--prepare-xt-from": prepareFrom = args[++i]; break;
                 case "--inspect": inspect = args[++i]; break;
+                case "--expect-core-signature":
+                    expectedCoreSignature = args[++i]
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    break;
                 case "--exit-owned": exitOwnedPid = int.Parse(args[++i]); break;
                 default:
                     Console.Error.WriteLine($"未知参数: {args[i]}");
@@ -56,19 +95,52 @@ internal static class Program
 
         if (inspect is not null)
         {
-            return Inspect(inspect);
+            return Inspect(inspect, attachPid, expectedCoreSignature);
         }
 
         if (input is null || output is null)
         {
-            Console.Error.WriteLine("用法: --input <abs .x_t> --output <abs .SLDPRT> [--visible] [--skip-recognize]");
+            Console.Error.WriteLine(
+                "用法: --input <abs .x_t> --output <abs .SLDPRT> "
+                + "[--isolated] [--options <0x3F|63>] [--visible] [--skip-recognize] [--skip-fully-define]");
             return 2;
         }
 
-        var result = new ProbeResult { Input = input, Output = output };
+        var result = new ProbeResult
+        {
+            Input = input,
+            Output = output,
+            IsolatedInstance = isolatedInstance,
+            ImportDiagnosisRequested = importDiagnosis,
+            NativeRecognitionCommandRequested = nativeRecognitionCommand,
+            RecognitionOptions = recognizeOptions,
+            RecognitionOptionsHex = $"0x{recognizeOptions:X}",
+            RecognitionOptionNames = DescribeRecognitionOptions(recognizeOptions),
+            AdvancedOptions = advancedOptions,
+            PerformanceOptions = performanceOptions,
+            CreateOptions = createOptions,
+            RequestedRecognitionPasses = recognitionPasses,
+            SelectionMode = selectionMode,
+            RecognitionSequence = recognitionSequence ?? [],
+            InteractiveFeatureType = interactiveFeature,
+        };
+
+        if (selectionMode is not ("none" or "first-mark0" or "first-mark8")
+            || recognitionPasses is < 1 or > 10
+            || recognitionSequence is { Length: 0 }
+            || (interactiveFeature is not null && (recognitionSequence is not null || recognitionPasses != 1))
+            || (nativeRecognitionCommand && (interactiveFeature is not null || recognitionSequence is not null))
+            || (isolatedInstance && attachPid is not null))
+        {
+            Console.Error.WriteLine($"未知选择策略: {selectionMode}");
+            return 2;
+        }
         var sw = Stopwatch.StartNew();
         ISldWorks? app = null;
         ModelDoc2? model = null;
+        Process? ownedProcess = null;
+        Process? attachedProcess = null;
+        string? previousActiveTitle = null;
         int[] before = GetPids();
 
         try
@@ -82,16 +154,62 @@ internal static class Program
                 ?? throw new InvalidOperationException($"ProgID 未注册：{ProgId}");
             result.Clsid = type.GUID.ToString("B").ToUpperInvariant();
 
-            app = (ISldWorks)Activator.CreateInstance(type)!;
+            if (attachPid is int existingPid)
+            {
+                attachedProcess = Process.GetProcessById(existingPid);
+                app = BindByPid(attachedProcess, TimeSpan.FromSeconds(15))
+                    ?? throw new TimeoutException($"无法按 PID {existingPid} 附着现有 SolidWorks 实例。");
+                result.AttachedPid = existingPid;
+                previousActiveTitle = (app.ActiveDoc as ModelDoc2)?.GetTitle();
+                result.PreviousActiveDocTitle = previousActiveTitle;
+            }
+            else if (isolatedInstance)
+            {
+                var executable = ResolveSolidWorksExecutable(type)
+                    ?? throw new InvalidOperationException("无法从 COM 注册解析 SLDWORKS.exe。");
+                ownedProcess = Process.Start(new ProcessStartInfo
+                {
+                    FileName = executable,
+                    UseShellExecute = false,
+                }) ?? throw new InvalidOperationException("启动隔离 SolidWorks 返回 null。");
+                app = BindByPid(ownedProcess, TimeSpan.FromSeconds(120))
+                    ?? throw new TimeoutException($"无法按 PID {ownedProcess.Id} 绑定隔离 SolidWorks 实例。");
+                result.NewPids = [ownedProcess.Id];
+                result.CreatedNewInstance = true;
+            }
+            else
+            {
+                app = (ISldWorks)Activator.CreateInstance(type)!;
+            }
             result.TimingsMs["AppLaunch"] = Mark(sw);
 
-            int[] after = GetPids();
-            result.NewPids = after.Except(before).ToArray();
-            result.CreatedNewInstance = result.NewPids.Length > 0;
+            if (!isolatedInstance)
+            {
+                int[] after = GetPids();
+                result.NewPids = after.Except(before).ToArray();
+                result.CreatedNewInstance = result.NewPids.Length > 0;
+            }
             result.PreexistingPids = before;
 
-            app.Visible = visible;
+            if (attachPid is null)
+                app.Visible = visible;
             result.SolidWorksRevision = app.RevisionNumber();
+
+            // FeatureWorks registers an in-proc server as ".\\fworks\\fworks.dll".
+            // Resolve that relative COM path against the SOLIDWORKS install root, not the
+            // caller's project directory.
+            var installedFeatureWorksDll = ResolveFeatureWorksDll();
+            var featureWorksDirectory = installedFeatureWorksDll is null
+                ? null
+                : Path.GetDirectoryName(installedFeatureWorksDll);
+            var solidWorksInstallDirectory = featureWorksDirectory is null
+                ? null
+                : Directory.GetParent(featureWorksDirectory)?.FullName;
+            if (solidWorksInstallDirectory is not null)
+            {
+                System.Environment.CurrentDirectory = solidWorksInstallDirectory;
+                result.Notes.Add("FeatureWorks COM 工作目录=" + solidWorksInstallDirectory);
+            }
 
             // 一键完全定义示例里用的是 "Point1@Origin" 这种英文名。中文界面下要么改中文名，
             // 要么打开这个开关强制英文特征名。探针直接打开，并在结束时还原。
@@ -159,9 +277,26 @@ internal static class Program
 
             // ---- 阶段 1：导入 .x_t ----
             int errors = 0;
-            object? importData = app.GetImportFileData(input);
-            result.ImportDataType = importData?.GetType().FullName ?? "(null)";
-            model = app.LoadFile4(input, "r", importData, ref errors);
+            if (Path.GetExtension(input).Equals(".SLDPRT", StringComparison.OrdinalIgnoreCase))
+            {
+                var warnings = 0;
+                model = (ModelDoc2?)app.OpenDoc6(
+                    input,
+                    (int)swDocumentTypes_e.swDocPART,
+                    (int)swOpenDocOptions_e.swOpenDocOptions_Silent,
+                    string.Empty,
+                    ref errors,
+                    ref warnings);
+                result.InputKind = "SavedPart";
+                result.LoadFileWarnings = warnings;
+            }
+            else
+            {
+                object? importData = app.GetImportFileData(input);
+                result.ImportDataType = importData?.GetType().FullName ?? "(null)";
+                model = app.LoadFile4(input, "r", importData, ref errors);
+                result.InputKind = "Parasolid";
+            }
             result.LoadFileErrors = errors;
             result.TimingsMs["Import"] = Mark(sw);
 
@@ -176,6 +311,68 @@ internal static class Program
             result.ActivateDocErrors = activateErrors;
             result.ActiveDocTitle = (app.ActiveDoc as ModelDoc2)?.GetTitle();
 
+            if (importDiagnosis)
+            {
+                result.ImportDiagnosisResult = ((PartDoc)model).ImportDiagnosis(
+                    CloseAllGaps: true,
+                    RemoveFaces: true,
+                    FixFaces: true,
+                    Options: 0);
+                PumpAndWait(300);
+                result.TimingsMs["ImportDiagnosis"] = Mark(sw);
+            }
+
+            // A fresh isolated instance can report "add-in already loaded" before it exposes
+            // the automation object. Production refreshes GetAddInObject after activating the
+            // imported document, so the probe must do the same before declaring FeatureWorks
+            // unavailable.
+            if (!skipRecognize)
+            {
+                var refreshedFeatureWorks = app.GetAddInObject(FeatureWorksProgId);
+                if (refreshedFeatureWorks is null)
+                {
+                    var dll = result.FeatureWorksDll ?? ResolveFeatureWorksDll();
+                    if (dll is not null && File.Exists(dll))
+                    {
+                        result.FeatureWorksDll = dll;
+                        var unloadResult = app.UnloadAddIn(dll);
+                        PumpAndWait(500);
+                        result.LoadAddInResult = app.LoadAddIn(dll);
+                        for (var loadAttempt = 1; loadAttempt <= 20 && refreshedFeatureWorks is null; loadAttempt++)
+                        {
+                            PumpAndWait(500);
+                            refreshedFeatureWorks = app.GetAddInObject(FeatureWorksProgId);
+                            result.Notes.Add(
+                                $"FeatureWorks 对象等待 {loadAttempt}/20：{refreshedFeatureWorks is not null}");
+                        }
+                        if (refreshedFeatureWorks is null)
+                        {
+                            foreach (var identifier in new[]
+                                     {
+                                         "{16B0AE52-0817-11D7-A7F8-0006299907FB}",
+                                         "{7CF8CA03-1DCE-11D1-A89B-0020AF351FA9}",
+                                         "FeatureWorksApp",
+                                     })
+                            {
+                                refreshedFeatureWorks = app.GetAddInObject(identifier);
+                                result.Notes.Add(
+                                    $"GetAddInObject({identifier})={refreshedFeatureWorks is not null}");
+                                if (refreshedFeatureWorks is not null)
+                                    break;
+                            }
+                        }
+                        result.Notes.Add(
+                            $"活动文档后重载 FeatureWorks：UnloadAddIn={unloadResult}, "
+                            + $"LoadAddIn={result.LoadAddInResult}, object={refreshedFeatureWorks is not null}");
+                    }
+                }
+
+                if (refreshedFeatureWorks is not null)
+                    fwObject = refreshedFeatureWorks;
+                result.FeatureWorksAddInObtained = fwObject is not null;
+                result.LoadedAddInOnDemand |= refreshedFeatureWorks is not null;
+            }
+
             result.DocTypeAfterImport = ((swDocumentTypes_e)model.GetType()).ToString();
             result.BodyCountAfterImport = CountBodies(model);
             result.FeatureNamesAfterImport = ListFeatures(model);
@@ -189,53 +386,95 @@ internal static class Program
                 }
                 else
                 {
+                    var refreshedFeatureWorks = app.GetAddInObject(FeatureWorksProgId);
+                    if (refreshedFeatureWorks is not null)
+                        fwObject = refreshedFeatureWorks;
                     var fw = (IFeatureWorksApp)fwObject;
 
                     // 建议：让 FeatureWorks 在生成特征时就给草图加几何关系，
                     // 后续 FullyDefineSketch 的工作量会小很多。
-                    result.SetAdvancedOptions = fw.SetAdvancedOptions(
-                        (short)(fwAdvancedOptions_e.fwAdvAddConstraintsToSketch
-                              | fwAdvancedOptions_e.fwAdvAllowWizardHoleRecognition));
+                    result.SetAdvancedOptions = fw.SetAdvancedOptions((short)advancedOptions);
 
-                    // 实测结论：只勾选实体类选项（1|4|8|16|32 = 61）恒返回 0；
-                    // 把 fwAutomaticRecognitionOptions_e 的 10 个位全部置上（0x3FF）才会真正识别。
-                    int recognizeOptions = 0x3FF;
-
-                    result.SetPerformanceOptions = fw.SetPerformanceOptions(0);
+                    result.SetPerformanceOptions = fw.SetPerformanceOptions(performanceOptions);
 
                     // 官方 VBA 示例在识别前先选了一个面。这里选实体的第一个面，
                     // 用来区分"必须有预选"和"API 本身没生效"。
                     model.ClearSelection2(true);
-                    result.FaceSelected = SelectFirstFace(model);
+                    using (var initialSelection = PrepareRecognitionSelection(model, selectionMode))
+                        result.FaceSelected = initialSelection is not null;
+                    result.SeedSelectionMark = SelectionMark(selectionMode);
 
-                    // 实测：同一个调用连续发多次，前几次返回 0，之后才返回真实数量。
-                    // 说明 FeatureWorks 不是同步完成的，必须重试并给 SW 泵消息的机会。
-                    for (int attempt = 1; attempt <= 10; attempt++)
+                    result.RecognizedFeatureCount = 0;
+                    result.CreateFeaturesResult = false;
+                    if (nativeRecognitionCommand)
                     {
                         model.ClearSelection2(true);
-                        result.FaceSelected = SelectFirstFace(model);
-                        int count = fw.RecognizeFeatureAutomatic(recognizeOptions);
-                        result.RecognitionTrials[$"attempt{attempt:00}"] = count;
-                        if (count > 0)
-                        {
-                            result.RecognizedFeatureCount = count;
-                            result.RecognizeAttempts = attempt;
-                            break;
-                        }
-
-                        PumpAndWait(300);
+                        result.NativeRecognitionCommandStarted = app.RunCommand(1999, string.Empty);
+                        PumpAndWait(1000);
+                        result.NativeRecognitionCommandAccepted = app.RunCommand(-2, string.Empty);
+                        PumpAndWait(15_000);
+                        result.NativeRecognitionWaitMilliseconds = 15_000;
+                        result.CreateFeaturesResult = result.NativeRecognitionCommandStarted
+                            && result.NativeRecognitionCommandAccepted;
+                        result.RecognizedFeatureCount = CountCoreFeatures(model);
+                        result.RecognizeAttempts = 1;
+                        result.CompletedRecognitionPasses = result.CreateFeaturesResult ? 1 : 0;
                     }
-
-                    if (result.RecognizedFeatureCount < 0)
+                    else if (interactiveFeature is not null)
                     {
-                        result.RecognizedFeatureCount = 0;
+                        model.ClearSelection2(true);
+                        using var selection = PrepareRecognitionSelection(model, selectionMode);
+                        result.FaceSelected = selection is not null;
+                        result.InteractiveRecognitionResult =
+                            (selectionMode == "none" || selection is not null)
+                            && fw.RecognizeFeatureInteractive(interactiveFeature, 0);
+                        result.RecognizedFeatureCount = result.InteractiveRecognitionResult ? 1 : 0;
+                        result.RecognizeAttempts = 1;
+                        result.CompletedRecognitionPasses = result.InteractiveRecognitionResult ? 1 : 0;
                     }
+                    else
+                    {
+                        var recognitionOptions = recognitionSequence
+                            ?? Enumerable.Repeat(recognizeOptions, recognitionPasses).ToArray();
+                        for (int pass = 1; pass <= recognitionOptions.Length; pass++)
+                        {
+                            var passOptions = recognitionOptions[pass - 1];
+                            var passCount = 0;
+                            for (int attempt = 1; attempt <= 10; attempt++)
+                            {
+                                model.ClearSelection2(true);
+                                using var selection = PrepareRecognitionSelection(model, selectionMode);
+                                result.FaceSelected = selection is not null;
+                                int count = selectionMode == "none" || selection is not null
+                                    ? fw.RecognizeFeatureAutomatic(passOptions)
+                                    : 0;
+                                result.RecognitionTrials[$"pass{pass:00}-options0x{passOptions:X}-attempt{attempt:00}"] = count;
+                                if (count > 0)
+                                {
+                                    passCount = count;
+                                    result.RecognizeAttempts += attempt;
+                                    break;
+                                }
 
-                    result.TimingsMs["Recognize"] = Mark(sw);
+                                PumpAndWait(300);
+                            }
 
-                    result.CreateFeaturesResult = fw.CreateFeatures(
-                        (short)fwFeatureCreationOptions_e.fwAddConstraintsToSketch);
-                    result.TimingsMs["CreateFeatures"] = Mark(sw);
+                            if (passCount == 0)
+                            {
+                                if (recognitionSequence is null)
+                                    break;
+                                continue;
+                            }
+                            result.RecognizedFeatureCount += passCount;
+                            result.CompletedRecognitionPasses++;
+                            PumpAndWait(300);
+                        }
+                    }
+                    if (!nativeRecognitionCommand && result.RecognizedFeatureCount > 0)
+                    {
+                        result.CreateFeaturesResult = fw.CreateFeatures(createOptions);
+                    }
+                    result.TimingsMs["RecognizeAndCreate"] = Mark(sw);
 
                     Marshal.FinalReleaseComObject(fwObject);
                 }
@@ -244,7 +483,8 @@ internal static class Program
             result.FeatureNamesAfterRecognize = ListFeatures(model);
 
             // ---- 阶段 3：逐个草图完全定义 ----
-            result.Sketches = FullyDefineAllSketches(model);
+            if (!skipFullyDefine)
+                result.Sketches = FullyDefineAllSketches(model);
             result.TimingsMs["FullyDefine"] = Mark(sw);
 
             // ---- 阶段 4：保存 .SLDPRT ----
@@ -290,6 +530,17 @@ internal static class Program
             }
             catch { }
 
+            if (app is not null && attachPid is not null && !string.IsNullOrWhiteSpace(previousActiveTitle))
+            {
+                try
+                {
+                    var restoreErrors = 0;
+                    app.ActivateDoc3(previousActiveTitle, false, 0, ref restoreErrors);
+                    result.RestoreActiveDocErrors = restoreErrors;
+                }
+                catch { }
+            }
+
             try
             {
                 if (app is not null && result.CreatedNewInstance)
@@ -304,6 +555,21 @@ internal static class Program
             {
                 try { Marshal.FinalReleaseComObject(app); } catch { }
             }
+
+            if (ownedProcess is not null)
+            {
+                try
+                {
+                    if (!ownedProcess.WaitForExit(20000))
+                    {
+                        ownedProcess.Kill(entireProcessTree: true);
+                        ownedProcess.WaitForExit(20000);
+                    }
+                }
+                catch { }
+                finally { ownedProcess.Dispose(); }
+            }
+            attachedProcess?.Dispose();
 
             if (result.ExitAppCalled)
             {
@@ -443,52 +709,189 @@ internal static class Program
         return names;
     }
 
-    /// <summary>验收用：重新打开一个 .SLDPRT，打印特征树与每个草图的约束状态。</summary>
-    private static int Inspect(string path)
+    private static int CountCoreFeatures(ModelDoc2 model)
     {
-        var type = Type.GetTypeFromProgID(ProgId, throwOnError: false);
-        if (type is null)
-        {
-            Console.Error.WriteLine("SldWorks.Application 未注册。");
-            return 2;
-        }
-
-        var app = (ISldWorks)Activator.CreateInstance(type)!;
-        int errors = 0;
-        int warnings = 0;
-        var model = (ModelDoc2?)app.OpenDoc6(
-            path,
-            (int)swDocumentTypes_e.swDocPART,
-            (int)swOpenDocOptions_e.swOpenDocOptions_Silent,
-            string.Empty,
-            ref errors,
-            ref warnings);
-
-        if (model is null)
-        {
-            Console.Error.WriteLine($"OpenDoc6 失败 errors={errors} warnings={warnings}");
-            return 1;
-        }
-
-        Console.WriteLine($"文件: {path}");
-        Console.WriteLine($"打开: errors={errors} warnings={warnings}");
+        var count = 0;
+        var scanned = 0;
         var feature = (Feature?)model.FirstFeature();
-        while (feature is not null)
+        while (feature is not null && scanned++ < 200)
         {
-            var typeName = feature.GetTypeName2();
-            var line = $"  {feature.Name} [{typeName}]";
-            if (typeName == "ProfileFeature" && feature.GetSpecificFeature2() is Sketch sketch)
-            {
-                line += $"  约束状态={(swConstrainedStatus_e)sketch.GetConstrainedStatus()}";
-            }
-
-            Console.WriteLine(line);
+            if (IsCoreFeatureType(feature.GetTypeName2()))
+                count++;
             feature = (Feature?)feature.GetNextFeature();
         }
 
-        app.CloseDoc(model.GetTitle());
-        return 0;
+        return count;
     }
+
+    /// <summary>验收用：在自有 SolidWorks 进程中只读重开 SLDPRT，并输出结构化特征树。</summary>
+    private static int Inspect(string path, int? attachPid, string[]? expectedCoreSignature)
+    {
+        var result = new InspectResult
+        {
+            Path = Path.GetFullPath(path),
+            PreexistingPids = GetPids(),
+        };
+        ISldWorks? app = null;
+        ModelDoc2? model = null;
+        Process? ownedProcess = null;
+        Process? attachedProcess = null;
+        string? previousActiveTitle = null;
+        try
+        {
+            if (!File.Exists(result.Path))
+                throw new FileNotFoundException("待检查 SLDPRT 不存在。", result.Path);
+            if (attachPid is int existingPid)
+            {
+                attachedProcess = Process.GetProcessById(existingPid);
+                app = BindByPid(attachedProcess, TimeSpan.FromSeconds(15))
+                    ?? throw new TimeoutException($"无法按 PID {existingPid} 附着检查用 SolidWorks。");
+                result.AttachedPid = existingPid;
+                previousActiveTitle = (app.ActiveDoc as ModelDoc2)?.GetTitle();
+            }
+            else
+            {
+                var type = Type.GetTypeFromProgID(ProgId, throwOnError: false)
+                    ?? throw new InvalidOperationException("SldWorks.Application 未注册。");
+                var executable = ResolveSolidWorksExecutable(type)
+                    ?? throw new InvalidOperationException("无法从 COM 注册解析 SLDWORKS.exe。");
+                ownedProcess = Process.Start(new ProcessStartInfo
+                {
+                    FileName = executable,
+                    UseShellExecute = false,
+                }) ?? throw new InvalidOperationException("启动检查用 SolidWorks 返回 null。");
+                result.OwnedPid = ownedProcess.Id;
+                app = BindByPid(ownedProcess, TimeSpan.FromSeconds(120))
+                    ?? throw new TimeoutException($"无法按 PID {ownedProcess.Id} 绑定检查用 SolidWorks。");
+                app.Visible = false;
+                app.UserControl = false;
+            }
+            result.SolidWorksRevision = app.RevisionNumber();
+
+            var errors = 0;
+            var warnings = 0;
+            model = (ModelDoc2?)app.OpenDoc6(
+                result.Path,
+                (int)swDocumentTypes_e.swDocPART,
+                (int)swOpenDocOptions_e.swOpenDocOptions_Silent,
+                string.Empty,
+                ref errors,
+                ref warnings);
+            result.OpenErrors = errors;
+            result.OpenWarnings = warnings;
+            if (model is null)
+                throw new InvalidOperationException($"OpenDoc6 失败 errors={errors} warnings={warnings}");
+
+            result.Title = model.GetTitle();
+            result.BodyCount = CountBodies(model);
+            result.Features = InspectFeatures(model);
+            result.ActualCoreSignature = result.Features
+                .Where(feature => IsCoreFeatureType(feature.TypeName))
+                .Select(feature => feature.TypeName)
+                .ToArray();
+            result.ExpectedCoreSignature = expectedCoreSignature ?? [];
+            result.SignatureMatched = expectedCoreSignature is null
+                || result.ActualCoreSignature.SequenceEqual(expectedCoreSignature, StringComparer.OrdinalIgnoreCase);
+            result.Success = result.SignatureMatched;
+            if (!result.SignatureMatched)
+            {
+                result.Error = "核心特征签名不一致。";
+            }
+        }
+        catch (Exception ex)
+        {
+            result.Success = false;
+            result.Error = ex.Message;
+            result.HResult = $"0x{unchecked((uint)ex.HResult):X8}";
+        }
+        finally
+        {
+            if (model is not null)
+            {
+                try { app?.CloseDoc(model.GetTitle()); } catch { }
+                ReleaseCom(model);
+            }
+            if (app is not null)
+            {
+                if (attachPid is not null)
+                {
+                    if (!string.IsNullOrWhiteSpace(previousActiveTitle))
+                    {
+                        try
+                        {
+                            var restoreErrors = 0;
+                            app.ActivateDoc3(previousActiveTitle, false, 0, ref restoreErrors);
+                        }
+                        catch { }
+                    }
+                }
+                else
+                {
+                    try { app.ExitApp(); } catch { }
+                }
+                ReleaseCom(app);
+            }
+            if (ownedProcess is not null)
+            {
+                try
+                {
+                    if (!ownedProcess.WaitForExit(20000))
+                    {
+                        result.ForcedTermination = true;
+                        ownedProcess.Kill(entireProcessTree: true);
+                        ownedProcess.WaitForExit(20000);
+                    }
+                }
+                catch { }
+                finally { ownedProcess.Dispose(); }
+            }
+            attachedProcess?.Dispose();
+            result.LeftoverPids = GetPids().Except(result.PreexistingPids).ToArray();
+            if (result.LeftoverPids.Length > 0)
+                result.Success = false;
+        }
+
+        Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        }));
+        return result.Success ? 0 : 1;
+    }
+
+    private static List<InspectFeature> InspectFeatures(ModelDoc2 model)
+    {
+        var result = new List<InspectFeature>();
+        var feature = (Feature?)model.FirstFeature();
+        while (feature is not null && result.Count < 512)
+        {
+            var next = (Feature?)feature.GetNextFeature();
+            Sketch? sketch = null;
+            try
+            {
+                var typeName = feature.GetTypeName2();
+                string? sketchStatus = null;
+                if (typeName == "ProfileFeature")
+                {
+                    sketch = feature.GetSpecificFeature2() as Sketch;
+                    if (sketch is not null)
+                        sketchStatus = ((swConstrainedStatus_e)sketch.GetConstrainedStatus()).ToString();
+                }
+                result.Add(new InspectFeature(feature.Name, typeName, sketchStatus));
+            }
+            finally
+            {
+                ReleaseCom(sketch);
+                ReleaseCom(feature);
+                feature = next;
+            }
+        }
+        return result;
+    }
+
+    private static bool IsCoreFeatureType(string typeName)
+        => typeName is "BaseBody" or "ImportedBody" or "Imported" or "Extrusion" or "ICE"
+            or "RefSurface" or "Thicken" or "HoleWzd" or "Fillet" or "Chamfer" or "Revolution" or "Rib";
 
     /// <summary>抽干本 STA 线程的消息队列并等待，给 SolidWorks 的异步工作留出时间。</summary>
     private static void PumpAndWait(int milliseconds)
@@ -527,7 +930,7 @@ internal static class Program
     [DllImport("user32.dll")]
     private static extern IntPtr DispatchMessage(ref NativeMessage message);
 
-    private static bool SelectFirstFace(ModelDoc2 model)
+    private static SeedFaceSelection? SelectFirstFace(ModelDoc2 model, int mark)
     {
         try
         {
@@ -535,24 +938,163 @@ internal static class Program
             var bodies = (object[]?)part.GetBodies2((int)swBodyType_e.swSolidBody, false);
             if (bodies is null || bodies.Length == 0)
             {
-                return false;
+                return null;
             }
 
             var body = (Body2)bodies[0];
             var face = body.GetFirstFace() as Face2;
             if (face is null)
             {
-                return false;
+                return null;
             }
 
+            var selectionManager = (SelectionMgr)model.SelectionManager;
+            var selectData = (SelectData)selectionManager.CreateSelectData();
+            selectData.Mark = mark;
             var entity = (Entity)face;
-            return entity.Select4(false, null);
+            if (!entity.Select4(false, selectData))
+            {
+                ReleaseCom(selectData);
+                return null;
+            }
+
+            return new SeedFaceSelection(body, face, selectData);
         }
         catch
         {
-            return false;
+            return null;
         }
     }
+
+    private static SeedFaceSelection? PrepareRecognitionSelection(ModelDoc2 model, string selectionMode)
+        => selectionMode switch
+        {
+            "none" => null,
+            "first-mark0" => SelectFirstFace(model, 0),
+            "first-mark8" => SelectFirstFace(model, AutomaticRecognitionSelectionMark),
+            _ => throw new ArgumentOutOfRangeException(nameof(selectionMode)),
+        };
+
+    private static int SelectionMark(string selectionMode)
+        => selectionMode switch
+        {
+            "first-mark8" => AutomaticRecognitionSelectionMark,
+            _ => 0,
+        };
+
+    private static int ParseInteger(string value)
+        => value.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+            ? Convert.ToInt32(value[2..], 16)
+            : int.Parse(value, System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string[] DescribeRecognitionOptions(int options)
+    {
+        (int Value, string Name)[] known =
+        [
+            (1, "Extrude"),
+            (2, "Volume"),
+            (4, "Revolve"),
+            (8, "Holes"),
+            (16, "Chamfils"),
+            (32, "Ribs"),
+            (64, "BaseFlange"),
+            (128, "SketchedBend"),
+            (256, "AutoEdgeFlange"),
+            (512, "AutoHemFlange"),
+        ];
+        return known.Where(item => (options & item.Value) != 0).Select(item => item.Name).ToArray();
+    }
+
+    private static string? ResolveSolidWorksExecutable(Type applicationType)
+    {
+        using var key = Microsoft.Win32.Registry.ClassesRoot
+            .OpenSubKey($@"CLSID\{{{applicationType.GUID}}}\LocalServer32");
+        if (key?.GetValue(null) is not string server || string.IsNullOrWhiteSpace(server))
+            return null;
+        return System.Environment.ExpandEnvironmentVariables(server.Trim().Trim('"'));
+    }
+
+    private static ISldWorks? BindByPid(Process process, TimeSpan timeout)
+    {
+        var monikerName = $"SolidWorks_PID_{process.Id}";
+        var stopwatch = Stopwatch.StartNew();
+        while (stopwatch.Elapsed < timeout)
+        {
+            var instance = GetRunningObject(monikerName);
+            if (instance is ISldWorks application)
+                return application;
+            if (instance is not null && Marshal.IsComObject(instance))
+            {
+                try { Marshal.FinalReleaseComObject(instance); } catch { }
+            }
+
+            process.Refresh();
+            if (process.HasExited)
+                return null;
+            Thread.Sleep(500);
+        }
+
+        return null;
+    }
+
+    private static object? GetRunningObject(string displayName)
+    {
+        IBindCtx? context = null;
+        IRunningObjectTable? table = null;
+        IEnumMoniker? enumerator = null;
+        try
+        {
+            if (CreateBindCtx(0, out context) != 0 || context is null)
+                return null;
+            context.GetRunningObjectTable(out table);
+            if (table is null)
+                return null;
+            table.EnumRunning(out enumerator);
+            if (enumerator is null)
+                return null;
+            var monikers = new IMoniker[1];
+            while (enumerator.Next(1, monikers, IntPtr.Zero) == 0)
+            {
+                var moniker = monikers[0];
+                try
+                {
+                    moniker.GetDisplayName(context, null, out var name);
+                    if (!string.Equals(name, displayName, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    table.GetObject(moniker, out var instance);
+                    return instance;
+                }
+                catch
+                {
+                }
+                finally
+                {
+                    ReleaseCom(moniker);
+                }
+            }
+        }
+        catch
+        {
+        }
+        finally
+        {
+            ReleaseCom(enumerator);
+            ReleaseCom(table);
+            ReleaseCom(context);
+        }
+
+        return null;
+    }
+
+    private static void ReleaseCom(object? value)
+    {
+        if (value is null || !Marshal.IsComObject(value))
+            return;
+        try { Marshal.FinalReleaseComObject(value); } catch { }
+    }
+
+    [DllImport("ole32.dll")]
+    private static extern int CreateBindCtx(int reserved, out IBindCtx context);
 
     private static int CountBodies(ModelDoc2 model)
     {
@@ -629,6 +1171,28 @@ internal static class Program
     }
 }
 
+internal sealed class SeedFaceSelection(Body2 body, Face2 face, SelectData selectData) : IDisposable
+{
+    private object? _body = body;
+    private object? _face = face;
+    private object? _selectData = selectData;
+
+    public void Dispose()
+    {
+        Release(ref _selectData);
+        Release(ref _face);
+        Release(ref _body);
+    }
+
+    private static void Release(ref object? value)
+    {
+        var current = Interlocked.Exchange(ref value, null);
+        if (current is null || !Marshal.IsComObject(current))
+            return;
+        try { Marshal.FinalReleaseComObject(current); } catch { }
+    }
+}
+
 internal sealed class ProbeResult
 {
     public bool Success { get; set; }
@@ -645,9 +1209,34 @@ internal sealed class ProbeResult
     public int[] LeakedPids { get; set; } = Array.Empty<int>();
     public bool OldEnglishFeatureNames { get; set; }
     public bool Old3DInterconnect { get; set; }
+    public bool IsolatedInstance { get; set; }
+    public bool ImportDiagnosisRequested { get; set; }
+    public int ImportDiagnosisResult { get; set; } = int.MinValue;
+    public bool NativeRecognitionCommandRequested { get; set; }
+    public bool NativeRecognitionCommandStarted { get; set; }
+    public bool NativeRecognitionCommandAccepted { get; set; }
+    public bool NativeRecognitionCommandTimedOut { get; set; }
+    public int NativeRecognitionWaitMilliseconds { get; set; }
+    public int? AttachedPid { get; set; }
+    public string? PreviousActiveDocTitle { get; set; }
+    public int RestoreActiveDocErrors { get; set; }
+    public int RecognitionOptions { get; set; }
+    public string? RecognitionOptionsHex { get; set; }
+    public string[] RecognitionOptionNames { get; set; } = [];
+    public int AdvancedOptions { get; set; }
+    public int PerformanceOptions { get; set; }
+    public short CreateOptions { get; set; }
+    public int RequestedRecognitionPasses { get; set; }
+    public int[] RecognitionSequence { get; set; } = [];
+    public string? InteractiveFeatureType { get; set; }
+    public bool InteractiveRecognitionResult { get; set; }
+    public int CompletedRecognitionPasses { get; set; }
+    public string SelectionMode { get; set; } = string.Empty;
 
     public string? ImportDataType { get; set; }
+    public string InputKind { get; set; } = string.Empty;
     public int LoadFileErrors { get; set; }
+    public int LoadFileWarnings { get; set; }
     public int ActivateDocErrors { get; set; }
     public string? ActiveDocTitle { get; set; }
     public string? DocTypeAfterImport { get; set; }
@@ -662,6 +1251,7 @@ internal sealed class ProbeResult
     public bool SetAdvancedOptions { get; set; }
     public bool SetPerformanceOptions { get; set; }
     public bool FaceSelected { get; set; }
+    public int SeedSelectionMark { get; set; }
     public int RecognizedFeatureCount { get; set; } = -1;
     public int RecognizedFeatureCountLateBound { get; set; } = -1;
     public Dictionary<string, int> RecognitionTrials { get; set; } = new();
@@ -679,6 +1269,30 @@ internal sealed class ProbeResult
     public Dictionary<string, long> TimingsMs { get; set; } = new();
     public List<string> Notes { get; set; } = new();
 }
+
+internal sealed class InspectResult
+{
+    public bool Success { get; set; }
+    public string? Error { get; set; }
+    public string? HResult { get; set; }
+    public string Path { get; set; } = string.Empty;
+    public string? Title { get; set; }
+    public string? SolidWorksRevision { get; set; }
+    public int[] PreexistingPids { get; set; } = [];
+    public int OwnedPid { get; set; }
+    public int? AttachedPid { get; set; }
+    public int[] LeftoverPids { get; set; } = [];
+    public bool ForcedTermination { get; set; }
+    public int OpenErrors { get; set; }
+    public int OpenWarnings { get; set; }
+    public int BodyCount { get; set; }
+    public List<InspectFeature> Features { get; set; } = [];
+    public string[] ExpectedCoreSignature { get; set; } = [];
+    public string[] ActualCoreSignature { get; set; } = [];
+    public bool SignatureMatched { get; set; }
+}
+
+internal sealed record InspectFeature(string Name, string TypeName, string? SketchStatus);
 
 internal sealed class SketchFact
 {

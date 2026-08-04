@@ -17,7 +17,8 @@ namespace PartGeometryProbe;
 /// </summary>
 internal static class Program
 {
-    private const double VolumeTolerance = 1e-9;
+    private const double MinimumMeasuredVolume = 1e-9;
+    private const double MaximumFeatureWorksVolumeRelativeDeviation = 2e-5;
 
     [STAThread]
     private static int Main(string[] args)
@@ -68,10 +69,11 @@ internal static class Program
                         : new Measurement { Note = "产物不存在" };
                     measurement.Label = Path.GetFileName(Path.GetDirectoryName(swDirectory) ?? swDirectory)
                         + "/" + Path.GetFileName(swDirectory);
-                    if (entry.Reference.Volume > VolumeTolerance && measurement.Volume > 0)
+                    if (entry.Reference.Volume > MinimumMeasuredVolume && measurement.Volume > 0)
                     {
                         measurement.VolumeRatio = measurement.Volume / entry.Reference.Volume;
-                        measurement.Matches = Math.Abs(measurement.VolumeRatio - 1) < 1e-6;
+                        measurement.Matches = Math.Abs(measurement.VolumeRatio - 1)
+                            <= MaximumFeatureWorksVolumeRelativeDeviation;
                     }
 
                     entry.Candidates.Add(measurement);

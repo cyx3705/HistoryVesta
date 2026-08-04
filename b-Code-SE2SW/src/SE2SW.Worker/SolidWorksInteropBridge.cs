@@ -394,6 +394,28 @@ internal sealed class SolidWorksInteropBridge : IDisposable
     public string GetFeatureTypeName(object feature)
         => Convert.ToString(Invoke(_featureInterface, feature, "GetTypeName2")) ?? string.Empty;
 
+    public IReadOnlyList<FeatureTreeEntry> ReadTopLevelFeatureTree(object model)
+    {
+        var result = new List<FeatureTreeEntry>();
+        var feature = FirstFeature(model);
+        while (feature is not null && result.Count < 512)
+        {
+            object? next = null;
+            try
+            {
+                next = NextFeature(feature);
+                result.Add(new FeatureTreeEntry(FeatureName(feature), FeatureTypeName(feature)));
+            }
+            finally
+            {
+                ComRelease.Final(feature);
+                feature = next;
+            }
+        }
+
+        return result;
+    }
+
     /// <summary>
     /// 配合要求两侧实体都带 mark=1。实测 <c>IEntity::Select2(append, mark)</c> 虽然返回 true，
     /// 但 <c>AddMate5</c> 仍报 errorStatus=1（IncorrectSelections）——SW 认的是
@@ -532,46 +554,6 @@ internal sealed class SolidWorksInteropBridge : IDisposable
     public void ClearSelection(object model)
         => Invoke(_modelInterface, model, "ClearSelection2", true);
 
-    /// <summary>
-    /// 自动识别必须先预选一个种子面：不预选时 RecognizeFeatureAutomatic 恒返回 0 且不报错。
-    /// </summary>
-    /// <returns>保持实体和面 RCW 存活的选择租约；调用识别方法后再释放。</returns>
-    public SeedFaceSelection SelectSeedFace(object model)
-    {
-        object? body = null;
-        object? face = null;
-        try
-        {
-            var raw = Invoke(_partInterface, model, "GetBodies2", 0 /* swSolidBody */, false);
-            if (raw is null)
-                return SeedFaceSelection.Failed("GetBodies2 返回 null");
-            if (raw is not Array bodies)
-                return SeedFaceSelection.Failed($"GetBodies2 返回 {raw.GetType().FullName}，不是数组");
-            if (bodies.Length == 0)
-                return SeedFaceSelection.Failed("零件中没有实体");
-
-            body = bodies.GetValue(0);
-            if (body is null)
-                return SeedFaceSelection.Failed("首个实体为空");
-            face = Invoke(_bodyInterface, body, "GetFirstFace");
-            if (face is null)
-                return SeedFaceSelection.Failed("GetFirstFace 返回 null");
-
-            if (!Convert.ToBoolean(Invoke(_entityInterface, face, "Select4", false, null)))
-                return SeedFaceSelection.Failed("Entity.Select4 返回 false");
-
-            var selection = SeedFaceSelection.Selected(body, face);
-            body = null;
-            face = null;
-            return selection;
-        }
-        finally
-        {
-            ComRelease.Final(face);
-            ComRelease.Final(body);
-        }
-    }
-
     public object? FirstFeature(object model)
         => Invoke(_modelInterface, model, "FirstFeature");
 
@@ -669,31 +651,4 @@ internal sealed class SolidWorksInteropBridge : IDisposable
     }
 }
 
-internal sealed class SeedFaceSelection : IDisposable
-{
-    private object? _body;
-    private object? _face;
-
-    private SeedFaceSelection(object? body, object? face, string? failure)
-    {
-        _body = body;
-        _face = face;
-        Failure = failure;
-    }
-
-    public string? Failure { get; }
-
-    public static SeedFaceSelection Selected(object body, object face)
-        => new(body, face, null);
-
-    public static SeedFaceSelection Failed(string failure)
-        => new(null, null, failure);
-
-    public void Dispose()
-    {
-        ComRelease.Final(_face);
-        ComRelease.Final(_body);
-        _face = null;
-        _body = null;
-    }
-}
+internal readonly record struct FeatureTreeEntry(string Name, string TypeName);

@@ -55,6 +55,7 @@ try
     TestFeatureRecognitionRetries();
     TestFeatureRecognitionSessionGuards();
     TestRecognitionGeometryGuard();
+    TestRecognitionSemanticGuard();
     TestImportIdentityAndSessionFaultGuards();
     TestActiveRunDisposal(root);
     Console.WriteLine("SE2SW.Smoke: PASS");
@@ -1370,9 +1371,11 @@ static void TestRecognitionGeometryGuard()
     True(boxed!.Contains("体积", StringComparison.Ordinal) && boxed.Contains("面数", StringComparison.Ordinal),
         $"诊断要给出前后数值便于排查，实得：{boxed}");
 
-    // 容差只为浮点噪声，不为"差不多"。
-    Equal(null, FeatureRecognizer.DescribeGeometryMismatch((1.0, 10), (1.0 + 5e-10, 10)),
-        "浮点噪声级别的偏差不算几何改变");
+    // 已验证的 FeatureWorks 金标准会产生 1.418e-5 的重建偏差，守卫必须放行但保持有界。
+    Equal(null, FeatureRecognizer.DescribeGeometryMismatch((1.0, 10), (1.0 + 1.5e-5, 10)),
+        "已验证的 FeatureWorks 重建偏差不得误判为几何破坏");
+    True(FeatureRecognizer.DescribeGeometryMismatch((1.0, 10), (1.0 + 2.1e-5, 10)) is not null,
+        "超过金标准上限的体积偏差必须判为几何改变");
     True(FeatureRecognizer.DescribeGeometryMismatch((1.0, 10), (1.0001, 10)) is not null,
         "万分之一的体积偏差就必须判为几何改变——这不是噪声");
 
@@ -1470,6 +1473,76 @@ static void TestUnifiedSourceWorkspace()
     thread.Join();
     if (failure is not null)
         throw new InvalidOperationException("单页来源工作区 Smoke 失败。", failure);
+}
+
+static void TestRecognitionSemanticGuard()
+{
+    Equal(0x3F, FeatureRecognizer.StandardPartRecognitionOptions,
+        "普通零件识别参数必须包含六类机械特征");
+    Equal(FeatureRecognizer.VolumeRecognitionOption,
+        FeatureRecognizer.StandardPartRecognitionOptions & FeatureRecognizer.VolumeRecognitionOption,
+        "普通零件自动识别必须选中体积特征");
+    Equal(0, FeatureRecognizer.StandardPartRecognitionOptions & FeatureRecognizer.SheetMetalRecognitionOptions,
+        "普通零件识别参数严禁混入钣金四位");
+    Equal(2e-5, FeatureRecognizer.MaximumFeatureWorksVolumeRelativeDeviation,
+        "几何守卫必须覆盖已验证的 FeatureWorks 重建误差且保持有界");
+
+    var mixedImported = FeatureRecognizer.DescribeSemanticMismatch(
+        2, true,
+        [new FeatureTreeEntry("Imported1", "BaseBody"), new FeatureTreeEntry("Boss-Extrude1", "Extrusion")]);
+    True(mixedImported is not null && mixedImported.Contains("不等价于手工识别", StringComparison.Ordinal),
+        "混合树仍含未识别导入体，不得把部分识别冒充完整成功");
+
+    var sheetMetal = FeatureRecognizer.DescribeSemanticMismatch(
+        2, true,
+        [new FeatureTreeEntry("Sheet-Metal1", "SheetMetal"), new FeatureTreeEntry("Imported1", "BaseBody")]);
+    True(sheetMetal is not null && sheetMetal.Contains("钣金", StringComparison.Ordinal),
+        "普通 .par 出现钣金特征必须判为语义错误");
+
+    var zeroCountSheetSideEffect = FeatureRecognizer.DescribeSemanticMismatch(
+        0, false,
+        [new FeatureTreeEntry("Sheet<10>", "CutListFolder"), new FeatureTreeEntry("Imported10", "BaseBody")]);
+    True(zeroCountSheetSideEffect is not null && zeroCountSheetSideEffect.Contains("钣金", StringComparison.Ordinal),
+        "RecognizeFeatureAutomatic 返回 0 时产生的钣金树副作用也必须触发干净重导入");
+    Equal(null, FeatureRecognizer.DescribeSemanticMismatch(
+        0, false,
+        [new FeatureTreeEntry("Imported1", "BaseBody")]),
+        "返回 0 且仍是原始导入体时沿用普通未识别降级");
+
+    var importedOnly = FeatureRecognizer.DescribeSemanticMismatch(
+        1, true,
+        [new FeatureTreeEntry("Origin", "OriginProfileFeature"), new FeatureTreeEntry("Imported1", "BaseBody")]);
+    True(importedOnly is not null && importedOnly.Contains("导入体", StringComparison.Ordinal),
+        "返回成功但仍只有导入体时不得报告识别成功");
+
+    True(FeatureRecognizer.DescribeSemanticMismatch(1, true, []) is not null,
+        "成功后无法枚举特征树必须安全降级");
+    Equal(null, FeatureRecognizer.DescribeSemanticMismatch(0, false, []),
+        "未识别/未创建由既有失败分支处理，不重复标记语义错误");
+
+    var outcome = new FeatureOutcome(
+        2, true, 0, 0, [], true, 10, "钣金误识别", SemanticMismatch: true);
+    var roundTrip = JsonSerializer.Deserialize<FeatureOutcome>(JsonSerializer.Serialize(outcome))!;
+    True(roundTrip.SemanticMismatch && !roundTrip.GeometryChanged && !roundTrip.SessionFaulted,
+        "SemanticMismatch 必须独立 JSON 往返");
+
+    True(SolidWorksImporter.ShouldReimportRejectedRecognition(roundTrip),
+        "语义错误必须触发关闭错误文档并从 XT 重新导入");
+    Equal(ConversionErrorClass.FeatureRecognitionSemanticMismatch,
+        SolidWorksImporter.ClassifyRejectedRecognition(roundTrip),
+        "语义错误必须保留独立分类，不得退化为普通创建失败");
+    Equal(ConversionErrorClass.FeatureRecognitionSemanticMismatch,
+        SolidWorksImporter.ClassifyCompletedFeatureOutcome(roundTrip),
+        "哑实体成功保存后仍须如实报告此前的语义错误");
+
+    var geometryChanged = outcome with { SemanticMismatch = false, GeometryChanged = true };
+    True(SolidWorksImporter.ShouldReimportRejectedRecognition(geometryChanged),
+        "几何错误仍须沿用既有的干净重导入保护");
+    Equal(ConversionErrorClass.FeatureCreationFailed,
+        SolidWorksImporter.ClassifyRejectedRecognition(geometryChanged),
+        "几何错误与语义错误必须保持不同分类");
+    True(!SolidWorksImporter.ShouldReimportRejectedRecognition(null),
+        "未执行识别时不得额外重导入");
 }
 
 static void TestUnifiedPartDirectoryFlow(string root)
@@ -1816,14 +1889,13 @@ static void TestParasolidTextProbe(string root)
 
 static void TestFeatureRecognitionRetries()
 {
-    var selections = 0;
+    var clears = 0;
     var recognitions = 0;
     var waits = 0;
     var recovered = FeatureRecognizer.RunRecognitionAttempts(
         () =>
         {
-            selections++;
-            return null;
+            clears++;
         },
         () => ++recognitions < 3 ? 0 : 12,
         () => waits++,
@@ -1831,16 +1903,15 @@ static void TestFeatureRecognitionRetries()
 
     Equal(12, recovered.RecognizedFeatureCount, "异步就绪后应返回识别出的特征数");
     Equal(3, recovered.Attempts, "前两次返回 0 时应继续尝试首件识别");
-    Equal(3, selections, "每次识别前都必须重新选择种子面");
+    Equal(3, clears, "每次识别前都必须清空本地识别实体选择");
     Equal(2, waits, "返回 0 后应等待并泵送消息，上次成功后不再等待");
 
-    selections = 0;
+    clears = 0;
     waits = 0;
     var exhausted = FeatureRecognizer.RunRecognitionAttempts(
         () =>
         {
-            selections++;
-            return null;
+            clears++;
         },
         static () => 0,
         () => waits++,
@@ -1848,7 +1919,7 @@ static void TestFeatureRecognitionRetries()
 
     Equal(0, exhausted.RecognizedFeatureCount, "达到重试上限后才允许按未识别降级");
     Equal(10, exhausted.Attempts, "识别重试必须有确定的上限");
-    Equal(10, selections, "每次重试都必须刷新种子面选择");
+    Equal(10, clears, "每次重试都必须清空本地识别实体选择");
     Equal(9, waits, "最后一次失败后不应再等待");
 }
 
