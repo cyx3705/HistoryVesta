@@ -27,6 +27,7 @@ public static class StudioCommandDataDeserializer
             "proj.history.diff" => Read<BranchDiffReport>(data),
             "git.rule.list" => Read<List<GitFileRuleInfo>>(data),
             "git.rule.scan" => Read<InventoryReport>(data),
+            "git.rule.review" => Read<GitRuleReviewReport>(data),
             "git.rule.set" or "git.rule.remove" => Read<GitFileRulePreview>(data),
             "git.rule.batch-set" => Read<GitFileRuleBatchPreview>(data),
             "lan.paircode" => Read<LanPairCode>(data),

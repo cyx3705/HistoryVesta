@@ -3,6 +3,7 @@ using AppShell.Core.Mcp;
 using System.Text;
 using AppShell.Core.Commands;
 using OneHistoryStudio.Git;
+using OneHistoryStudio.Service;
 using static OneHistoryStudio.Smoke.SmokeKit;
 
 namespace OneHistoryStudio.Smoke.Suites;
@@ -206,15 +207,20 @@ internal static class GitRulesSuite
             var commandNames = registry.All().Select(command => command.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             True(commandNames.SetEquals([
                     "git.rule.list", "git.rule.set", "git.rule.batch-set", "git.rule.remove", "git.rule.scan",
-                    "git.rule.gaps", "git.rule.suggest", "git.rule.sync",
+                    "git.rule.review", "git.rule.sync",
                 ]),
-                "command catalog contains the simplified rule commands and V2.2.1 inventory extensions");
+                "command catalog contains the V2.9 combined review command and no split legacy commands");
+            True(!commandNames.Contains("git.rule.gaps") && !commandNames.Contains("git.rule.suggest"),
+                "split gap and suggestion commands are no longer registered");
             True(!commandNames.Any(name => name.StartsWith("attr.", StringComparison.OrdinalIgnoreCase)),
                 "old attr commands absent");
             // V2.4.4:只读性由描述符自描述,不再查名字白名单。判据升级为「真值 + 解释结果」。
             True(registry.TryGet("git.rule.list", out var ruleList) && ruleList.Readonly
                  && McpExposurePolicy.State(ruleList) == "readonly",
                 "git.rule.list is readonly MCP projection");
+            True(registry.TryGet("git.rule.review", out var ruleReview) && ruleReview.Readonly
+                 && McpExposurePolicy.State(ruleReview) == "readonly",
+                "git.rule.review is readonly across UI, Web and MCP projections");
             True(registry.TryGet("git.rule.set", out var ruleSet) && !ruleSet.Readonly
                  && McpExposurePolicy.State(ruleSet) != "readonly",
                 "git.rule.set requires standard MCP policy");
@@ -243,16 +249,57 @@ internal static class GitRulesSuite
             True(batchCommand.Success && batchCommand.Data is GitFileRuleBatchPreview { Items.Count: 2 },
                 "batch JSON executes through CommandBus and returns typed preview");
 
+            await File.WriteAllTextAsync(Path.Combine(worktree, "proposal.md"), "review me\n");
+            await File.WriteAllTextAsync(Path.Combine(worktree, "mystery.reviewunknown"), "unknown\n");
+            var directoryCandidate = Path.Combine(worktree, "generated-review");
+            Directory.CreateDirectory(directoryCandidate);
+            for (var index = 0; index < 50; index++)
+                await File.WriteAllTextAsync(Path.Combine(directoryCandidate, $"item-{index:00}"), "generated\n");
+
             var scanCommand = await commandBus.ExecuteAsync("git.rule.scan name=main refresh=true", "UI");
             True(scanCommand.Success && scanCommand.Data is InventoryReport
                 {
                     ProjectCount: 1,
                     Formats.Count: > 0,
-                }, "V2.2.1 format inventory executes through CommandBus and returns structured data");
-            var gapsCommand = await commandBus.ExecuteAsync("git.rule.gaps name=main", "UI");
-            True(gapsCommand.Success && !gapsCommand.Message.Contains("git.rule.dir", StringComparison.Ordinal)
-                && gapsCommand.Message.Contains("git.rule.set pattern=<目录>/ track=false", StringComparison.Ordinal),
-                "directory gap guidance uses the unified git.rule.set command");
+                }, "format inventory executes through CommandBus and returns structured data");
+            var reviewCommand = await commandBus.ExecuteAsync("git.rule.review name=main", "UI");
+            True(reviewCommand.Success && reviewCommand.Data is GitRuleReviewReport
+                {
+                    Gaps.Directories.Count: > 0,
+                    Suggestions.Count: > 0,
+                    UnknownFormats.Count: > 0,
+                    SuggestedFileCount: > 0,
+                } review && review.Gaps.UndecidedCount > 0 && review.SuggestedCoverageRate > 0,
+                "one review returns suggestions, unknown formats and directory candidates from one scan");
+            var reviewJson = System.Text.Json.JsonSerializer.SerializeToElement(reviewCommand.Data);
+            True(StudioCommandDataDeserializer.Deserialize("git.rule.review", reviewJson)
+                    is GitRuleReviewReport { Gaps.Formats.Count: > 0 },
+                "service and Web data deserializer restores the combined review contract");
+
+            var cachedReview = await commandBus.ExecuteAsync("git.rule.review name=main", "UI");
+            True(cachedReview.Data is GitRuleReviewReport { Gaps.CachedProjects: 1 },
+                "repeated review reuses the project inventory cache");
+            var missingReview = await commandBus.ExecuteAsync("git.rule.review name=missing-project", "UI");
+            True(!missingReview.Success, "review reports a controlled failure when no scan target exists");
+
+            True((await service.SetAsync("main", "*.md", true, false, true, apply: true)).Success,
+                "apply suggested text rule for zero-gap regression");
+            True((await service.SetAsync("main", "*.reviewunknown", false, false, false, apply: true)).Success,
+                "apply manual decision for unknown format");
+            True((await service.SetAsync("main", "*.tmp", false, false, false, apply: true)).Success,
+                "apply suggested temporary-file decision");
+            True((await service.SetAsync("main", "generated-review/", false, false, false, apply: true)).Success,
+                "apply directory decision for zero-gap regression");
+            var resolvedReview = await commandBus.ExecuteAsync("git.rule.review name=main", "UI");
+            True(resolvedReview.Success && resolvedReview.Data is GitRuleReviewReport resolved
+                 && resolved.Gaps.UndecidedCount == 0
+                 && resolved.Gaps.Formats.Count == 0
+                 && resolved.Gaps.Directories.Count == 0
+                 && resolved.Suggestions.Count == 0
+                 && resolved.UnknownFormats.Count == 0
+                 && resolved.SuggestedCoverageRate == 1d,
+                "review reports zero undecided items after every decision is applied: " +
+                resolvedReview.Message);
 
             Ensure(await GitRunner.RunAsync(worktree, ["rm", "-f", "--", "asset.bin", "workbook.xlsx"]),
                 "remove all LFS pointers for empty JSON regression");

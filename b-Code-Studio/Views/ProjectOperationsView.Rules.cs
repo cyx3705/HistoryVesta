@@ -201,45 +201,20 @@ public partial class ProjectOperationsView
             await LoadRulesAsync(project, refresh: true);
     }
 
-    private async void OnReloadRulesClick(object sender, System.Windows.RoutedEventArgs e)
+    /// <summary>强制重扫本项目，并把台账与声明规则原子替换进表格。</summary>
+    private async void OnRefreshRulesClick(object sender, System.Windows.RoutedEventArgs e)
     {
-        if (CurrentProjectName() is { Length: > 0 } project
-            && await EnsureDirtyRulesHandledAsync("重新读取规则"))
-            await LoadRulesAsync(project);
+        if (CurrentProjectName() is not { Length: > 0 } project)
+            return;
+        if (!await EnsureDirtyRulesHandledAsync("刷新规则"))
+            return;
+        await LoadRulesAsync(project, refresh: true);
     }
 
-    // ---------------------------------------------------------------- 全覆盖扫描入口
-
-    /// <summary>强制重扫本项目并把完整格式台账重新合并进规则表。</summary>
-    private async void OnScanCoverageClick(object sender, System.Windows.RoutedEventArgs e)
-    {
-        if (_busAccessor() is not { } bus || CurrentProjectName() is not { Length: > 0 } project)
-            return;
-        if (!await EnsureDirtyRulesHandledAsync("重新扫描规则"))
-            return;
-
-        ScanCoverageButton.IsEnabled = false;
-        CoverageText.Text = "扫描中…";
-        try
-        {
-            await LoadRulesAsync(project, refresh: true);
-        }
-        finally
-        {
-            ScanCoverageButton.IsEnabled = true;
-        }
-    }
-
-    private void OnShowGapsClick(object sender, System.Windows.RoutedEventArgs e)
+    private void OnReviewRulesClick(object sender, System.Windows.RoutedEventArgs e)
     {
         if (CurrentProjectName() is { Length: > 0 } project)
-            _ = _busAccessor()?.ExecuteAsync($"git.rule.gaps name={CommandParser.QuoteArg(project)}", "UI");
-    }
-
-    private void OnSuggestClick(object sender, System.Windows.RoutedEventArgs e)
-    {
-        if (CurrentProjectName() is { Length: > 0 } project)
-            _ = _busAccessor()?.ExecuteAsync($"git.rule.suggest name={CommandParser.QuoteArg(project)}", "UI");
+            _ = _busAccessor()?.ExecuteAsync($"git.rule.review name={CommandParser.QuoteArg(project)}", "UI");
     }
 
     /// <summary>基线同步只发预览:写入需在控制台显式 apply=true(人在环上)。</summary>
@@ -305,10 +280,8 @@ public partial class ProjectOperationsView
         RuleGrid.IsEnabled = !running;
         PatternBox.IsEnabled = !running;
         AddRuleButton.IsEnabled = !running;
-        ReloadRulesButton.IsEnabled = !running;
-        ScanCoverageButton.IsEnabled = !running;
-        ShowGapsButton.IsEnabled = !running;
-        SuggestButton.IsEnabled = !running;
+        RefreshRulesButton.IsEnabled = !running;
+        ReviewRulesButton.IsEnabled = !running;
         SyncBaselineButton.IsEnabled = !running;
         CurrentProjectBox.IsEnabled = !running;
         RefreshProjectsButton.IsEnabled = !running;

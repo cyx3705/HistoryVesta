@@ -18,8 +18,7 @@ public static class GitRuleCommands
         registry.Register(BuildBatchSet(service), source);
         registry.Register(BuildRemove(service), source);
         registry.Register(BuildScan(inventory), source);
-        registry.Register(BuildGaps(inventory), source);
-        registry.Register(BuildSuggest(inventory, projects), source);
+        registry.Register(BuildReview(inventory, projects), source);
         registry.Register(BuildSync(service, projects), source);
     }
 
@@ -70,35 +69,20 @@ public static class GitRuleCommands
         },
     };
 
-    private static CommandDescriptor BuildSuggest(
+    private static CommandDescriptor BuildReview(
         FormatInventoryService inventory, ProjectService projects) => new()
     {
-        Name = "git.rule.suggest",
-        Summary = "对未决格式给出处置建议(派生件忽略/文本 LF/大二进制 LFS;未知格式留白)",
+        Name = "git.rule.review",
+        Summary = "一次扫描合并查看未决格式、目录候选、规则建议与需人工判断的未知格式",
         Readonly = true,
-        Example = "git.rule.suggest",
+        Example = "git.rule.review",
         Parameters = [StringParam("name", "项目名;省略则针对全库", position: 0)],
         Handler = async ctx =>
         {
-            var (success, message, suggestions) = await inventory.SuggestAsync(
+            var (success, message, report) = await inventory.ReviewAsync(
                 // 用警告阈值(proj.warnmb,默认 50MB)而非拒绝阈值:
                 // 超过警告线的二进制就该走 LFS,不必等到触发硬拒绝
                 ctx.GetString("name"), projects.WarnBytes, ctx.Progress, ctx.Cancellation);
-            return success ? CommandResult.Ok(message, suggestions) : CommandResult.Fail(message);
-        },
-    };
-
-    private static CommandDescriptor BuildGaps(FormatInventoryService inventory) => new()
-    {
-        Name = "git.rule.gaps",
-        Summary = "只列未纳管的格式与目录候选,按影响文件数降序(缺口清单)",
-        Readonly = true,
-        Example = "git.rule.gaps",
-        Parameters = [StringParam("name", "项目名;省略则查全库", position: 0)],
-        Handler = async ctx =>
-        {
-            var (success, message, report) = await inventory.GapsAsync(
-                ctx.GetString("name"), ctx.Progress, ctx.Cancellation);
             return success ? CommandResult.Ok(message, report) : CommandResult.Fail(message);
         },
     };

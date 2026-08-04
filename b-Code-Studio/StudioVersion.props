@@ -1,6 +1,6 @@
 ﻿<Project>
   <PropertyGroup>
-    <OneHistoryStudioVersion>2.8.5</OneHistoryStudioVersion>
+    <OneHistoryStudioVersion>2.9.0</OneHistoryStudioVersion>
     <VersionPrefix>$(OneHistoryStudioVersion)</VersionPrefix>
     <Version>$(OneHistoryStudioVersion)</Version>
     <AssemblyVersion>$(OneHistoryStudioVersion).0</AssemblyVersion>

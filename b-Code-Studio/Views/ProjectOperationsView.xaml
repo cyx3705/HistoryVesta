@@ -38,52 +38,54 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="新项目名称:" Margin="0,0,6,6"
                            VerticalAlignment="Center" />
-                <TextBox Grid.Row="0" Grid.Column="1" x:Name="NewProjectNameBox" Margin="0,0,0,6"
+                <TextBox Grid.Row="0" Grid.Column="1" x:Name="NewProjectNameBox" Margin="0,0,6,6"
                          VerticalContentAlignment="Center" TextChanged="OnNewProjectNameChanged" />
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="基础分支 / 当前项目:" Margin="0,0,6,6"
+                <Button Grid.Row="0" Grid.Column="2" x:Name="CreateProjectButton" Content="新建"
+                        Padding="10,3" Margin="0,0,0,6" IsEnabled="False" Click="OnCreateClick" />
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="当前项目:" Margin="0,0,6,0"
                            VerticalAlignment="Center" />
                 <ComboBox Grid.Row="1" Grid.Column="1" x:Name="CurrentProjectBox" IsEditable="True"
-                          Margin="0,0,0,6" SelectionChanged="OnProjectSelected" />
-                <WrapPanel Grid.Row="2" Grid.ColumnSpan="2">
-                    <Button x:Name="CreateProjectButton" Content="创建工作树" Padding="10,3"
-                            IsEnabled="False" Click="OnCreateClick" />
-                    <Button x:Name="OpenProjectButton" Content="打开所选项目" Padding="10,3"
-                            Margin="6,0,0,0" IsEnabled="False" Click="OnOpenClick" />
-                    <Button x:Name="RefreshProjectsButton" Content="刷新项目" Padding="10,3"
-                            Margin="6,0,0,0" Click="OnRefreshProjectsClick" />
-                </WrapPanel>
+                          Margin="0,0,6,0" SelectionChanged="OnProjectSelected" />
+                <Button Grid.Row="1" Grid.Column="2" x:Name="RefreshProjectsButton" Content="刷新"
+                        Padding="10,3" Click="OnRefreshProjectsClick" />
             </Grid>
         </GroupBox>
 
-        <GroupBox DockPanel.Dock="Top" Header="所选项目提交与推送" Margin="0,0,0,8">
+        <GroupBox DockPanel.Dock="Top" Header="提交与推送" Margin="0,0,0,8">
             <Grid Margin="6">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Row="0" Grid.ColumnSpan="2" x:Name="SelectedActionTitle"
+                <TextBlock Grid.Row="0" Grid.ColumnSpan="3" x:Name="SelectedActionTitle"
                            Text="当前未选择项目" FontWeight="SemiBold" Margin="0,0,0,6"
                            TextWrapping="Wrap" />
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="提交描述:" Margin="0,0,6,6"
                            VerticalAlignment="Center" />
                 <TextBox Grid.Row="1" Grid.Column="1" x:Name="SelectedCommitMessageBox"
-                         Margin="0,0,0,6" VerticalContentAlignment="Center"
+                         Margin="0,0,6,6" VerticalContentAlignment="Center"
                          TextChanged="OnCommitMessageChanged" />
-                <UniformGrid Grid.Row="2" Grid.ColumnSpan="2" Columns="4" Margin="0,0,0,6">
+                <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" Margin="0,0,0,6">
+                    <Button x:Name="SelectedCommitButton" Content="提交" Padding="14,3"
+                            IsEnabled="False" Click="OnCommitSelectedClick" />
+                    <Button x:Name="SelectedPushButton" Content="推送" Padding="14,3"
+                            Margin="6,0,0,0" IsEnabled="False" Click="OnPushSelectedClick" />
+                </StackPanel>
+                <UniformGrid Grid.Row="2" Grid.ColumnSpan="3" Columns="4">
                     <RadioButton x:Name="CurrentSubmodulesModeButton" GroupName="OperationMode"
                                  Content="当前&#10;仅子模块" Style="{StaticResource OperationSegment}"
                                  Click="OnOperationModeChanged" />
@@ -97,57 +99,41 @@
                                  Content="全部&#10;分支及子模块" Style="{StaticResource OperationSegment}"
                                  Click="OnOperationModeChanged" />
                 </UniformGrid>
-                <WrapPanel Grid.Row="3" Grid.ColumnSpan="2">
-                    <Button x:Name="SelectedCommitButton" Content="提交" Padding="14,3"
-                            IsEnabled="False" Click="OnCommitSelectedClick" />
-                    <Button x:Name="SelectedPushButton" Content="推送" Padding="14,3"
-                            Margin="6,0,0,0" IsEnabled="False" Click="OnPushSelectedClick" />
-                </WrapPanel>
             </Grid>
         </GroupBox>
 
         <DockPanel x:Name="RulePanel" IsEnabled="False">
             <TextBlock DockPanel.Dock="Top" x:Name="RuleTitle" FontWeight="SemiBold"
                        Text="Git 文件规则" Margin="0,0,0,6" TextWrapping="Wrap" />
-            <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBox Grid.Column="0" x:Name="PatternBox" Text="*.xlsx"
-                         VerticalContentAlignment="Center"
-                         ToolTip="文件格式如 *.xlsx；目录规则以 / 结尾如 Library/（只用于忽略）" />
-                <Button Grid.Column="1" x:Name="AddRuleButton" Content="添加格式/目录" Padding="10,3" Margin="6,0,0,0"
-                        Click="OnAddRuleClick" />
-            </Grid>
+            <TextBox DockPanel.Dock="Top" x:Name="PatternBox" Text="*.xlsx" Margin="0,0,0,6"
+                          VerticalContentAlignment="Center"
+                          ToolTip="文件格式如 *.xlsx；目录规则以 / 结尾如 Library/（只用于忽略）" />
 
-            <!-- 选择项目自动加载全格式台账；按钮强制刷新缓存。 -->
+            <ScrollViewer DockPanel.Dock="Top" HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Disabled" Margin="0,0,0,6">
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="AddRuleButton" Content="添加规则" Padding="10,3"
+                            Click="OnAddRuleClick" />
+                    <Button x:Name="RefreshRulesButton" Content="刷新规则" Padding="10,3" Margin="6,0,0,0"
+                            Click="OnRefreshRulesClick" />
+                    <Button x:Name="ReviewRulesButton" Content="未决与建议" Padding="10,3" Margin="6,0,0,0"
+                            Click="OnReviewRulesClick" />
+                    <Button x:Name="SyncBaselineButton" Content="同步基线" Padding="10,3" Margin="6,0,0,0"
+                            Click="OnSyncBaselineClick"
+                            ToolTip="只预览模板项目 baseline 规则同步；不会从页面直接写入" />
+                    <Button x:Name="SaveRuleButton" Content="保存修改（0）" Padding="10,3" Margin="6,0,0,0"
+                            IsEnabled="False" Click="OnSaveRuleClick" />
+                    <Button x:Name="DeleteRuleButton" Content="删除规则" Padding="10,3" Margin="6,0,0,0"
+                            IsEnabled="False" Click="OnDeleteRuleClick" />
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- 选择项目自动加载全格式台账；刷新规则强制刷新缓存。 -->
             <Border DockPanel.Dock="Top" Background="#F7F7F7" BorderBrush="#DDD" BorderThickness="1"
                     Padding="6" Margin="0,0,0,6">
-                <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" x:Name="CoverageText" Foreground="#555"
-                               Margin="0,0,0,6" TextWrapping="Wrap"
-                               Text="格式覆盖：选择项目后自动读取全部文件格式" />
-                    <WrapPanel>
-                        <Button x:Name="ScanCoverageButton" Content="扫描覆盖" Padding="10,3"
-                                Click="OnScanCoverageClick" />
-                        <Button x:Name="ShowGapsButton" Content="查看未决" Padding="10,3" Margin="6,0,0,0"
-                                Click="OnShowGapsClick" />
-                        <Button x:Name="SuggestButton" Content="规则建议" Padding="10,3" Margin="6,0,0,0"
-                                Click="OnSuggestClick" />
-                        <Button x:Name="SyncBaselineButton" Content="同步模板基线（预览）" Padding="10,3"
-                                Margin="6,0,0,0" Click="OnSyncBaselineClick" />
-                    </WrapPanel>
-                </DockPanel>
+                <TextBlock x:Name="CoverageText" Foreground="#555" TextWrapping="Wrap"
+                           Text="格式覆盖：选择项目后自动读取全部文件格式" />
             </Border>
-            <WrapPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
-                <Button x:Name="SaveRuleButton" Content="保存修改（0）" Padding="10,3"
-                        IsEnabled="False" Click="OnSaveRuleClick" />
-                <Button x:Name="DeleteRuleButton" Content="删除规则" Padding="10,3" Margin="6,0,0,0"
-                        IsEnabled="False" Click="OnDeleteRuleClick" />
-                <Button x:Name="ReloadRulesButton" Content="重新读取" Padding="10,3" Margin="6,0,0,0"
-                        Click="OnReloadRulesClick" />
-            </WrapPanel>
 
             <DataGrid x:Name="RuleGrid" AutoGenerateColumns="False" CanUserAddRows="False"
                       CanUserDeleteRows="False" SelectionMode="Single" SelectionUnit="FullRow"

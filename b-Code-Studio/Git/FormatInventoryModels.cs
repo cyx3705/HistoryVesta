@@ -38,3 +38,11 @@ public sealed record InventoryReport(
     long ElapsedMs,
     IReadOnlyList<FormatRow> Formats,
     IReadOnlyList<DirectoryCandidateRow> Directories);
+
+/// <summary>一次扫描生成的未决清单、自动建议和需人工判断的未知格式。</summary>
+public sealed record GitRuleReviewReport(
+    InventoryReport Gaps,
+    IReadOnlyList<RuleSuggestion> Suggestions,
+    IReadOnlyList<FormatRow> UnknownFormats,
+    int SuggestedFileCount,
+    double SuggestedCoverageRate);

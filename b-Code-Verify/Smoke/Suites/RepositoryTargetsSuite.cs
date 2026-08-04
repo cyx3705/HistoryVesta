@@ -178,6 +178,12 @@ internal static class RepositoryTargetsSuite
             .Where(name => name != null).ToList();
         Equal(1, named.Count(name => name == "SelectedCommitMessageBox"), "one commit message box");
         Equal(1, named.Count(name => name == "SaveRuleButton"), "one batch rule save button");
+        foreach (var removed in new[]
+                 {
+                     "OpenProjectButton", "ScanCoverageButton", "ReloadRulesButton",
+                     "ShowGapsButton", "SuggestButton",
+                 })
+            True(!named.Contains(removed), $"removed project operation control is absent: {removed}");
         True(project.Descendants().Any(element => element.Attribute(x + "Name")?.Value == "SaveRuleButton"
             && element.Attribute("Content")?.Value == "保存修改（0）"),
             "rule save button advertises whole dirty set instead of selected row");
@@ -190,8 +196,37 @@ internal static class RepositoryTargetsSuite
 
         var groups = project.Descendants().Where(element => element.Name.LocalName == "GroupBox")
             .ToDictionary(element => element.Attribute("Header")?.Value ?? string.Empty);
-        Equal(3, CountGridRows(groups["项目"]), "project group has three rows");
-        Equal(4, CountGridRows(groups["所选项目提交与推送"]), "operation group has four rows");
+        Equal(2, CountGridRows(groups["项目"]), "project group has two compact rows");
+        Equal(3, CountGridRows(groups["提交与推送"]), "commit and push group has three rows");
+        True(!project.ToString().Contains("基础分支", StringComparison.Ordinal)
+             && !project.ToString().Contains("打开所选项目", StringComparison.Ordinal),
+            "project page removes the base-branch label and duplicate open entry");
+
+        var byName = project.Descendants()
+            .Where(element => element.Attribute(x + "Name") != null)
+            .ToDictionary(element => element.Attribute(x + "Name")!.Value);
+        Equal("2", byName["CreateProjectButton"].Attribute("Grid.Column")?.Value,
+            "new project action sits to the right of its input");
+        Equal("2", byName["RefreshProjectsButton"].Attribute("Grid.Column")?.Value,
+            "project refresh sits to the right of current project");
+        Equal("1", byName["SelectedCommitMessageBox"].Attribute("Grid.Row")?.Value,
+            "commit description remains on the action row");
+        var commitActions = byName["SelectedCommitButton"].Parent;
+        True(commitActions != null && ReferenceEquals(commitActions, byName["SelectedPushButton"].Parent)
+             && commitActions.Attribute("Grid.Row")?.Value == "1"
+             && commitActions.Attribute("Grid.Column")?.Value == "2",
+            "commit and push buttons share the description row immediately to its right");
+
+        var actionNames = new[]
+        {
+            "AddRuleButton", "RefreshRulesButton", "ReviewRulesButton",
+            "SyncBaselineButton", "SaveRuleButton", "DeleteRuleButton",
+        };
+        var actionStrip = byName[actionNames[0]].Parent;
+        True(actionStrip != null && actionStrip.Name.LocalName == "StackPanel"
+             && actionNames.All(name => ReferenceEquals(actionStrip, byName[name].Parent))
+             && actionStrip.Parent?.Name.LocalName == "ScrollViewer",
+            "all six Git rule actions stay in one horizontally scrollable strip");
     }
 
     private static int CountGridRows(XElement group)

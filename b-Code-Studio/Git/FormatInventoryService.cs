@@ -122,53 +122,8 @@ public sealed class FormatInventoryService
         }
     }
 
-    /// <summary>只列未决项(格式 + 目录候选),按影响文件数降序——缺口一眼可见。</summary>
-    public async Task<(bool Success, string Message, InventoryReport? Report)> GapsAsync(
-        string? project,
-        IProgress<string>? progress,
-        CancellationToken cancellation = default)
-    {
-        var (success, message, report) = await ScanAsync(project, deep: false, refresh: false, progress, cancellation)
-            .ConfigureAwait(false);
-        if (!success || report == null)
-            return (success, message, report);
-
-        var gapFormats = report.Formats.Where(f => f.UndecidedCount > 0)
-            .OrderByDescending(f => f.UndecidedCount).ToList();
-        var gapDirs = report.Directories.Where(d => !d.Ignored)
-            .OrderByDescending(d => d.FileCount).ToList();
-        var trimmed = report with { Formats = gapFormats, Directories = gapDirs };
-
-        var text = new StringBuilder();
-        text.Append($"未决清单({(string.IsNullOrWhiteSpace(project) ? "全库" : project)}): " +
-                    $"{gapFormats.Count} 种格式 / {gapDirs.Count} 个目录候选,共 {report.UndecidedCount} 个文件待决");
-        if (gapFormats.Count == 0 && gapDirs.Count == 0)
-            text.Append("\n  ✓ 无未决项,覆盖率 100%");
-
-        foreach (var f in gapFormats.Take(30))
-        {
-            text.Append($"\n  {f.Format,-16} 未决 {f.UndecidedCount,6}  (共 {f.FileCount} 个 / {f.ProjectCount} 个项目)");
-        }
-
-        if (gapFormats.Count > 30)
-            text.Append($"\n  … 另有 {gapFormats.Count - 30} 种格式,完整台账见 git.rule.scan");
-
-        foreach (var d in gapDirs.Take(15))
-            text.Append($"\n  [目录] {d.Project}/{d.Directory}  {d.FileCount} 个无扩展名文件");
-
-        if (gapDirs.Count > 15)
-            text.Append($"\n  … 另有 {gapDirs.Count - 15} 个目录候选");
-
-        text.Append("\n处置: 格式用 git.rule.set 逐项纳管;目录候选用 " +
-                    "git.rule.set pattern=<目录>/ track=false");
-        return (true, text.ToString(), trimmed);
-    }
-
-    /// <summary>
-    /// 对未决格式给出处置建议；未知格式留白不猜。
-    /// apply 由调用方(指令层)按预览-应用两段式执行,本方法只产出建议。
-    /// </summary>
-    public async Task<(bool Success, string Message, IReadOnlyList<RuleSuggestion> Suggestions)> SuggestAsync(
+    /// <summary>一次扫描同时生成未决清单与规则建议；未知格式留给人工判断。</summary>
+    public async Task<(bool Success, string Message, GitRuleReviewReport? Report)> ReviewAsync(
         string? project,
         long lfsThresholdBytes,
         IProgress<string>? progress,
@@ -177,11 +132,17 @@ public sealed class FormatInventoryService
         var (success, message, report) = await ScanAsync(project, deep: false, refresh: false, progress, cancellation)
             .ConfigureAwait(false);
         if (!success || report == null)
-            return (false, message, []);
+            return (false, message, null);
+
+        var gapFormats = report.Formats.Where(row => row.UndecidedCount > 0)
+            .OrderByDescending(row => row.UndecidedCount).ToList();
+        var gapDirectories = report.Directories.Where(row => !row.Ignored)
+            .OrderByDescending(row => row.FileCount).ToList();
+        var gaps = report with { Formats = gapFormats, Directories = gapDirectories };
 
         var suggestions = new List<RuleSuggestion>();
         var unknown = new List<FormatRow>();
-        foreach (var row in report.Formats.Where(f => f.UndecidedCount > 0))
+        foreach (var row in gapFormats)
         {
             var suggestion = RuleSuggestionEngine.Suggest(row, lfsThresholdBytes);
             if (suggestion != null)
@@ -192,12 +153,30 @@ public sealed class FormatInventoryService
 
         suggestions = suggestions.OrderByDescending(s => s.AffectedFiles).ToList();
 
-        var covered = suggestions.Sum(s => s.AffectedFiles);
+        var covered = suggestions.Sum(suggestion => suggestion.AffectedFiles);
+        var suggestedCoverageRate = report.UndecidedCount == 0
+            ? 1d
+            : (double)covered / report.UndecidedCount;
+        var review = new GitRuleReviewReport(
+            gaps, suggestions, unknown, covered, suggestedCoverageRate);
         var text = new StringBuilder();
-        text.Append($"规则建议({(string.IsNullOrWhiteSpace(project) ? "全库" : project)}): " +
-                    $"{suggestions.Count} 条建议可覆盖 {covered} 个未决文件;" +
-                    $"{unknown.Count} 种未知格式留白待人工判定");
-        text.Append("\n格式                建议            影响文件  依据");
+        text.Append($"未决与建议({(string.IsNullOrWhiteSpace(project) ? "全库" : project)}): " +
+                    $"覆盖率 {report.CoverageRate:P1},未决 {report.UndecidedCount} 个文件;" +
+                    $"{suggestions.Count} 条建议可覆盖 {covered} 个({suggestedCoverageRate:P1});" +
+                    $"{unknown.Count} 种未知格式待人工判定");
+        text.Append($"\n未决清单: {gapFormats.Count} 种格式 / {gapDirectories.Count} 个目录候选");
+        if (gapFormats.Count == 0 && gapDirectories.Count == 0)
+            text.Append("\n  无未决项");
+        foreach (var row in gapFormats.Take(30))
+            text.Append($"\n  {row.Format,-16} 未决 {row.UndecidedCount,6}  (共 {row.FileCount} 个 / {row.ProjectCount} 个项目)");
+        if (gapFormats.Count > 30)
+            text.Append($"\n  ... 另有 {gapFormats.Count - 30} 种格式,完整台账见 git.rule.scan");
+        foreach (var row in gapDirectories.Take(15))
+            text.Append($"\n  [目录] {row.Project}/{row.Directory}  {row.FileCount} 个无扩展名文件");
+        if (gapDirectories.Count > 15)
+            text.Append($"\n  ... 另有 {gapDirectories.Count - 15} 个目录候选");
+
+        text.Append("\n规则建议:\n格式                建议            影响文件  依据");
 
         foreach (var s in suggestions.Take(40))
         {
@@ -206,7 +185,7 @@ public sealed class FormatInventoryService
         }
 
         if (suggestions.Count > 40)
-            text.Append($"\n  … 另有 {suggestions.Count - 40} 条建议(Data 载荷含全量)");
+            text.Append($"\n  ... 另有 {suggestions.Count - 40} 条建议(Data 载荷含全量)");
 
         if (unknown.Count > 0)
         {
@@ -215,7 +194,7 @@ public sealed class FormatInventoryService
         }
 
         text.Append("\n应用: git.rule.set 逐条采纳;目录候选用 git.rule.set pattern=<目录>/ track=false");
-        return (true, text.ToString(), suggestions);
+        return (true, text.ToString(), review);
     }
 
     // ---------------------------------------------------------------- 单项目扫描
@@ -240,7 +219,7 @@ public sealed class FormatInventoryService
         var declared = await GitFileRuleService.ReadDeclaredRulesAsync(root, cancellation).ConfigureAwait(false);
 
         var formats = new Dictionary<string, FormatStat>(StringComparer.OrdinalIgnoreCase);
-        var dirs = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var dirs = new Dictionary<string, DirectoryStat>(StringComparer.OrdinalIgnoreCase);
 
         // 体积统计恒开:逐文件 stat 求准确最大/合计(驱动 LFS 建议;全库仅多耗 580ms)
         const bool measure = true;
@@ -317,7 +296,15 @@ public sealed class FormatInventoryService
                     continue;
 
                 // 无扩展名文件按目录归并(§3.3),供目录规则决策
-                dirs[RollupDirectory(path)] = dirs.GetValueOrDefault(RollupDirectory(path)) + 1;
+                var directory = RollupDirectory(path);
+                if (!dirs.TryGetValue(directory, out var directoryStat))
+                    dirs[directory] = directoryStat = new DirectoryStat();
+                switch (kind)
+                {
+                    case FileKind.Tracked: directoryStat.Tracked++; break;
+                    case FileKind.Ignored: directoryStat.Ignored++; break;
+                    default: directoryStat.Untracked++; break;
+                }
             }
         }
     }
@@ -362,8 +349,9 @@ public sealed class FormatInventoryService
         {
             var m = kv.Value;
             var projectCount = m.Projects.Count;
-            // 未决 = 未跟踪未忽略 + (已跟踪但该格式在任何项目都无声明)
-            var undecided = m.Untracked + (m.DeclaredIn == 0 ? m.Tracked : 0);
+            // 无扩展名没有可声明的格式规则：已跟踪文件已经有明确归宿，只把未跟踪文件计为未决。
+            var undecided = m.Untracked
+                            + (kv.Key != NoExtension && m.DeclaredIn == 0 ? m.Tracked : 0);
             var state = m.DeclaredIn == 0
                 ? (m.Ignored > 0 && m.Tracked == 0 ? "已忽略(无显式规则)" : "未决")
                 : m.Divergent
@@ -381,8 +369,10 @@ public sealed class FormatInventoryService
         .ToList();
 
         // 达阈值的目录单列为候选；散尾并入 other 一行整体决策。
-        var allDirs = scans.SelectMany(scan => scan.Directories.Select(kv =>
-            new DirectoryCandidateRow(scan.Project, kv.Key, kv.Value, Ignored: false))).ToList();
+        var allDirs = scans.SelectMany(scan => scan.Directories
+            .Where(kv => kv.Value.Untracked > 0)
+            .Select(kv => new DirectoryCandidateRow(
+                scan.Project, kv.Key, kv.Value.Untracked, Ignored: false))).ToList();
 
         var dirs = allDirs.Where(d => d.FileCount >= DirectoryCandidateThreshold)
             .OrderByDescending(d => d.FileCount)
@@ -395,7 +385,7 @@ public sealed class FormatInventoryService
                 $"(共 {tail.Select(t => t.Project).Distinct().Count()} 个项目)",
                 $"other:散尾无扩展名文件({tail.Count} 处目录)",
                 tail.Sum(t => t.FileCount),
-                Ignored: false));
+                Ignored: tail.All(candidate => candidate.Ignored)));
         }
 
         var total = formats.Sum(f => (long)f.FileCount);
@@ -444,7 +434,7 @@ public sealed class FormatInventoryService
                 text.Append($"\n  {d.Project}/{d.Directory}  {d.FileCount} 个");
         }
 
-        text.Append("\ngit.rule.gaps 只看未决项;depth=normal 加体积统计,deep 加 LFS 指针核验");
+        text.Append("\ngit.rule.review 合并查看未决与建议;deep=true 加 LFS 指针核验");
         return text.ToString();
     }
 
@@ -615,7 +605,7 @@ public sealed class FormatInventoryService
         int Untracked,
         int LfsPointers,
         Dictionary<string, FormatStat> Formats,
-        Dictionary<string, int> Directories,
+        Dictionary<string, DirectoryStat> Directories,
         Dictionary<string, DeclaredDto> Declared);
 
     public sealed class FormatStat
@@ -630,6 +620,13 @@ public sealed class FormatInventoryService
 
         /// <summary>样本内容嗅探结果:true=二进制。用于纠正扩展名清单的误判(见 SniffBinary)。</summary>
         public bool BinarySniff { get; set; }
+    }
+
+    public sealed class DirectoryStat
+    {
+        public int Tracked { get; set; }
+        public int Ignored { get; set; }
+        public int Untracked { get; set; }
     }
 
     /// <summary>

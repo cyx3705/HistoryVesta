@@ -9,7 +9,7 @@ using OneHistoryStudio.Git;
 
 namespace OneHistoryStudio.Views;
 
-/// <summary>项目创建、打开和所选项目的三状态 Git 文件格式规则。</summary>
+/// <summary>项目创建、提交推送和所选项目的三状态 Git 文件格式规则。</summary>
 public partial class ProjectOperationsView : UserControl
 {
     private readonly Func<CommandBus?> _busAccessor;
@@ -178,12 +178,6 @@ public partial class ProjectOperationsView : UserControl
         }
     }
 
-    private void OnOpenClick(object sender, System.Windows.RoutedEventArgs e)
-    {
-        if (CurrentProjectName() is { Length: > 0 } name)
-            _ = _busAccessor()?.ExecuteAsync($"proj.open name={CommandParser.QuoteArg(name)}", "UI");
-    }
-
     private async void OnCommitSelectedClick(object sender, System.Windows.RoutedEventArgs e)
     {
         var mode = CurrentOperationMode();
@@ -237,7 +231,6 @@ public partial class ProjectOperationsView : UserControl
         var mode = CurrentOperationMode();
         var scopeReady = !ProjectOperationCommandBuilder.RequiresCurrentProject(mode) || hasCurrent;
         CreateProjectButton.IsEnabled = hasCurrent && NewProjectName().Length > 0;
-        OpenProjectButton.IsEnabled = hasCurrent;
         SelectedActionTitle.Text = !ProjectOperationCommandBuilder.RequiresCurrentProject(mode)
             ? "全部工作树"
             : hasCurrent
