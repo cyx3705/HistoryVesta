@@ -19,7 +19,8 @@ internal sealed class WorkerReporter(string batchId, JsonSerializerOptions jsonO
         FeatureOutcome? feature = null,
         AssemblyOutcome? assembly = null,
         ConversionArtifactKind? artifact = null,
-        ReuseKind? reuseKind = null)
+        ReuseKind? reuseKind = null,
+        MateOutcome? mate = null)
     {
         var payload = new WorkerEvent(
             batchId,
@@ -34,7 +35,18 @@ internal sealed class WorkerReporter(string batchId, JsonSerializerOptions jsonO
             feature,
             assembly,
             artifact,
-            reuseKind);
+            reuseKind,
+            mate);
+        Write(payload);
+    }
+
+    public void Forward(WorkerEvent workerEvent)
+    {
+        Write(workerEvent with { BatchId = batchId });
+    }
+
+    private void Write(WorkerEvent payload)
+    {
         lock (_gate)
         {
             Console.Out.WriteLine(JsonSerializer.Serialize(payload, jsonOptions));

@@ -11,6 +11,8 @@ Directory.CreateDirectory(root);
 try
 {
     TestSharedContractsAndVersion();
+    TestPartImportIsolationContracts(root);
+    TestCadProcessOwnershipResolution();
     TestOhsLayoutAndScan(root);
     TestViewModelDirectorySelection(root);
     TestMissingUnusedPreflight(root);
@@ -23,6 +25,8 @@ try
     TestAssemblyRetryReuse(root);
     TestAssemblyRetryRejectsUnsafeOutputs(root);
     TestAssemblyTemplateFallback(root);
+    TestComponentDocumentReuseGuard();
+    TestMateCandidateStalenessContract();
     TestAssemblyMatrixMapping();
     TestAssemblyTree();
     TestAssemblyGraphTopology();
@@ -34,9 +38,14 @@ try
     TestAssemblyPlannerNesting(root);
     TestAssemblyPlannerRejectsBrokenGraph(root);
     TestAssemblyNodeReuse(root);
+    TestMateGeometryMatching();
+    TestMateTypeMapping();
+    TestMateOutcomeSelfConsistency();
+    TestMateCandidateEquivalence();
     TestNestedAssemblyMetrics();
     TestAssemblyModeValidationText();
     TestAssemblyViewModelState(root);
+    TestAssemblyMateSwitchAndReport(root);
     TestAssemblyActiveRunDisposal(root);
     TestWorkspaceModes();
     TestUiModuleRegistration();
@@ -44,6 +53,8 @@ try
     TestParasolidTextProbe(root);
     TestFeatureRecognitionRetries();
     TestFeatureRecognitionSessionGuards();
+    TestRecognitionGeometryGuard();
+    TestImportIdentityAndSessionFaultGuards();
     TestActiveRunDisposal(root);
     Console.WriteLine("SE2SW.Smoke: PASS");
 }
@@ -52,14 +63,47 @@ finally
     Directory.Delete(root, recursive: true);
 }
 
+static void TestCadProcessOwnershipResolution()
+{
+    Equal(
+        0,
+        CadProcessOwnership.ResolveOwnedProcessId(new HashSet<int>(), Array.Empty<int>(), 0),
+        "COM 返回早于 CAD 进程出现时不得凭空取得所有权");
+    Equal(
+        200,
+        CadProcessOwnership.ResolveOwnedProcessId(new HashSet<int>(), [200], 0),
+        "启动前无 CAD 且只出现一个新 PID 时必须取得所有权");
+    Equal(
+        200,
+        CadProcessOwnership.ResolveOwnedProcessId(new HashSet<int> { 100 }, [100, 200], 0),
+        "已有用户进程时只能认领唯一新增 PID");
+    Equal(
+        0,
+        CadProcessOwnership.ResolveOwnedProcessId(new HashSet<int> { 100 }, [100], 100),
+        "窗口句柄指向启动前已有 PID 时不得取得所有权");
+    Equal(
+        0,
+        CadProcessOwnership.ResolveOwnedProcessId(new HashSet<int>(), [200, 300], 0),
+        "多个新增 PID 且没有窗口证据时必须保持未知");
+    Equal(
+        300,
+        CadProcessOwnership.ResolveOwnedProcessId(new HashSet<int>(), [200, 300], 300),
+        "窗口句柄必须能消解多个新增 PID 的歧义");
+}
+
 static void TestSharedContractsAndVersion()
 {
-    Equal("3.3.2", typeof(ModuleInfo).Assembly.GetName().Version?.ToString(3), "UI 程序集版本必须来自唯一版本源");
-    Equal("3.3.2", typeof(ConversionJob).Assembly.GetName().Version?.ToString(3), "Contracts 程序集版本必须来自唯一版本源");
-    Equal("3.3.2", typeof(WorkerRequestValidator).Assembly.GetName().Version?.ToString(3), "Worker 程序集版本必须来自唯一版本源");
-    Equal("3.3.2", new ModuleInfo().Version, "模块运行时版本不得另存字符串副本");
+    // 期望值从版本真源现读，不写死字面量——写死等于每次升版都要改这个测试，
+    // 而这道守卫要证明的恰恰是"版本只有一个来源"，它自己就不该成为第二个来源。
+    var expected = ReadVersionFromSingleSource();
+    Equal(expected, typeof(ModuleInfo).Assembly.GetName().Version?.ToString(3), "UI 程序集版本必须来自唯一版本源");
+    Equal(expected, typeof(ConversionJob).Assembly.GetName().Version?.ToString(3), "Contracts 程序集版本必须来自唯一版本源");
+    Equal(expected, typeof(WorkerRequestValidator).Assembly.GetName().Version?.ToString(3), "Worker 程序集版本必须来自唯一版本源");
+    Equal(expected, new ModuleInfo().Version, "模块运行时版本不得另存字符串副本");
+    Equal(expected, ReadVersionFromManifest(), "OHS 注册清单版本必须与版本真源一致");
 
     True(WorkerProtocol.IsKnownVerb(WorkerProtocol.PartsRequestVerb), "零件 Worker 动词必须由共享合同认可");
+    True(WorkerProtocol.IsKnownVerb(WorkerProtocol.PartImportVerb), "单零件隔离导入动词必须由共享合同认可");
     True(WorkerProtocol.IsKnownVerb(WorkerProtocol.AssemblyProbeVerb), "装配探查动词必须由共享合同认可");
     True(WorkerProtocol.IsKnownVerb(WorkerProtocol.AssemblyBuildVerb), "装配构建动词必须由共享合同认可");
     True(!WorkerProtocol.IsKnownVerb("--unknown"), "未知 Worker 动词必须被拒绝");
@@ -85,6 +129,145 @@ static void TestSharedContractsAndVersion()
     var json = JsonSerializer.Serialize(reuseEvent, WorkerProtocol.CreateJsonOptions());
     var roundTrip = JsonSerializer.Deserialize<WorkerEvent>(json, WorkerProtocol.CreateJsonOptions());
     Equal(ReuseKind.ExistingSolidWorksPart, roundTrip?.ReuseKind, "结构化复用类别必须可经 Worker JSON 往返");
+}
+
+static void TestPartImportIsolationContracts(string root)
+{
+    var directory = Path.Combine(root, "part-import-isolation");
+    var sourceDirectory = Path.Combine(directory, "source");
+    var xtDirectory = Path.Combine(directory, "XT");
+    var swDirectory = Path.Combine(directory, "SW");
+    Directory.CreateDirectory(sourceDirectory);
+    Directory.CreateDirectory(xtDirectory);
+    Directory.CreateDirectory(swDirectory);
+    var sourcePath = Path.Combine(sourceDirectory, "part.par");
+    var xtPath = Path.Combine(xtDirectory, "part.x_t");
+    var swPath = Path.Combine(swDirectory, "part.SLDPRT");
+    File.WriteAllText(sourcePath, "part");
+    File.WriteAllText(xtPath, "xt");
+
+    var job = new ConversionJob("part-1", sourcePath, xtPath, swPath);
+    var request = new PartImportRequest(
+        "batch-1",
+        ConversionMode.External,
+        job,
+        RecognizeFeatures: true,
+        FullyDefineSketches: true,
+        FeatureRecognitionTimeoutSeconds: 90,
+        ContinueWhenRecognitionFails: false);
+    WorkerRequestValidator.Validate(request);
+
+    var json = JsonSerializer.Serialize(request, WorkerProtocol.CreateJsonOptions());
+    var roundTrip = JsonSerializer.Deserialize<PartImportRequest>(json, WorkerProtocol.CreateJsonOptions());
+    Equal(request, roundTrip, "单零件隔离请求必须可经 Worker JSON 往返");
+    Equal(job, roundTrip?.Job, "单零件隔离请求不得丢失任务路径");
+
+    var batch = new BatchRequest("batch-1", ConversionMode.External, [job], RecognizeFeatures: true);
+    True(SolidWorksPartImportIsolation.ShouldIsolate(batch), "启用 FeatureWorks 时必须逐零件隔离");
+    True(
+        !SolidWorksPartImportIsolation.ShouldIsolate(batch with { RecognizeFeatures = false }),
+        "未启用 FeatureWorks 时必须保留原批量导入路径");
+    True(
+        SolidWorksImporter.ShouldResetFeatureWorksSession(resetRequested: true, ownsFreshInstance: false),
+        "附着已有 SolidWorks 会话时必须重置 FeatureWorks 状态");
+    True(
+        !SolidWorksImporter.ShouldResetFeatureWorksSession(resetRequested: true, ownsFreshInstance: true),
+        "全新 SolidWorks 会话不得在首个文档前卸载并重载 FeatureWorks");
+    True(
+        !SolidWorksImporter.ShouldResetFeatureWorksSession(resetRequested: false, ownsFreshInstance: false),
+        "未请求隔离重置时不得改变 FeatureWorks 加载状态");
+
+    File.WriteAllText(swPath, "existing");
+    Throws<IOException>(() => WorkerRequestValidator.Validate(request));
+    File.Delete(swPath);
+    File.Delete(xtPath);
+    Throws<FileNotFoundException>(() => WorkerRequestValidator.Validate(request));
+    File.WriteAllText(xtPath, "xt");
+
+    var feature = new FeatureOutcome(3, true, 2, 2, ["fully-defined"], false, 12);
+    var mate = new MateOutcome(
+        RelationTotal: 1,
+        MateRebuilt: 1,
+        SkippedSuppressed: 0,
+        SkippedUnsupported: 0,
+        FailedUnmatched: 0,
+        FailedAmbiguous: 0,
+        FailedRejected: 0,
+        ComponentsLeftFixed: 0,
+        MaxDriftMeters: 1e-10,
+        Diagnostics: []);
+    var forwarded = new WorkerEvent(
+        "child-batch",
+        job.Id,
+        ConversionStage.Completed,
+        "child event",
+        HResult: 123,
+        NativeError: 4,
+        NativeWarning: 5,
+        ErrorClass: ConversionErrorClass.None,
+        Feature: feature,
+        Artifact: ConversionArtifactKind.SolidWorksPart,
+        ReuseKind: ReuseKind.ExistingXt,
+        Mate: mate);
+    var originalOut = Console.Out;
+    using var output = new StringWriter();
+    try
+    {
+        Console.SetOut(output);
+        new WorkerReporter("parent-batch", WorkerProtocol.CreateJsonOptions()).Forward(forwarded);
+    }
+    finally
+    {
+        Console.SetOut(originalOut);
+    }
+
+    var forwardedRoundTrip = JsonSerializer.Deserialize<WorkerEvent>(
+        output.ToString().Trim(),
+        WorkerProtocol.CreateJsonOptions());
+    Equal("parent-batch", forwardedRoundTrip?.BatchId, "转发事件必须归入父批次");
+    Equal(forwarded.JobId, forwardedRoundTrip?.JobId, "转发事件不得丢失任务编号");
+    Equal(feature.RecognizedFeatureCount, forwardedRoundTrip?.Feature?.RecognizedFeatureCount, "转发事件不得丢失特征计数");
+    True(
+        feature.SketchStatuses.SequenceEqual(forwardedRoundTrip?.Feature?.SketchStatuses ?? []),
+        "转发事件不得丢失草图状态");
+    Equal(mate.RelationTotal, forwardedRoundTrip?.Mate?.RelationTotal, "转发事件不得丢失配合总数");
+    Equal(mate.MateRebuilt, forwardedRoundTrip?.Mate?.MateRebuilt, "转发事件不得丢失配合成功数");
+    Equal(mate.MaxDriftMeters, forwardedRoundTrip?.Mate?.MaxDriftMeters, "转发事件不得丢失配合漂移量");
+    Equal(forwarded.Artifact, forwardedRoundTrip?.Artifact, "转发事件不得丢失产物类别");
+    Equal(forwarded.ReuseKind, forwardedRoundTrip?.ReuseKind, "转发事件不得丢失复用类别");
+    Equal(forwarded.NativeError, forwardedRoundTrip?.NativeError, "转发事件不得丢失原生错误码");
+}
+
+/// <summary>从 build/SE2SW.Version.props 读出唯一版本源。</summary>
+static string ReadVersionFromSingleSource()
+{
+    var path = LocateRepoFile(Path.Combine("build", "SE2SW.Version.props"));
+    var match = System.Text.RegularExpressions.Regex.Match(
+        File.ReadAllText(path), @"<SE2SWVersion>([^<]+)</SE2SWVersion>");
+    True(match.Success, $"版本真源里找不到 SE2SWVersion：{path}");
+    return match.Groups[1].Value.Trim();
+}
+
+/// <summary>OHS 注册清单在仓库外的 z-SE2SW 目录，它是第二个必须跟上的地方。</summary>
+static string ReadVersionFromManifest()
+{
+    var path = LocateRepoFile(Path.Combine("..", "z-SE2SW", "module.manifest.json"));
+    using var document = JsonDocument.Parse(File.ReadAllText(path));
+    return document.RootElement.GetProperty("version").GetString() ?? string.Empty;
+}
+
+static string LocateRepoFile(string relative)
+{
+    var directory = AppContext.BaseDirectory;
+    for (var depth = 0; depth < 10 && directory is not null; depth++)
+    {
+        var candidate = Path.GetFullPath(Path.Combine(directory, relative));
+        if (File.Exists(candidate))
+            return candidate;
+        directory = Path.GetDirectoryName(directory.TrimEnd(Path.DirectorySeparatorChar));
+    }
+
+    throw new FileNotFoundException($"未能从 {AppContext.BaseDirectory} 向上定位 {relative}");
 }
 
 static void TestOhsLayoutAndScan(string root)
@@ -212,6 +395,58 @@ static void TestExternalLegacyAndDirectoryCreation(string root)
     File.WriteAllText(Path.Combine(conflict, "SW"), "occupied");
     Throws<IOException>(() => ExternalOutputLayout.EnsureDirectories(conflict));
     True(!Directory.Exists(Path.Combine(conflict, "XT")), "任一目录冲突时不得提前创建另一输出目录");
+}
+
+/// <summary>
+/// 嵌套装配的组件文档复用判据。
+///
+/// 真实事故：嵌套生成器打开组件文档后只释放不关闭（V3.0 的展平版是关的），
+/// 文档在 SolidWorks 会话里越堆越多，后续节点 OpenDoc6 撞上
+/// swFileWithSameTitleAlreadyOpen(65536) → 组件插不进去 → **该组件连同它的配合一起消失**。
+///
+/// 修复是两条：关闭打开的文档；真撞上时同一文件可复用。
+/// 这里锁住第二条的边界——同名不同路径绝不能复用，否则会把别人的几何插进装配。
+/// </summary>
+static void TestComponentDocumentReuseGuard()
+{
+    True(SolidWorksInteropBridge.CanReuseOpenDocument(@"C:\out\SW\零件1.SLDPRT", @"C:\out\SW\零件1.SLDPRT"),
+        "同一个文件必须允许复用——嵌套装配里上一层已经打开它是常态");
+    True(SolidWorksInteropBridge.CanReuseOpenDocument(@"C:\out\SW\零件1.SLDPRT", @"C:\out\sw\零件1.SLDPRT"),
+        "路径大小写不同仍是同一个文件");
+    True(SolidWorksInteropBridge.CanReuseOpenDocument(@"C:\out\SW\..\SW\零件1.SLDPRT", @"C:\out\SW\零件1.SLDPRT"),
+        "规范化后相同的路径仍是同一个文件");
+
+    True(!SolidWorksInteropBridge.CanReuseOpenDocument(@"C:\A\SW\零件1.SLDPRT", @"C:\B\SW\零件1.SLDPRT"),
+        "同名不同路径绝不能复用——那会把别人的几何插进装配");
+    True(!SolidWorksInteropBridge.CanReuseOpenDocument(@"C:\out\SW\零件1.SLDPRT", null),
+        "拿不到已打开文档的路径就无法证明是同一个，必须拒绝");
+    True(!SolidWorksInteropBridge.CanReuseOpenDocument(@"C:\out\SW\零件1.SLDPRT", "   "),
+        "空路径同样不足以证明身份");
+}
+
+/// <summary>
+/// 面候选跨重建失效的契约。
+///
+/// 真实事故（识别 + 配合同时开时 49/56 条失败）：每加一条配合都会 ForceRebuild，
+/// 重建让缓存里的 Face2 引用全部作废，下一条配合选实体时抛
+/// 0x80010108 RPC_E_DISCONNECTED。哑实体没有特征树、重建近乎空操作，指针侥幸能用；
+/// 识别版一重建就全废——所以只在两个开关同时打开时才炸。
+///
+/// 这里锁住判定侧：RPC_E_DISCONNECTED 必须被识别为会话级故障，
+/// 从而触发缓存重建而不是被当成普通失败吞掉。
+/// </summary>
+static void TestMateCandidateStalenessContract()
+{
+    True(FeatureRecognizer.IsServerFault(new InvalidOperationException("断开") { HResult = unchecked((int)0x80010108) }),
+        "RPC_E_DISCONNECTED 必须被识别——面指针跨重建失效就是以它出现的");
+
+    // 候选携带的实体只是给 Worker 选中用，匹配逻辑不解释它；
+    // 因此重新收集一次候选不应改变匹配结果。
+    var geometry = Plane(0, 0.13, 0, 0, -1, 0);
+    var before = MateGeometryMatcher.Match(geometry, [Cand("b1f1", 1, 0, 0.13, 0, 0, 1, 0)]);
+    var after = MateGeometryMatcher.Match(geometry, [Cand("b1f1", 1, 0, 0.13, 0, 0, 1, 0)]);
+    Equal(before.Status, after.Status, "重建后重新收集候选，匹配结论必须一致");
+    Equal(before.Candidate!.Key, after.Candidate!.Key, "同样的几何必须选到同一个面——重建不得改变选择");
 }
 
 static void TestAssemblyPlanningAndJson(string root)
@@ -853,6 +1088,8 @@ static void TestAssemblyNodeReuse(string root)
     var future = DateTime.UtcNow.AddMinutes(5);
     File.SetLastWriteTimeUtc(output, future);
     True(AssemblyNodeReusePlanner.CanReuse(node), "产物比全部依赖都新时可以复用");
+    Throws<ClassifiedConversionException>(
+        () => AssemblyNodeReusePlanner.CanReuse(node, requireMateRebuild: true));
 
     // .asm 没动，但里面的零件改了——V3.0 的"比源文件新"规则会漏掉这种情况。
     File.SetLastWriteTimeUtc(dependency, future.AddMinutes(1));
@@ -939,6 +1176,232 @@ static void TestAssemblyModeValidationText()
     True(worker.Message.Contains("当前装配转换", StringComparison.Ordinal), "Worker 预检不得继续暴露 V3.0 过时文案");
 }
 
+// ---- V3.5 装配关系重建 -------------------------------------------------------
+
+static RelationGeometry Plane(double px, double py, double pz, double nx, double ny, double nz)
+    => new(MateGeometryMatcher.GeometryPlane, [px, py, pz], [nx, ny, nz]);
+
+static RelationGeometry Axis(double px, double py, double pz, double dx, double dy, double dz)
+    => new(MateGeometryMatcher.GeometryAxis, [px, py, pz], [dx, dy, dz]);
+
+static MateCandidate Cand(string key, int kind, double px, double py, double pz, double dx, double dy, double dz)
+    => new(key, kind, [px, py, pz], [dx, dy, dz]);
+
+/// <summary>§3.3：唯一命中才接受；0 个与多个都必须当场判定失败，绝不猜。</summary>
+static void TestMateGeometryMatching()
+{
+    // 同一个平面可以由面上任意一点表达；法向反向仍是同一平面。
+    var target = Plane(0, 0.130, 0, 0, -1, 0);
+    var candidates = new[]
+    {
+        Cand("faceA", 1, 0.5, 0.130, -0.2, 0, 1, 0),      // 同一平面，法向反了
+        Cand("faceB", 1, 0, 0.131, 0, 0, 1, 0),           // 平行但差 1mm
+        Cand("faceC", 1, 0, 0.130, 0, 1, 0, 0),           // 过同一点但法向垂直
+        Cand("cylD", 2, 0, 0.130, 0, 0, 1, 0),            // 类型不同
+    };
+    var matched = MateGeometryMatcher.Match(target, candidates);
+    Equal(MateMatchStatus.Matched, matched.Status, "法向反向的同一平面必须命中");
+    Equal("faceA", matched.Candidate!.Key, "命中的应当是共面的那个");
+
+    var unmatched = MateGeometryMatcher.Match(target, [candidates[1], candidates[2]]);
+    Equal(MateMatchStatus.Unmatched, unmatched.Status, "没有共面候选时必须判为未匹配");
+    Equal(ConversionErrorClass.MateEntityUnmatched, unmatched.ErrorClass!.Value, "未匹配要映射到专用错误类");
+
+    // 轴：实测数据（19 号报告 §4 第 4 条关系），两点仅 Y 不同、方向 ±Y，共线。
+    var axis = Axis(-0.04, 0.1327, -0.04, 0, 1, 0);
+    var axisMatch = MateGeometryMatcher.Match(axis,
+    [
+        Cand("cyl1", 2, -0.04, 0.1255, -0.04, 0, -1, 0),   // 同一条轴，方向反
+        Cand("cyl2", 2, -0.04, 0.1255, 0.04, 0, 1, 0),     // 平行但不共线
+    ]);
+    Equal(MateMatchStatus.Matched, axisMatch.Status, "共线的轴必须命中");
+    Equal("cyl1", axisMatch.Candidate!.Key, "命中的应当是共线的那条轴");
+
+    // 容差边界：1e-6 内算在面上，超出即不算。
+    True(MateGeometryMatcher.IsPointOnPlane([0, 9e-7, 0], [0, 0, 0], [0, 1, 0]), "9e-7 应在容差内");
+    True(!MateGeometryMatcher.IsPointOnPlane([0, 1.1e-6, 0], [0, 0, 0], [0, 1, 0]), "1.1e-6 应超出容差");
+    True(!MateGeometryMatcher.IsParallel([0, 1, 0], [0, 0, 0]), "零向量不得判为平行");
+}
+
+/// <summary>§3.4 映射表，重点是条件可读那条陷阱。</summary>
+/// <summary>
+/// 实测教训（25 号文档 §5.2）：SolidWorks 会把一个几何面切成多块拓扑面——
+/// 一个通孔 2~3 个圆柱面、一个大平面多块共面面。首轮实测 106 侧里 43 侧因此被误判为歧义，
+/// 命中率被压到 37.7%；改为等价性判定后是 100%。
+///
+/// 这几条用例锁住"多候选不等于歧义"，同时保住"真不等价才判歧义"的安全网。
+/// </summary>
+static void TestMateCandidateEquivalence()
+{
+    var target = Plane(0, 0.130, 0, 0, -1, 0);
+
+    // 同一平面被切成三块：法向有同有反，都必须归为同一实体。
+    var split = MateGeometryMatcher.Match(target,
+    [
+        Cand("f2", 1, 0.5, 0.130, -0.2, 0, 1, 0),
+        Cand("f1", 1, -0.3, 0.130, 0.4, 0, -1, 0),
+        Cand("f3", 1, 0.1, 0.130, 0.1, 0, -1, 0),
+    ]);
+    Equal(MateMatchStatus.Matched, split.Status, "同一平面被切成多块不是歧义");
+    Equal(3, split.CandidateKeys.Count, "候选仍要全部报出，便于排查");
+    Equal("f1", split.Candidate!.Key, "优先法向同向，再按 Key 取序——同样输入必须永远同样输出");
+
+    // 同轴的多个圆柱（通孔被切开、沉孔多段），半径不同也是同一条轴。
+    var axis = Axis(0, 0, 0, 0, 0, 1);
+    var coaxial = MateGeometryMatcher.Match(axis,
+        [Cand("cyl2", 2, 0, 0, 0.05, 0, 0, 1), Cand("cyl1", 2, 0, 0, -0.02, 0, 0, -1)]);
+    Equal(MateMatchStatus.Matched, coaxial.Status, "同轴的多个圆柱面不是歧义");
+
+    // 安全网：真不等价的候选仍必须判歧义。两个平行但相距 10mm 的平面不可能同时通过筛选，
+    // 所以直接验等价性判定本身。
+    True(!MateGeometryMatcher.AreEquivalent(
+            Cand("a", 1, 0, 0, 0, 0, 1, 0),
+            Cand("b", 1, 0, 0.010, 0, 0, 1, 0)),
+        "平行但不共面的两个面不得判为等价");
+    True(!MateGeometryMatcher.AreEquivalent(
+            Cand("a", 2, 0, 0, 0, 0, 0, 1),
+            Cand("b", 2, 0.010, 0, 0, 0, 0, 1)),
+        "平行但不共线的两条轴不得判为等价");
+    True(!MateGeometryMatcher.AreEquivalent(
+            Cand("a", 1, 0, 0, 0, 0, 1, 0),
+            Cand("b", 2, 0, 0, 0, 0, 1, 0)),
+        "类型不同不得判为等价");
+    True(!MateGeometryMatcher.AreAllEquivalent(
+        [Cand("a", 1, 0, 0, 0, 0, 1, 0), Cand("b", 1, 0, 0.010, 0, 0, 1, 0)]),
+        "只要有一对不等价，整组就不等价");
+}
+
+static void TestMateTypeMapping()
+{
+    AssemblyRelation R(string kind) => new(@"C:\T.asm", 1, kind, "A:1", "B:1", null, null);
+
+    Equal(MatePlanKind.Fix, MateTypeMapper.Map(R(MateTypeMapper.Ground)).Kind, "接地关系映射为固定");
+
+    // 对齐一律 CLOSEST：组件已精确位于源位置，最近解就是"不动"。
+    // 显式传 Aligned/AntiAligned 的真机教训是求解器按指定方向翻转组件（180°，旋转偏差恒为 2）。
+    var coincident = MateTypeMapper.Map(R(MateTypeMapper.Planar) with { NormalsAligned = true });
+    Equal(SolidWorksMateType.Coincident, coincident.MateType, "零偏移平面关系映射为重合");
+    Equal(SolidWorksMateAlign.Closest, coincident.Align, "对齐必须是 CLOSEST，不得按 NormalsAligned 强指方向");
+
+    var distance = MateTypeMapper.Map(R(MateTypeMapper.Planar) with { Offset = 0.003, NormalsAligned = false });
+    Equal(SolidWorksMateType.Distance, distance.MateType, "带偏移的平面关系映射为距离");
+    Equal(SolidWorksMateAlign.Closest, distance.Align, "距离配合同样 CLOSEST");
+    True(Math.Abs(distance.Distance - 0.003) < 1e-12, "距离取 Offset 绝对值");
+
+    // 这条是本组的重点：ParallelOffset=false 时 Offset 根本读不出来、留的是默认 0。
+    // 若实现改用"Offset 是否为 0"推断类型，同轴关系会被误判成零距离配合。
+    var concentric = MateTypeMapper.Map(R(MateTypeMapper.Axial) with { ParallelOffset = false, Offset = 0 });
+    Equal(SolidWorksMateType.Concentric, concentric.MateType, "ParallelOffset=false 必须映射为同轴，不能看 Offset");
+    var axialDistance = MateTypeMapper.Map(R(MateTypeMapper.Axial) with { ParallelOffset = true, Offset = 0.012 });
+    Equal(SolidWorksMateType.Distance, axialDistance.MateType, "ParallelOffset=true 才是距离");
+
+    True(!MateTypeMapper.CanReadAxialOffset(false), "ParallelOffset=false 时不得去读 Offset");
+    True(!MateTypeMapper.CanReadRange(false), "RangedOffset=false 时不得去读 RangeLow/High");
+
+    var unsupported = MateTypeMapper.Map(R("TangentRelation3d"));
+    Equal(MatePlanKind.Unsupported, unsupported.Kind, "未实测的类型一律不翻译");
+    True(unsupported.Reason!.Contains("TangentRelation3d", StringComparison.Ordinal),
+        "不支持的原因里要带上接口名，据此决定下一版补哪个");
+
+    Equal(MatePlanKind.SkipSuppressed,
+        MateTypeMapper.Map(R(MateTypeMapper.Planar) with { IsSuppressed = true }).Kind,
+        "被抑制的关系在 SE 里没生效，不翻译");
+}
+
+/// <summary>§6.1 判据 3：每条关系都要有确定去向，不允许凭空消失。</summary>
+static void TestMateOutcomeSelfConsistency()
+{
+    var consistent = new MateOutcome(56, 37, 2, 4, 6, 3, 1, 5, 4.2e-7, [], GroundApplied: 3);
+    True(consistent.IsSelfConsistent, "37+3+2+4+6+3+1 应等于 56——接地关系也要有去向");
+    True(!(consistent with { MateRebuilt = 36 }).IsSelfConsistent, "少算一条必须被检出");
+
+    var json = JsonSerializer.Serialize(consistent);
+    var roundTrip = JsonSerializer.Deserialize<MateOutcome>(json)!;
+    True(roundTrip.IsSelfConsistent, "JSON 往返后计数仍须自洽");
+
+    var relation = new AssemblyRelation(@"C:\T.asm", 3, MateTypeMapper.Axial, "A:1", "B:1",
+        Axis(0, 0.1, 0, 0, 1, 0), Axis(0, 0.2, 0, 0, -1, 0), ParallelOffset: false);
+    var relationRoundTrip = JsonSerializer.Deserialize<AssemblyRelation>(JsonSerializer.Serialize(relation))!;
+    Equal(3, relationRoundTrip.Geometry1!.Point.Length, "几何点必须 3 元素往返");
+    Equal(MateGeometryMatcher.GeometryAxis, relationRoundTrip.Geometry2!.GeometryType, "几何类型必须往返");
+}
+
+/// <summary>
+/// 特征识别的几何守卫。真实事故：FeatureWorks 只认出基体拉伸时，CreateFeatures 照样返回 true，
+/// 零件被重建成一个方块存盘——管线此前从不校验几何，用户看到的是"形状全错但一切正常"。
+/// </summary>
+static void TestRecognitionGeometryGuard()
+{
+    // 一致：体积逐位相同，面数变化不影响判定（识别可能合并共面面）。
+    Equal(null, FeatureRecognizer.DescribeGeometryMismatch((1.234e-4, 32), (1.234e-4, 30)),
+        "体积一致时不得判为几何改变——面数合并是识别的正常行为");
+
+    // 方块事故：体积掉了一大截。
+    var boxed = FeatureRecognizer.DescribeGeometryMismatch((1.0e-4, 55), (2.5e-4, 6));
+    True(boxed is not null, "体积变化必须被检出");
+    True(boxed!.Contains("体积", StringComparison.Ordinal) && boxed.Contains("面数", StringComparison.Ordinal),
+        $"诊断要给出前后数值便于排查，实得：{boxed}");
+
+    // 容差只为浮点噪声，不为"差不多"。
+    Equal(null, FeatureRecognizer.DescribeGeometryMismatch((1.0, 10), (1.0 + 5e-10, 10)),
+        "浮点噪声级别的偏差不算几何改变");
+    True(FeatureRecognizer.DescribeGeometryMismatch((1.0, 10), (1.0001, 10)) is not null,
+        "万分之一的体积偏差就必须判为几何改变——这不是噪声");
+
+    // 量不到就是不安全，绝不默认放行。
+    True(FeatureRecognizer.DescribeGeometryMismatch((1.0e-4, 20), null) is not null,
+        "识别后读不出几何必须判为不安全");
+    Equal(null, FeatureRecognizer.DescribeGeometryMismatch(null, (1.0e-4, 20)),
+        "识别前就没有基准时，本判据不兜底，交给其他环节");
+
+    // 契约：GeometryChanged 与 DegradedToDumbSolid 语义不同，不能混用。
+    var outcome = new FeatureOutcome(3, true, 0, 0, [], true, 10, "几何被改变", GeometryChanged: true);
+    var roundTrip = JsonSerializer.Deserialize<FeatureOutcome>(JsonSerializer.Serialize(outcome))!;
+    True(roundTrip.GeometryChanged, "GeometryChanged 必须能 JSON 往返——Worker 靠它决定要不要重新导入");
+    True(!new FeatureOutcome(0, false, 0, 0, [], true, 10, "没识别出来").GeometryChanged,
+        "普通降级默认不得标记几何被改变");
+}
+
+/// <summary>
+/// 两道守卫，都来自真实事故：
+///   · 导入身份——FeatureWorks 服务器故障后 LoadFile4 交回上一件的文档，
+///     5 个零件被存成同一个方块（体积与面数逐位相同）；
+///   · 会话故障——死掉的 COM 对象不会自愈，不识别出来就会对着它重试到批次结束。
+/// </summary>
+static void TestImportIdentityAndSessionFaultGuards()
+{
+    // 身份正确：SolidWorks 导入 XT 后的标题是"基名.sldprt"。
+    Equal(null, SolidWorksImporter.DescribeImportIdentityFailure(@"C:\x\XT\测试零件5.x_t", "测试零件5.sldprt"),
+        "标题与 XT 基名一致时不得报错");
+    Equal(null, SolidWorksImporter.DescribeImportIdentityFailure(@"C:\x\XT\零件1.x_t", "零件1"),
+        "无扩展名的标题同样算一致");
+
+    // 事故现场：导入 测试零件5，SolidWorks 交回 测试零件4。
+    var wrong = SolidWorksImporter.DescribeImportIdentityFailure(@"C:\x\XT\测试零件5.x_t", "测试零件4.sldprt");
+    True(wrong is not null, "交回别的文档必须被检出——否则会把错误几何存成本零件");
+    True(wrong!.Contains("测试零件5", StringComparison.Ordinal) && wrong.Contains("测试零件4", StringComparison.Ordinal),
+        $"诊断要同时给出期望与实得，实得：{wrong}");
+
+    True(SolidWorksImporter.DescribeImportIdentityFailure(@"C:\x\XT\A.x_t", null) is not null,
+        "拿不到标题就无法证明身份，必须判失败");
+
+    // 会话故障的 HRESULT 识别。
+    True(FeatureRecognizer.IsServerFault(new InvalidOperationException("x") { HResult = unchecked((int)0x80010105) }),
+        "RPC_E_SERVERFAULT 必须识别为会话故障");
+    True(FeatureRecognizer.IsServerFault(new InvalidOperationException("x") { HResult = unchecked((int)0x80010108) }),
+        "RPC_E_DISCONNECTED 必须识别为会话故障");
+    True(!FeatureRecognizer.IsServerFault(new InvalidOperationException("普通失败")),
+        "普通异常不得误判为会话故障——否则会白白重建会话");
+
+    // 契约：标志语义互不相同，不能相互替代。
+    var faulted = new FeatureOutcome(0, false, 0, 0, [], true, 5, "服务器出现意外情况", SessionFaulted: true);
+    var roundTrip = JsonSerializer.Deserialize<FeatureOutcome>(JsonSerializer.Serialize(faulted))!;
+    True(roundTrip.SessionFaulted && !roundTrip.GeometryChanged,
+        "SessionFaulted 要能往返，且不得牵连 GeometryChanged");
+    True(new FeatureOutcome(0, false, 0, 0, [], true, 5, "没识别出来") is { SessionFaulted: false, GeometryChanged: false },
+        "普通降级默认两个标志都不置位");
+}
+
 static void TestUiModuleRegistration()
 {
     var registrar = new RecordingShellUiRegistrar();
@@ -988,6 +1451,93 @@ static void TestWorkspaceModes()
     thread.Join();
     if (failure is not null)
         throw new InvalidOperationException("三模式工作区 Smoke 失败。", failure);
+}
+
+/// <summary>
+/// V3.5 界面层：开关必须由"有没有关系"决定，配合结果必须真的走到用户眼前。
+/// 承诺是"建不起来的如实报告"——报告只进日志、用户看不见的话，承诺就没兑现。
+/// </summary>
+static void TestAssemblyMateSwitchAndReport(string root)
+{
+    var directory = Path.Combine(root, "assembly-mate-ui");
+    Directory.CreateDirectory(directory);
+    var assembly = Path.Combine(directory, "Top.asm");
+    var sub = Path.Combine(directory, "Sub.asm");
+    var part = Path.Combine(directory, "P.par");
+    File.WriteAllText(assembly, "asm");
+    File.WriteAllText(sub, "sub");
+    File.WriteAllText(part, "part");
+
+    AssemblyProbeResult Probe(IReadOnlyList<AssemblyRelation>? relations) => new(
+        assembly,
+        [
+            new AssemblyOccurrence("Sub:1", null, sub, true, false, false, Translation(0, 0, 0), null),
+            new AssemblyOccurrence("Sub:1/P:1", "Sub:1", part, false, false, false, Translation(0, 0, 0), null),
+        ],
+        [part], 0, 0, 1, 0, [],
+        [
+            new AssemblyDocumentReading(assembly, [Sub("Sub:1", sub, 0, 0, 0)], []),
+            new AssemblyDocumentReading(sub, [Part("P:1", part, 0, 0, 0)], [], relations),
+        ]);
+
+    // 没有关系 → 开关禁用，提示说清为什么。
+    var withoutRelations = new AssemblyViewModel(
+        (_, _, _) => Task.FromResult(Probe(null)),
+        static (_, _, _) => Task.FromResult(0),
+        static () => { },
+        Dispatcher.CurrentDispatcher);
+    using (withoutRelations)
+    {
+        withoutRelations.SetSourceFile(assembly);
+        withoutRelations.ProbeAsync().GetAwaiter().GetResult();
+        Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ApplicationIdle, static () => { });
+        True(!withoutRelations.CanRebuildMates, "没有装配关系时不得允许勾选重建配合");
+        True(withoutRelations.RebuildMatesHint.Contains("没有显式装配关系", StringComparison.Ordinal),
+            $"提示要说清原因，实得：{withoutRelations.RebuildMatesHint}");
+    }
+
+    // 有关系 → 开关可用，提示带上条数；转换后摘要与逐条诊断都要露出来。
+    var relation = new AssemblyRelation(sub, 2, MateTypeMapper.Planar, "P:1", "P:1",
+        Plane(0, 0, 0, 0, 1, 0), Plane(0, 0, 0, 0, -1, 0));
+    var outcome = new MateOutcome(
+        RelationTotal: 4, MateRebuilt: 2, SkippedSuppressed: 0, SkippedUnsupported: 0,
+        FailedUnmatched: 1, FailedAmbiguous: 0, FailedRejected: 0, ComponentsLeftFixed: 1,
+        MaxDriftMeters: 3e-9, Diagnostics: ["#3 PlanarRelation3d：实体定位失败"], GroundApplied: 1);
+    var withRelations = new AssemblyViewModel(
+        (_, _, _) => Task.FromResult(Probe([relation])),
+        (request, progress, _) =>
+        {
+            True(request.RebuildMates, "勾选后请求里必须带上 RebuildMates");
+            True(request.Relations is { Count: > 0 }, "请求里必须带上采集到的关系");
+            progress(new WorkerEvent("b", null, ConversionStage.Completed, "完成", Mate: outcome));
+            return Task.FromResult(0);
+        },
+        static () => { },
+        Dispatcher.CurrentDispatcher);
+    using (withRelations)
+    {
+        withRelations.SetSourceFile(assembly);
+        withRelations.ProbeAsync().GetAwaiter().GetResult();
+        Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ApplicationIdle, static () => { });
+        True(withRelations.CanRebuildMates, "有装配关系时开关必须可用");
+        True(withRelations.RebuildMatesHint.Contains("1 条", StringComparison.Ordinal),
+            $"提示要带上关系条数，实得：{withRelations.RebuildMatesHint}");
+
+        True(withRelations.RebuildMates, "解析到装配关系后必须默认开启重建，不能把核心语义藏成易漏选项");
+        Directory.CreateDirectory(Path.Combine(directory, "XT"));
+        Directory.CreateDirectory(Path.Combine(directory, "SW"));
+        withRelations.ConvertAsync().GetAwaiter().GetResult();
+        Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ApplicationIdle, static () => { });
+
+        True(withRelations.StatusText.Contains("配合重建 2/4", StringComparison.Ordinal),
+            $"状态栏要报出配合数，实得：{withRelations.StatusText}");
+        True(withRelations.StatusText.Contains("接地", StringComparison.Ordinal),
+            "接地关系的去向也要说明，否则用户会以为丢了两条");
+        True(withRelations.StatusText.Contains("1 条未建立", StringComparison.Ordinal),
+            "建不起来的必须明说，不能只报成功数");
+        True(withRelations.WarningSummary.Contains("实体定位失败", StringComparison.Ordinal),
+            $"逐条诊断必须走到用户眼前，实得：{withRelations.WarningSummary}");
+    }
 }
 
 static void TestAssemblyViewModelState(string root)

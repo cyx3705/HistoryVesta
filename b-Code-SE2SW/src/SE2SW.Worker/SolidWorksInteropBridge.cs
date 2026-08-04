@@ -19,6 +19,10 @@ internal sealed class SolidWorksInteropBridge : IDisposable
     private readonly Type _partInterface;
     private readonly Type _bodyInterface;
     private readonly Type _entityInterface;
+    private readonly Type _faceInterface;
+    private readonly Type _surfaceInterface;
+    private readonly Type _selectionManagerInterface;
+    private readonly Type _selectDataInterface;
     private readonly Type _assemblyInterface;
     private readonly Type _componentInterface;
     private readonly Type _mathUtilityInterface;
@@ -39,6 +43,10 @@ internal sealed class SolidWorksInteropBridge : IDisposable
         _partInterface = GetType(interopAssembly, "SolidWorks.Interop.sldworks.IPartDoc");
         _bodyInterface = GetType(interopAssembly, "SolidWorks.Interop.sldworks.IBody2");
         _entityInterface = GetType(interopAssembly, "SolidWorks.Interop.sldworks.IEntity");
+        _faceInterface = GetType(interopAssembly, "SolidWorks.Interop.sldworks.IFace2");
+        _surfaceInterface = GetType(interopAssembly, "SolidWorks.Interop.sldworks.ISurface");
+        _selectionManagerInterface = GetType(interopAssembly, "SolidWorks.Interop.sldworks.ISelectionMgr");
+        _selectDataInterface = GetType(interopAssembly, "SolidWorks.Interop.sldworks.ISelectData");
         _assemblyInterface = GetType(interopAssembly, "SolidWorks.Interop.sldworks.IAssemblyDoc");
         _componentInterface = GetType(interopAssembly, "SolidWorks.Interop.sldworks.IComponent2");
         _mathUtilityInterface = GetType(interopAssembly, "SolidWorks.Interop.sldworks.IMathUtility");
@@ -159,14 +167,75 @@ internal sealed class SolidWorksInteropBridge : IDisposable
         => OpenDocument(path, DocumentTypePart, out errors, out warnings);
 
     /// <summary>V3.3：嵌套装配要把子装配 .SLDASM 也打开，文档类型不能再写死为零件。</summary>
+    // swFileLoadError_e.swFileWithSameTitleAlreadyOpen
+    private const int FileWithSameTitleAlreadyOpen = 65536;
+
+    /// <summary>
+    /// 打开组件文档。已经开着的同一个文件直接复用——SolidWorks 会用
+    /// <c>swFileWithSameTitleAlreadyOpen</c> 拒绝重复打开，而这在嵌套装配里是常态：
+    /// 上一层已经把某个零件作为组件打开过。**只有路径也相同才复用**；
+    /// 同名不同路径必须失败，否则会把别人的几何插进来。
+    /// </summary>
     public object? OpenComponentDocument(string path, out int errors, out int warnings)
-        => OpenDocument(
-            path,
-            ConversionPathLayout.HasExtension(path, ConversionArtifactKind.SolidWorksAssembly)
-                ? DocumentTypeAssembly
-                : DocumentTypePart,
-            out errors,
-            out warnings);
+    {
+        var documentType = ConversionPathLayout.HasExtension(path, ConversionArtifactKind.SolidWorksAssembly)
+            ? DocumentTypeAssembly
+            : DocumentTypePart;
+        var model = OpenDocument(path, documentType, out errors, out warnings);
+        if (model is not null && errors == 0)
+            return model;
+        if ((errors & FileWithSameTitleAlreadyOpen) == 0)
+            return model;
+
+        var existing = FindOpenDocument(path);
+        if (existing is null)
+            return model;
+        // FindOpenDocument 已按绝对路径匹配，这里再核一次：同名不同路径绝不复用。
+        if (!CanReuseOpenDocument(path, Convert.ToString(Invoke(_modelInterface, existing, "GetPathName"))))
+            return model;
+        errors = 0;
+        return existing;
+    }
+
+    /// <summary>
+    /// 已打开的文档能不能当作本次要打开的那个来用。
+    /// **只有路径完全相同才可以**——同名不同路径复用会把别人的几何插进装配。
+    /// </summary>
+    internal static bool CanReuseOpenDocument(string wanted, string? openPath)
+    {
+        if (string.IsNullOrWhiteSpace(wanted) || string.IsNullOrWhiteSpace(openPath))
+            return false;
+        return string.Equals(Path.GetFullPath(wanted), Path.GetFullPath(openPath), StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>按绝对路径找一个已经打开的文档。找不到返回 null。</summary>
+    public object? FindOpenDocument(string path)
+    {
+        var target = Path.GetFullPath(path);
+        object? document = null;
+        try
+        {
+            document = Invoke(_applicationInterface, _application, "GetFirstDocument");
+            while (document is not null)
+            {
+                var current = Convert.ToString(Invoke(_modelInterface, document, "GetPathName")) ?? string.Empty;
+                if (!string.IsNullOrWhiteSpace(current)
+                    && string.Equals(Path.GetFullPath(current), target, StringComparison.OrdinalIgnoreCase))
+                {
+                    return document;
+                }
+
+                var next = Invoke(_modelInterface, document, "GetNext");
+                document = next;
+            }
+        }
+        catch
+        {
+            return null;
+        }
+
+        return null;
+    }
 
     private object? OpenDocument(string path, int documentType, out int errors, out int warnings)
     {
@@ -191,21 +260,21 @@ internal sealed class SolidWorksInteropBridge : IDisposable
     public void SetComponentTransform(object component, object transform)
         => Invoke(_componentInterface, component, "set_Transform2", transform);
 
+    /// <summary>
+    /// 读组件的当前变换。
+    ///
+    /// **不 final 释放返回的 MathTransform**：SolidWorks 对同一组件反复交还同一个 RCW，
+    /// <c>FinalReleaseComObject</c> 会把它清零，下一次读就报
+    /// "COM object that has been separated from its underlying RCW"。
+    /// V3.3 每个组件只读一次所以没暴露；V3.5 的校验回滚要反复读，一读就炸。
+    /// </summary>
     public double[] GetComponentTransform(object component)
     {
-        object? transform = null;
-        try
-        {
-            transform = Invoke(_componentInterface, component, "get_Transform2")
-                ?? throw new InvalidOperationException("SolidWorks 组件没有 Transform2。");
-            var raw = Invoke(_mathTransformInterface, transform, "get_ArrayData") as Array
-                ?? throw new InvalidDataException("SolidWorks MathTransform.ArrayData 无效。");
-            return raw.Cast<object>().Select(Convert.ToDouble).ToArray();
-        }
-        finally
-        {
-            ComRelease.Final(transform);
-        }
+        var transform = Invoke(_componentInterface, component, "get_Transform2")
+            ?? throw new InvalidOperationException("SolidWorks 组件没有 Transform2。");
+        var raw = Invoke(_mathTransformInterface, transform, "get_ArrayData") as Array
+            ?? throw new InvalidDataException("SolidWorks MathTransform.ArrayData 无效。");
+        return raw.Cast<object>().Select(Convert.ToDouble).ToArray();
     }
 
     public bool SelectComponent(object component, bool append)
@@ -216,6 +285,168 @@ internal sealed class SolidWorksInteropBridge : IDisposable
 
     public void FixSelectedComponents(object assembly)
         => Invoke(_assemblyInterface, assembly, "FixComponent");
+
+    // ---------------- V3.5：配合重建 ----------------
+
+    public void UnfixSelectedComponents(object assembly)
+        => Invoke(_assemblyInterface, assembly, "UnfixComponent");
+
+    /// <summary>swSolidBody = 0。子装配组件返回空，实体在它的子组件里。</summary>
+    public IReadOnlyList<object> GetComponentBodies(object component)
+    {
+        object?[] parameters = [0, false];
+        var raw = Invoke(_componentInterface, component, "GetBodies3", parameters) as Array;
+        return raw is null ? [] : raw.Cast<object>().Where(item => item is not null).ToArray()!;
+    }
+
+    public IReadOnlyList<object> GetComponentChildren(object component)
+    {
+        var raw = Invoke(_componentInterface, component, "GetChildren") as Array;
+        return raw is null ? [] : raw.Cast<object>().Where(item => item is not null).ToArray()!;
+    }
+
+    public IReadOnlyList<object> GetBodyFaces(object body)
+    {
+        var raw = Invoke(_bodyInterface, body, "GetFaces") as Array;
+        return raw is null ? [] : raw.Cast<object>().Where(item => item is not null).ToArray()!;
+    }
+
+    public object? GetFaceSurface(object face)
+        => Invoke(_faceInterface, face, "GetSurface");
+
+    public bool SurfaceIsPlane(object surface)
+        => Convert.ToBoolean(Invoke(_surfaceInterface, surface, "IsPlane"));
+
+    public bool SurfaceIsCylinder(object surface)
+        => Convert.ToBoolean(Invoke(_surfaceInterface, surface, "IsCylinder"));
+
+    public bool SurfaceIsCone(object surface)
+        => Convert.ToBoolean(Invoke(_surfaceInterface, surface, "IsCone"));
+
+    public double[]? GetSurfaceParameters(object surface, string property)
+        => Invoke(_surfaceInterface, surface, "get_" + property) as double[];
+
+    public object GetSelectionManager(object model)
+        => Invoke(_modelInterface, model, "get_SelectionManager")
+            ?? throw new InvalidOperationException("SolidWorks 未返回 SelectionMgr。");
+
+    public int GetSelectedObjectCount(object selectionManager)
+        => Convert.ToInt32(Invoke(_selectionManagerInterface, selectionManager, "GetSelectedObjectCount2", -1));
+
+    public int GetSelectedObjectType(object selectionManager, int index)
+        => Convert.ToInt32(Invoke(_selectionManagerInterface, selectionManager, "GetSelectedObjectType3", index, -1));
+
+    public int GetSelectedObjectMark(object selectionManager, int index)
+        => Convert.ToInt32(Invoke(_selectionManagerInterface, selectionManager, "GetSelectedObjectMark", index));
+
+    /// <summary>
+    /// 选中的实体属于哪个组件。为 null 说明这个面没有携带组件上下文——配合会因此被拒。
+    ///
+    /// **绝不释放返回值**：它就是调用方手里那个组件的同一个 RCW，
+    /// 释放掉等于把正在用的组件弄死。诊断代码不能损坏被诊断的对象。
+    /// </summary>
+    public bool SelectedObjectHasComponent(object selectionManager, int index)
+    {
+        try
+        {
+            return Invoke(_selectionManagerInterface, selectionManager, "GetSelectedObjectsComponent4", index, -1)
+                is not null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 零件全部实体的体积与面数。用于在特征识别前后比对几何是否被改变。
+    /// 读不出来时返回 null——判定方必须把"量不到"当作不安全，而不是当作一致。
+    /// </summary>
+    public (double Volume, int FaceCount)? MeasureSolidGeometry(object model)
+    {
+        try
+        {
+            var raw = Invoke(_partInterface, model, "GetBodies2", 0 /* swSolidBody */, false) as Array;
+            if (raw is null)
+                return null;
+            var volume = 0d;
+            var faces = 0;
+            var counted = 0;
+            foreach (var item in raw)
+            {
+                if (item is null)
+                    continue;
+                if (Invoke(_bodyInterface, item, "GetMassProperties", 1) is not double[] mass || mass.Length < 4)
+                    return null;
+                volume += mass[3];
+                faces += Convert.ToInt32(Invoke(_bodyInterface, item, "GetFaceCount"));
+                counted++;
+            }
+
+            return counted == 0 ? null : (volume, faces);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public string GetFeatureTypeName(object feature)
+        => Convert.ToString(Invoke(_featureInterface, feature, "GetTypeName2")) ?? string.Empty;
+
+    /// <summary>
+    /// 配合要求两侧实体都带 mark=1。实测 <c>IEntity::Select2(append, mark)</c> 虽然返回 true，
+    /// 但 <c>AddMate5</c> 仍报 errorStatus=1（IncorrectSelections）——SW 认的是
+    /// <c>Select4 + ISelectData.Mark</c> 这条路。
+    /// </summary>
+    public bool SelectEntityForMate(object model, object entity, bool append, int mark)
+    {
+        // 不做 final 释放：SelectionMgr 是 SolidWorks 每次交还的同一个对象，
+        // FinalReleaseComObject 会把它的 RCW 清零，之后所有调用都报
+        // "COM object that has been separated from its underlying RCW"。实测踩过一次。
+        var selectionManager = GetSelectionManager(model);
+        var selectData = Invoke(_selectionManagerInterface, selectionManager, "CreateSelectData");
+        if (selectData is null)
+            return false;
+        Invoke(_selectDataInterface, selectData, "set_Mark", mark);
+        return Convert.ToBoolean(Invoke(_entityInterface, entity, "Select4", append, selectData));
+    }
+
+    /// <summary>
+    /// AddMate5。两侧实体必须已按 mark=1 选中。
+    /// 返回 null 或 errorStatus != 0 都算失败，由调用方回滚。
+    /// </summary>
+    public object? AddMate(
+        object assembly,
+        int mateType,
+        int align,
+        bool flip,
+        double distance,
+        double angle,
+        out int errorStatus)
+    {
+        object?[] parameters =
+        [
+            mateType, align, flip,
+            distance, distance, distance,
+            1d, 1d,
+            angle, angle, angle,
+            false, false, 0,
+            0,
+        ];
+        var mate = Invoke(_assemblyInterface, assembly, "AddMate5", parameters);
+        errorStatus = Convert.ToInt32(parameters[^1]);
+        return mate;
+    }
+
+    public bool SelectFeature(object model, object feature)
+        => Convert.ToBoolean(Invoke(_featureInterface, feature, "Select2", false, 0));
+
+    public void DeleteSelection(object model)
+        => Invoke(_modelInterface, model, "EditDelete");
+
+    public bool ForceRebuild(object model)
+        => Convert.ToBoolean(Invoke(_modelInterface, model, "ForceRebuild3", false));
 
     // ---------------- V2.0：特征识别与草图完全定义 ----------------
 
@@ -266,6 +497,9 @@ internal sealed class SolidWorksInteropBridge : IDisposable
 
     public int LoadAddIn(string path)
         => Convert.ToInt32(Invoke(_applicationInterface, _application, "LoadAddIn", path));
+
+    public int UnloadAddIn(string path)
+        => Convert.ToInt32(Invoke(_applicationInterface, _application, "UnloadAddIn", path));
 
     /// <summary>
     /// FeatureWorks 的 InprocServer32 是相对路径 ".\fworks\fworks.dll"，

@@ -19,7 +19,9 @@ public sealed record AssemblyConversionPlan(
     IReadOnlyList<string> Warnings,
     // V3.3：拓扑序的装配节点。为空表示退化到 V3.0 的展平行为。
     IReadOnlyList<AssemblyNode>? Nodes = null,
-    int MaxDepth = 1)
+    int MaxDepth = 1,
+    // V3.5：全部层的装配关系，按所属 .asm 分派。
+    IReadOnlyList<AssemblyRelation>? Relations = null)
 {
     public bool CanConvert => BlockingIssues.Count == 0 && Parts.Count > 0;
 
@@ -27,6 +29,9 @@ public sealed record AssemblyConversionPlan(
     public bool IsNested => Nodes is { Count: > 0 };
 
     public int SubAssemblyCount => Nodes is null ? 0 : Nodes.Count(node => !node.IsRoot);
+
+    /// <summary>本次探查采集到的关系总数。为 0 时界面上的"重建装配关系"应当禁用。</summary>
+    public int RelationCount => Relations?.Count ?? 0;
 }
 
 public static class AssemblyPlanner
@@ -134,7 +139,10 @@ public static class AssemblyPlanner
             issues,
             warnings.Distinct(StringComparer.Ordinal).ToArray(),
             graph?.Nodes,
-            graph?.MaxDepth ?? 1);
+            graph?.MaxDepth ?? 1,
+            (probe.Documents ?? [])
+                .SelectMany(document => document.Relations ?? [])
+                .ToArray());
     }
 
     /// <summary>V3.3：把逐文档读数组装成拓扑序的装配节点；读数缺失时返回 null，由调用方退回展平。</summary>

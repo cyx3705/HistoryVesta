@@ -14,7 +14,8 @@ internal static class SolidWorksImporter
         BatchRequest request,
         IReadOnlyList<ConversionJob> exported,
         WorkerReporter reporter,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool resetFeatureWorksSession = false)
     {
         if (exported.Count == 0)
             return 0;
@@ -24,6 +25,7 @@ internal static class SolidWorksImporter
         SolidWorksInteropBridge? interop = null;
         FeatureRecognizer? recognizer = null;
         bool? originalCommandInProgress = null;
+        bool? featureWorksWasLoaded = null;
         var failed = 0;
 
         try
@@ -86,6 +88,34 @@ internal static class SolidWorksImporter
                 TryRun(() => application.CommandInProgress = true);
             }
 
+            if (ShouldResetFeatureWorksSession(request.RecognizeFeatures && resetFeatureWorksSession, ownership.OwnsInstance))
+            {
+                var resetSucceeded = FeatureRecognizer.TryBeginIsolatedSession(
+                    interop,
+                    out var wasLoaded,
+                    out var resetDiagnostic);
+                featureWorksWasLoaded = wasLoaded;
+                reporter.Report(
+                    exported[0].Id,
+                    ConversionStage.FeatureRecognition,
+                    resetDiagnostic,
+                    errorClass: resetSucceeded
+                        ? ConversionErrorClass.None
+                        : ConversionErrorClass.FeatureWorksUnavailable);
+            }
+            else if (request.RecognizeFeatures && resetFeatureWorksSession && ownership.OwnsInstance)
+            {
+                reporter.Report(
+                    exported[0].Id,
+                    ConversionStage.FeatureRecognition,
+                    "本零件使用全新 SolidWorks 会话，跳过 FeatureWorks 重载。",
+                    errorClass: ConversionErrorClass.None);
+            }
+
+            var featureWorksLost = false;
+            // 会话重建的总预算。实测教训：重建能"成功"（GetAddInObject 返回非空），
+            // 但下一次识别立刻再次故障——不设上限就是死循环（现场在同一个零件上转了 348 次）。
+            var sessionRecoveryBudget = resetFeatureWorksSession ? 0 : 2;
             recognizer = FeatureRecognizer.Prepare(interop);
             if (request.RecognizeFeatures)
             {
@@ -124,6 +154,8 @@ internal static class SolidWorksImporter
                 {
                     temporaryPath = TemporaryOutput.For(job.SolidWorksPath);
                     var importAttempt = 0;
+                    var recognitionDisabled = featureWorksLost;
+                    string? geometryFailureDiagnostic = null;
                     while (true)
                     {
                         try
@@ -159,15 +191,81 @@ internal static class SolidWorksImporter
                         if (documentType != DocumentTypePart)
                             throw new InvalidDataException("SolidWorks 导入结果不是零件文档。");
 
+                        // 导入身份校验。实测事故：FeatureWorks 的 COM 服务器故障后，
+                        // 后续 LoadFile4 会交回**上一件的文档**，于是接下来每个零件都被存成同一个形状
+                        // （现场是 5 个零件全部变成第 7 件那个方块）。
+                        // 标题不匹配就当场失败——绝不能把别人的几何存成这个零件。
+                        var identityFailure = DescribeImportIdentityFailure(
+                            job.XtPath, interop.GetTitle(modelObject));
+                        if (identityFailure is not null)
+                            throw new InvalidDataException(identityFailure);
+
                         // ---- V2.0：特征识别 + 草图完全定义（在保存之前做完） ----
                         // 未启用识别时不产生 FeatureOutcome，行为与 V1.x 完全一致。
-                        if (request.RecognizeFeatures)
+                        if (request.RecognizeFeatures && !recognitionDisabled)
                             featureOutcome = recognizer!.Process(
                                 modelObject,
                                 interop.GetTitle(modelObject),
                                 request,
                                 (stage, message) => reporter.Report(job.Id, stage, message),
                                 cancellationToken);
+
+                        // FeatureWorks 服务器故障：重建一次会话；重建不了就停用本批次的识别，
+                        // 给用户一个"从第 N 件起没有特征"的明确结论，而不是每件慢 10 次重试。
+                        if (featureOutcome is { SessionFaulted: true } && !recognitionDisabled)
+                        {
+                            if (sessionRecoveryBudget > 0 && recognizer!.TryRecoverSession())
+                            {
+                                sessionRecoveryBudget--;
+                                reporter.Report(
+                                    job.Id,
+                                    ConversionStage.FeatureRecognition,
+                                    $"FeatureWorks 会话故障，已重建并重新导入该零件（剩余重建预算 {sessionRecoveryBudget}）。",
+                                    errorClass: ConversionErrorClass.FeatureWorksUnavailable);
+                            }
+                            else
+                            {
+                                recognitionDisabled = true;
+                                featureWorksLost = true;
+                                reporter.Report(
+                                    job.Id,
+                                    ConversionStage.FeatureRecognition,
+                                    sessionRecoveryBudget > 0
+                                        ? "FeatureWorks 会话故障且无法重建，本批次剩余零件不再尝试识别，输出为哑实体。"
+                                        : "FeatureWorks 会话反复故障，已用尽重建预算，本批次剩余零件不再尝试识别，输出为哑实体。",
+                                    errorClass: ConversionErrorClass.FeatureWorksUnavailable);
+                            }
+
+                            TryClose(interop, modelObject);
+                            ComRelease.Final(modelObject);
+                            modelObject = null;
+                            ComRelease.Final(importData);
+                            importData = null;
+                            importAttempt++;
+                            StaMessagePump.PumpAndWait(750, cancellationToken);
+                            continue;
+                        }
+
+                        // 识别把几何改坏了：文档里现在是错的形状，光报降级没用，必须重新导入。
+                        // 重试时关掉识别，拿回干净的哑实体——宁可没有特征树，也不能形状不对。
+                        if (featureOutcome is { GeometryChanged: true } && !recognitionDisabled)
+                        {
+                            geometryFailureDiagnostic = featureOutcome.Diagnostic;
+                            recognitionDisabled = true;
+                            reporter.Report(
+                                job.Id,
+                                ConversionStage.FeatureRecognition,
+                                "特征识别改变了零件几何，正在丢弃并重新导入为哑实体。",
+                                errorClass: ConversionErrorClass.FeatureCreationFailed);
+                            TryClose(interop, modelObject);
+                            ComRelease.Final(modelObject);
+                            modelObject = null;
+                            ComRelease.Final(importData);
+                            importData = null;
+                            importAttempt++;
+                            StaMessagePump.PumpAndWait(750, cancellationToken);
+                            continue;
+                        }
 
                         if (!ShouldRetryFirstRecognition(
                                 jobIndex,
@@ -200,6 +298,13 @@ internal static class SolidWorksImporter
                         importData = null;
                         importAttempt++;
                         StaMessagePump.PumpAndWait(750, cancellationToken);
+                    }
+
+                    if (geometryFailureDiagnostic is not null)
+                    {
+                        featureOutcome = new FeatureOutcome(
+                            0, false, 0, 0, [], true, 0,
+                            "已重新导入为哑实体。原因：" + geometryFailureDiagnostic);
                     }
 
                     if (featureOutcome is { DegradedToDumbSolid: true }
@@ -296,6 +401,8 @@ internal static class SolidWorksImporter
         {
             // 先还原 FeatureWorks 相关的用户设置，再退出应用。
             recognizer?.Dispose();
+            if (interop is not null && featureWorksWasLoaded is bool wasLoaded)
+                FeatureRecognizer.RestoreIsolatedSessionState(interop, wasLoaded);
             if (applicationObject is not null)
             {
                 dynamic application = applicationObject;
@@ -313,9 +420,31 @@ internal static class SolidWorksImporter
             interop?.Dispose();
             ComRelease.Final(applicationObject);
             if (ownership.OwnsInstance)
-                _ = ownership.WaitForOwnedExit(TimeSpan.FromSeconds(30));
+            {
+                var exited = ownership.EnsureOwnedExit(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(5));
+                if (ownership.ForcedTerminationUsed)
+                {
+                    reporter.Report(
+                        null,
+                        ConversionStage.SolidWorksImport,
+                        $"本批创建的 SolidWorks 进程 {ownership.OwnedProcessId} 未正常退出，已按所有权记录回收。",
+                        errorClass: ConversionErrorClass.None);
+                }
+                if (!exited)
+                {
+                    reporter.Report(
+                        null,
+                        ConversionStage.Failed,
+                        $"本批创建的 SolidWorks 进程 {ownership.OwnedProcessId} 无法退出。",
+                        true,
+                        errorClass: ConversionErrorClass.AppLaunchFailed);
+                }
+            }
         }
     }
+
+    internal static bool ShouldResetFeatureWorksSession(bool resetRequested, bool ownsFreshInstance)
+        => resetRequested && !ownsFreshInstance;
 
     private static string DescribeFeatures(FeatureOutcome? outcome)
     {
@@ -332,6 +461,26 @@ internal static class SolidWorksImporter
             ? string.Empty
             : $"（{outcome.Diagnostic}）";
         return $" 识别 {outcome.RecognizedFeatureCount} 个特征，草图完全定义 {outcome.SketchFullyDefined}/{outcome.SketchTotal}。{diagnostic}";
+    }
+
+    /// <summary>
+    /// 导入身份校验：SolidWorks 交回的文档必须就是刚导入的那个 XT。
+    ///
+    /// 实测事故：FeatureWorks 的 COM 服务器故障后，后续 LoadFile4 会交回**上一件的文档**，
+    /// 于是接下来每个零件都被存成同一个形状（现场 5 个零件全变成第 7 件那个方块，
+    /// 体积与面数逐位相同）。返回 null 表示身份正确。
+    /// </summary>
+    internal static string? DescribeImportIdentityFailure(string xtPath, string? importedTitle)
+    {
+        var expected = Path.GetFileNameWithoutExtension(xtPath);
+        if (string.IsNullOrWhiteSpace(expected))
+            return null;
+        if (string.IsNullOrWhiteSpace(importedTitle))
+            return $"SolidWorks 未返回文档标题，无法确认导入的是 {expected}。";
+        if (importedTitle.StartsWith(expected, StringComparison.OrdinalIgnoreCase))
+            return null;
+        return $"SolidWorks 交回的文档与导入目标不符：期望 {expected}，实得 {importedTitle}。"
+            + " 这通常意味着上一件的文档没有正确关闭，继续下去会把错误几何存成本零件。";
     }
 
     internal static bool ShouldRetryFirstRecognition(

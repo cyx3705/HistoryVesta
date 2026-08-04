@@ -14,11 +14,23 @@ namespace SE2SW.Worker;
 internal static class AssemblyNodeReusePlanner
 {
     /// <returns><c>true</c> 表示可以直接复用已有产物，跳过生成。</returns>
-    public static bool CanReuse(AssemblyNode node)
+    public static bool CanReuse(AssemblyNode node, bool requireMateRebuild = false)
     {
         ArgumentNullException.ThrowIfNull(node);
         if (!File.Exists(node.OutputPath))
             return false;
+
+        // 时间戳只能证明几何依赖没有更新，不能证明这个 SLDASM 曾按当前关系集建立过
+        // 配合。若在此处复用，RebuildMates=true 会得到一个“成功”的旧装配，但根本没有
+        // 调用 SolidWorksMateRebuilder。安全策略是不覆盖未知归属的现有文件，并明确要求
+        // 用户移走旧产物后重新生成；绝不能静默跳过关系重建。
+        if (requireMateRebuild)
+        {
+            throw new ClassifiedConversionException(
+                ConversionErrorClass.OutputExists,
+                $"已有装配产物无法证明已按当前关系重建，拒绝静默复用：{node.OutputPath}；"
+                    + "请将本次转换生成的旧 SLDASM 移出 SW 文件夹后重新转换。");
+        }
 
         var output = new FileInfo(node.OutputPath);
         output.Refresh();

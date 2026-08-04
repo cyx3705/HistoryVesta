@@ -59,6 +59,11 @@ public enum ConversionErrorClass
     SubAssemblyBuildFailed,
     SubAssemblyCycleDetected,
     SubAssemblyReuseStale,
+    // V3.5 装配关系重建。枚举按数值序列化，新值只能追加在末尾。
+    MateEntityUnmatched,
+    MateEntityAmbiguous,
+    MateRejected,
+    MateTypeUnsupported,
 }
 
 public sealed record ConversionJob(
@@ -79,6 +84,20 @@ public sealed record BatchRequest(
     int FeatureRecognitionTimeoutSeconds = 120,
     bool ContinueWhenRecognitionFails = true);
 
+/// <summary>
+/// V3.5.2：父 Worker 向单零件导入子 Worker 发送的内部请求。
+/// 每个请求只允许一个已经导出 XT 的零件，以隔离 FeatureWorks 的 COM 生命周期。
+/// </summary>
+public sealed record PartImportRequest(
+    string BatchId,
+    ConversionMode Mode,
+    ConversionJob Job,
+    bool Overwrite = false,
+    bool RecognizeFeatures = true,
+    bool FullyDefineSketches = true,
+    int FeatureRecognitionTimeoutSeconds = 120,
+    bool ContinueWhenRecognitionFails = true);
+
 /// <summary>V2.0 单个零件的特征识别与草图定义结果，随 Completed 事件回传。</summary>
 public sealed record FeatureOutcome(
     int RecognizedFeatureCount,
@@ -88,7 +107,14 @@ public sealed record FeatureOutcome(
     IReadOnlyList<string> SketchStatuses,
     bool DegradedToDumbSolid,
     long ElapsedMilliseconds,
-    string? Diagnostic = null);
+    string? Diagnostic = null,
+    // 特征识别把实体几何改坏了（例如只认出基体、重建成一个方块）。
+    // 与 DegradedToDumbSolid 不同：那只是"没识别出来，实体原样保留"，
+    // 这个是"实体已经被改了，必须重新导入才能拿回正确几何"。
+    bool GeometryChanged = false,
+    // FeatureWorks 的 COM 服务器已故障。调用方必须重建会话，
+    // 否则后续每个零件都会对着同一个死对象重试到批次结束。
+    bool SessionFaulted = false);
 
 public sealed record WorkerEvent(
     string BatchId,
@@ -103,7 +129,9 @@ public sealed record WorkerEvent(
     FeatureOutcome? Feature = null,
     AssemblyOutcome? Assembly = null,
     ConversionArtifactKind? Artifact = null,
-    ReuseKind? ReuseKind = null);
+    ReuseKind? ReuseKind = null,
+    // V3.5：配合重建结果。与 Feature / Assembly 并列，可空追加不影响既有反序列化。
+    MateOutcome? Mate = null);
 
 /// <summary>装配树中的一个实例。Solid Edge GetMatrix 已返回顶层世界矩阵。</summary>
 public sealed record AssemblyOccurrence(
@@ -141,7 +169,64 @@ public sealed record AssemblyChild(
 public sealed record AssemblyDocumentReading(
     string SourceAssemblyPath,
     IReadOnlyList<AssemblyChild> Children,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings,
+    // V3.5：该文档自己那一层的装配关系。为 null 表示本次未采集关系。
+    IReadOnlyList<AssemblyRelation>? Relations = null);
+
+/// <summary>
+/// V3.5：<c>GetGeometryN</c> 的产物。
+///
+/// 参考系是**所属装配文档自身的坐标系**——因为该 <c>.asm</c> 是作为独立顶层文档打开的，
+/// 它的"世界系"就是它自己（25 号文档 §3.2）。因此这些值可以直接用来在对应的
+/// <c>.SLDASM</c> 里定位实体，不需要任何换算。
+/// </summary>
+/// <param name="GeometryType">1 = 平面（面上一点 + 法向）；2 = 轴（轴上一点 + 方向）。</param>
+public sealed record RelationGeometry(
+    int GeometryType,
+    double[] Point,
+    double[] Direction);
+
+/// <summary>
+/// V3.5：一条 Solid Edge 装配关系。字段照抄 19 号报告的实测清单，不发明。
+///
+/// <paramref name="Offset"/> / <paramref name="ParallelOffset"/> 存在条件可读性：
+/// Axial 关系在 <c>ParallelOffset == false</c> 时读 <c>Offset</c> 会抛 0x80004005。
+/// 采集侧必须先读开关再读值，读不到时留默认值并在 <paramref name="Diagnostic"/> 说明。
+/// </summary>
+public sealed record AssemblyRelation(
+    string SourceAssemblyPath,
+    int Index,
+    string InterfaceName,
+    string? Occurrence1,
+    string? Occurrence2,
+    RelationGeometry? Geometry1,
+    RelationGeometry? Geometry2,
+    double Offset = 0,
+    bool NormalsAligned = false,
+    bool ParallelOffset = false,
+    bool IsSuppressed = false,
+    string? Diagnostic = null);
+
+/// <summary>V3.5：配合重建结果，随 Completed 事件回传。</summary>
+public sealed record MateOutcome(
+    int RelationTotal,
+    int MateRebuilt,
+    int SkippedSuppressed,
+    int SkippedUnsupported,
+    int FailedUnmatched,
+    int FailedAmbiguous,
+    int FailedRejected,
+    int ComponentsLeftFixed,
+    double MaxDriftMeters,
+    IReadOnlyList<string> Diagnostics,
+    // 接地关系的去向：不产生配合，落为"固定该组件"。
+    int GroundApplied = 0)
+{
+    /// <summary>§6.1 判据 3：每条关系都必须有确定去向，不允许凭空消失。</summary>
+    public bool IsSelfConsistent =>
+        MateRebuilt + GroundApplied + SkippedSuppressed + SkippedUnsupported
+            + FailedUnmatched + FailedAmbiguous + FailedRejected == RelationTotal;
+}
 
 /// <summary>
 /// V3.3：一个待生成的 <c>.SLDASM</c> 及其直接子项。
@@ -183,9 +268,13 @@ public sealed record AssemblyBatchRequest(
     bool RecognizeFeatures = false,
     bool FullyDefineSketches = false,
     bool ContinueWhenPartFails = false,
+    // V3.5：把 SE 装配关系翻译成 SW 配合。默认关闭，不改既有行为。
+    bool RebuildMates = false,
     int FeatureRecognitionTimeoutSeconds = 120,
     // V3.3：拓扑序的装配节点。为 null 时退化为 V3.0 的展平行为。
-    IReadOnlyList<AssemblyNode>? Nodes = null);
+    IReadOnlyList<AssemblyNode>? Nodes = null,
+    // V3.5：全部层的装配关系，按 SourceAssemblyPath 分派到各层。
+    IReadOnlyList<AssemblyRelation>? Relations = null);
 
 /// <summary>
 /// 装配转换结果。
@@ -207,6 +296,8 @@ public sealed record AssemblyOutcome(
     int SubAssemblyTotal = 0,
     int SubAssemblyBuilt = 0,
     int MaxDepth = 1,
+    // V3.5：配合重建结果，按层合并。
+    MateOutcome? Mate = null,
     // V3.3.2: Reused assemblies are not reopened, inserted, or fixed during this run.
     int ReusedAssemblyCount = 0,
     int ReusedAssemblyPlannedComponentCount = 0);

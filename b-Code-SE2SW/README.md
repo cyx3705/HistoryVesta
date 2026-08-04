@@ -1,6 +1,6 @@
 # SE2SW 格式转换模块
 
-> 状态：3.3.2 已正式部署；V3.3 子装配嵌套已完成并通过真机门禁（3 个装配文件、3 层、22 个叶组件最大平移偏差 5.6e-17 m）。
+> 状态：3.5.5 —— 识别与配合可同时开启（组合档 56/56 落位、文件级核对 53 条配合特征、零文档泄漏）。
 > 目标宿主：OneHistoryStudio / AppShell 模块宿主  
 > 目标格式：Solid Edge `.par/.asm` -> Parasolid `.x_t` -> SolidWorks `.SLDPRT/.SLDASM`
 
@@ -13,6 +13,20 @@ Solid Edge COM 导出 Parasolid，再使用 SolidWorks COM 导入并保存为 So
 嵌套所需的局部矩阵不靠世界矩阵求逆换算，而是把每个子装配 `.asm` 作为独立顶层文档打开后直接读取——
 读到的本来就是该文档坐标系下的值。转换前用世界矩阵与局部矩阵互相印证（阈值 1e-9），
 参考系用错会在触碰 CAD 之前被拦下。
+
+V3.5 起可选开启**装配关系重建**：把 Solid Edge 的 `Relations3d` 翻译成 SolidWorks 配合。
+关系按所属 `.asm` 落到各自那层，实体靠几何唯一定位而非坐标点选，配合逐条建立并立即校验位置——
+相对 V3.3 基线漂移超过 1e-6 m 就回滚该条并还原位置。未被任何配合约束的组件保持固定，
+**位置精度绝不退化**，建不起来的逐条报到界面上。默认关闭；与特征识别不互斥。
+
+V3.5.2 起，开启特征识别时每个唯一零件由独立子 Worker 处理，并在附着既有 SolidWorks 单实例时
+逐件重置 FeatureWorks 加载项。一个零件的 `RPC_E_SERVERFAULT` 不再污染后续导入或装配构建；
+未开启识别的路径仍使用原批量导入。
+
+V3.5.3 修复 COM 返回早于 `SLDWORKS.exe` 进入进程表时的所有权竞态。全新会话不再在首个文档前
+无意义地卸载/重载 FeatureWorks；模块明确创建的隐藏 CAD 若在 `ExitApp` 后超时，只按记录的唯一 PID
+回收，绝不按进程名清理，也绝不关闭启动前已有的用户会话。零件阶段失效时装配会明确中止，
+不会继续消费损坏会话或生成误导性的缺件装配。
 
 装配转换会优先使用 SolidWorks 当前默认装配模板；默认值为空、是虚拟 token、不是物理文件或无法创建文档时，
 Worker 会从本机 SolidWorks 官方模板目录选择物理 `.asmdot`，不永久修改用户设置。失败后再次转换时，已有且有效的
@@ -41,6 +55,11 @@ tests/SE2SW.Smoke     不启动 CAD 的目录与扫描冒烟测试
 tests/SE2SW.UiSmoke   仅显示窗口的渲染冒烟壳
 tools/AssemblyProbe    SE/SW occurrence、矩阵、模板、插入与固定探针
 tools/RelationProbe    SE 装配关系与装配级 Parasolid 导出只读探针
+tools/MateMatchProbe   SE 关系几何到 SW 面的只读匹配率探针
+tools/MateApplyProbe   AddMate5 应用姿势的最小复现矩阵探针
+tools/PartGeometryProbe  以 XT 为基准核对 SLDPRT 体积/面数的几何守卫探针
+tools/FeatureWorksProbe  FeatureWorks 可用性分步诊断探针
+tools/FeatureWorksBatchSmoke  多零件单批次的非交互式 FeatureWorks 隔离门禁
 tools/AssemblyProductionGate  生产 Worker 真机装配收口门禁
 ```
 
@@ -90,6 +109,21 @@ OHS 注册清单位于项目根目录 `z-SE2SW/module.manifest.json`，MCP 档�
   不改任何转换行为；含 [tools/RelationProbe](tools/RelationProbe)
 - [V3.2：装配关系实测报告](docs/19-V3.2-装配关系实测报告.md) —— `Relations3d` 类型与参数实测、
   `GetGeometryN` 世界系点/向量、`SaveCopyAs` 装配级 Parasolid 导出与 SW 导入形态
+- [V3.5：装配关系重建](docs/25-V3.5-装配关系重建.md) —— 设计合同；关系采集、几何匹配、
+  类型映射与校验回滚；含 [tools/MateMatchProbe](tools/MateMatchProbe)（A 路裁决：两轮实测均 100%）
+- [特征识别几何损坏与 FeatureWorks 不可用](docs/28-特征识别几何损坏与FeatureWorks不可用.md) —— 识别重建实体后
+  从不校验几何导致零件变方块；已加几何守卫与重导入还原（待真机验证）
+- [V3.5.2：FeatureWorks 调用隔离修复](docs/29-V3.5.2-FeatureWorks调用隔离修复.md) —— 单零件子 Worker、
+  加载项重置、故障重试、取消/事件转发与非交互式真机门禁
+- [V3.5.3：装配失效与 CAD 生命周期修复](docs/30-V3.5.3-装配失效与CAD生命周期修复.md) —— 所有权竞态、
+  全新/既有会话分流、自有进程故障回收与装配组合门禁
+- [V3.5.5：面指针跨重建失效与门禁盲区](docs/32-V3.5.5-面指针跨重建失效与门禁盲区.md) —— 缓存的 Face2
+  在 ForceRebuild 后失效导致识别开启时配合大面积丢失；新增识别+配合组合档与文档泄漏断言
+- [V3.5.4：组件文档泄漏导致配合丢失](docs/31-V3.5.4-组件文档泄漏导致配合丢失.md) —— V3.3 回归：
+  嵌套生成器不关组件文档，撞上同名已打开后组件与配合整块消失；含修复与文件级核对
+- [V3.5.0：发布收口](docs/27-V3.5.0-发布收口.md) —— 三档真机门禁、版本单一真源验证、正式槽备份与哈希
+- [V3.5：配合应用阻塞问题报表](docs/26-V3.5-配合应用阻塞问题报表.md) —— **已结案**：根因是
+  swAddMateError_NoError = 1 被当作失败；含证据链、三处修复与终局门禁（56/56 落位、偏差 2.43e-9 m）
 - [V3.3：子装配嵌套链路](docs/20-V3.3-子装配嵌套链路.md) —— 设计合同与实施记录；每个子装配递归生成
   `.SLDASM`、局部矩阵采集与自校验、装配树标注、三层真机门禁
 - [V1.1 工程实施与验收](docs/05-V1.1-工程实施与验收.md)
@@ -107,6 +141,15 @@ OHS 注册清单位于项目根目录 `z-SE2SW/module.manifest.json`，MCP 档�
 - 不处理钣金 `.psm`、工程图 `.dft`；装配引用中的非 `.par/.asm` 文件跳过并报告。
 - 同一批次串行转换，避免两个 CAD 应用的 COM 自动化并发冲突。
 - 不翻译 Mates、材料、属性或配置；隐藏件仍插入并报告。
+
+## V3.5 范围
+
+- 三种已实测的关系类型：平面（重合 / 距离）、轴（同轴 / 距离）、接地（固定组件）；
+  其余类型报 `MateTypeUnsupported` 并带回接口名，不猜测映射。
+- 对齐一律 `swAlignCLOSEST`：组件已精确位于源位置，最近解就是不动。
+- 每加一条配合立即校验全部组件相对基线的漂移，超差即删配合**并还原位置**。
+- 关系只翻译到它自己那一层的 `.SLDASM`，不跨层提升。
+- 与特征识别可同时开启——实测识别后几何匹配率仍为 100%。
 
 ## V3.3 范围
 

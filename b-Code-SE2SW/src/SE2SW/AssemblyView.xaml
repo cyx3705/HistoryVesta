@@ -173,6 +173,10 @@
                                   IsEnabled="{Binding CanFullyDefineSketches}" />
                         <CheckBox Content="零件失败时继续" Margin="16,0,0,0"
                                   IsChecked="{Binding ContinueWhenPartFails}" />
+                        <CheckBox Content="重建装配关系（默认开启）" Margin="16,0,0,0"
+                                  IsChecked="{Binding RebuildMates}"
+                                  IsEnabled="{Binding CanRebuildMates}"
+                                  ToolTip="{Binding RebuildMatesHint}" />
                     </StackPanel>
                 </Border>
             </Expander>

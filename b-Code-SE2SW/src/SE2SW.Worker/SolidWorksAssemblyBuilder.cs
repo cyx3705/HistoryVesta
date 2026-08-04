@@ -229,7 +229,7 @@ internal static class SolidWorksAssemblyBuilder
             interop?.Dispose();
             ComRelease.Final(applicationObject);
             if (ownership.OwnsInstance)
-                _ = ownership.WaitForOwnedExit(TimeSpan.FromSeconds(30));
+                _ = ownership.EnsureOwnedExit(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(5));
         }
     }
 

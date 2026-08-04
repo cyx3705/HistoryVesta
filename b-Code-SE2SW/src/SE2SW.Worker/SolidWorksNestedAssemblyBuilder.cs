@@ -20,6 +20,7 @@ internal static class SolidWorksNestedAssemblyBuilder
     public static AssemblyOutcome Build(
         IReadOnlyList<AssemblyNode> nodes,
         IReadOnlyDictionary<string, ConversionJob> successfulJobs,
+        IReadOnlyDictionary<string, IReadOnlyList<AssemblyRelation>> relationsByAssembly,
         int partConverted,
         int partFailed,
         int skippedSuppressed,
@@ -38,6 +39,7 @@ internal static class SolidWorksNestedAssemblyBuilder
         var maxRotationDeviation = 0d;
         var reused = new List<string>();
         var skippedChildren = new List<string>();
+        var mateOutcomes = new List<MateOutcome>();
 
         try
         {
@@ -72,8 +74,9 @@ internal static class SolidWorksNestedAssemblyBuilder
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 metrics.AddPlannedNode(node);
+                var nodeRelations = relationsByAssembly.GetValueOrDefault(Path.GetFullPath(node.SourceAssemblyPath));
 
-                if (AssemblyNodeReusePlanner.CanReuse(node))
+                if (AssemblyNodeReusePlanner.CanReuse(node, nodeRelations is { Count: > 0 }))
                 {
                     reused.Add(node.OutputPath);
                     reporter.Report(null, ConversionStage.Skipped,
@@ -92,12 +95,15 @@ internal static class SolidWorksNestedAssemblyBuilder
                     node,
                     successfulJobs,
                     assemblyOutputs,
+                    nodeRelations,
                     reporter,
                     cancellationToken,
                     skippedChildren);
                 metrics.AddBuiltNode(result.Inserted, result.Fixed);
                 maxOriginDeviation = Math.Max(maxOriginDeviation, result.MaxOriginDeviation);
                 maxRotationDeviation = Math.Max(maxRotationDeviation, result.MaxRotationDeviation);
+                if (result.Mate is not null)
+                    mateOutcomes.Add(result.Mate);
                 if (!node.IsRoot)
                     subAssemblyBuilt++;
             }
@@ -115,6 +121,7 @@ internal static class SolidWorksNestedAssemblyBuilder
                 SubAssemblyTotal: nodes.Count(node => !node.IsRoot),
                 SubAssemblyBuilt: subAssemblyBuilt,
                 MaxDepth: nodes.Count == 0 ? 1 : nodes.Max(node => node.Depth),
+                Mate: Merge(mateOutcomes),
                 ReusedAssemblyCount: metrics.ReusedAssemblyCount,
                 ReusedAssemblyPlannedComponentCount: metrics.ReusedAssemblyPlannedComponentCount);
         }
@@ -125,15 +132,35 @@ internal static class SolidWorksNestedAssemblyBuilder
             interop?.Dispose();
             ComRelease.Final(applicationObject);
             if (ownership.OwnsInstance)
-                _ = ownership.WaitForOwnedExit(TimeSpan.FromSeconds(30));
+                _ = ownership.EnsureOwnedExit(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(5));
         }
+    }
+
+    /// <summary>把各层的配合结果并成一份。逐项相加即可——每条关系只属于一层。</summary>
+    private static MateOutcome? Merge(IReadOnlyList<MateOutcome> outcomes)
+    {
+        if (outcomes.Count == 0)
+            return null;
+        return new MateOutcome(
+            outcomes.Sum(item => item.RelationTotal),
+            outcomes.Sum(item => item.MateRebuilt),
+            outcomes.Sum(item => item.SkippedSuppressed),
+            outcomes.Sum(item => item.SkippedUnsupported),
+            outcomes.Sum(item => item.FailedUnmatched),
+            outcomes.Sum(item => item.FailedAmbiguous),
+            outcomes.Sum(item => item.FailedRejected),
+            outcomes.Sum(item => item.ComponentsLeftFixed),
+            outcomes.Max(item => item.MaxDriftMeters),
+            outcomes.SelectMany(item => item.Diagnostics).ToArray(),
+            outcomes.Sum(item => item.GroundApplied));
     }
 
     private readonly record struct NodeResult(
         int Inserted,
         int Fixed,
         double MaxOriginDeviation,
-        double MaxRotationDeviation);
+        double MaxRotationDeviation,
+        MateOutcome? Mate = null);
 
     /// <summary>
     /// 生成一个装配文件。只读 <paramref name="node"/> 的直接子项——需要祖先信息才能算出的结果，
@@ -145,10 +172,12 @@ internal static class SolidWorksNestedAssemblyBuilder
         AssemblyNode node,
         IReadOnlyDictionary<string, ConversionJob> successfulJobs,
         IReadOnlyDictionary<string, string> assemblyOutputs,
+        IReadOnlyList<AssemblyRelation>? relations,
         WorkerReporter reporter,
         CancellationToken cancellationToken,
         List<string> skippedChildren)
     {
+        MateOutcome? mateOutcome = null;
         reporter.Report(null, ConversionStage.AssemblyBuild,
             $"正在生成第 {node.Depth} 层装配：{Path.GetFileName(node.OutputPath)}（{node.Children.Count} 个组件）",
             artifact: ConversionArtifactKind.SolidWorksAssembly);
@@ -157,6 +186,7 @@ internal static class SolidWorksNestedAssemblyBuilder
         object? extension = null;
         object? mathUtility = null;
         var components = new List<object>();
+        var componentsByName = new Dictionary<string, object>(StringComparer.Ordinal);
         var openedDocuments = new List<object>();
         string? temporaryPath = null;
         var closed = false;
@@ -207,6 +237,7 @@ internal static class SolidWorksNestedAssemblyBuilder
                         ConversionErrorClass.ComponentInsertFailed,
                         $"AddComponent5 返回 null：{componentPath}");
                 components.Add(component);
+                componentsByName[child.Name] = component;
 
                 // 局部矩阵直接用，不与任何父级矩阵复合——这一层的参考系就是这一层。
                 var expected = SolidWorksAssemblyBuilder.ToSolidWorksTransform(child.LocalTransform);
@@ -252,6 +283,15 @@ internal static class SolidWorksNestedAssemblyBuilder
                         $"组件固定不完整：{fixedCount}/{components.Count}（{Path.GetFileName(node.OutputPath)}）");
             }
 
+            // V3.5：此刻组件已插入、变换已逐个回读校验，位置就是配合重建要用的基线。
+            // 必须在保存之前做——保存后再改就得二次提交，中途失败会留下半成品。
+            if (relations is { Count: > 0 })
+            {
+                mateOutcome = SolidWorksMateRebuilder.Rebuild(
+                    interop, assemblyModel, mathUtility!, node, relations, componentsByName,
+                    reporter, cancellationToken);
+            }
+
             temporaryPath = TemporaryOutput.For(node.OutputPath);
             extension = interop.GetExtension(assemblyModel);
             if (!interop.SaveAs3(extension, temporaryPath, SaveAsCurrentVersion, SaveAsSilent, out var saveErrors, out var saveWarnings)
@@ -277,7 +317,7 @@ internal static class SolidWorksNestedAssemblyBuilder
 
             TemporaryOutput.Commit(temporaryPath, node.OutputPath);
             temporaryPath = null;
-            return new NodeResult(components.Count, fixedCount, maxOrigin, maxRotation);
+            return new NodeResult(components.Count, fixedCount, maxOrigin, maxRotation, mateOutcome);
         }
         catch (Exception ex) when (ex is not ClassifiedConversionException and not OperationCanceledException)
         {
@@ -291,8 +331,15 @@ internal static class SolidWorksNestedAssemblyBuilder
             TemporaryOutput.DeleteIfExists(temporaryPath);
             if (!closed && assemblyModel is not null)
                 TryRun(() => interop.CloseDocument(interop.GetTitle(assemblyModel)));
+            // 打开的组件文档必须关掉。V3.0 的展平版本来就关（每批只有一个节点，问题不明显），
+            // 嵌套版一个节点一批文档，不关就会在 SolidWorks 会话里越堆越多，
+            // 后续节点 OpenDoc6 撞上 swFileWithSameTitleAlreadyOpen(65536)——
+            // 组件插不进去，该组件连同它的配合一起消失。实测就是这么丢的。
             foreach (var document in openedDocuments)
+            {
+                TryRun(() => interop.CloseDocument(interop.GetTitle(document)));
                 ComRelease.Final(document);
+            }
             foreach (var component in components)
                 ComRelease.Final(component);
             ComRelease.Final(mathUtility);
@@ -359,8 +406,8 @@ internal static class SolidWorksNestedAssemblyBuilder
         IReadOnlyList<string> skippedChildren,
         IReadOnlyList<string>? failedPartPaths)
     {
-        var diagnostic = $"V3.3 嵌套装配：{nodes.Count} 个装配文件、最大 "
-            + $"{(nodes.Count == 0 ? 1 : nodes.Max(node => node.Depth))} 层，所有组件固定，不含配合；"
+        var diagnostic = $"嵌套装配：{nodes.Count} 个装配文件、最大 "
+            + $"{(nodes.Count == 0 ? 1 : nodes.Max(node => node.Depth))} 层；"
             + $"最大旋转元素偏差 {maxRotationDeviation:G6}。";
         if (reused.Count > 0)
             diagnostic += " 复用产物：" + string.Join("；", reused);

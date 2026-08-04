@@ -46,7 +46,7 @@ internal static class AssemblyConverter
                 reporter,
                 cancellationToken);
         var importJobs = reusePlan.ImportFromExistingXt.Concat(exported).ToArray();
-        _ = SolidWorksImporter.Import(partRequest, importJobs, reporter, cancellationToken);
+        _ = SolidWorksPartImportIsolation.Import(partRequest, importJobs, reporter, cancellationToken);
         var successfulJobs = request.PartJobs
             .Where(job => File.Exists(job.SolidWorksPath) && new FileInfo(job.SolidWorksPath).Length > 0)
             .ToDictionary(job => Path.GetFullPath(job.SourcePath), StringComparer.OrdinalIgnoreCase);
@@ -82,6 +82,10 @@ internal static class AssemblyConverter
             ? SolidWorksNestedAssemblyBuilder.Build(
                 nodes,
                 successfulJobs,
+                // V3.5：按 .asm 归拢关系。RebuildMates 关闭时传空表，行为与 3.3.2 完全一致。
+                request.RebuildMates
+                    ? BuildRelationIndex(request)
+                    : new Dictionary<string, IReadOnlyList<AssemblyRelation>>(StringComparer.OrdinalIgnoreCase),
                 request.PartJobs.Count - partFailed,
                 partFailed,
                 request.Occurrences.Count(item => item.IsSuppressed),
@@ -119,5 +123,27 @@ internal static class AssemblyConverter
             assembly: outcome,
             artifact: ConversionArtifactKind.SolidWorksAssembly);
         return partFailed == 0 ? 0 : 1;
+    }
+
+    /// <summary>
+    /// 关系按所属 <c>.asm</c> 归拢。每条关系只属于一层——SE 就是这么存的（19 号报告 §10.2），
+    /// 所以这里不需要任何跨层归属推断。
+    /// </summary>
+    private static Dictionary<string, IReadOnlyList<AssemblyRelation>> BuildRelationIndex(AssemblyBatchRequest request)
+    {
+        var index = new Dictionary<string, IReadOnlyList<AssemblyRelation>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var node in request.Nodes ?? [])
+        {
+            var relations = request.Relations?
+                .Where(item => string.Equals(
+                    Path.GetFullPath(item.SourceAssemblyPath),
+                    Path.GetFullPath(node.SourceAssemblyPath),
+                    StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            if (relations is { Length: > 0 })
+                index[Path.GetFullPath(node.SourceAssemblyPath)] = relations;
+        }
+
+        return index;
     }
 }

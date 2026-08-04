@@ -75,6 +75,10 @@ internal static class SolidEdgeAssemblyExplorer
                 ComRelease.Final(top);
             }
 
+            // V3.5：顶层自己那一层的关系。必须在关闭文档之前读。
+            var rootRelations = SolidEdgeRelationReader.Read(
+                document, sourceAssemblyPath, warnings, cancellationToken);
+
             document.Close(false);
             application.DoIdle();
             ComRelease.Final(documentObject);
@@ -93,7 +97,7 @@ internal static class SolidEdgeAssemblyExplorer
             // 该文档坐标系下的局部矩阵，不需要拿父级世界矩阵求逆换算。
             var documentReadings = new List<AssemblyDocumentReading>
             {
-                new(Path.GetFullPath(sourceAssemblyPath), rootChildren, []),
+                new(Path.GetFullPath(sourceAssemblyPath), rootChildren, Array.Empty<string>(), rootRelations),
             };
             var subAssemblyPaths = occurrences
                 .Where(item => item.IsSubAssembly && !item.IsSuppressed && File.Exists(item.SourcePath))
@@ -145,7 +149,7 @@ internal static class SolidEdgeAssemblyExplorer
             }
             ComRelease.Final(applicationObject);
             if (ownership.OwnsInstance)
-                _ = ownership.WaitForOwnedExit(TimeSpan.FromSeconds(30));
+                _ = ownership.EnsureOwnedExit(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(5));
         }
     }
 
@@ -166,6 +170,7 @@ internal static class SolidEdgeAssemblyExplorer
         var directory = Path.GetDirectoryName(assemblyPath)!;
         var children = new List<AssemblyChild>();
         var local = new List<string>();
+        var relations = new List<AssemblyRelation>();
         object? documentObject = null;
         try
         {
@@ -194,6 +199,10 @@ internal static class SolidEdgeAssemblyExplorer
             {
                 ComRelease.Final(top);
             }
+
+            // V3.5：这一层自己的关系。该文档是作为独立顶层打开的，
+            // 所以 GetGeometryN 的"世界系"就是它自己的坐标系，无需换算。
+            relations.AddRange(SolidEdgeRelationReader.Read(document, assemblyPath, local, cancellationToken));
 
             document.Close(false);
             application.DoIdle();
@@ -224,7 +233,7 @@ internal static class SolidEdgeAssemblyExplorer
 
         if (children.Count == 0)
             warnings.Add($"子装配没有可读的一级实例：{assemblyPath}");
-        return new AssemblyDocumentReading(assemblyPath, children, local);
+        return new AssemblyDocumentReading(assemblyPath, children, local, relations);
     }
 
     /// <summary>把一个一级 occurrence 读成 <see cref="AssemblyChild"/>。矩阵取值不做任何换算。</summary>

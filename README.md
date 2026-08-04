@@ -11,6 +11,7 @@
 | `b-Code-ActiveDock` | `z-ActiveDock` | `ActiveDock` | `standard` | 服务（自持窗口） | 桌面右下角活动项目坞，命令域 `dock` |
 | `b-Code-GitHubConnection` | `z-GitHubConnection` | `GitHubConnection` | `readonly` | 桌面（停靠窗口） | 服务器本机 GitHub、GCM、SSH 和 origin 连接治理 |
 | `b-Code-SE2SW` | `z-SE2SW` | `SE2SW` | `hidden` | 服务 | Solid Edge 零件/装配体转换为 SolidWorks |
+| `b-Code-SWuse` | `z-SWuse` | `SWuse` | `hidden` | 服务（自持顶层窗口） | 多文件 C# 经受控 API 生成 SolidWorks 零件 |
 
 `StudioTools.dll` 使用 AppShell 支持的多 `ModuleInfoBase` 合同保留三个原逻辑命令域和 10 条命令，
 同时只占用一个源码项目、一份发布清单和一个正式模块槽。ActiveDock、GitHubConnection 与 SE2SW 因宿主归属、
@@ -37,6 +38,8 @@ dotnet build .\b-Code-GitHubConnection\GitHubConnection.csproj -c Release -p:NuG
 dotnet run --project .\b-Code-GitHubConnection\tests\Smoke\Smoke.csproj -c Release
 dotnet build .\b-Code-SE2SW\src\SE2SW\SE2SW.csproj -c Release --no-restore
 dotnet run --project .\b-Code-SE2SW\tests\SE2SW.Smoke\SE2SW.Smoke.csproj -c Release --no-restore
+dotnet build .\b-Code-SWuse\src\SWuse\SWuse.csproj -c Release -p:NuGetAudit=false
+dotnet run --project .\b-Code-SWuse\tests\SWuse.Smoke\SWuse.Smoke.csproj -c Release -p:NuGetAudit=false
 ```
 
 ```text
@@ -45,6 +48,7 @@ tool.sync name=StudioTools
 tool.sync name=ActiveDock
 tool.sync name=GitHubConnection
 tool.sync name=SE2SW
+tool.sync name=SWuse
 module.list
 ```
 

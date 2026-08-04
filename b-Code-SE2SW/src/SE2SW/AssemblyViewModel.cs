@@ -29,11 +29,15 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
     private bool _recognizeFeatures;
     private bool _fullyDefineSketches;
     private bool _continueWhenPartFails;
+    // 装配关系是 .asm 的语义组成部分，而不是高级附加选项。解析到可翻译关系时，
+    // ApplyProbeResult 会保持此默认开启；没有关系的装配则会自动关闭且禁用开关。
+    private bool _rebuildMates = true;
     private bool _conversionCompleted;
     private CancellationTokenSource? _operationCancellation;
     private Task? _activeOperation;
     private DispatcherOperation? _dispatchOperation;
     private AssemblyConversionPlan? _plan;
+    private MateOutcome? _mateOutcome;
     private string? _sourceHashAfterProbe;
     private bool _disposed;
 
@@ -95,6 +99,7 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
             OnPropertyChanged(nameof(CanProbe));
             OnPropertyChanged(nameof(CanConvert));
             OnPropertyChanged(nameof(CanFullyDefineSketches));
+            OnPropertyChanged(nameof(CanRebuildMates));
         }
     }
 
@@ -126,6 +131,27 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
         get => _continueWhenPartFails;
         set => SetField(ref _continueWhenPartFails, value);
     }
+
+    /// <summary>
+    /// V3.5：把 SE 装配关系翻译成 SW 配合。发现关系时默认开启。
+    ///
+    /// 与"识别特征"**不互斥**——实测证明识别后几何匹配率仍是 100%（25 号文档 §5.1）。
+    /// </summary>
+    public bool RebuildMates
+    {
+        get => _rebuildMates;
+        set => SetField(ref _rebuildMates, value);
+    }
+
+    /// <summary>只有解析出关系才允许勾选——没有关系可翻译时，这个开关是个空承诺。</summary>
+    public bool CanRebuildMates => CanEdit && (_plan?.RelationCount ?? 0) > 0;
+
+    public string RebuildMatesHint => _plan is null
+        ? "先解析装配体，才能知道有多少装配关系可以翻译。"
+        : _plan.RelationCount > 0
+            ? $"把 {_plan.RelationCount} 条 Solid Edge 装配关系翻译成 SolidWorks 配合。"
+                + "逐条建立并校验位置，超差的自动回滚并如实报告；建不起来的组件保持固定，位置精度不会退化。"
+            : "本装配体没有显式装配关系（靠拖放定位），没有可翻译的内容，全部组件保持固定。";
 
     public bool IsExternalMode => true;
     public bool IsOhsModeAvailable => false;
@@ -328,7 +354,9 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
             RecognizeFeatures: RecognizeFeatures,
             FullyDefineSketches: RecognizeFeatures && FullyDefineSketches,
             ContinueWhenPartFails: ContinueWhenPartFails,
-            Nodes: plan.Nodes);
+            RebuildMates: RebuildMates && plan.RelationCount > 0,
+            Nodes: plan.Nodes,
+            Relations: plan.Relations);
         PreflightValidator.ValidateAssemblyRequest(request);
 
         foreach (var row in Parts)
@@ -343,20 +371,66 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
             }
         }
         QueueUiUpdate(() => StatusText = $"正在转换 {jobs.Length} 个唯一零件并组装");
+        MateOutcome? reportedMate = null;
         var exitCode = await _runWorker(
             request,
-            workerEvent => QueueUiUpdate(() => ApplyWorkerEvent(workerEvent)),
+            workerEvent =>
+            {
+                // 不能只依赖 UI 调度后的字段：Worker 已经退出而 Dispatcher 尚未消费事件时，
+                // _mateOutcome 仍可能是旧值。这里保存本批次的原始回执，再异步更新界面。
+                reportedMate ??= workerEvent.Mate ?? workerEvent.Assembly?.Mate;
+                QueueUiUpdate(() => ApplyWorkerEvent(workerEvent));
+            },
             cancellationToken).ConfigureAwait(false);
+        if (exitCode == 0 && request.RebuildMates && plan.RelationCount > 0 && reportedMate is null)
+        {
+            throw new InvalidDataException(
+                "Worker 未返回装配关系重建结果；为避免把未重建配合的 SLDASM 误报为成功，"
+                + "本次转换已判为失败。请保留转换日志并重试。");
+        }
         QueueUiUpdate(() =>
         {
             _conversionCompleted = File.Exists(plan.AssemblyOutputPath);
             StatusText = exitCode == 0
-                ? $"装配转换完成：{plan.AssemblyOutputPath}"
+                ? $"装配转换完成：{plan.AssemblyOutputPath}{FormatMateSummary()}"
                 : _conversionCompleted
-                    ? $"装配已生成，但有零件失败：{plan.AssemblyOutputPath}"
+                    ? $"装配已生成，但有零件失败：{plan.AssemblyOutputPath}{FormatMateSummary()}"
                     : "装配转换失败，未生成 SLDASM";
+            AppendMateDiagnostics();
             OnPropertyChanged(nameof(CanConvert));
         });
+    }
+
+    /// <summary>状态栏尾巴：一句话说清 56 条关系去了哪里。</summary>
+    private string FormatMateSummary()
+    {
+        if (_mateOutcome is not { RelationTotal: > 0 } mate)
+            return string.Empty;
+        var failed = mate.FailedUnmatched + mate.FailedAmbiguous + mate.FailedRejected;
+        var text = $"；配合重建 {mate.MateRebuilt}/{mate.RelationTotal}";
+        if (mate.GroundApplied > 0)
+            text += $"（另有 {mate.GroundApplied} 条接地关系落为固定）";
+        if (failed > 0)
+            text += $"，{failed} 条未建立";
+        if (mate.ComponentsLeftFixed > 0)
+            text += $"，{mate.ComponentsLeftFixed} 个组件保持固定";
+        return text;
+    }
+
+    /// <summary>
+    /// 把逐条诊断并进警告栏。V3.5 的承诺是"建不起来的如实报告"——
+    /// 报告只写进日志、用户看不见的话，这个承诺就没兑现。
+    /// </summary>
+    private void AppendMateDiagnostics()
+    {
+        if (_mateOutcome is not { Diagnostics.Count: > 0 } mate)
+            return;
+        var summary = string.Join("；", mate.Diagnostics.Take(6));
+        if (mate.Diagnostics.Count > 6)
+            summary += $"；……另有 {mate.Diagnostics.Count - 6} 条，详见转换日志";
+        WarningSummary = string.IsNullOrWhiteSpace(WarningSummary)
+            ? summary
+            : WarningSummary + "；" + summary;
     }
 
     private void ApplyProbeResult(
@@ -365,7 +439,11 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
         string sourceHash)
     {
         ClearProbeResult();
+        _mateOutcome = null;
         _plan = plan;
+        // 每次解析都依据新装配的真实关系数重置默认值。这样切换到无关系装配不会留下
+        // 一个看似可用、实际不会执行的勾选状态；切回有关系装配也无需用户额外发现设置。
+        RebuildMates = plan.RelationCount > 0;
         _sourceHashAfterProbe = sourceHash;
         XtDirectory = plan.XtDirectory;
         SolidWorksDirectory = plan.SolidWorksDirectory;
@@ -382,14 +460,18 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
         StatusText = plan.CanConvert
             ? plan.IsNested
                 ? $"解析完成：{result.Occurrences.Count} 个实例、{plan.Parts.Count} 个唯一零件、"
-                    + $"{plan.SubAssemblyCount} 个子装配，最大 {plan.MaxDepth} 层；按层级生成嵌套装配"
+                    + $"{plan.SubAssemblyCount} 个子装配，最大 {plan.MaxDepth} 层、{plan.RelationCount} 条装配关系；按层级生成嵌套装配"
                 : $"解析完成：{result.Occurrences.Count} 个实例、{plan.Parts.Count} 个唯一零件；最终输出会展平"
             : $"解析完成，但有 {plan.BlockingIssues.Count} 个前置错误";
         OnPropertyChanged(nameof(CanConvert));
+        OnPropertyChanged(nameof(CanRebuildMates));
+        OnPropertyChanged(nameof(RebuildMatesHint));
     }
 
     private void ApplyWorkerEvent(WorkerEvent workerEvent)
     {
+        // 配合结果既可能直接挂在事件上，也可能随装配结果一起回来。
+        _mateOutcome = workerEvent.Mate ?? workerEvent.Assembly?.Mate ?? _mateOutcome;
         if (workerEvent.JobId is null)
         {
             StatusText = ConversionProgressPresenter.FormatMessage(workerEvent);

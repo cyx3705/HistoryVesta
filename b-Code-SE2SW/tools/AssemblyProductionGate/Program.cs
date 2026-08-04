@@ -25,6 +25,8 @@ internal static class Program
             return SetAssemblyTemplate(args[1]);
         if (args.Length == 1 && string.Equals(args[0], "--cleanup-gate-documents", StringComparison.OrdinalIgnoreCase))
             return CleanupGateDocuments();
+        if (args.Length == 2 && string.Equals(args[0], "--audit-assemblies", StringComparison.OrdinalIgnoreCase))
+            return AuditAssemblies(args[1]);
 
         GateOptions options;
         try
@@ -150,6 +152,93 @@ internal static class Program
         }
     }
 
+    /// <summary>
+    /// 只读重开一组已生成的装配，并输出 SW 实际保存的配合特征树。
+    /// 这是关系重建的独立验收路径：不采信 Worker 的自报结果，也不需要显示 GUI。
+    /// </summary>
+    private static int AuditAssemblies(string directory)
+    {
+        var root = Path.GetFullPath(directory);
+        if (!Directory.Exists(root))
+        {
+            Console.Error.WriteLine($"装配目录不存在：{root}");
+            return 2;
+        }
+
+        var before = GetPids("SLDWORKS");
+        ISldWorks? application = null;
+        try
+        {
+            var type = Type.GetTypeFromProgID("SldWorks.Application", throwOnError: false)
+                ?? throw new InvalidOperationException("SldWorks.Application 未注册。");
+            application = (ISldWorks?)Activator.CreateInstance(type)
+                ?? throw new InvalidOperationException("SolidWorks COM 返回空实例。");
+            var owned = GetPids("SLDWORKS").Except(before).ToArray();
+            if (owned.Length > 0)
+            {
+                application.Visible = false;
+                application.UserControl = false;
+            }
+
+            var facts = new List<AssemblyAuditFact>();
+            foreach (var path in Directory.EnumerateFiles(root, "*.SLDASM").OrderBy(item => item, StringComparer.OrdinalIgnoreCase))
+            {
+                var (model, assembly) = OpenAssembly(application, path);
+                try
+                {
+                    var components = (assembly.GetComponents(true) as Array ?? Array.Empty<object>())
+                        .Cast<object>().OfType<Component2>().ToArray();
+                    facts.Add(new AssemblyAuditFact(
+                        path,
+                        components.Length,
+                        components.Count(component => component.IsFixed()),
+                        ReadMateFeatures(model)));
+                }
+                finally
+                {
+                    CloseModel(application, model);
+                }
+            }
+
+            Console.WriteLine(JsonSerializer.Serialize(facts, JsonOptions));
+            if (owned.Length > 0)
+            {
+                try { application.ExitApp(); } catch { }
+            }
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+            return 1;
+        }
+        finally
+        {
+            Release(application);
+        }
+    }
+
+    private static IReadOnlyList<string> ReadMateFeatures(ModelDoc2 model)
+    {
+        var mates = new List<string>();
+        Feature? feature = model.FirstFeature() as Feature;
+        while (feature is not null)
+        {
+            if (string.Equals(feature.GetTypeName2(), "MateGroup", StringComparison.OrdinalIgnoreCase))
+            {
+                Feature? mate = feature.GetFirstSubFeature() as Feature;
+                while (mate is not null)
+                {
+                    mates.Add($"{mate.Name}:{mate.GetTypeName2()}");
+                    mate = mate.GetNextSubFeature() as Feature;
+                }
+            }
+            feature = feature.GetNextFeature() as Feature;
+        }
+
+        return mates;
+    }
+
     private static void Run(GateOptions options, GateResult result)
     {
         ValidateInput(options);
@@ -214,7 +303,9 @@ internal static class Program
         var assemblyOutput = Path.Combine(
             swDirectory,
             Path.GetFileNameWithoutExtension(options.SourceAssembly) + ".SLDASM");
-        if (File.Exists(assemblyOutput))
+        // --reuse-existing 档专门验证安全重试：V3.3 起已有装配产物由 AssemblyNodeReusePlanner
+        // 按"比全部递归依赖都新"核验后复用，因此这一档必须允许它存在，否则复用路径永远跑不到。
+        if (!options.ReuseExisting && File.Exists(assemblyOutput))
             throw new IOException($"装配输出已经存在，门禁不会覆盖：{assemblyOutput}");
         var existingPartOutputHashes = options.ReuseExisting
             ? jobs.SelectMany(job => new[] { job.XtPath, job.SolidWorksPath })
@@ -242,8 +333,10 @@ internal static class Program
                     $"局部矩阵与世界矩阵不一致：超差 {verification.Mismatches.Count} 处、未匹配 {verification.Unmatched.Count} 处。");
             result.AssemblyNodeCount = graph.Nodes.Count;
             result.MaxDepth = graph.MaxDepth;
-            foreach (var node in graph.Nodes.Where(item => File.Exists(item.OutputPath)))
-                throw new IOException($"装配输出已经存在，门禁不会覆盖：{node.OutputPath}");
+            var preexisting = graph.Nodes.Where(item => File.Exists(item.OutputPath)).ToArray();
+            if (!options.ReuseExisting && preexisting.Length > 0)
+                throw new IOException($"装配输出已经存在，门禁不会覆盖：{preexisting[0].OutputPath}");
+            result.PreexistingAssemblyOutputs = preexisting.Select(item => item.OutputPath).ToList();
         }
 
         var assemblyRequest = new AssemblyBatchRequest(
@@ -253,10 +346,14 @@ internal static class Program
             assemblyOutput,
             jobs,
             probe.Occurrences,
-            RecognizeFeatures: false,
-            FullyDefineSketches: false,
+            RecognizeFeatures: options.RecognizeFeatures,
+            FullyDefineSketches: options.RecognizeFeatures,
             ContinueWhenPartFails: false,
-            Nodes: graph?.Nodes);
+            RebuildMates: options.RebuildMates,
+            Nodes: graph?.Nodes,
+            Relations: (probe.Documents ?? [])
+                .SelectMany(document => document.Relations ?? [])
+                .ToArray());
 
         ISldWorks? application = null;
         string? originalTemplate = null;
@@ -294,12 +391,24 @@ internal static class Program
             result.WorkerExitCode = buildRun.ExitCode;
             if (buildRun.ExitCode != 0)
                 throw new InvalidOperationException($"生产 Worker 装配构建失败，exit={buildRun.ExitCode}：{buildRun.StandardError}");
-            VerifyAssembly(application, assemblyOutput, probe.Occurrences, jobs, result, graph);
+            VerifyAssembly(application, assemblyOutput, probe.Occurrences, jobs, result, graph, options.RebuildMates);
         }
         finally
         {
             if (application is not null)
             {
+                // 泄漏断言：转换结束后 SolidWorks 里不该还留着我们打开的文档。
+                // V3.3 的嵌套生成器漏了 CloseDocument，文档在会话里累积，
+                // 直到后续节点撞上 swFileWithSameTitleAlreadyOpen 才暴露——
+                // 而那时门禁早已"通过"过很多次。单次运行就能查出来的事，
+                // 不该等到跑第二次才发现。
+                result.LeakedDocuments = ListOpenDocuments(application);
+                if (ownedSwPids.Length > 0)
+                {
+                    foreach (var leaked in result.LeakedDocuments)
+                        TryCloseByPath(application, leaked);
+                }
+
                 if (options.PhysicalAssemblyTemplate is not null
                     && originalTemplate is not null
                     && !application.SetUserPreferenceStringValue(
@@ -323,6 +432,13 @@ internal static class Program
 
         if (!result.TemplateRestored)
             throw new InvalidOperationException("SolidWorks 默认装配模板未能恢复。");
+        if (result.LeakedDocuments.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"转换结束后仍有 {result.LeakedDocuments.Count} 个文档留在 SolidWorks 会话里，"
+                + "这类泄漏会在后续节点上表现为组件插入失败、配合整块丢失："
+                + string.Join("；", result.LeakedDocuments.Select(Path.GetFileName)));
+        }
         foreach (var pair in sourceHashes)
         {
             if (!string.Equals(pair.Value, ComputeSha256(pair.Key), StringComparison.Ordinal))
@@ -368,7 +484,8 @@ internal static class Program
         IReadOnlyList<AssemblyOccurrence> occurrences,
         IReadOnlyList<ConversionJob> jobs,
         GateResult result,
-        AssemblyGraph graph)
+        AssemblyGraph graph,
+        bool allowMated)
     {
         result.AssemblyNodeCount = graph.Nodes.Count;
         result.MaxDepth = graph.MaxDepth;
@@ -390,11 +507,12 @@ internal static class Program
                         $"{Path.GetFileName(node.OutputPath)} 一级组件数不一致：{top.Length}/{node.Children.Count}");
                 }
 
-                foreach (var component in top)
-                {
-                    if (!component.IsFixed())
-                        throw new InvalidDataException($"组件未固定：{node.OutputPath} → {component.Name2}");
-                }
+                // V3.5 起组件可以被配合约束而不固定；--rebuild-mates 档只统计不强制，
+                // 位置正确性由下面的 GetTotalTransform 全量比对兜底——那才是真验收。
+                var fixedCount = top.Count(component => component.IsFixed());
+                result.FixedComponentCounts.Add($"{Path.GetFileName(node.OutputPath)}:{fixedCount}/{top.Length}");
+                if (!allowMated && fixedCount != top.Length)
+                    throw new InvalidDataException($"组件未固定：{node.OutputPath}（{fixedCount}/{top.Length}）");
             }
             finally
             {
@@ -448,7 +566,7 @@ internal static class Program
             }
 
             result.LeafComponentsVerified = expected.Count;
-            result.ComponentFixed = expected.Count;
+            result.ComponentFixed = expected.Count;  // 语义：位置核验通过的叶组件数
             result.MaxRotationDeviation = maxRotation;
             result.MaxTranslationDeviationMeters = maxTranslation;
             result.MaxTotalTransformDeviationMeters = maxTranslation;
@@ -480,6 +598,44 @@ internal static class Program
         return (model, (AssemblyDoc)model);
     }
 
+    /// <summary>列出会话里仍然打开、且带磁盘路径的文档。未保存的临时文档没有路径，不计。</summary>
+    private static List<string> ListOpenDocuments(ISldWorks application)
+    {
+        var open = new List<string>();
+        ModelDoc2? document = null;
+        try
+        {
+            document = application.GetFirstDocument() as ModelDoc2;
+            while (document is not null)
+            {
+                ModelDoc2? next = null;
+                try
+                {
+                    next = document.GetNext() as ModelDoc2;
+                    var path = document.GetPathName();
+                    if (!string.IsNullOrWhiteSpace(path))
+                        open.Add(path);
+                }
+                finally
+                {
+                    Release(document);
+                }
+                document = next;
+            }
+        }
+        catch
+        {
+            // 读不出来就不断言——门禁不该因为诊断本身失败而误报。
+        }
+
+        return open;
+    }
+
+    private static void TryCloseByPath(ISldWorks application, string path)
+    {
+        try { application.CloseDoc(Path.GetFileName(path)); } catch { }
+    }
+
     private static void CloseModel(ISldWorks application, ModelDoc2? model)
     {
         if (model is null)
@@ -502,11 +658,12 @@ internal static class Program
         IReadOnlyList<AssemblyOccurrence> occurrences,
         IReadOnlyList<ConversionJob> jobs,
         GateResult result,
-        AssemblyGraph? graph = null)
+        AssemblyGraph? graph = null,
+        bool allowMated = false)
     {
         if (graph is not null)
         {
-            VerifyNestedAssembly(application, occurrences, jobs, result, graph);
+            VerifyNestedAssembly(application, occurrences, jobs, result, graph, allowMated);
             return;
         }
 
@@ -729,7 +886,9 @@ internal sealed record GateOptions(
     string SourceAssembly,
     string WorkerPath,
     string? PhysicalAssemblyTemplate,
-    bool ReuseExisting)
+    bool ReuseExisting,
+    bool RecognizeFeatures = false,
+    bool RebuildMates = false)
 {
     public static GateOptions Parse(IReadOnlyList<string> args)
     {
@@ -737,11 +896,27 @@ internal sealed record GateOptions(
         string? worker = null;
         string? template = null;
         var reuseExisting = false;
+        var recognize = false;
+        var rebuildMates = false;
         for (var index = 0; index < args.Count;)
         {
             if (string.Equals(args[index], "--reuse-existing", StringComparison.OrdinalIgnoreCase))
             {
                 reuseExisting = true;
+                index++;
+                continue;
+            }
+            // V3.5 §5.1：在识别版几何上重跑门禁，用来裁决 A 路是否成立。
+            if (string.Equals(args[index], "--recognize", StringComparison.OrdinalIgnoreCase))
+            {
+                recognize = true;
+                index++;
+                continue;
+            }
+            // V3.5 §6.2：配合重建档。
+            if (string.Equals(args[index], "--rebuild-mates", StringComparison.OrdinalIgnoreCase))
+            {
+                rebuildMates = true;
                 index++;
                 continue;
             }
@@ -762,7 +937,9 @@ internal sealed record GateOptions(
             Path.GetFullPath(source ?? throw new ArgumentException("缺少 --se-asm")),
             Path.GetFullPath(worker ?? throw new ArgumentException("缺少 --worker")),
             string.IsNullOrWhiteSpace(template) ? null : Path.GetFullPath(template),
-            reuseExisting);
+            reuseExisting,
+            recognize,
+            rebuildMates);
     }
 }
 
@@ -795,6 +972,9 @@ internal sealed class GateResult
     public int TransformSelfCheckCount { get; set; }
     public double TransformSelfCheckDeviation { get; set; }
     public List<NodeFact> AssemblyNodes { get; set; } = [];
+    public List<string> FixedComponentCounts { get; set; } = [];
+    public List<string> LeakedDocuments { get; set; } = [];
+    public List<string> PreexistingAssemblyOutputs { get; set; } = [];
     public int LeafComponentsVerified { get; set; }
     public double MaxTotalTransformDeviationMeters { get; set; }
     public List<WorkerEvent> WorkerEvents { get; } = [];
@@ -808,3 +988,4 @@ internal sealed record ExpectedComponent(string Path, double[] Transform);
 internal sealed record ActualComponent(string Path, double[] Transform, bool IsFixed);
 internal sealed record OutputFact(string Path, long Length, string Sha256);
 internal sealed record NodeFact(string Output, int Depth, bool IsRoot, int ExpectedChildren, int ActualComponents);
+internal sealed record AssemblyAuditFact(string Path, int ComponentCount, int FixedCount, IReadOnlyList<string> MateFeatures);

@@ -14,7 +14,7 @@ internal static class Program
         if (paths is null)
         {
             Console.Error.WriteLine(
-                $"Usage: SE2SW.Worker {WorkerProtocol.PartsRequestVerb}|{WorkerProtocol.AssemblyProbeVerb}|{WorkerProtocol.AssemblyBuildVerb} "
+                $"Usage: SE2SW.Worker {WorkerProtocol.PartsRequestVerb}|{WorkerProtocol.PartImportVerb}|{WorkerProtocol.AssemblyProbeVerb}|{WorkerProtocol.AssemblyBuildVerb} "
                 + $"<absolute-json-path> {WorkerProtocol.CancellationArgument} <absolute-signal-path>");
             return 2;
         }
@@ -33,6 +33,7 @@ internal static class Program
             return paths.Value.Verb.ToLowerInvariant() switch
             {
                 WorkerProtocol.PartsRequestVerb => RunParts(Read<BatchRequest>(paths.Value.RequestPath), cancellation.Token),
+                WorkerProtocol.PartImportVerb => RunPartImport(Read<PartImportRequest>(paths.Value.RequestPath), cancellation.Token),
                 WorkerProtocol.AssemblyProbeVerb => RunProbe(Read<AssemblyProbeRequest>(paths.Value.RequestPath), cancellation.Token),
                 WorkerProtocol.AssemblyBuildVerb => RunAssembly(Read<AssemblyBatchRequest>(paths.Value.RequestPath), cancellation.Token),
                 _ => 2,
@@ -62,7 +63,7 @@ internal static class Program
         {
             var exported = SolidEdgeExporter.Export(request, reporter, cancellationToken);
             var failed = request.Jobs.Count - exported.Count;
-            failed += SolidWorksImporter.Import(request, exported, reporter, cancellationToken);
+            failed += SolidWorksPartImportIsolation.Import(request, exported, reporter, cancellationToken);
             return failed == 0 ? 0 : 1;
         }
         catch (OperationCanceledException)
@@ -74,6 +75,46 @@ internal static class Program
         {
             reporter.Report(null, ConversionStage.Failed, ex.Message, true, ex.HResult,
                 errorClass: ComErrorClassifier.Classify(ex, ConversionErrorClass.Unknown));
+            return 4;
+        }
+    }
+
+    private static int RunPartImport(PartImportRequest request, CancellationToken cancellationToken)
+    {
+        WorkerRequestValidator.Validate(request);
+        var reporter = new WorkerReporter(request.BatchId, JsonOptions);
+        try
+        {
+            var batchRequest = new BatchRequest(
+                request.BatchId,
+                request.Mode,
+                [request.Job],
+                request.Overwrite,
+                request.RecognizeFeatures,
+                request.FullyDefineSketches,
+                request.FeatureRecognitionTimeoutSeconds,
+                request.ContinueWhenRecognitionFails);
+            return SolidWorksImporter.Import(
+                batchRequest,
+                [request.Job],
+                reporter,
+                cancellationToken,
+                resetFeatureWorksSession: request.RecognizeFeatures) == 0 ? 0 : 1;
+        }
+        catch (OperationCanceledException)
+        {
+            reporter.Report(request.Job.Id, ConversionStage.Cancelled, "单零件导入已取消。", errorClass: ConversionErrorClass.Cancelled);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            reporter.Report(
+                request.Job.Id,
+                ConversionStage.Failed,
+                "单零件导入失败：" + ex.Message,
+                true,
+                ex.HResult,
+                errorClass: ComErrorClassifier.Classify(ex, ConversionErrorClass.ImportFailed));
             return 4;
         }
     }

@@ -44,6 +44,27 @@ internal sealed class FeatureRecognizer : IDisposable
     private const int RecognitionAttempts = 10;
     private const int RecognitionRetryDelayMilliseconds = 300;
 
+    /// <summary>
+    /// 识别前后允许的体积相对偏差。特征识别**重建**实体，正确的重建体积应当逐位相同，
+    /// 这里留的余量只为浮点噪声，不为"差不多"。
+    /// </summary>
+    private const double VolumeRelativeTolerance = 1e-9;
+
+    /// <summary>
+    /// COM 服务器已死的 HRESULT。实测事故：FeatureWorks 在批次中途故障后，
+    /// 每个后续零件都会拿着同一个死对象重试 10 次，全部返回 0x80010105。
+    /// </summary>
+    private static readonly int[] ServerFaultHResults =
+    [
+        unchecked((int)0x80010105), // RPC_E_SERVERFAULT
+        unchecked((int)0x80010108), // RPC_E_DISCONNECTED
+        unchecked((int)0x800706BA), // RPC_S_SERVER_UNAVAILABLE
+        unchecked((int)0x80004005), // E_FAIL：FeatureWorks 崩溃后也会以它出现
+    ];
+
+    internal static bool IsServerFault(Exception exception)
+        => ServerFaultHResults.Contains(exception.HResult);
+
     private const string SketchFeatureTypeName = "ProfileFeature";
     private const int MarkHorizontalDatum = 2;
     private const int MarkVerticalDatum = 4;
@@ -216,6 +237,11 @@ internal sealed class FeatureRecognizer : IDisposable
             });
             TryRun(() => _ = _interop.SetPerformanceOptions(_featureWorks!, 0));
 
+            // 识别前的几何基准。FeatureWorks 的 CreateFeatures 会用识别出的特征**重建实体**——
+            // 只认出一部分特征时，重建结果可能只剩基体（一个方块），而 CreateFeatures 照样返回 true。
+            // 这条管线此前从不校验几何，方块会被当成正常产物存盘。
+            var baselineGeometry = _interop.MeasureSolidGeometry(model);
+
             step = "RecognizeFeatureAutomatic";
             SeedFaceSelection? seedSelection = null;
             RecognitionAttemptResult recognition;
@@ -276,6 +302,16 @@ internal sealed class FeatureRecognizer : IDisposable
             {
                 return Degraded(recognized, false, stopwatch, statuses, "CreateFeatures 返回 false。");
             }
+
+            step = "VerifyGeometry";
+            var mismatch = DescribeGeometryMismatch(baselineGeometry, _interop.MeasureSolidGeometry(model));
+            if (mismatch is not null)
+            {
+                // 几何被改变了。特征树再漂亮也没有意义——交付一个形状不对的零件
+                // 比交付一个哑实体坏得多，因为用户看不出来。
+                // 标记 GeometryChanged：此刻文档里已经是错的几何，调用方必须重新导入。
+                return Degraded(recognized, true, stopwatch, statuses, mismatch) with { GeometryChanged = true };
+            }
         }
         catch (OperationCanceledException)
         {
@@ -283,7 +319,9 @@ internal sealed class FeatureRecognizer : IDisposable
         }
         catch (Exception ex)
         {
-            return Degraded(recognized, created, stopwatch, statuses, $"{step} 失败：{ex.Message}");
+            // COM 服务器已死：标记出来，让调用方重建会话而不是继续对着尸体重试。
+            return Degraded(recognized, created, stopwatch, statuses, $"{step} 失败：{ex.Message}")
+                with { SessionFaulted = IsServerFault(ex) };
         }
 
         var total = 0;
@@ -562,6 +600,153 @@ internal sealed class FeatureRecognizer : IDisposable
         7 => "自动求解关闭",
         _ => "读取失败",
     };
+
+    /// <summary>
+    /// 比对识别前后的实体几何。返回 null 表示一致；否则返回可直接进报告的原因。
+    ///
+    /// 量不到就判为不一致：识别把实体重建了，此时读不出几何本身就是异常信号，
+    /// 绝不能因为"读不到"而默认放行。
+    /// </summary>
+    internal static string? DescribeGeometryMismatch(
+        (double Volume, int FaceCount)? before,
+        (double Volume, int FaceCount)? after)
+    {
+        if (before is not { } baseline)
+            return null;   // 识别前就量不到，说明这条管线本来就没有可比基准，不由本判据兜底。
+        if (after is not { } result)
+            return "特征识别后无法读出实体几何，已降级为哑实体。";
+        if (baseline.Volume <= 0)
+            return null;
+
+        var deviation = Math.Abs(result.Volume - baseline.Volume) / baseline.Volume;
+        if (deviation > VolumeRelativeTolerance)
+        {
+            return $"特征识别改变了零件几何：体积 {baseline.Volume:G6} → {result.Volume:G6}"
+                + $"（相对偏差 {deviation:G3}），面数 {baseline.FaceCount} → {result.FaceCount}；已降级为哑实体。";
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// FeatureWorks 的 COM 服务器故障后重建会话。
+    ///
+    /// 死对象是不会自愈的：不重建就等于对着尸体重试到批次结束。
+    /// 重建不成功就返回 false，由调用方停用本批次的识别并如实报告——
+    /// 让用户拿到"从第 N 件起没有特征"的明确结论，而不是每件都慢 10 次重试。
+    /// </summary>
+    public bool TryRecoverSession()
+    {
+        _featureWorks = null;
+        try
+        {
+            var path = _interop.ResolveFeatureWorksPath();
+            if (path is not null && File.Exists(path))
+                _ = _interop.LoadAddIn(path);
+        }
+        catch
+        {
+            return false;
+        }
+
+        try
+        {
+            _featureWorks = _interop.GetAddInObject(FeatureWorksProgId);
+        }
+        catch
+        {
+            _featureWorks = null;
+        }
+
+        return _featureWorks is not null;
+    }
+
+    /// <summary>
+    /// V3.5.2：子 Worker 可能附着到用户已打开的 SolidWorks 单实例，仅隔离 STA 不会重启
+    /// FeatureWorks 服务。每件开始前卸载并重载加载项，清除上一个零件留下的故障状态。
+    /// </summary>
+    public static bool TryBeginIsolatedSession(
+        SolidWorksInteropBridge interop,
+        out bool wasLoaded,
+        out string diagnostic)
+    {
+        wasLoaded = false;
+        diagnostic = string.Empty;
+        object? existing = null;
+        try
+        {
+            existing = interop.GetAddInObject(FeatureWorksProgId);
+            wasLoaded = existing is not null;
+        }
+        catch
+        {
+            // 故障对象本身可能无法取得；仍尝试按已加载状态重置。
+            wasLoaded = true;
+        }
+        finally
+        {
+            ComRelease.Final(existing);
+        }
+
+        try
+        {
+            var path = interop.ResolveFeatureWorksPath();
+            if (path is null || !File.Exists(path))
+            {
+                diagnostic = "未找到 FeatureWorks 加载项，不能建立单零件隔离会话。";
+                return false;
+            }
+
+            var unloadResult = interop.UnloadAddIn(path);
+            StaMessagePump.PumpAndWait(500, CancellationToken.None);
+            var loadResult = interop.LoadAddIn(path);
+            StaMessagePump.PumpAndWait(500, CancellationToken.None);
+            if (loadResult is not (SwLoadAddinSuccess or SwLoadAddinAlreadyLoaded))
+            {
+                diagnostic = $"FeatureWorks 重载失败：UnloadAddIn={unloadResult}, LoadAddIn={loadResult}。";
+                return false;
+            }
+
+            object? refreshed = null;
+            try
+            {
+                refreshed = interop.GetAddInObject(FeatureWorksProgId);
+                if (refreshed is null)
+                {
+                    diagnostic = $"FeatureWorks 重载后自动化对象为空：UnloadAddIn={unloadResult}, LoadAddIn={loadResult}。";
+                    return false;
+                }
+            }
+            finally
+            {
+                ComRelease.Final(refreshed);
+            }
+
+            diagnostic = $"FeatureWorks 单零件会话已重置（UnloadAddIn={unloadResult}, LoadAddIn={loadResult}）。";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            diagnostic = "FeatureWorks 单零件会话重置失败：" + ex.Message;
+            return false;
+        }
+    }
+
+    public static void RestoreIsolatedSessionState(SolidWorksInteropBridge interop, bool wasLoaded)
+    {
+        if (wasLoaded)
+            return;
+        try
+        {
+            var path = interop.ResolveFeatureWorksPath();
+            if (path is not null && File.Exists(path))
+                _ = interop.UnloadAddIn(path);
+        }
+        catch
+        {
+            // 恢复失败不能覆盖已经完成的零件结果。
+        }
+    }
 
     public void Dispose()
     {

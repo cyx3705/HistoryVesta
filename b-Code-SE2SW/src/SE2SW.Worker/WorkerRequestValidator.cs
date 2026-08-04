@@ -22,6 +22,18 @@ internal static class WorkerRequestValidator
         }
     }
 
+    public static void Validate(PartImportRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.BatchId) || string.IsNullOrWhiteSpace(request.Job.Id))
+            throw new InvalidDataException("单零件导入批次编号或任务编号无效。");
+
+        ValidatePath(request.Job.SourcePath, ConversionPathLayout.SolidEdgePartExtension, mustExist: true);
+        ValidatePath(request.Job.XtPath, ConversionPathLayout.GetExtension(ConversionArtifactKind.Xt), mustExist: true);
+        ValidatePath(request.Job.SolidWorksPath, ConversionPathLayout.GetExtension(ConversionArtifactKind.SolidWorksPart), mustExist: false);
+        if (!request.Overwrite && File.Exists(request.Job.SolidWorksPath))
+            throw new IOException($"输出已经存在：{request.Job.Id}");
+    }
+
     public static void Validate(AssemblyProbeRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.BatchId))
