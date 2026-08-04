@@ -177,16 +177,12 @@ internal static class RepositoryTargetsSuite
             .Select(element => element.Attribute(x + "Name")?.Value)
             .Where(name => name != null).ToList();
         Equal(1, named.Count(name => name == "SelectedCommitMessageBox"), "one commit message box");
-        Equal(1, named.Count(name => name == "SaveRuleButton"), "one batch rule save button");
         foreach (var removed in new[]
                  {
                      "OpenProjectButton", "ScanCoverageButton", "ReloadRulesButton",
-                     "ShowGapsButton", "SuggestButton",
+                     "ShowGapsButton", "SuggestButton", "SaveRuleButton",
                  })
             True(!named.Contains(removed), $"removed project operation control is absent: {removed}");
-        True(project.Descendants().Any(element => element.Attribute(x + "Name")?.Value == "SaveRuleButton"
-            && element.Attribute("Content")?.Value == "保存修改（0）"),
-            "rule save button advertises whole dirty set instead of selected row");
         Equal(4, project.Descendants().Count(element => element.Name.LocalName == "RadioButton"
             && element.Attribute("GroupName")?.Value == "OperationMode"), "four operation segments");
         True(!overview.ToString().Contains("CommitAll", StringComparison.Ordinal)
@@ -217,16 +213,29 @@ internal static class RepositoryTargetsSuite
              && commitActions.Attribute("Grid.Column")?.Value == "2",
             "commit and push buttons share the description row immediately to its right");
 
+        True(ReferenceEquals(byName["PatternBox"].Parent, byName["AddRuleButton"].Parent)
+             && byName["AddRuleButton"].Parent?.Name.LocalName == "Grid"
+             && byName["AddRuleButton"].Attribute("Grid.Column")?.Value == "1",
+            "add rule action sits on the extension input row");
         var actionNames = new[]
         {
-            "AddRuleButton", "RefreshRulesButton", "ReviewRulesButton",
-            "SyncBaselineButton", "SaveRuleButton", "DeleteRuleButton",
+            "RefreshRulesButton", "ReviewRulesButton", "SyncBaselineButton", "DeleteRuleButton",
         };
         var actionStrip = byName[actionNames[0]].Parent;
         True(actionStrip != null && actionStrip.Name.LocalName == "StackPanel"
              && actionNames.All(name => ReferenceEquals(actionStrip, byName[name].Parent))
              && actionStrip.Parent?.Name.LocalName == "ScrollViewer",
-            "all six Git rule actions stay in one horizontally scrollable strip");
+            "the remaining Git rule actions stay in one horizontally scrollable strip");
+
+        var rulesCode = File.ReadAllText(Path.Combine(
+            RepoRoot, "Views", "ProjectOperationsView.Rules.cs"));
+        True(rulesCode.Contains("DispatcherTimer", StringComparison.Ordinal)
+             && rulesCode.Contains("TimeSpan.FromMilliseconds(600)", StringComparison.Ordinal)
+             && rulesCode.Contains("ScheduleRuleAutoSave", StringComparison.Ordinal),
+            "rule edits use one debounced automatic save coordinator");
+        True(!rulesCode.Contains("OnSaveRuleClick", StringComparison.Ordinal)
+             && !rulesCode.Contains("MessageBox.Show", StringComparison.Ordinal),
+            "manual save entry and unsaved-change dialog are removed");
     }
 
     private static int CountGridRows(XElement group)

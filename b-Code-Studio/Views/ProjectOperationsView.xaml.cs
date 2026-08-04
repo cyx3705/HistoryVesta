@@ -28,6 +28,7 @@ public partial class ProjectOperationsView : UserControl
         _selection = selection;
         SelectedCommitMessageBox.Text = "一键推送更新";
         RuleGrid.ItemsSource = _rules;
+        InitializeRuleAutoSave();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         ViewKit.RunOnceOnLoaded(this, () => RefreshProjectsAsync(_selection.CurrentProjectName));

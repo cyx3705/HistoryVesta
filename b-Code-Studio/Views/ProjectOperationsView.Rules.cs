@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using AppShell.Core.Commands;
 using OneHistoryStudio.Git;
 
@@ -10,6 +10,14 @@ namespace OneHistoryStudio.Views;
 
 public partial class ProjectOperationsView
 {
+    private readonly DispatcherTimer _ruleAutoSaveTimer = new()
+    {
+        Interval = TimeSpan.FromMilliseconds(600),
+    };
+
+    private void InitializeRuleAutoSave()
+        => _ruleAutoSaveTimer.Tick += OnRuleAutoSaveTick;
+
     private async Task LoadRulesAsync(string project, bool refresh = false)
     {
         if (_busAccessor() is not { } bus)
@@ -96,17 +104,15 @@ public partial class ProjectOperationsView
         _rules.Add(draft);
         RuleGrid.SelectedItem = draft;
         RuleGrid.ScrollIntoView(draft);
-        StatusText.Text = "新规则尚未保存";
+        StatusText.Text = "新规则等待自动保存";
         UpdateRuleActions();
+        ScheduleRuleAutoSave();
     }
 
     private void OnRuleSelected(object sender, SelectionChangedEventArgs e)
         => UpdateRuleActions();
 
-    private async void OnSaveRuleClick(object sender, System.Windows.RoutedEventArgs e)
-        => _ = await SaveDirtyRulesAsync(_loadedRuleProject ?? CurrentProjectName(), refreshAfter: true);
-
-    private async Task<bool> SaveDirtyRulesAsync(string project, bool refreshAfter)
+    private async Task<bool> SaveDirtyRulesAsync(string project)
     {
         if (_busAccessor() is not { } bus || string.IsNullOrWhiteSpace(project))
             return false;
@@ -138,7 +144,7 @@ public partial class ProjectOperationsView
             var preview = await bus.ExecuteAsync(command + " apply=false", "UI");
             if (!preview.Success || preview.Data is not GitFileRuleBatchPreview batch)
             {
-                StatusText.Text = "批量规则预览失败，修改仍保留；详见控制台";
+                StatusText.Text = "规则自动保存预览失败，修改仍保留；详见控制台";
                 return false;
             }
             if (!batch.Changed)
@@ -152,14 +158,12 @@ public partial class ProjectOperationsView
             var applied = await bus.ExecuteAsync(command + " apply=true", "UI");
             if (!applied.Success)
             {
-                StatusText.Text = $"批量保存失败，{dirty.Count} 条修改仍保留；详见控制台";
+                StatusText.Text = $"自动保存未完成，{dirty.Count} 条修改仍保留：{ViewKit.ResultSummary(applied)}";
                 return false;
             }
             foreach (var row in dirty)
                 row.AcceptChanges();
-            StatusText.Text = $"已保存 {dirty.Count} 条规则";
-            if (refreshAfter)
-                await LoadRulesAsync(project, refresh: true);
+            StatusText.Text = $"已自动保存 {dirty.Count} 条规则";
             return true;
         }
         finally
@@ -175,9 +179,12 @@ public partial class ProjectOperationsView
             return;
         if (rule.IsDraft)
         {
+            _ruleAutoSaveTimer.Stop();
             rule.PropertyChanged -= OnRuleRowChanged;
             _rules.Remove(rule);
             UpdateRuleActions();
+            if (_rules.Any(row => row.CanEdit && row.IsDirty))
+                ScheduleRuleAutoSave();
             return;
         }
         if (!rule.IsDeclared)
@@ -227,48 +234,47 @@ public partial class ProjectOperationsView
 
     private async Task<bool> EnsureDirtyRulesHandledAsync(string action)
     {
+        _ruleAutoSaveTimer.Stop();
         RuleGrid.CommitEdit(DataGridEditingUnit.Cell, true);
         RuleGrid.CommitEdit(DataGridEditingUnit.Row, true);
         var count = _rules.Count(row => row.CanEdit && row.IsDirty);
         if (count == 0)
             return true;
-
-        var choice = MessageBox.Show(
-            $"当前有 {count} 条文件规则尚未保存。\n\n是：保存后{action}\n否：放弃修改后{action}\n取消：留在当前页面",
-            "未保存的文件规则",
-            MessageBoxButton.YesNoCancel,
-            MessageBoxImage.Warning);
-        if (choice == MessageBoxResult.Cancel)
-            return false;
-        if (choice == MessageBoxResult.Yes)
-            return await SaveDirtyRulesAsync(_loadedRuleProject ?? CurrentProjectName(), refreshAfter: false);
-
-        DiscardRuleChanges();
-        return true;
-    }
-
-    private void DiscardRuleChanges()
-    {
-        foreach (var draft in _rules.Where(row => row.IsDraft).ToList())
-        {
-            draft.PropertyChanged -= OnRuleRowChanged;
-            _rules.Remove(draft);
-        }
-        foreach (var row in _rules.Where(row => row.IsDirty))
-            row.ResetChanges();
-        UpdateRuleActions();
+        StatusText.Text = $"正在自动保存 {count} 条规则，完成后{action}…";
+        var saved = await SaveDirtyRulesAsync(_loadedRuleProject ?? CurrentProjectName());
+        if (!saved)
+            StatusText.Text += $"；已取消{action}";
+        return saved;
     }
 
     private void OnRuleRowChanged(object? sender, PropertyChangedEventArgs e)
-        => UpdateRuleActions();
+    {
+        UpdateRuleActions();
+        if (sender is RuleEditRow { IsDirty: true })
+            ScheduleRuleAutoSave();
+    }
+
+    private void ScheduleRuleAutoSave()
+    {
+        _ruleAutoSaveTimer.Stop();
+        _ruleAutoSaveTimer.Start();
+    }
+
+    private async void OnRuleAutoSaveTick(object? sender, EventArgs e)
+    {
+        _ruleAutoSaveTimer.Stop();
+        if (_ruleOperationRunning)
+        {
+            ScheduleRuleAutoSave();
+            return;
+        }
+        if (_rules.All(row => !row.CanEdit || !row.IsDirty))
+            return;
+        await SaveDirtyRulesAsync(_loadedRuleProject ?? CurrentProjectName());
+    }
 
     private void UpdateRuleActions()
     {
-        if (SaveRuleButton == null)
-            return;
-        var dirtyCount = _rules.Count(row => row.CanEdit && row.IsDirty);
-        SaveRuleButton.Content = $"保存修改（{dirtyCount}）";
-        SaveRuleButton.IsEnabled = !_ruleOperationRunning && dirtyCount > 0;
         var selected = RuleGrid.SelectedItem as RuleEditRow;
         DeleteRuleButton.IsEnabled = !_ruleOperationRunning && selected is { CanEdit: true }
                                      && (selected.IsDeclared || selected.IsDraft);

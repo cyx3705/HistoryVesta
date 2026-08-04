@@ -82,6 +82,7 @@ internal static partial class DockingSuite
         AssertNarrowView(
             new ProjectOperationsView(static () => null, new ProjectSelectionState()),
             "project operations");
+        RunRuleAutoSave();
     }
 
     private static void AssertNarrowView(FrameworkElement view, string name)
