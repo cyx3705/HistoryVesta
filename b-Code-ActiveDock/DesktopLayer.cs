@@ -26,6 +26,7 @@ public static class DesktopLayer
     private const uint SwpNoMove = 0x0002;
     private const uint SwpNoZOrder = 0x0004;
     private const uint SwpNoActivate = 0x0010;
+    private const uint MonitorDefaultToPrimary = 0x00000001;
 
     private static readonly IntPtr HwndBottom = new(1);
     private static readonly object Gate = new();
@@ -46,6 +47,34 @@ public static class DesktopLayer
     {
         if (hwnd != IntPtr.Zero)
             SetWindowPos(hwnd, HwndBottom, 0, 0, 0, 0, SwpNoMove | SwpNoSize | SwpNoActivate);
+    }
+
+    /// <summary>
+    /// 在 Win32 的同一坐标系中把窗口贴合到主显示器工作区右下角。
+    /// </summary>
+    /// <remarks>
+    /// WPF 的 <c>SystemParameters.WorkArea</c> 使用 DIPs，而无感知/系统感知宿主中的
+    /// 顶层 HWND 位置可能仍按物理像素解释。两者混用会在 150% 等缩放下留下明显空白。
+    /// 这里让工作区、窗口矩形与 SetWindowPos 全部走同一组 User32 API，避免坐标系漂移。
+    /// </remarks>
+    public static bool AnchorToPrimaryBottomRight(IntPtr hwnd, int margin)
+    {
+        if (hwnd == IntPtr.Zero || !GetWindowRect(hwnd, out var window))
+            return false;
+
+        var monitor = MonitorFromWindow(IntPtr.Zero, MonitorDefaultToPrimary);
+        if (monitor == IntPtr.Zero)
+            return false;
+
+        var monitorInfo = new MonitorInfo { Size = (uint)Marshal.SizeOf<MonitorInfo>() };
+        if (!GetMonitorInfo(monitor, ref monitorInfo))
+            return false;
+
+        var width = window.Right - window.Left;
+        var height = window.Bottom - window.Top;
+        var left = monitorInfo.WorkArea.Right - width - margin;
+        var top = monitorInfo.WorkArea.Bottom - height - margin;
+        return SetWindowPos(hwnd, HwndBottom, left, top, 0, 0, SwpNoSize | SwpNoActivate);
     }
 
     /// <summary>
@@ -108,6 +137,15 @@ public static class DesktopLayer
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    private struct MonitorInfo
+    {
+        public uint Size;
+        public Rect MonitorArea;
+        public Rect WorkArea;
+        public uint Flags;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     private struct WindowPos
     {
         public IntPtr Window;
@@ -121,6 +159,12 @@ public static class DesktopLayer
 
     [DllImport("user32.dll")]
     private static extern bool GetWindowRect(IntPtr handle, out Rect rect);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo monitorInfo);
 
     [DllImport("user32.dll")]
     private static extern bool SetWindowPos(

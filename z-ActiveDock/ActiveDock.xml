@@ -136,6 +136,16 @@
         <member name="M:ActiveDock.DesktopLayer.PushToBottom(System.IntPtr)">
             <summary>把窗口压回 z-order 最底。</summary>
         </member>
+        <member name="M:ActiveDock.DesktopLayer.AnchorToPrimaryBottomRight(System.IntPtr,System.Int32)">
+            <summary>
+            在 Win32 的同一坐标系中把窗口贴合到主显示器工作区右下角。
+            </summary>
+            <remarks>
+            WPF 的 <c>SystemParameters.WorkArea</c> 使用 DIPs，而无感知/系统感知宿主中的
+            顶层 HWND 位置可能仍按物理像素解释。两者混用会在 150% 等缩放下留下明显空白。
+            这里让工作区、窗口矩形与 SetWindowPos 全部走同一组 User32 API，避免坐标系漂移。
+            </remarks>
+        </member>
         <member name="M:ActiveDock.DesktopLayer.PinToBottom(System.IntPtr)">
             <summary>
             在 WM_WINDOWPOSCHANGING 里把插入位置改写为 HWND_BOTTOM。

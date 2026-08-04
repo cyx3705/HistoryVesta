@@ -60,6 +60,7 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
         private readonly WrapPanel _items = new() { Orientation = Orientation.Horizontal };
         private HwndSource? _source;
         private bool _resizing;
+        private bool _anchorPending;
 
         public DockWindow()
         {
@@ -126,6 +127,10 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
         {
             const int WmNcHitTest = 0x0084;
             const int WmDisplayChange = 0x007E;
+            const int WmSettingChange = 0x001A;
+            const int WmActivateApp = 0x001C;
+            const int WmShowWindow = 0x0018;
+            const int WmDpiChanged = 0x02E0;
             const int WmWindowPosChanging = 0x0046;
             const int WmEnterSizeMove = 0x0231;
             const int WmExitSizeMove = 0x0232;
@@ -133,25 +138,25 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
             switch (message)
             {
                 case WmNcHitTest:
-                {
-                    // 重定父之后 WPF 的 Left/Top 不再是屏幕坐标，PointFromScreen 会算错，
-                    // 因此一律以窗口真实屏幕矩形为基准，全程用物理像素。
-                    if (!DesktopLayer.TryGetWindowRect(hwnd, out var left, out var top, out var width, out var height))
-                        return IntPtr.Zero;
-                    var screenX = unchecked((short)(lParam.ToInt64() & 0xFFFF));
-                    var screenY = unchecked((short)((lParam.ToInt64() >> 16) & 0xFFFF));
-                    var scale = _source?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
-                    var code = DockLayout.HitTest(
-                        screenX - left,
-                        screenY - top,
-                        width,
-                        height,
-                        DockLayout.BorderWidth * scale);
-                    if (code == DockLayout.HitNone)
-                        return IntPtr.Zero;
-                    handled = true;
-                    return new IntPtr(code);
-                }
+                    {
+                        // 重定父之后 WPF 的 Left/Top 不再是屏幕坐标，PointFromScreen 会算错，
+                        // 因此一律以窗口真实屏幕矩形为基准，全程用物理像素。
+                        if (!DesktopLayer.TryGetWindowRect(hwnd, out var left, out var top, out var width, out var height))
+                            return IntPtr.Zero;
+                        var screenX = unchecked((short)(lParam.ToInt64() & 0xFFFF));
+                        var screenY = unchecked((short)((lParam.ToInt64() >> 16) & 0xFFFF));
+                        var scale = _source?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
+                        var code = DockLayout.HitTest(
+                            screenX - left,
+                            screenY - top,
+                            width,
+                            height,
+                            DockLayout.BorderWidth * scale);
+                        if (code == DockLayout.HitNone)
+                            return IntPtr.Zero;
+                        handled = true;
+                        return new IntPtr(code);
+                    }
 
                 case WmEnterSizeMove:
                     // 调整期间交给系统的尺寸循环，自己不要再 SetWindowPos，否则会和拖拽打架。
@@ -165,7 +170,11 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
                     return IntPtr.Zero;
 
                 case WmDisplayChange:
-                    Dispatcher.BeginInvoke(ApplyAnchor);
+                case WmSettingChange:
+                case WmActivateApp:
+                case WmShowWindow:
+                case WmDpiChanged:
+                    QueueAnchor();
                     return IntPtr.Zero;
 
                 case WmWindowPosChanging:
@@ -182,9 +191,27 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
         /// <summary>把窗口吸附到主显示器工作区右下角。</summary>
         private void ApplyAnchor()
         {
+            if (_source != null && DesktopLayer.AnchorToPrimaryBottomRight(_source.Handle, (int)DockLayout.Margin))
+                return;
+
+            // 极少数 Win32 查询失败时仍保留 WPF 的旧降级路径，避免窗口失去可见位置。
             var (left, top) = DockLayout.Anchor(SystemParameters.WorkArea, ActualWidth, ActualHeight);
             Left = left;
             Top = top;
+        }
+
+        private void QueueAnchor()
+        {
+            if (_resizing || _anchorPending)
+                return;
+
+            _anchorPending = true;
+            Dispatcher.BeginInvoke(() =>
+            {
+                _anchorPending = false;
+                if (!_resizing)
+                    ApplyAnchor();
+            });
         }
 
         private void OnChanged()
@@ -193,7 +220,10 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
                 if (ActiveDockState.Hidden)
                     Hide();
                 else
+                {
                     Show();
+                    QueueAnchor();
+                }
                 RefreshItems();
             });
 

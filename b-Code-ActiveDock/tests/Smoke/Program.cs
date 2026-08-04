@@ -13,7 +13,7 @@ var moduleInfos = assembly.GetTypes()
 
 Equal(1, moduleInfos.Count, "独立程序集必须只有一个模块入口");
 Equal("dock", moduleInfos[0].ModuleName, "命令域必须沿用 dock");
-Equal("2.0.0", moduleInfos[0].Version, "模块版本");
+Equal("2.0.1", moduleInfos[0].Version, "模块版本");
 Equal(typeof(ActiveDockCommands), moduleInfos[0].MainClassType, "命令入口类型");
 
 Equal(
@@ -67,6 +67,12 @@ Equal(1040 - 200 - DockLayout.Margin, anchorTop, "锚点上边界");
 var (wideLeft, tallTop) = DockLayout.Anchor(work, 500, 300);
 Equal(anchorLeft + 360, wideLeft + 500, "加宽后右边界不动");
 Equal(anchorTop + 200, tallTop + 300, "加高后下边界不动");
+
+// 150% 缩放时必须以原生工作区而非 WPF DIP 工作区为基准，否则会停在屏幕中部。
+var nativeWork = new System.Windows.Rect(0, 0, 2560, 1400);
+var (nativeLeft, nativeTop) = DockLayout.Anchor(nativeWork, 696, 198);
+Equal(1848.0, nativeLeft, "原生工作区右边界");
+Equal(1186.0, nativeTop, "原生工作区下边界");
 
 Equal(DockLayout.MinWidth, DockLayout.ClampWidth(10), "宽度下限");
 Equal(DockLayout.MaxWidth, DockLayout.ClampWidth(9999), "宽度上限");
