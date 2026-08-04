@@ -1,10 +1,13 @@
 [CmdletBinding()]
 param(
-    [string]$ManifestPath = (Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'z-SE2SW\module.manifest.json')
+    [string]$ManifestPath
 )
 
 $ErrorActionPreference = 'Stop'
 $moduleRoot = Split-Path -Parent $PSScriptRoot
+if ([string]::IsNullOrWhiteSpace($ManifestPath)) {
+    $ManifestPath = Join-Path (Split-Path -Parent $moduleRoot) 'z-SE2SW\module.manifest.json'
+}
 $versionPropsPath = Join-Path $moduleRoot 'build\SE2SW.Version.props'
 
 if (-not (Test-Path -LiteralPath $versionPropsPath -PathType Leaf)) {

@@ -64,6 +64,16 @@ public enum ConversionErrorClass
     MateEntityAmbiguous,
     MateRejected,
     MateTypeUnsupported,
+    FeatureRecognitionTimeout,
+}
+
+public static class FeatureRecognitionPolicy
+{
+    public const int DefaultTimeoutSeconds = 180;
+    public const int MaximumTimeoutSeconds = 3600;
+
+    public static int NormalizeTimeoutSeconds(int value)
+        => value <= 0 ? DefaultTimeoutSeconds : Math.Min(value, MaximumTimeoutSeconds);
 }
 
 public sealed record ConversionJob(
@@ -81,7 +91,7 @@ public sealed record BatchRequest(
     bool RecognizeFeatures = true,
     // V2.0：对识别出的每个草图执行"完全定义草图"。依赖 RecognizeFeatures。
     bool FullyDefineSketches = true,
-    int FeatureRecognitionTimeoutSeconds = 120,
+    int FeatureRecognitionTimeoutSeconds = FeatureRecognitionPolicy.DefaultTimeoutSeconds,
     bool ContinueWhenRecognitionFails = true);
 
 /// <summary>
@@ -95,7 +105,7 @@ public sealed record PartImportRequest(
     bool Overwrite = false,
     bool RecognizeFeatures = true,
     bool FullyDefineSketches = true,
-    int FeatureRecognitionTimeoutSeconds = 120,
+    int FeatureRecognitionTimeoutSeconds = FeatureRecognitionPolicy.DefaultTimeoutSeconds,
     bool ContinueWhenRecognitionFails = true);
 
 /// <summary>V2.0 单个零件的特征识别与草图定义结果，随 Completed 事件回传。</summary>
@@ -270,7 +280,7 @@ public sealed record AssemblyBatchRequest(
     bool ContinueWhenPartFails = false,
     // V3.5：把 SE 装配关系翻译成 SW 配合。默认关闭，不改既有行为。
     bool RebuildMates = false,
-    int FeatureRecognitionTimeoutSeconds = 120,
+    int FeatureRecognitionTimeoutSeconds = FeatureRecognitionPolicy.DefaultTimeoutSeconds,
     // V3.3：拓扑序的装配节点。为 null 时退化为 V3.0 的展平行为。
     IReadOnlyList<AssemblyNode>? Nodes = null,
     // V3.5：全部层的装配关系，按 SourceAssemblyPath 分派到各层。

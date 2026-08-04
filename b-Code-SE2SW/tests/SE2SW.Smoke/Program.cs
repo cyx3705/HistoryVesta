@@ -47,7 +47,8 @@ try
     TestAssemblyViewModelState(root);
     TestAssemblyMateSwitchAndReport(root);
     TestAssemblyActiveRunDisposal(root);
-    TestWorkspaceModes();
+    TestUnifiedSourceWorkspace();
+    TestUnifiedPartDirectoryFlow(root);
     TestUiModuleRegistration();
     TestTemporaryOutput(root);
     TestParasolidTextProbe(root);
@@ -101,6 +102,14 @@ static void TestSharedContractsAndVersion()
     Equal(expected, typeof(WorkerRequestValidator).Assembly.GetName().Version?.ToString(3), "Worker 程序集版本必须来自唯一版本源");
     Equal(expected, new ModuleInfo().Version, "模块运行时版本不得另存字符串副本");
     Equal(expected, ReadVersionFromManifest(), "OHS 注册清单版本必须与版本真源一致");
+    Equal(180, FeatureRecognitionPolicy.DefaultTimeoutSeconds, "特征识别默认无进度预算必须是三分钟");
+    Equal(180, FeatureRecognitionPolicy.NormalizeTimeoutSeconds(0), "缺省超时必须回到三分钟");
+    Equal(180, FeatureRecognitionPolicy.NormalizeTimeoutSeconds(180), "显式三分钟超时不得被改写");
+    Equal(3600, FeatureRecognitionPolicy.NormalizeTimeoutSeconds(99999), "超时配置必须有上限");
+    Equal(
+        FeatureRecognitionPolicy.DefaultTimeoutSeconds,
+        new AssemblyBatchRequest("b", ConversionMode.External, "a.asm", "a.SLDASM", [], []).FeatureRecognitionTimeoutSeconds,
+        "装配请求不得保留独立的旧超时默认值");
 
     True(WorkerProtocol.IsKnownVerb(WorkerProtocol.PartsRequestVerb), "零件 Worker 动词必须由共享合同认可");
     True(WorkerProtocol.IsKnownVerb(WorkerProtocol.PartImportVerb), "单零件隔离导入动词必须由共享合同认可");
@@ -163,6 +172,25 @@ static void TestPartImportIsolationContracts(string root)
     Equal(job, roundTrip?.Job, "单零件隔离请求不得丢失任务路径");
 
     var batch = new BatchRequest("batch-1", ConversionMode.External, [job], RecognizeFeatures: true);
+    var recognitionStartedAt = DateTimeOffset.Parse("2026-08-04T12:00:00+00:00");
+    True(
+        !SolidWorksPartImportIsolation.HasRecognitionStalled(
+            0,
+            recognitionStartedAt.AddMinutes(10),
+            TimeSpan.FromMinutes(3)),
+        "未收到单件开始识别事件时不得启动无进度超时");
+    True(
+        !SolidWorksPartImportIsolation.HasRecognitionStalled(
+            recognitionStartedAt.Ticks,
+            recognitionStartedAt.AddSeconds(179),
+            TimeSpan.FromMinutes(3)),
+        "三分钟预算内不得终止识别子 Worker");
+    True(
+        SolidWorksPartImportIsolation.HasRecognitionStalled(
+            recognitionStartedAt.Ticks,
+            recognitionStartedAt.AddMinutes(3),
+            TimeSpan.FromMinutes(3)),
+        "三分钟无进度必须触发哑实体回退");
     True(SolidWorksPartImportIsolation.ShouldIsolate(batch), "启用 FeatureWorks 时必须逐零件隔离");
     True(
         !SolidWorksPartImportIsolation.ShouldIsolate(batch with { RecognizeFeatures = false }),
@@ -1407,17 +1435,17 @@ static void TestUiModuleRegistration()
     var registrar = new RecordingShellUiRegistrar();
     var module = new SE2SWUiModule { ShellUi = registrar };
     module.CreateUi();
-    Equal(1, registrar.Descriptors.Count, "模块应只注册一个双页工具窗口");
+    Equal(1, registrar.Descriptors.Count, "模块应只注册一个单页工具窗口");
     var descriptor = registrar.Descriptors.Single();
     Equal("se2sw", descriptor.Id, "必须保留稳定窗口 ID se2sw");
     Equal("SE2SW 转换", descriptor.Title, "窗口标题应覆盖零件与装配两种转换");
-    True(descriptor.ContentFactory != null, "双页工具窗口必须提供内容工厂");
+    True(descriptor.ContentFactory != null, "单页工具窗口必须提供内容工厂");
     Equal(DockSide.Right, descriptor.DefaultSide, "窗口应保持 AppShell 普通右侧工具窗口语义");
     module.DestroyUi();
     Equal(1, registrar.DisposeCount, "热卸载必须释放双页窗口句柄");
 }
 
-static void TestWorkspaceModes()
+static void TestUnifiedSourceWorkspace()
 {
     Exception? failure = null;
     var thread = new Thread(() =>
@@ -1425,21 +1453,12 @@ static void TestWorkspaceModes()
         try
         {
             using var workspace = new SE2SWWorkspaceView();
-            Equal(3, workspace.PageCount, "V3.1 工作区必须只有三个同级模式");
-            Equal(0, workspace.SelectedPageIndex, "默认必须进入模式 1：零件转换");
-            Equal(ConversionMode.External, workspace.ActivePartMode, "零件转换必须对应原外界模式");
-
-            workspace.SelectedPageIndex = 1;
-            Equal(1, workspace.SelectedPageIndex, "模式 2 必须进入装配转换");
-
-            workspace.SelectedPageIndex = 2;
-            Equal(ConversionMode.Ohs, workspace.ActivePartMode, "模式 3 必须对应 OHS 零件兼容模式");
-
-            workspace.PartPage.SetMode(ConversionMode.External);
-            Equal(0, workspace.SelectedPageIndex, "零件页自动识别外界目录后顶层模式必须同步回零件转换");
-
-            Equal(ConversionMode.External, workspace.ActivePartMode, "返回模式 1 必须恢复外界零件模式");
-            Throws<ArgumentOutOfRangeException>(() => workspace.SelectedPageIndex = 3);
+            Equal(ConversionSourceKind.None, workspace.UnifiedPage.ViewModel.SourceKind,
+                "单页工作区默认必须等待用户选择来源");
+            True(workspace.UnifiedPage.ViewModel.SourcePath.Length == 0,
+                "未选择来源时不能残留旧路径");
+            Equal("转换装配体", workspace.UnifiedPage.ViewModel.PrimaryActionText,
+                "未选择来源时主按钮使用装配体占位文案");
         }
         catch (Exception ex)
         {
@@ -1450,7 +1469,131 @@ static void TestWorkspaceModes()
     thread.Start();
     thread.Join();
     if (failure is not null)
-        throw new InvalidOperationException("三模式工作区 Smoke 失败。", failure);
+        throw new InvalidOperationException("单页来源工作区 Smoke 失败。", failure);
+}
+
+static void TestUnifiedPartDirectoryFlow(string root)
+{
+    var directory = Path.Combine(root, "unified-parts");
+    var childDirectory = Path.Combine(directory, "child");
+    Directory.CreateDirectory(childDirectory);
+    var partA = Path.Combine(directory, "A.par");
+    var partB = Path.Combine(directory, "B.PAR");
+    var partC = Path.Combine(directory, "C.par");
+    var nestedPart = Path.Combine(childDirectory, "Nested.par");
+    File.WriteAllText(partA, "a");
+    File.WriteAllText(partB, "b");
+    File.WriteAllText(partC, "c");
+    File.WriteAllText(nestedPart, "nested");
+
+    var assemblyDirectory = Path.Combine(root, "unified-assembly");
+    Directory.CreateDirectory(assemblyDirectory);
+    var assembly = Path.Combine(assemblyDirectory, "Top.asm");
+    var assemblyPart = Path.Combine(assemblyDirectory, "AssemblyPart.par");
+    File.WriteAllText(assembly, "asm");
+    File.WriteAllText(assemblyPart, "part");
+    var probeCount = 0;
+    var partRunCount = 0;
+    List<BatchRequest> capturedRequests = [];
+    var probe = new AssemblyProbeResult(
+        assembly,
+        [new AssemblyOccurrence("AssemblyPart:1", null, assemblyPart, false, false, false, Translation(0, 0, 0), null)],
+        [assemblyPart],
+        0, 0, 1, 0, []);
+
+    using var viewModel = new AssemblyViewModel(
+        (_, _, _) =>
+        {
+            probeCount++;
+            return Task.FromResult(probe);
+        },
+        static (_, _, _) => Task.FromResult(0),
+        static () => { },
+        Dispatcher.CurrentDispatcher,
+        (request, progress, _) =>
+        {
+            partRunCount++;
+            capturedRequests.Add(request);
+            foreach (var job in request.Jobs)
+            {
+                if (partRunCount == 1 && string.Equals(
+                        Path.GetFileName(job.SourcePath), "C.par", StringComparison.OrdinalIgnoreCase))
+                {
+                    progress(new WorkerEvent(request.BatchId, job.Id, ConversionStage.Failed, "模拟失败", IsError: true));
+                    continue;
+                }
+                File.WriteAllText(job.SolidWorksPath, "converted");
+                progress(new WorkerEvent(request.BatchId, job.Id, ConversionStage.Completed, "完成"));
+            }
+            return Task.FromResult(partRunCount == 1 ? 1 : 0);
+        });
+
+    viewModel.SetAssemblySource(assembly);
+    viewModel.ProbeAsync().GetAwaiter().GetResult();
+    Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ApplicationIdle, static () => { });
+    Equal(1, probeCount, "一次装配来源选择只能执行一次显式探查");
+    Equal(1, viewModel.AssemblyTree.Count, "装配探查应建立树");
+
+    viewModel.ContinueWhenPartFails = true;
+    viewModel.SetPartDirectory(directory);
+    Equal(ConversionSourceKind.PartDirectory, viewModel.SourceKind, "选择文件夹后必须切换到零件来源");
+    Equal(3, viewModel.Parts.Count, "文件夹模式只扫描顶层 .par");
+    True(viewModel.Parts.All(row => !string.Equals(row.SourcePath, nestedPart, StringComparison.OrdinalIgnoreCase)),
+        "文件夹模式不得递归扫描子目录");
+    Equal(0, viewModel.AssemblyTree.Count, "切到文件夹必须清除旧装配树");
+    True(!viewModel.ContinueWhenPartFails && !viewModel.RebuildMates,
+        "文件夹模式必须关闭装配专属失败策略与关系重建");
+    True(!viewModel.CanContinueWhenPartFails && !viewModel.CanRebuildMates,
+        "文件夹模式必须禁用装配专属选项");
+    Equal("转换全部零件", viewModel.PrimaryActionText, "文件夹模式主按钮文案不应提装配");
+    True(!Directory.Exists(Path.Combine(directory, "XT")) && !Directory.Exists(Path.Combine(directory, "SW")),
+        "扫描阶段不得创建输出目录");
+
+    Directory.CreateDirectory(Path.Combine(directory, "XT"));
+    File.WriteAllText(Path.Combine(directory, "XT", "A.x_t"), "existing");
+    viewModel.SetPartDirectory(directory);
+    True(viewModel.Parts.Single(row => row.FileName == "A.par").HasExistingOutput,
+        "已有 XT 的零件必须标记为已存在");
+    True(viewModel.CanConvert, "仍有未转换零件时必须允许批量转换");
+
+    viewModel.ConvertAsync().GetAwaiter().GetResult();
+    Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ApplicationIdle, static () => { });
+    Equal(1, partRunCount, "全部零件批次只能启动一次 Worker");
+    var firstRequest = capturedRequests.Single();
+    True(firstRequest is { Mode: ConversionMode.External, Overwrite: false },
+        "文件夹批次必须沿用外界模式且禁止覆盖");
+    Equal(2, firstRequest.Jobs.Count, "已有产物必须从批次中摘除，其余零件一次送入 Worker");
+    True(firstRequest.Jobs.Select(job => Path.GetFileName(job.SourcePath))
+            .SequenceEqual(["B.PAR", "C.par"], StringComparer.OrdinalIgnoreCase),
+        "批次只应包含全部尚无产物的顶层零件");
+    True(!firstRequest.RecognizeFeatures && !firstRequest.FullyDefineSketches,
+        "识别特征和完全定义草图必须默认关闭");
+    True(viewModel.Parts.Single(row => row.FileName == "B.PAR").HasExistingOutput,
+        "部分失败后成功项必须在重扫中更新为已存在");
+    True(!viewModel.Parts.Single(row => row.FileName == "C.par").HasExistingOutput && viewModel.CanConvert,
+        "部分失败后无产物项必须保持可重试");
+
+    viewModel.ConvertAsync().GetAwaiter().GetResult();
+    Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ApplicationIdle, static () => { });
+    Equal(2, partRunCount, "失败项重试应再启动一次 Worker");
+    Equal(1, capturedRequests[1].Jobs.Count, "重试批次不得重复发送成功项");
+    Equal("C.par", Path.GetFileName(capturedRequests[1].Jobs[0].SourcePath),
+        "重试批次只能包含上次失败项");
+    True(viewModel.Parts.All(row => row.HasExistingOutput),
+        "重试成功后必须重扫并把全部项目更新为已存在");
+    True(!viewModel.CanConvert, "全部已有产物后不得重复转换");
+
+    viewModel.SetAssemblySource(assembly);
+    True(!viewModel.CanConvert && viewModel.Parts.Count == 0 && viewModel.AssemblyTree.Count == 0,
+        "从文件夹切回装配必须清空零件结果和旧计划");
+    Equal(ConversionSourceKind.Assembly, viewModel.SourceKind, "来源状态必须回到装配体");
+
+    var empty = Path.Combine(root, "unified-empty");
+    Directory.CreateDirectory(empty);
+    viewModel.SetPartDirectory(empty);
+    Equal(0, viewModel.Parts.Count, "空文件夹必须得到空清单");
+    True(!viewModel.CanConvert && viewModel.StatusText.Contains("未找到", StringComparison.Ordinal),
+        "空文件夹应禁用转换并给出明确状态");
 }
 
 /// <summary>

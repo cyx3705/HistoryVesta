@@ -320,8 +320,10 @@ internal sealed class FeatureRecognizer : IDisposable
         catch (Exception ex)
         {
             // COM 服务器已死：标记出来，让调用方重建会话而不是继续对着尸体重试。
-            return Degraded(recognized, created, stopwatch, statuses, $"{step} 失败：{ex.Message}")
-                with { SessionFaulted = IsServerFault(ex) };
+            return Degraded(recognized, created, stopwatch, statuses, $"{step} 失败：{ex.Message}") with
+            {
+                SessionFaulted = IsServerFault(ex),
+            };
         }
 
         var total = 0;

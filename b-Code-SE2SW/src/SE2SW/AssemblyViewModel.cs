@@ -13,17 +13,20 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
 {
     private readonly Func<AssemblyProbeRequest, Action<WorkerEvent>, CancellationToken, Task<AssemblyProbeResult>> _probeWorker;
     private readonly Func<AssemblyBatchRequest, Action<WorkerEvent>, CancellationToken, Task<int>> _runWorker;
+    private readonly Func<BatchRequest, Action<WorkerEvent>, CancellationToken, Task<int>> _runPartWorker;
     private readonly Action _validateEnvironment;
     private readonly Dispatcher _uiDispatcher;
     private readonly object _lifecycleGate = new();
     private readonly object _dispatchGate = new();
     private readonly Queue<Action> _pendingUiUpdates = new();
     private string _sourceAssemblyPath = string.Empty;
+    private string _partDirectory = string.Empty;
+    private ConversionSourceKind _sourceKind;
     private string _xtDirectory = string.Empty;
     private string _solidWorksDirectory = string.Empty;
     private string _assemblyOutputPath = string.Empty;
-    private string _statusText = "请选择 Solid Edge .asm 装配体";
-    private string _warningSummary = "输出按源装配的层级生成嵌套装配体，全部组件固定，不含配合。";
+    private string _statusText = "请选择装配体或零件文件夹";
+    private string _warningSummary = string.Empty;
     private bool _isBusy;
     private bool _isProbing;
     private bool _recognizeFeatures;
@@ -31,7 +34,7 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
     private bool _continueWhenPartFails;
     // 装配关系是 .asm 的语义组成部分，而不是高级附加选项。解析到可翻译关系时，
     // ApplyProbeResult 会保持此默认开启；没有关系的装配则会自动关闭且禁用开关。
-    private bool _rebuildMates = true;
+    private bool _rebuildMates;
     private bool _conversionCompleted;
     private CancellationTokenSource? _operationCancellation;
     private Task? _activeOperation;
@@ -47,15 +50,7 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
     public string SourceAssemblyPath
     {
         get => _sourceAssemblyPath;
-        set
-        {
-            if (IsBusy || !SetField(ref _sourceAssemblyPath, value))
-                return;
-            UpdateOutputPaths();
-            ClearProbeResult();
-            StatusText = "源文件已改变，请重新解析装配体";
-            OnPropertyChanged(nameof(CanProbe));
-        }
+        set => SetAssemblySource(value);
     }
 
     public string XtDirectory
@@ -100,6 +95,7 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
             OnPropertyChanged(nameof(CanConvert));
             OnPropertyChanged(nameof(CanFullyDefineSketches));
             OnPropertyChanged(nameof(CanRebuildMates));
+            OnPropertyChanged(nameof(CanContinueWhenPartFails));
         }
     }
 
@@ -116,6 +112,8 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
         {
             if (!SetField(ref _recognizeFeatures, value))
                 return;
+            if (!value)
+                FullyDefineSketches = false;
             OnPropertyChanged(nameof(CanFullyDefineSketches));
         }
     }
@@ -123,13 +121,23 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
     public bool FullyDefineSketches
     {
         get => _fullyDefineSketches;
-        set => SetField(ref _fullyDefineSketches, value);
+        set
+        {
+            if (!RecognizeFeatures && value)
+                return;
+            SetField(ref _fullyDefineSketches, value);
+        }
     }
 
     public bool ContinueWhenPartFails
     {
         get => _continueWhenPartFails;
-        set => SetField(ref _continueWhenPartFails, value);
+        set
+        {
+            if (!CanContinueWhenPartFails && value)
+                return;
+            SetField(ref _continueWhenPartFails, value);
+        }
     }
 
     /// <summary>
@@ -140,11 +148,16 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
     public bool RebuildMates
     {
         get => _rebuildMates;
-        set => SetField(ref _rebuildMates, value);
+        set
+        {
+            if (!IsAssemblyMode && value)
+                return;
+            SetField(ref _rebuildMates, value);
+        }
     }
 
     /// <summary>只有解析出关系才允许勾选——没有关系可翻译时，这个开关是个空承诺。</summary>
-    public bool CanRebuildMates => CanEdit && (_plan?.RelationCount ?? 0) > 0;
+    public bool CanRebuildMates => CanEdit && IsAssemblyMode && (_plan?.RelationCount ?? 0) > 0;
 
     public string RebuildMatesHint => _plan is null
         ? "先解析装配体，才能知道有多少装配关系可以翻译。"
@@ -155,12 +168,34 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
 
     public bool IsExternalMode => true;
     public bool IsOhsModeAvailable => false;
+    public ConversionSourceKind SourceKind => _sourceKind;
+    public string SourcePath => SourceKind switch
+    {
+        ConversionSourceKind.Assembly => SourceAssemblyPath,
+        ConversionSourceKind.PartDirectory => _partDirectory,
+        _ => string.Empty,
+    };
+    public string SourceLabel => SourceKind switch
+    {
+        ConversionSourceKind.Assembly => "装配体",
+        ConversionSourceKind.PartDirectory => "零件文件夹",
+        _ => "选择来源",
+    };
+    public bool IsAssemblyMode => SourceKind == ConversionSourceKind.Assembly;
+    public bool IsPartDirectoryMode => SourceKind == ConversionSourceKind.PartDirectory;
     public bool CanEdit => !IsBusy;
-    public bool CanProbe => CanEdit && File.Exists(SourceAssemblyPath)
+    public bool CanProbe => CanEdit && IsAssemblyMode && File.Exists(SourceAssemblyPath)
         && ConversionPathLayout.HasExtension(SourceAssemblyPath, ConversionPathLayout.SolidEdgeAssemblyExtension);
-    public bool CanConvert => CanEdit && !_conversionCompleted && _plan?.CanConvert == true;
+    public bool CanConvert => CanEdit && (IsAssemblyMode
+        ? !_conversionCompleted && _plan?.CanConvert == true
+        : IsPartDirectoryMode && Parts.Any(row => !row.HasExistingOutput));
     public bool CanFullyDefineSketches => CanEdit && RecognizeFeatures;
-    public string OperationText => IsProbing ? "正在解析装配体" : "正在转换装配体";
+    public bool CanContinueWhenPartFails => CanEdit && IsAssemblyMode;
+    public string PrimaryActionText => IsPartDirectoryMode ? "转换全部零件" : "转换装配体";
+    public string PartsPanelTitle => IsPartDirectoryMode ? "零件" : "唯一零件";
+    public string OperationText => IsProbing
+        ? "正在解析装配体"
+        : IsPartDirectoryMode ? "正在转换全部零件" : "正在转换装配体";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -171,7 +206,9 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
             (request, progress, cancellationToken) =>
                 new WorkerClient().RunAssemblyAsync(request, progress, cancellationToken),
             () => PreflightValidator.ValidateEnvironment(WorkerClient.WorkerPath),
-            Dispatcher.CurrentDispatcher)
+            Dispatcher.CurrentDispatcher,
+            (request, progress, cancellationToken) =>
+                new WorkerClient().RunAsync(request, progress, cancellationToken))
     {
     }
 
@@ -179,22 +216,62 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
         Func<AssemblyProbeRequest, Action<WorkerEvent>, CancellationToken, Task<AssemblyProbeResult>> probeWorker,
         Func<AssemblyBatchRequest, Action<WorkerEvent>, CancellationToken, Task<int>> runWorker,
         Action validateEnvironment,
-        Dispatcher uiDispatcher)
+        Dispatcher uiDispatcher,
+        Func<BatchRequest, Action<WorkerEvent>, CancellationToken, Task<int>>? runPartWorker = null)
     {
         _probeWorker = probeWorker ?? throw new ArgumentNullException(nameof(probeWorker));
         _runWorker = runWorker ?? throw new ArgumentNullException(nameof(runWorker));
+        _runPartWorker = runPartWorker
+            ?? ((request, progress, cancellationToken) =>
+                new WorkerClient().RunAsync(request, progress, cancellationToken));
         _validateEnvironment = validateEnvironment ?? throw new ArgumentNullException(nameof(validateEnvironment));
         _uiDispatcher = uiDispatcher ?? throw new ArgumentNullException(nameof(uiDispatcher));
     }
 
     public void SetSourceFile(string path)
-        => SourceAssemblyPath = path;
+        => SetAssemblySource(path);
+
+    public void SetAssemblySource(string path)
+    {
+        if (IsBusy)
+            return;
+
+        ClearSourceResults();
+        _sourceAssemblyPath = Path.GetFullPath(path.Trim());
+        _partDirectory = string.Empty;
+        SetSourceKind(ConversionSourceKind.Assembly);
+        RebuildMates = false;
+        UpdateAssemblyOutputPaths();
+        StatusText = "正在准备解析装配体";
+        NotifySourceChanged();
+    }
+
+    public void SetPartDirectory(string path)
+    {
+        if (IsBusy)
+            return;
+
+        var fullPath = Path.GetFullPath(path.Trim());
+        if (!Directory.Exists(fullPath))
+            throw new DirectoryNotFoundException($"文件夹不存在：{fullPath}");
+
+        ClearSourceResults();
+        _sourceAssemblyPath = string.Empty;
+        _partDirectory = fullPath;
+        SetSourceKind(ConversionSourceKind.PartDirectory);
+        ContinueWhenPartFails = false;
+        RebuildMates = false;
+        ScanPartDirectory(updateStatus: true);
+        NotifySourceChanged();
+    }
 
     public Task ProbeAsync()
         => StartOperationAsync(isProbe: true, ProbeCoreAsync);
 
     public Task ConvertAsync()
-        => StartOperationAsync(isProbe: false, ConvertCoreAsync);
+        => StartOperationAsync(
+            isProbe: false,
+            IsPartDirectoryMode ? ConvertPartsCoreAsync : ConvertAssemblyCoreAsync);
 
     public void Cancel()
     {
@@ -273,6 +350,8 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
         {
             QueueUiUpdate(() =>
             {
+                if (!IsProbing && IsPartDirectoryMode)
+                    ScanPartDirectory(updateStatus: false);
                 IsBusy = false;
                 IsProbing = false;
                 OnPropertyChanged(nameof(OperationText));
@@ -327,7 +406,7 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
-    private async Task ConvertCoreAsync(CancellationToken cancellationToken)
+    private async Task ConvertAssemblyCoreAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var plan = _plan ?? throw new InvalidOperationException("请先成功解析装配体。");
@@ -399,6 +478,52 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
             AppendMateDiagnostics();
             OnPropertyChanged(nameof(CanConvert));
         });
+    }
+
+    private async Task ConvertPartsCoreAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!IsPartDirectoryMode || !Directory.Exists(_partDirectory))
+            throw new DirectoryNotFoundException("请选择存在的零件文件夹。");
+
+        var pending = Parts.Where(row => !row.HasExistingOutput).ToArray();
+        if (pending.Length == 0)
+            throw new InvalidOperationException("没有尚待转换的零件。");
+
+        _validateEnvironment();
+        ExternalOutputLayout.EnsureDirectories(_partDirectory);
+        var jobs = pending.Select(row => new ConversionJob(
+            row.Id,
+            row.SourcePath,
+            row.XtPath,
+            row.SolidWorksPath)).ToArray();
+        PreflightValidator.ValidateJobs(jobs, overwrite: false);
+
+        foreach (var row in pending)
+        {
+            row.Status = "排队";
+            row.Detail = string.Empty;
+            row.ResetFeatureResult();
+            if (!RecognizeFeatures)
+            {
+                row.FeatureText = "—";
+                row.SketchText = "—";
+            }
+        }
+
+        var request = new BatchRequest(
+            Guid.NewGuid().ToString("N"),
+            ConversionMode.External,
+            jobs,
+            Overwrite: false,
+            RecognizeFeatures: RecognizeFeatures,
+            FullyDefineSketches: RecognizeFeatures && FullyDefineSketches);
+        QueueUiUpdate(() => StatusText = $"正在转换 {jobs.Length} 个零件");
+        var exitCode = await _runPartWorker(
+            request,
+            workerEvent => QueueUiUpdate(() => ApplyWorkerEvent(workerEvent)),
+            cancellationToken).ConfigureAwait(false);
+        QueueUiUpdate(() => StatusText = exitCode == 0 ? "零件转换完成" : "零件转换结束，存在失败项");
     }
 
     /// <summary>状态栏尾巴：一句话说清 56 条关系去了哪里。</summary>
@@ -485,7 +610,7 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
         ConversionProgressPresenter.ApplyFeatureOutcome(row, workerEvent.Feature);
     }
 
-    private void UpdateOutputPaths()
+    private void UpdateAssemblyOutputPaths()
     {
         try
         {
@@ -514,6 +639,64 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
         AssemblyTree.Clear();
         Parts.Clear();
         WarningSummary = "输出按源装配的层级生成嵌套装配体，全部组件固定，不含配合。";
+        OnPropertyChanged(nameof(CanConvert));
+    }
+
+    private void ClearSourceResults()
+    {
+        ClearProbeResult();
+        _mateOutcome = null;
+        XtDirectory = string.Empty;
+        SolidWorksDirectory = string.Empty;
+        AssemblyOutputPath = string.Empty;
+    }
+
+    private void ScanPartDirectory(bool updateStatus)
+    {
+        Parts.Clear();
+        var directories = ConversionPathLayout.ResolveExternalDirectories(_partDirectory);
+        XtDirectory = directories.XtDirectory;
+        SolidWorksDirectory = directories.SolidWorksDirectory;
+        AssemblyOutputPath = string.Empty;
+        foreach (var candidate in FileScanner.Scan(ConversionMode.External, _partDirectory))
+            Parts.Add(new ConversionFileRow(candidate));
+
+        WarningSummary = string.Empty;
+        if (updateStatus)
+        {
+            var pending = Parts.Count(row => !row.HasExistingOutput);
+            StatusText = Parts.Count == 0
+                ? "未找到顶层 .par 文件"
+                : pending == 0
+                    ? $"扫描完成，共 {Parts.Count} 个零件，均已有产物"
+                    : $"扫描完成，共 {Parts.Count} 个零件，{pending} 个待转换";
+        }
+        OnPropertyChanged(nameof(CanConvert));
+    }
+
+    private void SetSourceKind(ConversionSourceKind value)
+    {
+        if (!SetField(ref _sourceKind, value, nameof(SourceKind)))
+            return;
+        OnPropertyChanged(nameof(IsAssemblyMode));
+        OnPropertyChanged(nameof(IsPartDirectoryMode));
+        OnPropertyChanged(nameof(SourceLabel));
+        OnPropertyChanged(nameof(PrimaryActionText));
+        OnPropertyChanged(nameof(PartsPanelTitle));
+        OnPropertyChanged(nameof(OperationText));
+        OnPropertyChanged(nameof(CanContinueWhenPartFails));
+        OnPropertyChanged(nameof(CanRebuildMates));
+        OnPropertyChanged(nameof(RebuildMatesHint));
+        OnPropertyChanged(nameof(CanProbe));
+        OnPropertyChanged(nameof(CanConvert));
+    }
+
+    private void NotifySourceChanged()
+    {
+        OnPropertyChanged(nameof(SourceAssemblyPath));
+        OnPropertyChanged(nameof(SourcePath));
+        OnPropertyChanged(nameof(SourceLabel));
+        OnPropertyChanged(nameof(CanProbe));
         OnPropertyChanged(nameof(CanConvert));
     }
 

@@ -60,6 +60,36 @@
             <Setter Property="BorderThickness" Value="0,0,1,1" />
             <Setter Property="Padding" Value="10,0" />
         </Style>
+        <Style x:Key="HorizontalOptionExpander" TargetType="Expander">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Expander">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <ToggleButton x:Name="HeaderToggle" Background="Transparent" BorderThickness="0"
+                                          Padding="8,5" FocusVisualStyle="{x:Null}"
+                                          IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                                <StackPanel Orientation="Horizontal">
+                                    <ContentPresenter Content="{TemplateBinding Header}" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="Arrow" Text="›" FontSize="20" FontFamily="Segoe UI Symbol"
+                                               Margin="7,-2,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </ToggleButton>
+                            <ContentPresenter x:Name="ExpandSite" ContentSource="Content" Margin="8,0,0,0"
+                                              VerticalAlignment="Center" Visibility="Collapsed" />
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="ExpandSite" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="Arrow" Property="Text" Value="‹" />
+                            </Trigger>
+                            <Trigger SourceName="HeaderToggle" Property="IsMouseOver" Value="True">
+                                <Setter TargetName="HeaderToggle" Property="Background" Value="#E9EFEC" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -116,28 +146,30 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock Text="{Binding SelectionText}" VerticalAlignment="Center" Foreground="#596762" />
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="14,0,0,0">
-                <Button Content="全选" Click="OnSelectAllClick" IsEnabled="{Binding CanEdit}" />
-                <Button Content="清空" Margin="6,0,0,0" Click="OnClearSelectionClick" IsEnabled="{Binding CanEdit}" />
-            </StackPanel>
-            <Expander Grid.Column="3" Header="转换选项" Margin="12,0" VerticalAlignment="Center"
+            <Expander Grid.Column="0" Header="转换选项" VerticalAlignment="Center"
+                      ExpandDirection="Right" Style="{StaticResource HorizontalOptionExpander}"
                       IsEnabled="{Binding CanEdit}">
-                <Border Margin="0,6,0,0" Padding="10,8" Background="White"
+                <Border Margin="8,0,0,0" Padding="10,8" Background="White"
                         BorderBrush="#D7DDDA" BorderThickness="1" CornerRadius="4">
-                    <StackPanel>
+                    <StackPanel Orientation="Horizontal">
                         <CheckBox Content="识别特征" IsChecked="{Binding RecognizeFeatures}"
                                   ToolTip="导入后使用 FeatureWorks 自动识别特征。" />
-                        <CheckBox Content="完全定义草图" Margin="0,7,0,0"
+                        <CheckBox Content="完全定义草图" Margin="16,0,0,0"
                                   IsChecked="{Binding FullyDefineSketches}"
                                   IsEnabled="{Binding CanFullyDefineSketches}" />
                     </StackPanel>
                 </Border>
             </Expander>
+            <TextBlock Grid.Column="1" Margin="14,0,0,0" Text="{Binding SelectionText}"
+                       VerticalAlignment="Center" Foreground="#596762" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="14,0,0,0">
+                <Button Content="全选" Click="OnSelectAllClick" IsEnabled="{Binding CanEdit}" />
+                <Button Content="清空" Margin="6,0,0,0" Click="OnClearSelectionClick" IsEnabled="{Binding CanEdit}" />
+            </StackPanel>
             <Button Grid.Column="4" Content="{Binding PrimaryActionText}" MinWidth="154"
                     Style="{StaticResource PrimaryButton}"
                     Click="OnConvertClick" IsEnabled="{Binding CanEdit}" />

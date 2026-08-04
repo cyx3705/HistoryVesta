@@ -11,6 +11,7 @@
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="SE2SW.Smoke" />
+    <InternalsVisibleTo Include="SE2SW.UiSmoke" />
     <ProjectReference Include="..\SE2SW.Contracts\SE2SW.Contracts.csproj" />
     <ProjectReference Include="..\SE2SW.Worker\SE2SW.Worker.csproj" ReferenceOutputAssembly="false" />
     <PackageReference Include="OneHistory.AppShell.Core" Version="3.0.3" />

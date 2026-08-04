@@ -30,6 +30,46 @@ internal static class SolidWorksPartImportIsolation
             for (var attempt = 1; attempt <= SessionFaultAttempts; attempt++)
             {
                 var result = RunIsolated(request, job, reporter, cancellationToken);
+                if (result == IsolatedImportResult.RecognitionTimedOut)
+                {
+                    var timeoutSeconds = FeatureRecognitionPolicy.NormalizeTimeoutSeconds(
+                        request.FeatureRecognitionTimeoutSeconds);
+                    var timeoutOutcome = new FeatureOutcome(
+                        0, false, 0, 0, [], true, timeoutSeconds * 1000L,
+                        $"特征识别连续 {timeoutSeconds} 秒无进度，已跳过并改用哑实体。",
+                        SessionFaulted: false);
+                    reporter.Report(
+                        job.Id,
+                        ConversionStage.FeatureRecognition,
+                        "特征识别超时，正在使用普通导入管线重建哑实体。",
+                        errorClass: ConversionErrorClass.FeatureRecognitionTimeout,
+                        feature: timeoutOutcome,
+                        artifact: ConversionArtifactKind.SolidWorksPart);
+
+                    // 识别 Worker 被终止后，不能复用其中的 COM 文档；用独立的无 FeatureWorks
+                    // 请求从同一 XT 重建完整 SLDPRT，再让装配构建器按普通组件路径处理。
+                    var dumbRequest = request with
+                    {
+                        RecognizeFeatures = false,
+                        FullyDefineSketches = false,
+                        ContinueWhenRecognitionFails = true,
+                    };
+                    var dumbResult = RunIsolated(dumbRequest, job, reporter, cancellationToken);
+                    if (dumbResult == IsolatedImportResult.Succeeded)
+                    {
+                        reporter.Report(
+                            job.Id,
+                            ConversionStage.Completed,
+                            "已跳过无进度的特征识别，哑实体已生成并可参与装配。",
+                            errorClass: ConversionErrorClass.FeatureRecognitionTimeout,
+                            feature: timeoutOutcome,
+                            artifact: ConversionArtifactKind.SolidWorksPart);
+                        break;
+                    }
+
+                    failed++;
+                    break;
+                }
                 if (result != IsolatedImportResult.SessionFaulted)
                 {
                     failed += result == IsolatedImportResult.Failed ? 1 : 0;
@@ -77,6 +117,13 @@ internal static class SolidWorksPartImportIsolation
     internal static bool ShouldIsolate(BatchRequest request)
         => request.RecognizeFeatures;
 
+    internal static bool HasRecognitionStalled(
+        long lastProgressUtcTicks,
+        DateTimeOffset observedAt,
+        TimeSpan timeout)
+        => lastProgressUtcTicks != 0
+           && observedAt - new DateTimeOffset(lastProgressUtcTicks, TimeSpan.Zero) >= timeout;
+
     private static IsolatedImportResult RunIsolated(
         BatchRequest request,
         ConversionJob job,
@@ -123,6 +170,7 @@ internal static class SolidWorksPartImportIsolation
 
             var childReportedError = 0;
             var childSessionFaulted = 0;
+            long lastRecognitionProgressTicks = 0;
             var unparsedOutput = new List<string>();
             var standardError = new StringBuilder();
             process.OutputDataReceived += (_, eventArgs) =>
@@ -137,6 +185,11 @@ internal static class SolidWorksPartImportIsolation
                         Interlocked.Exchange(ref childReportedError, 1);
                     if (workerEvent.Feature is { SessionFaulted: true })
                         Interlocked.Exchange(ref childSessionFaulted, 1);
+                    if (workerEvent.JobId == job.Id
+                        && workerEvent.Stage == ConversionStage.FeatureRecognition)
+                    {
+                        Interlocked.Exchange(ref lastRecognitionProgressTicks, DateTimeOffset.UtcNow.Ticks);
+                    }
                     reporter.Forward(workerEvent);
                 }
                 catch (JsonException)
@@ -162,9 +215,21 @@ internal static class SolidWorksPartImportIsolation
             using var cancellationRegistration = cancellationToken.Register(
                 static state => TrySignalCancellation((string)state!),
                 cancellationPath);
+            var recognitionTimeout = TimeSpan.FromSeconds(
+                FeatureRecognitionPolicy.NormalizeTimeoutSeconds(request.FeatureRecognitionTimeoutSeconds));
+            var recognitionTimedOut = false;
             var cancellationObservedAt = DateTimeOffset.MinValue;
             while (!process.WaitForExit(100))
             {
+                var progressTicks = Volatile.Read(ref lastRecognitionProgressTicks);
+                if (request.RecognizeFeatures
+                    && HasRecognitionStalled(progressTicks, DateTimeOffset.UtcNow, recognitionTimeout))
+                {
+                    recognitionTimedOut = true;
+                    TryKill(process);
+                    process.WaitForExit();
+                    break;
+                }
                 if (!cancellationToken.IsCancellationRequested)
                     continue;
                 if (cancellationObservedAt == DateTimeOffset.MinValue)
@@ -177,6 +242,9 @@ internal static class SolidWorksPartImportIsolation
             }
             process.WaitForExit();
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (recognitionTimedOut)
+                return IsolatedImportResult.RecognitionTimedOut;
 
             if (process.ExitCode == 0)
             {
@@ -223,6 +291,7 @@ internal static class SolidWorksPartImportIsolation
         Succeeded,
         Failed,
         SessionFaulted,
+        RecognitionTimedOut,
     }
 
     private static string ResolveWorkerExecutable()
@@ -267,6 +336,21 @@ internal static class SolidWorksPartImportIsolation
         catch
         {
             // 父 Worker仍会在宽限期后终止自己创建的子进程。
+        }
+    }
+
+    private static void TryKill(Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+                process.Kill(entireProcessTree: true);
+        }
+        catch (InvalidOperationException)
+        {
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
         }
     }
 
