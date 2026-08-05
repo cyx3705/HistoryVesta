@@ -10,6 +10,10 @@ public partial class App : Application
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         base.OnStartup(e);
+
+        var shellWindow = new ShellWindow();
+        MainWindow = shellWindow;
+        shellWindow.Show();
     }
 
     private static void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
