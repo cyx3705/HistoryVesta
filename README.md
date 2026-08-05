@@ -23,7 +23,7 @@
 |---|---|
 | `b-Code-AppShell/` | Core、Services、Shell、ServiceHost、演示宿主与测试 |
 | `b-Code-Samples/` | 模块开发示例 |
-| `b-Office/package/` | 消费文档编辑源 |
+| `b-Office/OneHistoryAppShell/` | 消费文档编辑源 |
 | `b-Office/current/` | 现行项目、验证、升级与发布合同 |
 | `b-Code-AppShell/eng/release/` | 发布清单和生成模板等机器输入 |
 | `b-Office/` | 冻结契约、内部设计与执行证据 |

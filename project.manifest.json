@@ -26,7 +26,7 @@
       "b-Code-AppShell/eng",
       "b-Code-Samples",
       "b-Office/current",
-      "b-Office/package"
+      "b-Office/OneHistoryAppShell"
     ],
     "sourceRoots": [
       "b-Code-AppShell/src",
@@ -51,7 +51,7 @@
   },
   "documents": {
     "center": "b-Office/文档中心.md",
-    "package": "b-Office/package/复用说明.md",
+    "package": "b-Office/OneHistoryAppShell/复用说明.md",
     "structure": "b-Office/current/目录规范.md",
     "overview": "b-Office/current/项目概览.md",
     "technicalContract": "b-Office/current/技术合同.md",
@@ -59,10 +59,10 @@
     "verification": "b-Office/current/验证合同.md",
     "upgradeAndRelease": "b-Office/current/升级与发布.md",
     "historyBoundary": "b-Office/history/历史资料说明.md",
-    "apiManual": "b-Office/package/AppShell_API与指令手册.md",
-    "moduleAndMcp": "b-Office/package/AppShell_3.0_模块与MCP接入.md",
-    "runtimeLimits": "b-Office/package/AppShell_3.0_运行时约束与已知限制.md",
-    "consumerChanges": "b-Office/package/AppShell_3.0_消费变更摘要.md"
+    "apiManual": "b-Office/OneHistoryAppShell/AppShell_API与指令手册.md",
+    "moduleAndMcp": "b-Office/OneHistoryAppShell/AppShell_3.0_模块与MCP接入.md",
+    "runtimeLimits": "b-Office/OneHistoryAppShell/AppShell_3.0_运行时约束与已知限制.md",
+    "consumerChanges": "b-Office/OneHistoryAppShell/AppShell_3.0_消费变更摘要.md"
   },
   "commands": {
     "setup": "dotnet restore .\\AppShell.sln --locked-mode",

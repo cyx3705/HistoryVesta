@@ -7,7 +7,7 @@
 ## 文档流向
 
 ```text
-b-Office/package/
+b-Office/OneHistoryAppShell/
   -> b-Publish/current/docs/
   -> z-Package-AppShell/docs/（当前正式快照）
   -> b-Publish/history/<版本>/docs/（正式发布后）
