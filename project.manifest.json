@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "template": { "isTemplate": false, "source": "0000-001-AIReady", "strictValidationArgument": "-Instantiation" },
+  "project": {
+    "id": "2026-018",
+    "name": "MyAPI",
+    "title": "OneHistory MyAPI V4 探索",
+    "kind": ["runtime", "backend", "exploration"],
+    "status": "exploration",
+    "version": "4.0.0-exploration",
+    "branch": "2026-018-MyAPI"
+  },
+  "paths": {
+    "activeRoots": ["b-Code-MyAPI/src", "b-Code-MyAPI/tests", "b-Code-TestModule", "Module", "b-Office/current", "b-Office/package"],
+    "sourceRoots": ["b-Code-MyAPI/src", "b-Code-MyAPI/tests", "b-Code-TestModule", "Module"],
+    "generatedRoots": [],
+    "archiveRoots": ["b-Office/history"],
+    "allowedRootDirectoryPrefixes": ["a-", "b-", "z-", "Module"]
+  },
+  "documents": {
+    "center": "b-Office/document-center.md",
+    "overview": "b-Office/current/overview.md",
+    "technicalContract": "b-Office/current/technical-contract.md",
+    "decisions": "b-Office/current/decisions.md",
+    "verification": "b-Office/current/verification-contract.md",
+    "exploration": "b-Office/current/v4-exploration.md",
+    "package": "b-Office/package/reuse.md",
+    "moduleOpen": "Module/模块开放说明.md",
+    "historyBoundary": "b-Office/history/history-boundary.md"
+  },
+  "commands": {
+    "setup": "dotnet restore .\\b-Code-MyAPI\\MyAPI.sln --locked-mode",
+    "build": "dotnet build .\\b-Code-MyAPI\\MyAPI.sln -c Release --no-restore",
+    "test": "dotnet run --project .\\b-Code-MyAPI\\tests\\MyAPI.ContractTests\\MyAPI.ContractTests.csproj -c Release --no-build",
+    "verify": "git diff --check",
+    "run": "dotnet run --project .\\b-Code-MyAPI\\src\\MyAPI.Host\\MyAPI.Host.csproj -- --EnableHttp true",
+    "package": null
+  },
+  "externalDependencies": [{ "name": ".NET SDK", "version": "8.0 or newer", "purpose": "构建现有 Lite 原型" }],
+  "contextExclusions": ["b-Office/history/**", "Unused/**", "**/bin/**", "**/obj/**", "**/.vs/**", "artifacts/**"]
+}

@@ -24,3 +24,10 @@
 *.vsidx
 *.xlk
 # OneHistoryStudio baseline end
+
+# .NET / IDE generated state
+**/bin/
+**/obj/
+**/.vs/
+*.user
+artifacts/

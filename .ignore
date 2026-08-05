@@ -1,0 +1,7 @@
+# AI 上下文排除
+b-Office/history/**
+Unused/**
+**/bin/**
+**/obj/**
+**/.vs/**
+artifacts/**

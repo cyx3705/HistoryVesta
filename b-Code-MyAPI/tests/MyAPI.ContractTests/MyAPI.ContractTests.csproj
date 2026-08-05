@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MyAPI.Abstractions\MyAPI.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\MyAPI.Runtime\MyAPI.Runtime.csproj" />
+    <ProjectReference Include="..\..\src\MyAPI.Host\MyAPI.Host.csproj" />
+    <ProjectReference Include="..\..\..\b-Code-TestModule\MyAPI.TestCapability\MyAPI.TestCapability.csproj" />
+    <ProjectReference Include="..\..\..\b-Code-TestModule\MyAPI.TestModule\MyAPI.TestModule.csproj" />
+  </ItemGroup>
+</Project>
