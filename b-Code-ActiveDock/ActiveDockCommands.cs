@@ -7,11 +7,14 @@ public sealed class ActiveDockCommands
     /// <summary>返回 OHS 项目入口的当前注册状态。</summary>
     [ModuleCommand(Readonly = true)]
     public ExplorerEntryStatus explorer()
-        => new(ExplorerNamespaceRegistration.IsRegistered(), ActiveDockState.WorktreeRoot);
+        => new(ExplorerNamespaceRegistration.IsRegistered(), DockShortcutFolder.Path);
 
     /// <summary>把当前工作树注册到资源管理器左侧。</summary>
     public string explorerRegister()
-        => ExplorerNamespaceRegistration.RegisterOrUpdate(ActiveDockState.WorktreeRoot).Message;
+    {
+        DockShortcutFolder.Synchronize(ActiveDockState.Projects);
+        return ExplorerNamespaceRegistration.RegisterOrUpdate(DockShortcutFolder.Path).Message;
+    }
 
     /// <summary>移除 ActiveDock 注册的资源管理器入口。</summary>
     public string explorerRemove()

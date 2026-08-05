@@ -4,6 +4,15 @@
         <name>ActiveDock</name>
     </assembly>
     <members>
+        <member name="M:ActiveDock.ActiveDockCommands.explorer">
+            <summary>返回 OHS 项目入口的当前注册状态。</summary>
+        </member>
+        <member name="M:ActiveDock.ActiveDockCommands.explorerRegister">
+            <summary>把当前工作树注册到资源管理器左侧。</summary>
+        </member>
+        <member name="M:ActiveDock.ActiveDockCommands.explorerRemove">
+            <summary>移除 ActiveDock 注册的资源管理器入口。</summary>
+        </member>
         <member name="M:ActiveDock.ActiveDockCommands.list">
             <summary>列出活动项目。</summary>
         </member>
@@ -204,6 +213,14 @@
         <member name="M:ActiveDock.DockPolicy.Normalized">
             <summary>把越界或互相矛盾的取值收敛到合法范围。</summary>
         </member>
+        <member name="T:ActiveDock.DockShortcutFolder">
+            <summary>Keeps the Explorer-facing shortcut folder identical to the current dock list.</summary>
+        </member>
+        <member name="M:ActiveDock.DockShortcutFolder.Synchronize(System.Collections.Generic.IReadOnlyList{ActiveDock.DockProject},System.String)">
+            <summary>
+            Reconciles only .lnk files owned by the dock. Non-shortcut files are intentionally untouched.
+            </summary>
+        </member>
         <member name="T:ActiveDock.DockTheme">
             <summary>
             活动坞配色。2.0.0 由浅底改为深色半透明底，前景色整体反相。
@@ -273,6 +290,9 @@
         </member>
         <member name="M:ActiveDock.DockWeight.GlowBlur(System.Double,System.Double)">
             <summary>白色光圈的模糊半径。</summary>
+        </member>
+        <member name="T:ActiveDock.ExplorerNamespaceRegistration">
+            <summary>Registers the dock-generated shortcut folder in the current user's Explorer namespace.</summary>
         </member>
         <member name="T:ActiveDock.OhsLauncher">
             <summary>

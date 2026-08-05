@@ -5,6 +5,8 @@ using AppShell.Core.Modules;
 using BaseVariable;
 
 var assembly = typeof(ActiveDockCommands).Assembly;
+var previousExplorerRegistrationSetting = Environment.GetEnvironmentVariable("ACTIVEDOCK_DISABLE_EXPLORER_REGISTRATION");
+Environment.SetEnvironmentVariable("ACTIVEDOCK_DISABLE_EXPLORER_REGISTRATION", "1");
 
 var moduleInfos = assembly.GetTypes()
     .Where(type => type.IsPublic && !type.IsAbstract && typeof(ModuleInfoBase).IsAssignableFrom(type))
@@ -13,7 +15,7 @@ var moduleInfos = assembly.GetTypes()
 
 Equal(1, moduleInfos.Count, "独立程序集必须只有一个模块入口");
 Equal("dock", moduleInfos[0].ModuleName, "命令域必须沿用 dock");
-Equal("2.1.0", moduleInfos[0].Version, "模块版本");
+Equal("2.2.1", moduleInfos[0].Version, "模块版本");
 Equal(typeof(ActiveDockCommands), moduleInfos[0].MainClassType, "命令入口类型");
 
 Equal(
@@ -35,14 +37,21 @@ True(
     "必须实现 IShellUiAware 才能被宿主注入并据此判定归属");
 var registrar = new RecordingRegistrar();
 var shellHosted = new ActiveDockUiModule();
-((IShellUiAware)shellHosted).ShellUi = registrar;
-shellHosted.CreateUi();
-Equal(1, registrar.Registered.Count, "桌面侧必须注册且只注册一次管理页面");
-Equal("dock.manager", registrar.Registered[0], "桌面侧注册的必须是管理页面");
-shellHosted.CreateUi();
-Equal(1, registrar.Registered.Count, "重复 CreateUi 不得重复注册");
-shellHosted.DestroyUi();
-Equal(1, registrar.Disposed, "DestroyUi 必须释放管理页面注册句柄");
+try
+{
+    ((IShellUiAware)shellHosted).ShellUi = registrar;
+    shellHosted.CreateUi();
+    Equal(1, registrar.Registered.Count, "桌面侧必须注册且只注册一次管理页面");
+    Equal("dock.manager", registrar.Registered[0], "桌面侧注册的必须是管理页面");
+    shellHosted.CreateUi();
+    Equal(1, registrar.Registered.Count, "重复 CreateUi 不得重复注册");
+    shellHosted.DestroyUi();
+    Equal(1, registrar.Disposed, "DestroyUi 必须释放管理页面注册句柄");
+}
+finally
+{
+    Environment.SetEnvironmentVariable("ACTIVEDOCK_DISABLE_EXPLORER_REGISTRATION", previousExplorerRegistrationSetting);
+}
 
 var cache = Path.Combine(Path.GetTempPath(), "activedock-icons-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(cache);
@@ -114,6 +123,28 @@ Equal("OHS 项目", ExplorerNamespaceRegistration.DisplayName, "Explorer 入口�
 True(Guid.TryParse(ExplorerNamespaceRegistration.EntryClsid, out _), "Explorer 入口 CLSID 必须有效");
 True(!ExplorerNamespaceRegistration.RegisterOrUpdate(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"))).Success,
     "不存在的工作树不得写入 Explorer 注册项");
+
+var shortcuts = Path.Combine(Path.GetTempPath(), "activedock-shortcuts-" + Guid.NewGuid().ToString("N"));
+var projectRoot = Path.Combine(shortcuts, "source");
+var firstProject = Path.Combine(projectRoot, "2026-001-First");
+var secondProject = Path.Combine(projectRoot, "2026-002-Second");
+Directory.CreateDirectory(firstProject);
+Directory.CreateDirectory(secondProject);
+try
+{
+    var first = new DockProject("2026-001-First", "2026-001", firstProject, now, false);
+    var second = new DockProject("2026-002-Second", "2026-002", secondProject, now, false);
+    var initial = DockShortcutFolder.Synchronize([first, second], shortcuts);
+    Equal(2, initial.Written, "活动坞项目必须各生成一条快捷方式");
+    Equal(2, Directory.EnumerateFiles(shortcuts, "*.lnk").Count(), "快捷方式文件数与活动坞项目一致");
+    var reconciled = DockShortcutFolder.Synchronize([second], shortcuts);
+    Equal(1, reconciled.Removed, "退出活动坞的项目快捷方式必须移除");
+    Equal(1, Directory.EnumerateFiles(shortcuts, "*.lnk").Count(), "同步后快捷方式必须与活动坞一致");
+}
+finally
+{
+    Directory.Delete(shortcuts, recursive: true);
+}
 
 Console.WriteLine(
     "ActiveDock.Smoke: PASS (1 module, 15 commands, 1 UI module, shell-hosted manager, Explorer entry, bottom-right layout, weight+glow)");

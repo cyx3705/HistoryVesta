@@ -117,6 +117,7 @@ internal static partial class ActiveDockState
         }
 
         Changed?.Invoke();
+        _ = RefreshAsync();
     }
 
     /// <summary>记一次通过活动坞的打开：先衰减到当前时刻，再累加一次点击。</summary>
@@ -149,6 +150,7 @@ internal static partial class ActiveDockState
         }
 
         Changed?.Invoke();
+        _ = RefreshAsync();
     }
 
     /// <summary>清除使用记录；name 为空表示全部。</summary>
@@ -164,6 +166,7 @@ internal static partial class ActiveDockState
         }
 
         Changed?.Invoke();
+        _ = RefreshAsync();
     }
 
     public static void SetPolicy(int? minItems, int? maxItems, double? halfLifeDays)
@@ -179,6 +182,7 @@ internal static partial class ActiveDockState
         }
 
         Changed?.Invoke();
+        _ = RefreshAsync();
     }
 
     public static async Task<IReadOnlyList<DockProject>> RefreshAsync()
@@ -186,6 +190,11 @@ internal static partial class ActiveDockState
         var projects = await Task.Run(ScanProjects).ConfigureAwait(false);
         lock (Gate)
             _projects = projects;
+        if (!DockShortcutFolder.IsExplorerRegistrationDisabled)
+        {
+            DockShortcutFolder.Synchronize(projects);
+            _ = ExplorerNamespaceRegistration.RegisterOrUpdate(DockShortcutFolder.Path);
+        }
         Changed?.Invoke();
         return projects;
     }
@@ -214,6 +223,8 @@ internal static partial class ActiveDockState
                 .ToList();
         }
 
+        if (!DockShortcutFolder.IsExplorerRegistrationDisabled)
+            DockShortcutFolder.Synchronize(Projects);
         Changed?.Invoke();
         return true;
     }

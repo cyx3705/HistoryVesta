@@ -6,7 +6,7 @@ using System.Text.Json;
 
 namespace ActiveDock;
 
-/// <summary>Registers the OHS project root in the current user's Explorer namespace.</summary>
+/// <summary>Registers the dock-generated shortcut folder in the current user's Explorer namespace.</summary>
 public static class ExplorerNamespaceRegistration
 {
     public const string DisplayName = "OHS \u9879\u76ee";
@@ -14,6 +14,8 @@ public static class ExplorerNamespaceRegistration
 
     private const string FolderShortcutClsid = "{0E5AAE11-A475-4c5b-AB00-C66DE400274E}";
     private const string ClassesClsid = @"Software\Classes\CLSID\";
+    private const string MyComputerNamespace =
+        @"Software\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\";
     private const string ManagedValue = "ActiveDock.Managed";
     private const int ShellFolderAttributes = unchecked((int)0xF080004D);
     private const uint ShcneAssocChanged = 0x08000000;
@@ -77,6 +79,9 @@ public static class ExplorerNamespaceRegistration
             using (var shellFolder = root.CreateSubKey("ShellFolder"))
                 shellFolder?.SetValue("Attributes", ShellFolderAttributes, RegistryValueKind.DWord);
 
+            using var namespaceKey = Registry.CurrentUser.CreateSubKey(MyComputerNamespace + EntryClsid);
+            namespaceKey?.SetValue(null, DisplayName, RegistryValueKind.String);
+
             RefreshExplorerNamespace();
             return RegistrationResult.Succeeded(fullPath);
         }
@@ -91,6 +96,7 @@ public static class ExplorerNamespaceRegistration
         try
         {
             Registry.CurrentUser.DeleteSubKeyTree(ClassesClsid + EntryClsid, throwOnMissingSubKey: false);
+            Registry.CurrentUser.DeleteSubKeyTree(MyComputerNamespace + EntryClsid, throwOnMissingSubKey: false);
             RestorePreviousRegistration();
             RefreshExplorerNamespace();
             return RegistrationResult.Succeeded(null);
@@ -135,6 +141,9 @@ public static class ExplorerNamespaceRegistration
                 instance?.SetValue("CLSID", FolderShortcutClsid, RegistryValueKind.String);
                 using var props = instance?.CreateSubKey("InitPropertyBag");
                 props?.SetValue("TargetFolderPath", previousPath, RegistryValueKind.String);
+
+                using var namespaceKey = Registry.CurrentUser.CreateSubKey(MyComputerNamespace + EntryClsid);
+                namespaceKey?.SetValue(null, backup.Name ?? DisplayName, RegistryValueKind.String);
             }
         }
         finally
