@@ -11,6 +11,7 @@
 | V4-007 | 所有协议适配统一调用 `ICommandDispatcher`，不再从 public 方法自动生成命令 | 已实现 |
 | V4-008 | 测试能力和注册适配外置为根级 `b-Code-TestModule`，生产内核不内置示例模块 | 已实现 |
 | V4-009 | OHS、AppShell 等上层模块的实验性源码统一暂存于根级 `Module/`；不进入 V4 发布包 | 已实现 |
+| V4-010 | AppShell V4 迁移为单项目桌面 Shell 前端，删除命令总线、MyAPI 后端引用和前后端适配层 | 已实现 |
 
 ## 未决事项
 

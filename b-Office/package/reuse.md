@@ -12,6 +12,7 @@
 - `MyAPI.Host` 是协议和 DLL 加载适配器，不是业务能力容器；上层也可以完全绕过它，直接使用 `MyAPI.Runtime`。
 - 正式消费前必须完成权限、审计、版本和错误合同评审。
 - `Module/` 仅供 OHS、AppShell 等上层模块实验性建构；不能把其中代码当作稳定包或正式消费合同。
+- AppShell V4 目前只提供桌面 Shell 前端实验，不提供 MyAPI 命令总线、后端服务或前后端适配；页面通过 `DesktopPageDefinition` 注册到宿主。
 
 ## 与 3.0 的隔离
 

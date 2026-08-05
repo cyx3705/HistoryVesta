@@ -1,0 +1,23 @@
+<Application x:Class="OneHistory.AppShell.Desktop.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnMainWindowClose">
+    <Application.Resources>
+        <SolidColorBrush x:Key="ShellBlue" Color="#1E4D78" />
+        <SolidColorBrush x:Key="ShellBlueDark" Color="#163A5C" />
+        <SolidColorBrush x:Key="ShellBorder" Color="#D5DCE3" />
+        <SolidColorBrush x:Key="ShellSurface" Color="#F5F7FA" />
+        <SolidColorBrush x:Key="ShellText" Color="#1D2A36" />
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="Foreground" Value="{StaticResource ShellText}" />
+        </Style>
+        <Style TargetType="{x:Type ListBoxItem}">
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+    </Application.Resources>
+</Application>

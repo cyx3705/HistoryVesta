@@ -32,6 +32,8 @@
     "setup": "dotnet restore .\\b-Code-MyAPI\\MyAPI.sln --locked-mode",
     "build": "dotnet build .\\b-Code-MyAPI\\MyAPI.sln -c Release --no-restore",
     "test": "dotnet run --project .\\b-Code-MyAPI\\tests\\MyAPI.ContractTests\\MyAPI.ContractTests.csproj -c Release --no-build",
+    "moduleAppShellBuild": "dotnet build .\\Module\\AppShell\\AppShell.Desktop.csproj -c Release",
+    "moduleAppShellRun": "dotnet run --project .\\Module\\AppShell\\AppShell.Desktop.csproj -c Debug",
     "verify": "git diff --check",
     "run": "dotnet run --project .\\b-Code-MyAPI\\src\\MyAPI.Host\\MyAPI.Host.csproj -- --EnableHttp true",
     "package": null
