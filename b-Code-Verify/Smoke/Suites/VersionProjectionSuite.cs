@@ -248,10 +248,10 @@ internal static class VersionProjectionSuite
 
         var officeRoot = Path.Combine(ParentDir, "b-Office");
         var currentRoot = Path.Combine(officeRoot, "current");
-        var packageRoot = Path.Combine(officeRoot, "package");
+        var packageRoot = Path.Combine(officeRoot, "OneHistoryStudio");
         var historyRoot = Path.Combine(officeRoot, "history");
         True(Directory.Exists(currentRoot) && Directory.Exists(packageRoot) && Directory.Exists(historyRoot),
-            "documentation follows the current/package/history contract");
+            "documentation follows the current/OneHistoryStudio/history contract");
         True(!Directory.Exists(Path.Combine(officeRoot, "meta"))
              && !Directory.Exists(Path.Combine(officeRoot, "versions"))
              && !Directory.Exists(Path.Combine(officeRoot, "evidence")),
@@ -265,7 +265,7 @@ internal static class VersionProjectionSuite
         True(currentDocuments.SetEquals(["使用说明.md", "项目库与备份.md", "发布与升级.md"]),
             "current contains the reviewed OHS-owned contracts");
         True(packageDocuments.SetEquals(["命令手册.md", "模块开发手册.md", "MCP接入与安全.md"]),
-            "package contains the reviewed consumer contracts");
+            "OneHistoryStudio contains the reviewed consumer contracts");
         var documentationCenter = Path.Combine(officeRoot, "文档中心.md");
         True(File.Exists(documentationCenter), "b-Office has a root documentation center");
         Equal(0, Directory.EnumerateFiles(officeRoot, "README.md", SearchOption.AllDirectories).Count(),
