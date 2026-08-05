@@ -72,6 +72,8 @@ internal static partial class ActiveDockState
         }
     }
 
+    internal static string WorktreeRoot => ReadWorktreeRoot();
+
     /// <summary>
     /// 监视 state.json。活动坞在服务进程、管理页面在桌面 Shell 进程，两者不共享内存，
     /// 靠这个文件完成跨进程同步：任一侧写入后，另一侧重载偏好并刷新界面。

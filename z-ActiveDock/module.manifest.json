@@ -1,7 +1,7 @@
 ﻿{
   "name": "ActiveDock",
-  "version": "2.0.1",
-  "description": "桌面右下角活动项目坞，由 OHS 服务宿主承载",
+  "version": "2.1.0",
+  "description": "活动项目坞与资源管理器 OHS 项目入口，由 OHS 服务宿主承载",
   "artifact": "z-ActiveDock/ActiveDock.dll",
   "docs": "z-ActiveDock/ActiveDock.xml",
   "mcpExposure": "standard",

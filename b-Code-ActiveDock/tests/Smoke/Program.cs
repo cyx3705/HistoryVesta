@@ -13,15 +13,15 @@ var moduleInfos = assembly.GetTypes()
 
 Equal(1, moduleInfos.Count, "独立程序集必须只有一个模块入口");
 Equal("dock", moduleInfos[0].ModuleName, "命令域必须沿用 dock");
-Equal("2.0.1", moduleInfos[0].Version, "模块版本");
+Equal("2.1.0", moduleInfos[0].Version, "模块版本");
 Equal(typeof(ActiveDockCommands), moduleInfos[0].MainClassType, "命令入口类型");
 
 Equal(
-    12,
+    15,
     moduleInfos[0].MainClassType!
         .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
         .Count(method => !method.IsSpecialName),
-    "dock 指令数(2.0.0 新增 open/usage/forget/exclude/include/policy)");
+    "dock 指令数(2.1.0 新增 Explorer 入口注册状态、注册和移除)");
 
 var uiTypes = assembly.GetTypes()
     .Where(type => type.IsPublic && !type.IsAbstract && typeof(IUiModule).IsAssignableFrom(type))
@@ -110,9 +110,13 @@ True(policy.MinItems >= DockPolicy.LowestItems, "最少显示数下限");
 True(policy.MaxItems <= DockPolicy.HighestItems, "最多显示数上限");
 True(policy.HalfLifeDays >= DockPolicy.ShortestHalfLifeDays, "半衰期下限");
 Equal("dock.manager", DockManagerView.CreateDescriptor().Id, "管理页面窗口 ID");
+Equal("OHS 项目", ExplorerNamespaceRegistration.DisplayName, "Explorer 入口名称");
+True(Guid.TryParse(ExplorerNamespaceRegistration.EntryClsid, out _), "Explorer 入口 CLSID 必须有效");
+True(!ExplorerNamespaceRegistration.RegisterOrUpdate(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"))).Success,
+    "不存在的工作树不得写入 Explorer 注册项");
 
 Console.WriteLine(
-    "ActiveDock.Smoke: PASS (1 module, 12 commands, 1 UI module, shell-hosted manager, bottom-right layout, weight+glow)");
+    "ActiveDock.Smoke: PASS (1 module, 15 commands, 1 UI module, shell-hosted manager, Explorer entry, bottom-right layout, weight+glow)");
 
 static void True(bool condition, string message)
 {

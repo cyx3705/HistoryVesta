@@ -5,8 +5,8 @@ namespace ActiveDock;
 public sealed class ModuleInfo : ModuleInfoBase
 {
     public override string ModuleName => "dock";
-    public override string Description => "桌面右下角活动项目坞";
+    public override string Description => "活动项目坞与资源管理器 OHS 项目入口";
     public override string Author => "OneHistory";
-    public override string Version => "2.0.1";
+    public override string Version => "2.1.0";
     public override Type? MainClassType => typeof(ActiveDockCommands);
 }

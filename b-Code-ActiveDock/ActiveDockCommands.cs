@@ -4,6 +4,19 @@ namespace ActiveDock;
 
 public sealed class ActiveDockCommands
 {
+    /// <summary>返回 OHS 项目入口的当前注册状态。</summary>
+    [ModuleCommand(Readonly = true)]
+    public ExplorerEntryStatus explorer()
+        => new(ExplorerNamespaceRegistration.IsRegistered(), ActiveDockState.WorktreeRoot);
+
+    /// <summary>把当前工作树注册到资源管理器左侧。</summary>
+    public string explorerRegister()
+        => ExplorerNamespaceRegistration.RegisterOrUpdate(ActiveDockState.WorktreeRoot).Message;
+
+    /// <summary>移除 ActiveDock 注册的资源管理器入口。</summary>
+    public string explorerRemove()
+        => ExplorerNamespaceRegistration.RemoveRegistration().Message;
+
     /// <summary>列出活动项目。</summary>
     [ModuleCommand(Readonly = true)]
     public IReadOnlyList<DockProject> list() => ActiveDockState.Projects;
@@ -90,3 +103,5 @@ public sealed record DockUsageRow(
     DateTimeOffset? LastOpened,
     bool Pinned,
     bool Excluded);
+
+public sealed record ExplorerEntryStatus(bool Registered, string Path);

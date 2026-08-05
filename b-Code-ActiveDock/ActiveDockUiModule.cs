@@ -30,6 +30,7 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
     public void CreateUi()
     {
         ActiveDockState.StartWatching();
+        _ = ExplorerNamespaceRegistration.RegisterOrUpdate(ActiveDockState.WorktreeRoot);
 
         // 桌面 Shell 侧承载扩展坞管理页面，服务宿主侧承载活动坞本体。
         if (_shellUi != null)
