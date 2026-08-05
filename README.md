@@ -41,8 +41,8 @@ dotnet build .\OHS.sln -c Debug --no-restore
 
 ### 现行开发基线
 
-- 只以当前源码、运行时行为、`b-Office/current/` 和 `b-Office/package/` 为现行开发基线。
-- `b-Office/package/` 是模块及其他集成项目可直接消费的稳定文档合同。
+- 只以当前源码、运行时行为、`b-Office/current/` 和 `b-Office/OneHistoryStudio/` 为现行开发基线。
+- `b-Office/OneHistoryStudio/` 是模块及其他集成项目可直接消费的稳定文档合同。
 - `b-Office/history/` 中的版本文档是留存记录，不是需求、设计或实现依据。
 - AppShell 由平级 `2026-023-AppShell` 独立维护；本仓只消费冻结的 `OneHistory.AppShell.* 3.0.3` 包，
   不得复制框架源码或权威文档。
@@ -57,7 +57,7 @@ dotnet build .\OHS.sln -c Debug --no-restore
   都必须同时添加 `-g '!b-Office/history/**'`；不得先执行宽泛检索、再从输出中过滤历史文档。
 - 只有用户明确要求追溯某个版本、核对某份 V 文档，或明确要求继续维护指定版本文档时，才可读取
   直接相关的指定文件；读取范围应保持最小。
-- 历史文档与源码、运行时或现行文档冲突时，以源码、运行时、`current/` 和 `package/` 为准，不得用旧文档
+- 历史文档与源码、运行时或现行文档冲突时，以源码、运行时、`current/` 和 `OneHistoryStudio/` 为准，不得用旧文档
   覆盖现行事实。
-- 版本交付时，把仍然有效的产品行为和运维规则融入 `current/`，跨项目消费合同融入 `package/`。
+- 版本交付时，把仍然有效的产品行为和运维规则融入 `current/`，跨项目消费合同融入 `OneHistoryStudio/`。
   V 文档原文可以留存，但不得成为后续任务的前置阅读材料。
