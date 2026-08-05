@@ -12,6 +12,7 @@ MyAPI V4 是 OneHistory 的后端模块运行时探索：负责模块发现、�
 | --- | --- |
 | exploration | 从 Lite 原型演进 V4 后端内核，不承诺稳定 API |
 | 已完成 | 旧 Core 删除；命令合同、运行时和宿主完成拆分；测试模块外置为独立 b-Code |
+| 已完成 | AppShell V4 页面宿主接入 AvalonDock，支持活动页面、拖出浮动、拖回停靠和页面生命周期 |
 | 当前基线 | `b-Code-MyAPI/MyAPI.sln`，目标框架 net8.0 |
 | 已验证 | 8 项契约测试、Release 构建、真实 DLL 加载和 HTTP 命令调用 |
 | 尚未承诺 | 权限模型、审计存储、跨进程协议、正式发布包 |

@@ -7,6 +7,7 @@
 - `MyAPI.Host`：可选 HTTP/MCP 适配和 DLL 模块加载；宿主默认空闲，HTTP 默认只绑定回环地址。
 - `b-Code-TestModule/MyAPI.TestCapability`：完全独立的测试能力程序集，可脱离 MyAPI 直接消费。
 - `b-Code-TestModule/MyAPI.TestModule`：把测试能力显式注册到 MyAPI 的外置薄适配层；只用于契约和冒烟验证，不属于生产内核。
+- `Module/AppShell`：实验性的纯 WPF 页面宿主；使用 AvalonDock 4.72.1 提供页面激活、浮动、停靠、关闭、重开与注销，不依赖 MyAPI 后端。
 
 ## 命令边界
 

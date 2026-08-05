@@ -9,7 +9,8 @@ public sealed record DesktopPageDefinition
         string id,
         string title,
         Func<FrameworkElement> createView,
-        string owner = "AppShell")
+        string owner = "AppShell",
+        bool canClose = true)
     {
         if (string.IsNullOrWhiteSpace(id))
             throw new ArgumentException("Page id is required.", nameof(id));
@@ -21,13 +22,24 @@ public sealed record DesktopPageDefinition
         Title = title;
         CreateView = createView;
         Owner = string.IsNullOrWhiteSpace(owner) ? "AppShell" : owner;
+        CanClose = canClose;
     }
 
     public string Id { get; }
     public string Title { get; }
     public string Owner { get; }
+    public bool CanClose { get; }
     public Func<FrameworkElement> CreateView { get; }
 }
+
+public sealed record DesktopPageInfo(
+    string Id,
+    string Title,
+    string Owner,
+    bool IsOpen,
+    bool IsActive,
+    bool IsFloating,
+    bool CanClose);
 
 public sealed class DesktopPageCatalog
 {

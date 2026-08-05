@@ -7,9 +7,10 @@
 AppShell V4 的内核只保留桌面 Shell 前端：
 
 - WPF 主窗口和桌面视觉基底；
-- 页面目录、页面选择和页面承载；
-- 页面拖入主工作区的前端交互；
-- 给上层页面模块使用的 `DesktopPageDefinition` 和 `RegisterPage` 入口。
+- 页面目录、活动页面选择和 AvalonDock 文档承载；
+- 页面标签拖出浮动、拖回停靠、关闭、重开和注销生命周期；
+- 给上层页面模块使用的 `DesktopPageDefinition`、`RegisterPage`、`ActivatePage`、
+  `FloatPage`、`DockPage`、`ClosePage`、`UnregisterPage` 与 `ListPages` 入口。
 
 AppShell V4 不包含也不引用：
 
@@ -24,6 +25,7 @@ OHS 页面和其他前端模块以页面定义接入 Shell。后端能力属于�
 
 ```powershell
 dotnet build .\Module\AppShell\AppShell.Desktop.csproj -c Release
+dotnet run --project .\Module\AppShell.Tests\AppShell.ContractTests.csproj -c Release
 dotnet run --project .\Module\AppShell\AppShell.Desktop.csproj -c Debug
 ```
 

@@ -33,11 +33,15 @@
     "build": "dotnet build .\\b-Code-MyAPI\\MyAPI.sln -c Release --no-restore",
     "test": "dotnet run --project .\\b-Code-MyAPI\\tests\\MyAPI.ContractTests\\MyAPI.ContractTests.csproj -c Release --no-build",
     "moduleAppShellBuild": "dotnet build .\\Module\\AppShell\\AppShell.Desktop.csproj -c Release",
+    "moduleAppShellTest": "dotnet run --project .\\Module\\AppShell.Tests\\AppShell.ContractTests.csproj -c Release",
     "moduleAppShellRun": "dotnet run --project .\\Module\\AppShell\\AppShell.Desktop.csproj -c Debug",
     "verify": "git diff --check",
     "run": "dotnet run --project .\\b-Code-MyAPI\\src\\MyAPI.Host\\MyAPI.Host.csproj -- --EnableHttp true",
     "package": null
   },
-  "externalDependencies": [{ "name": ".NET SDK", "version": "8.0 or newer", "purpose": "构建现有 Lite 原型" }],
+  "externalDependencies": [
+    { "name": ".NET SDK", "version": "8.0 or newer", "purpose": "构建现有 Lite 原型与 WPF 模块实验" },
+    { "name": "Dirkster.AvalonDock", "version": "4.72.1", "purpose": "AppShell V4 页面活动、浮动与停靠" }
+  ],
   "contextExclusions": ["b-Office/history/**", "Unused/**", "**/bin/**", "**/obj/**", "**/.vs/**", "artifacts/**"]
 }
