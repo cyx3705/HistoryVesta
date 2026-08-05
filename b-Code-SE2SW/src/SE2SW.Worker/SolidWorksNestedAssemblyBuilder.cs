@@ -15,6 +15,9 @@ internal static class SolidWorksNestedAssemblyBuilder
     private const string ProgId = "SldWorks.Application";
     private const string ProcessName = "SLDWORKS";
     private const int SaveAsCurrentVersion = 0;
+
+    /// <summary>swFileLoadError_e.swFileWithSameTitleAlreadyOpen。</summary>
+    private const int SwFileWithSameTitleAlreadyOpen = 65536;
     private const int SaveAsSilent = 1;
 
     public static AssemblyOutcome Build(
@@ -214,9 +217,16 @@ internal static class SolidWorksNestedAssemblyBuilder
                 var document = interop.OpenComponentDocument(componentPath, out var errors, out var warnings);
                 if (document is null || errors != 0)
                 {
+                    // errors=65536 是 swFileWithSameTitleAlreadyOpen。裸错误码没法照做，
+                    // 把占用标题的那个文档指出来——现场就是用户手工识别留下的未保存同名零件。
+                    var conflict = (errors & SwFileWithSameTitleAlreadyOpen) != 0
+                        ? interop.DescribeTitleConflict(componentPath)
+                        : null;
                     throw new ClassifiedConversionException(
                         ConversionErrorClass.ComponentInsertFailed,
-                        $"组件文档打开失败：{componentPath}，errors={errors}, warnings={warnings}");
+                        conflict is null
+                            ? $"组件文档打开失败：{componentPath}，errors={errors}, warnings={warnings}"
+                            : $"组件文档打开失败：{componentPath}。{conflict}");
                 }
 
                 openedDocuments.Add(document);
@@ -307,15 +317,10 @@ internal static class SolidWorksNestedAssemblyBuilder
             interop.CloseDocument(interop.GetTitle(assemblyModel));
             closed = true;
             _ = FileProbe.WaitForStableNonEmptyFile(temporaryPath, cancellationToken);
-            if (File.Exists(node.OutputPath))
-            {
-                // 走到这里说明复用判定放行过它却又要重写，属于逻辑错误，宁可失败也不覆盖用户文件。
-                throw new ClassifiedConversionException(
-                    ConversionErrorClass.OutputExists,
-                    $"装配输出已经存在：{node.OutputPath}");
-            }
-
-            TemporaryOutput.Commit(temporaryPath, node.OutputPath);
+            // V3.6.6：走到这里说明复用判定判了"重做"（产物过期、需要重建配合、或本来就没有）。
+            // 既然已经决定重做，就必须允许覆盖——否则重做永远落不了盘。
+            // 复用判定放行的节点根本不会进到 BuildNode，不存在"该复用却被覆盖"的情况。
+            TemporaryOutput.Commit(temporaryPath, node.OutputPath, overwrite: true);
             temporaryPath = null;
             return new NodeResult(components.Count, fixedCount, maxOrigin, maxRotation, mateOutcome);
         }

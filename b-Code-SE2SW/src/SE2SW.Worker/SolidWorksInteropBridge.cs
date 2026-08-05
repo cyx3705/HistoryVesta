@@ -208,6 +208,46 @@ internal sealed class SolidWorksInteropBridge : IDisposable
         return string.Equals(Path.GetFullPath(wanted), Path.GetFullPath(openPath), StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// 解释标题占用：会话里已经开着一个同名文档，但它不是我们要的那个文件。
+    ///
+    /// 借用用户会话时这很常见——用户手工导入过一个同名零件（多半还没保存），
+    /// SolidWorks 就会用 <c>swFileWithSameTitleAlreadyOpen</c> 拒绝打开真正的组件。
+    /// 返回一句能直接照做的话；判断不出占用者时返回 null，由调用方沿用原始错误码。
+    /// </summary>
+    public string? DescribeTitleConflict(string path)
+    {
+        var wantedTitle = Path.GetFileName(path);
+        object? document = null;
+        try
+        {
+            document = Invoke(_applicationInterface, _application, "GetFirstDocument");
+            while (document is not null)
+            {
+                var title = Convert.ToString(Invoke(_modelInterface, document, "GetTitle")) ?? string.Empty;
+                if (title.Equals(wantedTitle, StringComparison.OrdinalIgnoreCase)
+                    || Path.GetFileNameWithoutExtension(title).Equals(
+                        Path.GetFileNameWithoutExtension(wantedTitle), StringComparison.OrdinalIgnoreCase))
+                {
+                    var openPath = Convert.ToString(Invoke(_modelInterface, document, "GetPathName")) ?? string.Empty;
+                    return string.IsNullOrWhiteSpace(openPath)
+                        ? $"SolidWorks 里已经开着一个未保存的同名文档「{title}」，占用了标题。"
+                          + "请在 SolidWorks 中关闭它（无需保存）后重跑；不关闭就无法插入真正的组件。"
+                        : $"SolidWorks 里已经开着同名但不同文件的文档「{title}」（{openPath}）。"
+                          + "请先关闭它再重跑——同名不同路径绝不复用，否则会把别人的几何插进装配。";
+                }
+
+                document = Invoke(_modelInterface, document, "GetNext");
+            }
+        }
+        catch
+        {
+            // 诊断失败不能盖掉真正的错误，交回 null 让调用方用原始错误码。
+        }
+
+        return null;
+    }
+
     /// <summary>按绝对路径找一个已经打开的文档。找不到返回 null。</summary>
     public object? FindOpenDocument(string path)
     {

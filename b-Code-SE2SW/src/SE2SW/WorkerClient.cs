@@ -8,6 +8,19 @@ namespace SE2SW;
 public sealed class WorkerClient
 {
     private static readonly TimeSpan StageInactivityTimeout = TimeSpan.FromSeconds(180);
+
+    /// <summary>
+    /// 装配构建的无进度预算。
+    ///
+    /// 装配阶段每个节点才报一条事件，而单个节点要插入组件、逐个设变换、
+    /// 重建配合、再存盘——25 个组件的节点安静超过 180 秒是常态，不是卡死。
+    /// 现场事故：按零件的 180 秒预算去卡装配，装配管线被反复误杀。
+    /// </summary>
+    private static readonly TimeSpan AssemblyInactivityTimeout = TimeSpan.FromMinutes(20);
+
+    /// <summary>零件按 180 秒卡；装配用自己的预算。看门狗防的是真死，不是慢。</summary>
+    private static TimeSpan InactivityBudgetFor(string verb)
+        => verb == WorkerProtocol.AssemblyBuildVerb ? AssemblyInactivityTimeout : StageInactivityTimeout;
     private static readonly JsonSerializerOptions JsonOptions = WorkerProtocol.CreateJsonOptions();
 
     public static string WorkerPath
@@ -122,11 +135,12 @@ public sealed class WorkerClient
             });
 
             var stderrTask = process.StandardError.ReadToEndAsync();
+            var inactivityBudget = InactivityBudgetFor(verb);
             var timedOut = false;
             while (true)
             {
                 var lineTask = process.StandardOutput.ReadLineAsync(CancellationToken.None).AsTask();
-                var timeoutTask = Task.Delay(StageInactivityTimeout);
+                var timeoutTask = Task.Delay(inactivityBudget);
                 var cancellationTask = Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
                 var completed = await Task.WhenAny(lineTask, timeoutTask, cancellationTask).ConfigureAwait(false);
                 if (completed != lineTask)
@@ -139,7 +153,7 @@ public sealed class WorkerClient
                             batchId,
                             null,
                             ConversionStage.Failed,
-                            $"CAD 阶段连续 {StageInactivityTimeout.TotalSeconds:0} 秒无进度，工作进程已终止。",
+                            $"CAD 阶段连续 {inactivityBudget.TotalSeconds:0} 秒无进度，工作进程已终止。",
                             IsError: true,
                             ErrorClass: ConversionErrorClass.Timeout));
                     }

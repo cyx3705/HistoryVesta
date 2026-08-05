@@ -19,7 +19,16 @@ internal static class AssemblyConverter
             request.FeatureRecognitionTimeoutSeconds,
             ContinueWhenRecognitionFails: true);
 
-        var reusePlan = AssemblyPartReusePlanner.Create(request.PartJobs, cancellationToken);
+        var reusePlan = AssemblyPartReusePlanner.Create(
+            request.PartJobs, cancellationToken, request.RecognizeFeatures);
+        foreach (var job in reusePlan.RegeneratedForRecognition)
+        {
+            reporter.Report(
+                job.Id,
+                ConversionStage.SolidWorksImport,
+                $"已开启特征识别，旧的 SLDPRT 不含特征也无法判别，将重新导入并识别：{job.SolidWorksPath}",
+                artifact: ConversionArtifactKind.SolidWorksPart);
+        }
         foreach (var job in reusePlan.ReusableSolidWorksParts)
         {
             reporter.Report(
@@ -46,7 +55,13 @@ internal static class AssemblyConverter
                 reporter,
                 cancellationToken);
         var importJobs = reusePlan.ImportFromExistingXt.Concat(exported).ToArray();
-        _ = SolidWorksPartImportIsolation.Import(partRequest, importJobs, reporter, cancellationToken);
+        // 为识别而重做的零件，其 SLDPRT 就在原地；不放开覆盖会被
+        // WorkerRequestValidator 以「输出已经存在」拦下。其余零件本来就没有 SLDPRT，
+        // 放开覆盖对它们没有任何影响。
+        var importRequest = reusePlan.RegeneratedForRecognition.Count > 0
+            ? partRequest with { Overwrite = true }
+            : partRequest;
+        _ = SolidWorksPartImportIsolation.Import(importRequest, importJobs, reporter, cancellationToken);
         var successfulJobs = request.PartJobs
             .Where(job => File.Exists(job.SolidWorksPath) && new FileInfo(job.SolidWorksPath).Length > 0)
             .ToDictionary(job => Path.GetFullPath(job.SourcePath), StringComparer.OrdinalIgnoreCase);

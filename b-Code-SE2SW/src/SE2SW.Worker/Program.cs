@@ -99,7 +99,8 @@ internal static class Program
                 [request.Job],
                 reporter,
                 cancellationToken,
-                resetFeatureWorksSession: request.RecognizeFeatures) == 0 ? 0 : 1;
+                resetFeatureWorksSession: request.RecognizeFeatures,
+                useDedicatedSession: request.UseDedicatedSession) == 0 ? 0 : 1;
         }
         catch (OperationCanceledException)
         {

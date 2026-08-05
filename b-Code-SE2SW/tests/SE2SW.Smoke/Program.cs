@@ -193,18 +193,62 @@ static void TestPartImportIsolationContracts(string root)
             TimeSpan.FromMinutes(3)),
         "三分钟无进度必须触发哑实体回退");
     True(SolidWorksPartImportIsolation.ShouldIsolate(batch), "启用 FeatureWorks 时必须逐零件隔离");
+    // FeatureWorks 崩在某个复杂零件上以后，继续附着同一个进程只会拿到同一具尸体——
+    // 现场实测跑到第 14 件崩溃、剩下 39 件全退哑实体。首次尝试仍借用现有会话
+    // （多半是人工激活过的那个，识别质量最好），重试才升级为专属进程。
+    True(
+        !SolidWorksPartImportIsolation.ShouldUseDedicatedSession(attempt: 1),
+        "首次尝试必须借用现有会话，人工激活过的会话识别质量最好");
+    True(
+        SolidWorksPartImportIsolation.ShouldUseDedicatedSession(attempt: 2),
+        "会话故障后的重试必须换专属进程，否则会拿到同一个已损坏的 FeatureWorks");
     True(
         !SolidWorksPartImportIsolation.ShouldIsolate(batch with { RecognizeFeatures = false }),
         "未启用 FeatureWorks 时必须保留原批量导入路径");
+    // V3.6.4：推翻 V3.6.2 的"附着已有会话时重载 FeatureWorks"。
+    // 实测（2026-08-05）自动识别依赖一份由人工识别建立的**进程内激活状态**，
+    // UnloadAddIn 会把它一起清掉，让用户手工激活过的会话整批退化成哑实体。
     True(
-        SolidWorksImporter.ShouldResetFeatureWorksSession(resetRequested: true, ownsFreshInstance: false),
-        "附着已有 SolidWorks 会话时必须重置 FeatureWorks 状态");
+        !SolidWorksImporter.ShouldResetFeatureWorksSession(resetRequested: true, ownsFreshInstance: false),
+        "附着已有 SolidWorks 会话时不得重载 FeatureWorks（会清掉人工激活状态）");
     True(
         !SolidWorksImporter.ShouldResetFeatureWorksSession(resetRequested: true, ownsFreshInstance: true),
         "全新 SolidWorks 会话不得在首个文档前卸载并重载 FeatureWorks");
     True(
         !SolidWorksImporter.ShouldResetFeatureWorksSession(resetRequested: false, ownsFreshInstance: false),
         "未请求隔离重置时不得改变 FeatureWorks 加载状态");
+    True(
+        SolidWorksPartImportIsolation.UnactivatedSessionThreshold >= 2,
+        "未激活判定阈值不得低于 2，单个零件确实可能本就没有可识别特征");
+    True(
+        SolidWorksPartImportIsolation.DescribeUnactivatedSession(2).Contains("手工", StringComparison.Ordinal),
+        "未激活诊断必须告诉用户去做什么，而不是只说失败");
+    True(
+        SolidWorksPartImportIsolation
+            .DescribeUnactivatedSession(0, reportedByAddIn: true)
+            .Contains("SetAdvancedOptions", StringComparison.Ordinal),
+        "由加载项直接判定时，诊断必须写明依据是 SetAdvancedOptions 而非零识别启发式");
+    // 语义守卫丢弃结果后识别数同样是 0，但那说明识别是好的，绝不能算作"未激活"证据。
+    var semanticReject = new FeatureOutcome(
+        0, false, 0, 0, [], true, 0, "结果仍包含未识别导入体，已降级。", SemanticMismatch: true);
+    True(
+        !semanticReject.SessionNotActivated,
+        "语义守卫驳回不得置 SessionNotActivated——它恰恰证明识别在工作");
+    // SetAdvancedOptions 返回 false 时，识别必然为 0（实测重试 12 次也翻不过来），
+    // 因此这条结果必须同时是"未激活"和"已降级为哑实体"。
+    var notActivated = FeatureRecognizer.NotActivated(new System.Diagnostics.Stopwatch(), []);
+    True(notActivated.SessionNotActivated, "未激活结果必须置 SessionNotActivated");
+    True(notActivated.DegradedToDumbSolid, "未激活时必须按哑实体降级");
+    Equal(0, notActivated.RecognizedFeatureCount, "未激活时不得报告任何识别数");
+    True(!notActivated.GeometryChanged, "未激活时识别没有跑，几何不得被标记为已改变");
+    // 归因猜测不得废掉 V2.3 那条已被真机验证的首件重试：猜错一次就连补救一起没了。
+    True(
+        SolidWorksImporter.ShouldRetryFirstRecognition(0, 0, true, notActivated),
+        "疑似未激活也必须保留首件重试——归因只是猜测，不能据此取消补救");
+    True(
+        SolidWorksImporter.ShouldRetryFirstRecognition(
+            0, 0, true, new FeatureOutcome(0, false, 0, 0, [], true, 0)),
+        "普通的首件零识别仍必须重试一次");
 
     File.WriteAllText(swPath, "existing");
     Throws<IOException>(() => WorkerRequestValidator.Validate(request));
@@ -615,6 +659,42 @@ static void TestAssemblyRetryReuse(string root)
     Equal(1, plan.ImportFromExistingXt.Count, "只有有效 XT 时必须跳过 SE 导出并进入 SW 导入");
     Equal("reuse-xt", plan.ImportFromExistingXt.Single().Id, "XT 复用任务分类错误");
     Equal(1, plan.NeedsExport.Count, "没有产物的零件必须走完整转换");
+    Equal(0, plan.RegeneratedForRecognition.Count, "未开启识别时不得把已有 SLDPRT 判为需重做");
+
+    // 现场事故（307 实例 / 54 零件）：`SW\` 目录里是上一轮的哑实体 SLDPRT，
+    // 复用判据不看识别开关，54 个零件全被跳过，用户开了识别却一个特征都没有。
+    // 已有 SLDPRT 是否含特征，不打开文档无从判断，因此开启识别时一律重做。
+    var recognizePlan = AssemblyPartReusePlanner.Create(
+        [reuseSw, reuseXt, fresh], CancellationToken.None, recognizeFeatures: true);
+    Equal(0, recognizePlan.ReusableSolidWorksParts.Count, "开启识别时不得复用已有 SLDPRT，否则识别永远不会发生");
+    Equal(1, recognizePlan.RegeneratedForRecognition.Count, "开启识别时已有 SLDPRT 必须记为需重做");
+    Equal("reuse-sw", recognizePlan.RegeneratedForRecognition.Single().Id, "需重做任务分类错误");
+    Equal(1, recognizePlan.ImportFromExistingXt.Count, "已有 XT 的零件仍只复用 XT，不重跑 Solid Edge 导出");
+    // reuse-sw 只有 SLDPRT、没有 XT：重做时无源可导入，必须回到完整导出。
+    Equal(2, recognizePlan.NeedsExport.Count, "重做的零件没有 XT 时必须回到完整导出");
+
+    // 同一零件既有 SLDPRT 又有 XT 时，重做只需重跑导入与识别，不必再过 Solid Edge。
+    var bothArtifacts = CreatePartJob("both", "Both");
+    File.WriteAllText(bothArtifacts.SolidWorksPath, "solidworks-part");
+    File.SetLastWriteTimeUtc(bothArtifacts.SolidWorksPath, sourceTime.AddMinutes(2));
+    WriteValidXt(bothArtifacts.XtPath);
+    File.SetLastWriteTimeUtc(bothArtifacts.XtPath, sourceTime.AddMinutes(2));
+    var bothPlan = AssemblyPartReusePlanner.Create(
+        [bothArtifacts], CancellationToken.None, recognizeFeatures: true);
+    Equal(1, bothPlan.RegeneratedForRecognition.Count, "已有 SLDPRT 必须记为需重做");
+    Equal(1, bothPlan.ImportFromExistingXt.Count, "重做时有 XT 就复用 XT，只重跑导入与识别");
+    Equal(0, bothPlan.NeedsExport.Count, "有可用 XT 时不得重跑 Solid Edge 导出");
+
+    // 落盘闸门：默认绝不覆盖用户产物；只有调用方明确要求重做时才放行。
+    // 现场事故：请求里 Overwrite=true，但 Commit 写死 false，53 个零件全部止于
+    // 「当文件已存在时，无法创建该文件」。
+    var commitTarget = Path.Combine(directory, "commit-target.SLDPRT");
+    File.WriteAllText(commitTarget, "old");
+    var commitTemp = TemporaryOutput.For(commitTarget);
+    File.WriteAllText(commitTemp, "new");
+    Throws<IOException>(() => TemporaryOutput.Commit(commitTemp, commitTarget));
+    TemporaryOutput.Commit(commitTemp, commitTarget, overwrite: true);
+    Equal("new", File.ReadAllText(commitTarget), "放行覆盖后必须真正落到最终路径");
 
     var identity = new[]
     {
@@ -1117,17 +1197,22 @@ static void TestAssemblyNodeReuse(string root)
     var future = DateTime.UtcNow.AddMinutes(5);
     File.SetLastWriteTimeUtc(output, future);
     True(AssemblyNodeReusePlanner.CanReuse(node), "产物比全部依赖都新时可以复用");
-    Throws<ClassifiedConversionException>(
-        () => AssemblyNodeReusePlanner.CanReuse(node, requireMateRebuild: true));
+
+    // V3.6.6：判不出"可安全复用"时一律**重做**，不再抛异常要求用户移走旧产物。
+    // 原策略防的是"输出目录混着来历不明的同名 SLDASM"，那是冒烟环境的假设；
+    // 真实用法是转换到空目录，代价却是 UI 默认开着重建配合时连重跑一次都做不到。
+    True(
+        !AssemblyNodeReusePlanner.CanReuse(node, requireMateRebuild: true),
+        "需要重建配合时必须重做，不能复用证明不了配合来历的旧产物");
 
     // .asm 没动，但里面的零件改了——V3.0 的"比源文件新"规则会漏掉这种情况。
     File.SetLastWriteTimeUtc(dependency, future.AddMinutes(1));
-    Throws<ClassifiedConversionException>(() => AssemblyNodeReusePlanner.CanReuse(node));
+    True(!AssemblyNodeReusePlanner.CanReuse(node), "产物早于任一依赖时必须重做");
 
     File.SetLastWriteTimeUtc(dependency, future.AddMinutes(-1));
     File.WriteAllText(output, string.Empty);
     File.SetLastWriteTimeUtc(output, future);
-    Throws<ClassifiedConversionException>(() => AssemblyNodeReusePlanner.CanReuse(node));
+    True(!AssemblyNodeReusePlanner.CanReuse(node), "空产物必须重做");
 }
 
 static void TestNestedAssemblyMetrics()

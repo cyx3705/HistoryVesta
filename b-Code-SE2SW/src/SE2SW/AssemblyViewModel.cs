@@ -31,7 +31,7 @@ public sealed class AssemblyViewModel : INotifyPropertyChanged, IDisposable
     private bool _isProbing;
     private bool _recognizeFeatures;
     private bool _fullyDefineSketches;
-    private bool _continueWhenPartFails;
+    private bool _continueWhenPartFails = true;
     // 装配关系是 .asm 的语义组成部分，而不是高级附加选项。解析到可翻译关系时，
     // ApplyProbeResult 会保持此默认开启；没有关系的装配则会自动关闭且禁用开关。
     private bool _rebuildMates;

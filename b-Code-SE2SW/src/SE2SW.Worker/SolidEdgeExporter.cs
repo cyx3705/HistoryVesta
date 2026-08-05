@@ -66,14 +66,20 @@ internal static class SolidEdgeExporter
                     artifact: ConversionArtifactKind.Xt);
                 object? documentObject = null;
                 string? temporaryPath = null;
+                // Solid Edge 的 COM 失败大多只给一句 E_FAIL，不带任何上下文。
+                // 不记步骤就无法区分"打不开这个 .par"和"打开了但导不出实体"，
+                // 现场就出现过整批只有一个零件 E_FAIL、却查不出卡在哪一步。
+                var step = "ComputeSourceHash";
                 try
                 {
                     var sourceHash = ComputeSha256(job.SourcePath);
                     temporaryPath = TemporaryOutput.For(job.XtPath);
+                    step = "Documents.Open";
                     documentObject = documents.Open(job.SourcePath);
                     dynamic document = documentObject;
                     application.DoIdle();
 
+                    step = "SaveBody";
                     document.SaveBody(
                         temporaryPath,
                         SaveBodyAsParasolidText,
@@ -81,11 +87,13 @@ internal static class SolidEdgeExporter
                         Type.Missing,
                         Type.Missing);
                     application.DoIdle();
+                    step = "Document.Close";
                     document.Close(false);
                     application.DoIdle();
                     ComRelease.Final(documentObject);
                     documentObject = null;
 
+                    step = "VerifyParasolidText";
                     var output = FileProbe.VerifyParasolidText(temporaryPath, cancellationToken);
                     if (!CryptographicOperations.FixedTimeEquals(sourceHash, ComputeSha256(job.SourcePath)))
                         throw new InvalidDataException("Solid Edge 导出后源 .par 文件内容发生变化。");
@@ -110,7 +118,7 @@ internal static class SolidEdgeExporter
                     reporter.Report(
                         job.Id,
                         ConversionStage.Failed,
-                        "Solid Edge 导出失败：" + ex.Message,
+                        $"Solid Edge 导出失败（步骤 {step}，源 {Path.GetFileName(job.SourcePath)}）：{ex.Message}",
                         true,
                         ex.HResult,
                         errorClass: ClassifyExportError(ex));

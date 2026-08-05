@@ -239,12 +239,26 @@ internal sealed class FeatureRecognizer : IDisposable
             }
 
             step = "SetFeatureWorksOptions";
-            TryRun(() =>
+            // SetAdvancedOptions 的返回值只作**诊断**用，绝不据此跳过识别。
+            //
+            // 教训：独立探针里它 true/false 与识别成败逐次吻合，于是一度被用来短路——
+            // 但生产走的是后期绑定的 Invoke，且外面套着吞异常的 TryRun，
+            // 「false」既可能是真的返回 false，也可能是调用抛了异常被吞掉。
+            // 用这个分不清的信号否决整条链路，结果是用户已人工激活的会话里
+            // 53 个零件全部被判「未激活」而跳过识别。识别该不该跑，只由识别自己回答。
+            var optionsAccepted = false;
+            string? optionsFailure = null;
+            try
             {
-                _ = _interop.SetAdvancedOptions(
+                optionsAccepted = _interop.SetAdvancedOptions(
                     _featureWorks!,
                     FwAdvAddConstraintsToSketch | FwAdvAllowWizardHoleRecognition);
-            });
+            }
+            catch (Exception ex)
+            {
+                optionsFailure = $"0x{ex.HResult:X8} {ex.Message}";
+            }
+
             TryRun(() => _ = _interop.SetPerformanceOptions(_featureWorks!, 0));
 
             // 识别前的几何基准。FeatureWorks 的 CreateFeatures 会用识别出的特征**重建实体**——
@@ -264,12 +278,16 @@ internal sealed class FeatureRecognizer : IDisposable
             recognized = recognition.RecognizedFeatureCount;
             if (recognized <= 0)
             {
-                return Degraded(
-                    0,
-                    false,
-                    stopwatch,
-                    statuses,
-                    $"RecognizeFeatureAutomatic 连续 {recognition.Attempts} 次返回 0。");
+                // 识别确实没结果时，才回头看选项调用留下的线索：
+                // 「干净地返回 false」是未激活会话的特征（冷会话实测重试 12 次恒 false）；
+                // 「抛了异常」说明是别的问题，必须把 HRESULT 带出去，不能冒充未激活。
+                var optionsNote = optionsFailure is null
+                    ? $"SetAdvancedOptions 返回 {optionsAccepted}。"
+                    : $"SetAdvancedOptions 抛出 {optionsFailure}。";
+                var diagnostic = $"RecognizeFeatureAutomatic 连续 {recognition.Attempts} 次返回 0。{optionsNote}";
+                return !optionsAccepted && optionsFailure is null
+                    ? NotActivated(stopwatch, statuses, diagnostic)
+                    : Degraded(0, false, stopwatch, statuses, diagnostic);
             }
 
             step = "VerifyRecognitionSideEffects";
@@ -463,6 +481,23 @@ internal sealed class FeatureRecognizer : IDisposable
     internal readonly record struct RecognitionAttemptResult(
         int RecognizedFeatureCount,
         int Attempts);
+
+    /// <summary>
+    /// 识别已经真跑过并且颗粒无收，且 <c>SetAdvancedOptions</c> 干净地返回了 false——
+    /// 这是未激活会话的特征。按哑实体降级（几何原样保留），
+    /// 并置 <see cref="FeatureOutcome.SessionNotActivated"/> 供父 Worker 参考。
+    ///
+    /// 注意：这只是**识别失败之后**的归因，绝不能用来提前跳过识别。
+    /// </summary>
+    internal static FeatureOutcome NotActivated(
+        Stopwatch stopwatch,
+        List<string> statuses,
+        string? diagnostic = null)
+        => new(
+            0, false, 0, 0, statuses, true, stopwatch.ElapsedMilliseconds,
+            (diagnostic is null ? string.Empty : diagnostic + " ")
+                + "疑为本 SolidWorks 会话未激活 FeatureWorks：请在该窗口手工做一次特征识别后重跑。",
+            SessionNotActivated: true);
 
     private static FeatureOutcome Degraded(
         int recognized,
@@ -786,20 +821,15 @@ internal sealed class FeatureRecognizer : IDisposable
         }
     }
 
+    /// <summary>
+    /// 已改为不做任何事。原实现会在加载项"本来没加载"时把它卸掉以还原现场，
+    /// 但 FeatureWorks 的自动识别依赖一份**进程内激活状态**（须由人工识别一次建立，
+    /// 见 <see cref="SolidWorksImporter.ShouldResetFeatureWorksSession"/> 的实测说明），
+    /// 卸载会连带清掉它，让用户手工激活过的会话在下一批次里失效。
+    /// 加载项留在会话里没有副作用，代价远小于清掉激活态。
+    /// </summary>
     public static void RestoreIsolatedSessionState(SolidWorksInteropBridge interop, bool wasLoaded)
     {
-        if (wasLoaded)
-            return;
-        try
-        {
-            var path = interop.ResolveFeatureWorksPath();
-            if (path is not null && File.Exists(path))
-                _ = interop.UnloadAddIn(path);
-        }
-        catch
-        {
-            // 恢复失败不能覆盖已经完成的零件结果。
-        }
     }
 
     public void Dispose()

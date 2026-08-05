@@ -15,12 +15,14 @@ internal static class SolidWorksImporter
         IReadOnlyList<ConversionJob> exported,
         WorkerReporter reporter,
         CancellationToken cancellationToken,
-        bool resetFeatureWorksSession = false)
+        bool resetFeatureWorksSession = false,
+        bool useDedicatedSession = false)
     {
         if (exported.Count == 0)
             return 0;
 
         var ownership = CadProcessOwnership.Capture(ProcessName);
+        var dedicatedProcessId = 0;
         object? applicationObject = null;
         SolidWorksInteropBridge? interop = null;
         FeatureRecognizer? recognizer = null;
@@ -36,10 +38,24 @@ internal static class SolidWorksImporter
                     "未检测到 SolidWorks COM 注册。");
             try
             {
-                applicationObject = Activator.CreateInstance(applicationType)
-                    ?? throw new InvalidOperationException("COM 返回了空实例。");
+                if (useDedicatedSession)
+                {
+                    // 上一次尝试里 FeatureWorks 崩了。CreateInstance 只会再附着回同一个
+                    // 已损坏的进程，所以这次自己起一个专属实例，别人的会话不受影响。
+                    (applicationObject, dedicatedProcessId) =
+                        SolidWorksSessionLauncher.StartDedicated(cancellationToken);
+                    reporter.Report(
+                        exported[0].Id,
+                        ConversionStage.SolidWorksImport,
+                        $"上一次 FeatureWorks 会话故障，本零件改用专属 SolidWorks 进程（PID {dedicatedProcessId}）。");
+                }
+                else
+                {
+                    applicationObject = Activator.CreateInstance(applicationType)
+                        ?? throw new InvalidOperationException("COM 返回了空实例。");
+                }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not ClassifiedConversionException and not OperationCanceledException)
             {
                 throw new ClassifiedConversionException(
                     ComErrorClassifier.Classify(ex, ConversionErrorClass.AppLaunchFailed),
@@ -358,7 +374,7 @@ internal static class SolidWorksImporter
                     modelObject = null;
 
                     var output = FileProbe.WaitForStableNonEmptyFile(temporaryPath, cancellationToken);
-                    TemporaryOutput.Commit(temporaryPath, job.SolidWorksPath);
+                    TemporaryOutput.Commit(temporaryPath, job.SolidWorksPath, request.Overwrite);
                     temporaryPath = null;
                     reporter.Report(
                         job.Id,
@@ -444,8 +460,22 @@ internal static class SolidWorksImporter
         }
     }
 
+    /// <summary>
+    /// 恒为 false：**任何情况下都不再重载 FeatureWorks 加载项**。
+    ///
+    /// 实测（2026-08-05，消解加热板.x_t 与 XJ10B-12导热块.x_t）：
+    /// <c>RecognizeFeatureAutomatic</c> 只有在该 SolidWorks **进程**里由人工完成过一次
+    /// 特征识别之后才会生效；未激活时恒返回 0，不抛异常、不改几何，是静默失败。
+    /// 该激活状态是加载项的进程内状态——不跨进程、正常退出也不写盘。
+    ///
+    /// 于是本函数原来的两条分支都成了负收益：
+    /// * 借用用户会话时重载 → <c>UnloadAddIn</c> 把人工激活一起清掉，整批退化成哑实体；
+    /// * 自有新会话时重载 → 那个会话本来就未激活，重载不产生任何收益。
+    ///
+    /// 参数保留是为了不改调用点与既有测试的形状，语义已作废。
+    /// </summary>
     internal static bool ShouldResetFeatureWorksSession(bool resetRequested, bool ownsFreshInstance)
-        => resetRequested && !ownsFreshInstance;
+        => false;
 
     internal static bool ShouldReimportRejectedRecognition(FeatureOutcome? outcome)
         => outcome is { GeometryChanged: true } or { SemanticMismatch: true };
@@ -504,6 +534,13 @@ internal static class SolidWorksImporter
             + " 这通常意味着上一件的文档没有正确关闭，继续下去会把错误几何存成本零件。";
     }
 
+    /// <summary>
+    /// V2.3 的首件重试：第一个零件识别为 0 时再导入识别一次。
+    ///
+    /// 不因 <see cref="FeatureOutcome.SessionNotActivated"/> 而跳过重试：那只是归因猜测，
+    /// 一旦猜错就会连 V2.3 这条已被真机验证过的补救一起废掉。多花一件的时间，
+    /// 换不误伤，值得。
+    /// </summary>
     internal static bool ShouldRetryFirstRecognition(
         int jobIndex,
         int importAttempt,

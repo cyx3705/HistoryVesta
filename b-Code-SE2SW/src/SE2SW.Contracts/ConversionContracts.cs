@@ -107,7 +107,10 @@ public sealed record PartImportRequest(
     bool RecognizeFeatures = true,
     bool FullyDefineSketches = true,
     int FeatureRecognitionTimeoutSeconds = FeatureRecognitionPolicy.DefaultTimeoutSeconds,
-    bool ContinueWhenRecognitionFails = true);
+    bool ContinueWhenRecognitionFails = true,
+    // V3.6.5：上一次尝试里 FeatureWorks 崩了就置为 true，子 Worker 会自己启动一个
+    // 专属 SolidWorks 进程，而不是再附着回那个已经损坏的会话。
+    bool UseDedicatedSession = false);
 
 /// <summary>V2.0 单个零件的特征识别与草图定义结果，随 Completed 事件回传。</summary>
 public sealed record FeatureOutcome(
@@ -128,7 +131,11 @@ public sealed record FeatureOutcome(
     bool SessionFaulted = false,
     // FeatureWorks 返回成功，但特征树包含钣金类型或仍只有导入体。
     // 几何可能未改变，调用方仍必须丢弃该文档并重新导入为哑实体。
-    bool SemanticMismatch = false);
+    bool SemanticMismatch = false,
+    // 本 SolidWorks 会话未激活 FeatureWorks：SetAdvancedOptions 返回 false。
+    // 实测该返回值与识别成败逐次吻合，且重试 12 次也翻不过来（见 40 号文档）。
+    // 调用方应当立即停止对本批次继续尝试识别，而不是每个零件白跑一遍。
+    bool SessionNotActivated = false);
 
 public sealed record WorkerEvent(
     string BatchId,
@@ -281,7 +288,10 @@ public sealed record AssemblyBatchRequest(
     bool Overwrite = false,
     bool RecognizeFeatures = false,
     bool FullyDefineSketches = false,
-    bool ContinueWhenPartFails = false,
+    // V3.6.5：默认**生成缺件装配体**。个别零件转换失败（例如源 .par 文件名编码损坏、
+    // Solid Edge SaveBody 直接 E_FAIL）不该让整个装配体颗粒无收——
+    // 现场 54 个零件里只有 1 个导不出，却因此不生成任何 SLDASM。
+    bool ContinueWhenPartFails = true,
     // V3.5：把 SE 装配关系翻译成 SW 配合。默认关闭，不改既有行为。
     bool RebuildMates = false,
     int FeatureRecognitionTimeoutSeconds = FeatureRecognitionPolicy.DefaultTimeoutSeconds,

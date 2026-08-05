@@ -282,7 +282,7 @@
                         <CheckBox Content="完全定义草图" Margin="16,0,0,0"
                                   IsChecked="{Binding FullyDefineSketches}"
                                   IsEnabled="{Binding CanFullyDefineSketches}" />
-                        <CheckBox Content="零件失败时继续" Margin="16,0,0,0"
+                        <CheckBox Content="零件失败时继续（默认开启）" Margin="16,0,0,0"
                                   IsChecked="{Binding ContinueWhenPartFails}"
                                   IsEnabled="{Binding CanContinueWhenPartFails}" />
                         <CheckBox Content="重建装配关系（默认开启）" Margin="16,0,0,0"

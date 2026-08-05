@@ -346,9 +346,14 @@ internal static class Program
             assemblyOutput,
             jobs,
             probe.Occurrences,
+            // --reuse-existing 的语义就是"在已有产物上重跑门禁"，此时必须允许覆盖：
+            // 否则上一轮成功生成的顶层 SLDASM 会让下一轮在校验阶段就以
+            // "装配输出已经存在" 失败，门禁变成一次性的。
+            Overwrite: options.ReuseExisting,
             RecognizeFeatures: options.RecognizeFeatures,
             FullyDefineSketches: options.RecognizeFeatures,
-            ContinueWhenPartFails: false,
+            // V3.6.5：与产品默认一致——个别零件导不出也要生成缺件装配体。
+            ContinueWhenPartFails: true,
             RebuildMates: options.RebuildMates,
             Nodes: graph?.Nodes,
             Relations: (probe.Documents ?? [])
@@ -389,8 +394,34 @@ internal static class Program
                 gateDirectory);
             result.WorkerEvents.AddRange(buildRun.Events);
             result.WorkerExitCode = buildRun.ExitCode;
-            if (buildRun.ExitCode != 0)
+
+            // 统计必须在退出码判定**之前**做：exit=1 是"完成但有零件失败"，
+            // 装配体照样生成了，此时更需要把识别数据留痕。先算再判。
+            var outcomes = buildRun.Events.Where(item => item.Feature is not null).Select(item => item.Feature!).ToArray();
+            result.RecognizedPartCount = outcomes.Count(item => !item.DegradedToDumbSolid);
+            result.DumbSolidPartCount = outcomes.Count(item => item.DegradedToDumbSolid);
+            result.SketchTotal = outcomes.Sum(item => item.SketchTotal);
+            result.SketchFullyDefined = outcomes.Sum(item => item.SketchFullyDefined);
+            // exit=1 表示"有零件失败但批次已完成"。ContinueWhenPartFails 默认开启后
+            // 这是正常的部分成功（本装配体固定有 1 个 .par 文件名编码损坏、导不出），
+            // 装配体已经生成，不该判整轮失败。只有 exit≥2 才是真的没跑完。
+            if (buildRun.ExitCode is not (0 or 1))
                 throw new InvalidOperationException($"生产 Worker 装配构建失败，exit={buildRun.ExitCode}：{buildRun.StandardError}");
+
+            if (options.RecognizeFeatures && options.MinimumRecognizedParts > 0)
+            {
+                if (result.RecognizedPartCount < options.MinimumRecognizedParts)
+                {
+                    throw new InvalidDataException(
+                        $"特征识别低于基线：完全识别 {result.RecognizedPartCount} 个，"
+                        + $"要求至少 {options.MinimumRecognizedParts} 个（降级 {result.DumbSolidPartCount} 个）。");
+                }
+                if (result.SketchTotal != result.SketchFullyDefined)
+                {
+                    throw new InvalidDataException(
+                        $"草图未全部完全定义：{result.SketchFullyDefined}/{result.SketchTotal}。");
+                }
+            }
             VerifyAssembly(application, assemblyOutput, probe.Occurrences, jobs, result, graph, options.RebuildMates);
         }
         finally
@@ -445,15 +476,28 @@ internal static class Program
                 throw new InvalidDataException($"源 CAD 文件被修改：{pair.Key}");
         }
         result.SourceHashesUnchanged = true;
-        foreach (var pair in existingPartOutputHashes)
+        // 源 CAD 文件必须逐字节不变（上面那条），这条不可放宽。
+        //
+        // 但"已有零件产物不得改写"只在**不开识别**时成立：V3.6.5 起，开启识别时
+        // 已有 SLDPRT 一律重做——旧产物多半是识别失败留下的哑实体，不重做识别就永远不会发生。
+        // 继续断言它不变，等于要求"开了识别也别真去识别"。
+        if (options.RecognizeFeatures)
         {
-            if (!File.Exists(pair.Key)
-                || !string.Equals(pair.Value, ComputeSha256(pair.Key), StringComparison.Ordinal))
-            {
-                throw new InvalidDataException($"安全重试改写了已有零件产物：{pair.Key}");
-            }
+            result.ExistingPartOutputsUnchanged = false;
         }
-        result.ExistingPartOutputsUnchanged = true;
+        else
+        {
+            foreach (var pair in existingPartOutputHashes)
+            {
+                if (!File.Exists(pair.Key)
+                    || !string.Equals(pair.Value, ComputeSha256(pair.Key), StringComparison.Ordinal))
+                {
+                    throw new InvalidDataException($"安全重试改写了已有零件产物：{pair.Key}");
+                }
+            }
+
+            result.ExistingPartOutputsUnchanged = true;
+        }
         result.OutputFiles = Directory.EnumerateFiles(xtDirectory)
             .Concat(Directory.EnumerateFiles(swDirectory))
             .Select(path => new OutputFact(path, new FileInfo(path).Length, ComputeSha256(path)))
@@ -490,6 +534,24 @@ internal static class Program
         result.AssemblyNodeCount = graph.Nodes.Count;
         result.MaxDepth = graph.MaxDepth;
 
+        // 子项 → 产物路径。子装配查图里同源的节点，零件查同源的任务。
+        string? ResolveChildOutput(AssemblyChild child)
+        {
+            var source = Path.GetFullPath(child.SourcePath);
+            if (child.IsSubAssembly)
+            {
+                return graph.Nodes
+                    .FirstOrDefault(item => string.Equals(
+                        Path.GetFullPath(item.SourceAssemblyPath), source, StringComparison.OrdinalIgnoreCase))
+                    ?.OutputPath;
+            }
+
+            return jobs
+                .FirstOrDefault(item => string.Equals(
+                    Path.GetFullPath(item.SourcePath), source, StringComparison.OrdinalIgnoreCase))
+                ?.SolidWorksPath;
+        }
+
         foreach (var node in graph.Nodes)
         {
             if (!File.Exists(node.OutputPath))
@@ -499,19 +561,33 @@ internal static class Program
             {
                 var top = (assembly.GetComponents(true) as Array ?? Array.Empty<object>())
                     .Cast<object>().OfType<Component2>().ToArray();
+
+                // ContinueWhenPartFails 默认开启后，个别零件转换失败时会**如实生成缺件装配体**
+                // （本装配体固定有 1 个 .par 文件名编码损坏、Solid Edge 导不出）。
+                // 因此期望的一级组件数是"产物真的存在的子项"，不是子项总数——
+                // 否则门禁等于在要求"绝不缺件"，和已定的产品行为直接矛盾。
+                var expectedChildren = node.Children.Count(child => File.Exists(ResolveChildOutput(child) ?? string.Empty));
+                var missing = node.Children.Count - expectedChildren;
                 result.AssemblyNodes.Add(new NodeFact(
-                    node.OutputPath, node.Depth, node.IsRoot, node.Children.Count, top.Length));
-                if (top.Length != node.Children.Count)
+                    node.OutputPath, node.Depth, node.IsRoot, expectedChildren, top.Length));
+                if (top.Length != expectedChildren)
                 {
                     throw new InvalidDataException(
-                        $"{Path.GetFileName(node.OutputPath)} 一级组件数不一致：{top.Length}/{node.Children.Count}");
+                        $"{Path.GetFileName(node.OutputPath)} 一级组件数不一致：{top.Length}/{expectedChildren}"
+                        + (missing > 0 ? $"（另有 {missing} 个子项因零件未转换而缺件）" : string.Empty));
                 }
 
                 // V3.5 起组件可以被配合约束而不固定；--rebuild-mates 档只统计不强制，
                 // 位置正确性由下面的 GetTotalTransform 全量比对兜底——那才是真验收。
                 var fixedCount = top.Count(component => component.IsFixed());
-                result.FixedComponentCounts.Add($"{Path.GetFileName(node.OutputPath)}:{fixedCount}/{top.Length}");
-                if (!allowMated && fixedCount != top.Length)
+                var reused = result.PreexistingAssemblyOutputs.Any(item =>
+                    string.Equals(Path.GetFullPath(item), Path.GetFullPath(node.OutputPath), StringComparison.OrdinalIgnoreCase));
+                result.FixedComponentCounts.Add(
+                    $"{Path.GetFileName(node.OutputPath)}:{fixedCount}/{top.Length}{(reused ? "(复用)" : string.Empty)}");
+                // 复用的子装配不是本轮生成的，它的固定状态由生成它的那一次决定——
+                // 例如在 UI 里开着"重建装配关系"跑出来的装配，组件本来就是浮动+配合。
+                // 拿本轮的固定预期去要求它，测的是历史产物而不是这次的代码。
+                if (!allowMated && !reused && fixedCount != top.Length)
                     throw new InvalidDataException($"组件未固定：{node.OutputPath}（{fixedCount}/{top.Length}）");
             }
             finally
@@ -537,18 +613,26 @@ internal static class Program
                 job => Path.GetFullPath(job.SourcePath),
                 job => Path.GetFullPath(job.SolidWorksPath),
                 StringComparer.OrdinalIgnoreCase);
-            var expected = occurrences
+            var candidates = occurrences
                 .Where(item => !item.IsSubAssembly && !item.IsSuppressed)
                 .Where(item => bySource.ContainsKey(Path.GetFullPath(item.SourcePath)))
                 .Select(item => new ExpectedComponent(
                     bySource[Path.GetFullPath(item.SourcePath)],
                     ToSolidWorksTransform(item.WorldTransform)))
                 .ToList();
+            // 与一级组件同一口径：零件没转换出来（缺件装配体）时，它的每个实例
+            // 都不该计入期望。否则门禁在要求"绝不缺件"，与已定的产品行为矛盾。
+            var expected = candidates.Where(item => File.Exists(item.Path)).ToList();
+            var missingInstances = candidates.Count - expected.Count;
 
             result.ComponentExpected = expected.Count;
             result.ComponentActual = leaves.Count;
             if (leaves.Count != expected.Count)
-                throw new InvalidDataException($"顶层展开后的叶组件数不一致：{leaves.Count}/{expected.Count}");
+            {
+                throw new InvalidDataException(
+                    $"顶层展开后的叶组件数不一致：{leaves.Count}/{expected.Count}"
+                    + (missingInstances > 0 ? $"（另有 {missingInstances} 个实例因零件未转换而缺件）" : string.Empty));
+            }
 
             var maxTranslation = 0d;
             var maxRotation = 0d;
@@ -888,7 +972,9 @@ internal sealed record GateOptions(
     string? PhysicalAssemblyTemplate,
     bool ReuseExisting,
     bool RecognizeFeatures = false,
-    bool RebuildMates = false)
+    bool RebuildMates = false,
+    // 完全识别零件数的下限。0 表示不断言。识别档的实测基线见 41 号文档。
+    int MinimumRecognizedParts = 0)
 {
     public static GateOptions Parse(IReadOnlyList<string> args)
     {
@@ -898,6 +984,7 @@ internal sealed record GateOptions(
         var reuseExisting = false;
         var recognize = false;
         var rebuildMates = false;
+        var minimumRecognized = 0;
         for (var index = 0; index < args.Count;)
         {
             if (string.Equals(args[index], "--reuse-existing", StringComparison.OrdinalIgnoreCase))
@@ -924,6 +1011,7 @@ internal sealed record GateOptions(
                 throw new ArgumentException($"参数缺少值：{args[index]}");
             switch (args[index].ToLowerInvariant())
             {
+                case "--min-recognized": minimumRecognized = int.Parse(args[index + 1]); break;
                 case "--se-asm": source = args[index + 1]; break;
                 case "--worker": worker = args[index + 1]; break;
                 case "--assembly-template": template = args[index + 1]; break;
@@ -939,7 +1027,8 @@ internal sealed record GateOptions(
             string.IsNullOrWhiteSpace(template) ? null : Path.GetFullPath(template),
             reuseExisting,
             recognize,
-            rebuildMates);
+            rebuildMates,
+            minimumRecognized);
     }
 }
 
@@ -959,6 +1048,10 @@ internal sealed class GateResult
     public int SuppressedCount { get; set; }
     public int UnresolvedCount { get; set; }
     public int WorkerExitCode { get; set; }
+    public int RecognizedPartCount { get; set; }
+    public int DumbSolidPartCount { get; set; }
+    public int SketchTotal { get; set; }
+    public int SketchFullyDefined { get; set; }
     public int ComponentExpected { get; set; }
     public int ComponentActual { get; set; }
     public int ComponentFixed { get; set; }
