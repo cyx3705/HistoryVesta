@@ -144,6 +144,7 @@ if ($null -ne $manifest) {
         }
 
         $allowedPrefixes = @($manifest.paths.allowedRootDirectoryPrefixes)
+        $allowedNames = @($manifest.paths.allowedRootDirectoryNames)
         foreach ($expectedPrefix in @('a-', 'b-', 'z-')) {
             if ($allowedPrefixes -notcontains $expectedPrefix) {
                 Add-ContractError "paths.allowedRootDirectoryPrefixes must include '$expectedPrefix'."
@@ -157,7 +158,12 @@ if ($null -ne $manifest) {
                 $directory.Name.StartsWith([string]$_, [StringComparison]::OrdinalIgnoreCase)
             }).Count -ne 0
             if (-not $allowed) {
-                Add-ContractError "Root directory must use an a-, b-, or z- prefix: $($directory.Name)"
+                $allowed = @($allowedNames | Where-Object {
+                    $directory.Name.Equals([string]$_, [StringComparison]::OrdinalIgnoreCase)
+                }).Count -ne 0
+            }
+            if (-not $allowed) {
+                Add-ContractError "Root directory is not allowed by the naming contract: $($directory.Name)"
             }
         }
     }
