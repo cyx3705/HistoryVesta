@@ -133,7 +133,8 @@ registry.Register(new CommandDescriptor
 始终至少占对应轴的 50%。
 
 顶栏移动按宿主归属区分：普通嵌入页和专注页的空白顶栏只移动整个 AppShell，独立浮窗的空白顶栏只移动该浮窗。
-空白顶栏必须按住满 120ms 且越过系统拖动阈值后才开始移动；最大化宿主使用两倍阈值，开始移动时按鼠标横向比例恢复。
+主 AppShell 处于普通状态时，空白顶栏越过系统拖动阈值即开始移动，不增加按住延时。主窗口最大化状态及独立浮窗仍需按住满 120ms；最大化宿主使用两倍阈值，开始移动时按鼠标横向比例恢复。
+一次按下只要越过移动阈值，就不再作为双击的第一次点击；下一次点击必须重新开始双击序列。
 只有真实页签能够把页面拖出：普通页签沿用 AvalonDock 原生流程，专注页签执行 `win.restore` → `win.float`。
 浮窗使用恢复后嵌入窗格的实际宽高并保持鼠标在原页签抓取点，跨显示器时按目标显示器 DPI 和工作区定位；重新停靠仍须
 拖动真实页签。工具页动作区不提供浮窗最大化/还原按钮；文档浮窗保留自身状态按钮，该按钮不等同于 `win.max`，
@@ -199,7 +200,7 @@ registry.Register(new CommandDescriptor
 | `run file= [continue=false]` | 执行命令脚本；失败时默认停止 |
 | `app.exit` | 正常关闭桌面应用 |
 | `app.frontend.show`、`app.frontend.hide` | 显示/隐藏前端窗口并保持后台服务连接 |
-| `app.frontend.focus-console` | 唤出前端并聚焦控制台命令框；无前端时由后台启动 |
+| `app.frontend.focus-console` | 唤出前端、将主窗口提升到 Windows 前台、切换控制台聚焦布局并聚焦命令框；控制台已显示时仍重复上浮和聚焦；无前端时由后台启动 |
 | `app.frontend.exit` | 只退出前端进程；`app.exit` 才协调前后台一起退出 |
 | `app.about` | 显示应用身份与版本 |
 | `app.get [key]` | 读取一个或全部设置；`code`、token、password/passwd、secret、private key 与 connection string 类设置只返回 `(已配置)`，不返回明文 |

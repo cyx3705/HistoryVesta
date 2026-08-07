@@ -374,6 +374,7 @@ public partial class ShellWindow : Window
         ApplyFocusChrome();
 
         Closing += OnShellClosing;
+        Closed += OnShellClosed;
     }
 
     /// <summary>
@@ -608,6 +609,9 @@ public partial class ShellWindow : Window
         _modules?.Dispose();
     }
 
+    private void OnShellClosed(object? sender, EventArgs e)
+        => _topBar.Dispose();
+
     private void RegisterFrontendLifecycleCommands(CommandRegistry registry)
     {
         registry.Register(new CommandDescriptor
@@ -647,14 +651,23 @@ public partial class ShellWindow : Window
                 Show();
                 if (WindowState == WindowState.Minimized)
                     WindowState = WindowState.Normal;
-                Activate();
-                if (_docking.MaximizedId != null &&
-                    !_docking.MaximizedId.Equals(StandardWindowIds.Console, StringComparison.OrdinalIgnoreCase))
-                    _docking.RestoreLayoutFromMaximized();
-                _docking.Show(StandardWindowIds.Console);
-                if (!string.Equals(_docking.MaximizedId, StandardWindowIds.Console, StringComparison.OrdinalIgnoreCase))
+                var consoleIsFocused = string.Equals(
+                    _docking.MaximizedId,
+                    StandardWindowIds.Console,
+                    StringComparison.OrdinalIgnoreCase);
+                if (!consoleIsFocused)
+                {
+                    if (_docking.MaximizedId != null)
+                        _docking.RestoreLayoutFromMaximized();
+                    _docking.Show(StandardWindowIds.Console);
                     _docking.MaximizeWindow(StandardWindowIds.Console);
-                _console.FocusInput();
+                }
+                WindowForegroundActivator.Activate(this);
+                Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
+                {
+                    WindowForegroundActivator.Activate(this);
+                    _console.FocusInput();
+                });
                 return CommandResult.Ok("控制台已聚焦");
             }),
         }, FrontendCommandCatalog.Source);
@@ -778,12 +791,14 @@ public partial class ShellWindow : Window
         foreach (var floating in DockManager.FloatingWindows.ToList())
         {
             // 已经是目标主题就整窗跳过 —— 本方法在布局回调里跑,不幂等会死循环
-            if (!SwapTokens(floating.Resources, uri, atEnd: true))
-                continue;
+            SwapTokens(floating.Resources, uri, atEnd: true);
             if (floating.TryFindResource("Shell.Brush.Surface") is Brush surface)
                 floating.Background = surface;
             if (floating.TryFindResource("Shell.Brush.Hairline") is Brush hairline)
+            {
                 floating.BorderBrush = hairline;
+                FloatingWindowTheme.ApplyNativeBorder(floating, hairline);
+            }
         }
     }
 
@@ -905,6 +920,9 @@ public partial class ShellWindow : Window
         {
             HandledEventsToo = true,
         });
+        style.Setters.Add(new EventSetter(
+            FrameworkElement.LoadedEvent,
+            new RoutedEventHandler(OnPaneLoaded)));
 
         // UI-06:页签容器样式随窗格样式下发(同心圆角 + 主题色选中态)
         if (FindInDictionary(_themeResources, tabItemStyleKey) is Style tabStyle)
@@ -926,6 +944,12 @@ public partial class ShellWindow : Window
 
     private void OnPaneLostMouseCapture(object sender, MouseEventArgs e)
         => _topBar.HandlePaneLostMouseCapture(sender, e);
+
+    private void OnPaneLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is UIElement pane)
+            _topBar.AttachPaneCommandBinding(pane);
+    }
 
     // ---------------------------------------------------------------- 顶部按钮组占位
 

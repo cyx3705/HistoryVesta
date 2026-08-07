@@ -211,6 +211,42 @@ public sealed class ShellChromeContractTests
     }
 
     [Fact]
+    public void FrontendFocusConsoleRaisesTheWindowAndRefocusesExistingConsole()
+    {
+        RunShell(window =>
+        {
+            Assert.True(window.Commands.ExecuteAsync("app.frontend.hide", "test")
+                .GetAwaiter().GetResult().Success);
+            PumpDispatcher();
+            Assert.False(window.IsVisible);
+
+            Assert.True(window.Commands.ExecuteAsync("app.frontend.focus-console", "test")
+                .GetAwaiter().GetResult().Success);
+            PumpDispatcher(500);
+
+            var input = FindVisualDescendants<TextBox>(window)
+                .Single(item => item.Name == "Input");
+            Assert.True(window.IsVisible);
+            Assert.True(window.IsActive);
+            Assert.Equal(StandardWindowIds.Console, window.Docking.MaximizedId);
+            Assert.True(input.IsKeyboardFocusWithin);
+            Assert.False(window.Topmost);
+
+            var layoutChanges = 0;
+            window.Docking.WindowsChanged += (_, _) => layoutChanges++;
+            RequireButton(window, "MenuButton").Focus();
+            Assert.True(window.Commands.ExecuteAsync("app.frontend.focus-console", "test")
+                .GetAwaiter().GetResult().Success);
+            PumpDispatcher(500);
+
+            Assert.True(window.IsActive);
+            Assert.True(input.IsKeyboardFocusWithin);
+            Assert.False(window.Topmost);
+            Assert.Equal(0, layoutChanges);
+        });
+    }
+
+    [Fact]
     public void DarkThemeUsesTokenizedCheckBoxesAndConsoleRows()
     {
         var log = new RelayLog();
@@ -369,22 +405,33 @@ public sealed class ShellChromeContractTests
     }
 
     [Fact]
-    public void FloatingToolWindowFollowsTheDarkTheme()
+    public void FloatingToolWindowFrameFollowsLightAndDarkThemes()
     {
         RunShell(window =>
         {
-            window.Commands.ExecuteAsync("app.theme mode=dark", "test").GetAwaiter().GetResult();
-            PumpDispatcher();
-
             var manager = Assert.Single(FindVisualDescendants<AvalonDock.DockingManager>(window));
             window.Docking.Float(StandardWindowIds.Console);
             PumpDispatcher(900);
 
             // R4-3:浮动窗口自带一份主题字典,不单独换就一直是白的
             var floating = Assert.Single(manager.FloatingWindows.ToList());
-            var background = Assert.IsType<SolidColorBrush>(floating.Background).Color;
-            Assert.True((background.R + background.G + background.B) / 3 < 0x60,
-                $"floating window background {background} did not follow the dark theme");
+            Assert.Equal(
+                Assert.IsType<SolidColorBrush>(window.FindResource("Shell.Brush.Surface")).Color,
+                Assert.IsType<SolidColorBrush>(floating.Background).Color);
+            Assert.Equal(
+                Assert.IsType<SolidColorBrush>(window.FindResource("Shell.Brush.Hairline")).Color,
+                Assert.IsType<SolidColorBrush>(floating.BorderBrush).Color);
+            Assert.Equal(new Thickness(1), floating.BorderThickness);
+
+            window.Commands.ExecuteAsync("app.theme mode=dark", "test").GetAwaiter().GetResult();
+            PumpDispatcher();
+
+            Assert.Equal(
+                Assert.IsType<SolidColorBrush>(window.FindResource("Shell.Brush.Surface")).Color,
+                Assert.IsType<SolidColorBrush>(floating.Background).Color);
+            Assert.Equal(
+                Assert.IsType<SolidColorBrush>(window.FindResource("Shell.Brush.Hairline")).Color,
+                Assert.IsType<SolidColorBrush>(floating.BorderBrush).Color);
         });
     }
 
@@ -515,6 +562,9 @@ public sealed class ShellChromeContractTests
 
             var manager = Assert.Single(FindVisualDescendants<AvalonDock.DockingManager>(window));
             var floating = Assert.Single(manager.FloatingWindows.ToList());
+            var chrome = WindowChrome.GetWindowChrome(floating);
+            Assert.NotNull(chrome);
+            Assert.Equal(0, chrome.CaptionHeight);
             var root = Assert.IsType<Border>(floating.Template.LoadContent());
             var presenter = Assert.Single(FindLogicalDescendants<ContentPresenter>(root));
             Assert.Null(presenter.DataContext);
@@ -628,6 +678,40 @@ public sealed class ShellChromeContractTests
             DefaultSide = DockSide.Center,
             DefaultRatio = 1,
             ContentFactory = () => content = new Grid { Tag = "FloatingDocumentContent" },
+        }));
+    }
+
+    [Fact]
+    public void FloatingDocumentWindowActionRoutesThroughItsOwnPaneBinding()
+    {
+        Grid? content = null;
+        RunShell(window =>
+        {
+            window.Docking.Show("center.float.actions");
+            window.Docking.Float("center.float.actions");
+            PumpDispatcher(900);
+
+            var manager = Assert.Single(FindVisualDescendants<AvalonDock.DockingManager>(window));
+            var floating = Assert.Single(manager.FloatingWindows.ToList());
+            Assert.NotNull(content);
+            var pane = FindAncestor<LayoutDocumentPaneControl>(content!, _ => true);
+            Assert.NotNull(pane);
+            var button = FindVisualDescendants<Button>(pane!)
+                .Single(item => item.Name == "FloatingDocumentMaxRestore");
+            Assert.Equal(Visibility.Visible, button.Visibility);
+            var command = Assert.IsType<RoutedCommand>(button.Command);
+
+            Assert.True(command.CanExecute(button.CommandParameter, button.CommandTarget));
+            command.Execute(button.CommandParameter, button.CommandTarget);
+            PumpDispatcher();
+            Assert.Equal(WindowState.Maximized, floating.WindowState);
+        }, configure: config => config.ToolWindows.Add(new ToolWindowDescriptor
+        {
+            Id = "center.float.actions",
+            Title = "Center Float Actions",
+            DefaultSide = DockSide.Center,
+            DefaultRatio = 1,
+            ContentFactory = () => content = new Grid(),
         }));
     }
 

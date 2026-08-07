@@ -66,6 +66,19 @@ public sealed class ShellTopBarGestureTests
             start, new Point(10, 18), 4, 4, multiplier: 2));
     }
 
+    [Theory]
+    [InlineData(true, WindowState.Normal, false)]
+    [InlineData(true, WindowState.Maximized, true)]
+    [InlineData(false, WindowState.Normal, true)]
+    [InlineData(false, WindowState.Maximized, true)]
+    public void OnlyNormalMainWindowSkipsTheTopBarHold(
+        bool isMainWindow,
+        WindowState state,
+        bool expected)
+        => Assert.Equal(
+            expected,
+            ShellTopBarCoordinator.ShouldDelayHostDrag(isMainWindow, state));
+
     [Fact]
     public void DelayedDragRejectsOneHundredNineteenMilliseconds()
     {
@@ -92,6 +105,7 @@ public sealed class ShellTopBarGestureTests
         gesture.Begin(1_000, new Point(10, 10), 4, 4);
 
         Assert.False(gesture.Update(1_050, new Point(18, 10)));
+        Assert.True(gesture.HasReachedThreshold);
         Assert.False(gesture.TryActivate(1_119));
         Assert.True(gesture.TryActivate(1_120));
     }
@@ -117,8 +131,33 @@ public sealed class ShellTopBarGestureTests
         gesture.Cancel();
 
         Assert.False(gesture.IsActive);
+        Assert.False(gesture.HasReachedThreshold);
         Assert.False(gesture.TryActivate(1_120));
     }
+
+    [Fact]
+    public void MovementBeforeTheHoldExpiresInvalidatesThePreviousClick()
+    {
+        var doubleClick = new FastDoubleClickGesture(TimeSpan.FromMilliseconds(250));
+        var drag = new DelayedDragGesture(TimeSpan.FromMilliseconds(120));
+        Assert.False(doubleClick.RegisterPress("header:main", 1_000, new Point(10, 10), 4, 4));
+        drag.Begin(1_000, new Point(10, 10), 4, 4);
+
+        Assert.False(drag.Update(1_050, new Point(18, 10)));
+        Assert.True(drag.HasReachedThreshold);
+        doubleClick.Cancel("header:main");
+
+        Assert.False(doubleClick.RegisterPress("header:main", 1_100, new Point(10, 10), 4, 4));
+    }
+
+    [Theory]
+    [InlineData(WindowState.Normal, WindowState.Maximized)]
+    [InlineData(WindowState.Maximized, WindowState.Normal)]
+    [InlineData(WindowState.Minimized, WindowState.Maximized)]
+    public void FloatingWindowToggleHasOneDeterministicTarget(
+        WindowState current,
+        WindowState expected)
+        => Assert.Equal(expected, ShellTopBarCoordinator.GetToggledWindowState(current));
 
     [Theory]
     [InlineData(96, 720, 520)]

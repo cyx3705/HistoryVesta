@@ -448,20 +448,6 @@
                                   SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
             </Grid>
         </Border>
-        <ControlTemplate.Triggers>
-            <DataTrigger Binding="{Binding Model.SelectedContent.IsFloating,
-                                      RelativeSource={RelativeSource TemplatedParent}}"
-                         Value="True">
-                <Setter TargetName="ShellChromeHost" Property="Visibility" Value="Collapsed" />
-                <Setter TargetName="FloatingDocumentMaxRestore" Property="Visibility" Value="Visible" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Model.SelectedContent.IsMaximized,
-                                      RelativeSource={RelativeSource TemplatedParent}}"
-                         Value="True">
-                <Setter TargetName="FloatingDocumentMaxRestoreIcon" Property="Data"
-                        Value="{DynamicResource Shell.Icon.Restore}" />
-            </DataTrigger>
-        </ControlTemplate.Triggers>
     </ControlTemplate>
 
     <!-- ================================================================ 窗格模板:专注形态(UI-04) -->
@@ -518,9 +504,12 @@
     <Style TargetType="{x:Type adc:LayoutAnchorableFloatingWindowControl}">
         <Setter Property="WindowStyle" Value="None" />
         <Setter Property="ShowInTaskbar" Value="False" />
+        <Setter Property="Background" Value="{DynamicResource Shell.Brush.Surface}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Shell.Brush.Hairline}" />
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="WindowChrome.WindowChrome">
             <Setter.Value>
-                <WindowChrome CaptionHeight="{DynamicResource Shell.Size.Tab}"
+                <WindowChrome CaptionHeight="0"
                               ResizeBorderThickness="6"
                               GlassFrameThickness="0"
                               CornerRadius="0"
@@ -548,9 +537,12 @@
     <Style TargetType="{x:Type adc:LayoutDocumentFloatingWindowControl}">
         <Setter Property="WindowStyle" Value="None" />
         <Setter Property="ShowInTaskbar" Value="False" />
+        <Setter Property="Background" Value="{DynamicResource Shell.Brush.Surface}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Shell.Brush.Hairline}" />
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="WindowChrome.WindowChrome">
             <Setter.Value>
-                <WindowChrome CaptionHeight="{DynamicResource Shell.Size.Tab}"
+                <WindowChrome CaptionHeight="0"
                               ResizeBorderThickness="6"
                               GlassFrameThickness="0"
                               CornerRadius="0"

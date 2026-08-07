@@ -18,7 +18,7 @@ namespace AppShell.Shell;
 /// Keeps main-window chrome and page chrome on one input and command path.
 /// Only AvalonDock public model and window APIs are used here.
 /// </summary>
-internal sealed class ShellTopBarCoordinator
+internal sealed class ShellTopBarCoordinator : IDisposable
 {
     private const string ChromeLogSource = "shell.chrome";
 
@@ -29,6 +29,8 @@ internal sealed class ShellTopBarCoordinator
     private readonly IShellLog _log;
     private readonly RoutedCommand _pageActionCommand;
     private readonly HashSet<FrameworkElement> _focusedTabs = [];
+    private readonly HashSet<LayoutDocumentPaneControl> _documentPanes = [];
+    private readonly List<(UIElement Target, CommandBinding Binding)> _pageActionBindings = [];
     private readonly FastDoubleClickGesture _doubleClick = new(TimeSpan.FromMilliseconds(250));
     private readonly DelayedDragGesture _hostDrag = new(TimeSpan.FromMilliseconds(120));
     private readonly DispatcherTimer _hostDragTimer;
@@ -42,6 +44,7 @@ internal sealed class ShellTopBarCoordinator
     private FrameworkElement? _pendingHostSurface;
     private string? _pendingHostTarget;
     private bool _pendingHostWasMaximized;
+    private bool _pendingHostRequiresHold;
     private string? _pendingDockTabTarget;
     private Point _pendingDockTabStart;
     private FrameworkElement? _pendingDockTab;
@@ -49,6 +52,7 @@ internal sealed class ShellTopBarCoordinator
     private Point _pendingDockTabAnchor;
     private FloatingDragContext? _pendingFloatingContext;
     private TaskCompletionSource<bool>? _pendingFloatingCompletion;
+    private bool _disposed;
 
     public ShellTopBarCoordinator(
         Window window,
@@ -70,13 +74,6 @@ internal sealed class ShellTopBarCoordinator
         };
         _hostDragTimer.Tick += OnHostDragHoldElapsed;
 
-        AttachPageActionBinding(_window);
-        CommandManager.RegisterClassCommandBinding(
-            typeof(LayoutAnchorablePaneControl),
-            CreatePageActionBinding());
-        CommandManager.RegisterClassCommandBinding(
-            typeof(LayoutDocumentPaneControl),
-            CreatePageActionBinding());
         _manager.LayoutFloatingWindowControlCreated += OnFloatingWindowCreated;
         _manager.AddHandler(
             UIElement.PreviewMouseMoveEvent,
@@ -86,6 +83,47 @@ internal sealed class ShellTopBarCoordinator
             UIElement.PreviewMouseLeftButtonUpEvent,
             new MouseButtonEventHandler(OnDockPreviewMouseLeftButtonUp),
             handledEventsToo: true);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+        _disposed = true;
+
+        ReleasePendingCapture();
+        ReleaseHostWindowCapture();
+        ClearPendingDockTab();
+        if (_pendingFloatingContext is { } context)
+            ClearPendingFloatingContext(context);
+
+        _hostDragTimer.Tick -= OnHostDragHoldElapsed;
+        _manager.LayoutFloatingWindowControlCreated -= OnFloatingWindowCreated;
+        _manager.RemoveHandler(
+            UIElement.PreviewMouseMoveEvent,
+            new MouseEventHandler(OnDockPreviewMouseMove));
+        _manager.RemoveHandler(
+            UIElement.PreviewMouseLeftButtonUpEvent,
+            new MouseButtonEventHandler(OnDockPreviewMouseLeftButtonUp));
+
+        foreach (var tab in _focusedTabs.ToArray())
+            DetachFocusedTab(tab);
+        foreach (var floating in _manager.FloatingWindows.OfType<LayoutFloatingWindowControl>())
+            floating.StateChanged -= OnFloatingWindowStateChanged;
+        _documentPanes.Clear();
+        foreach (var (target, binding) in _pageActionBindings)
+            target.CommandBindings.Remove(binding);
+        _pageActionBindings.Clear();
+    }
+
+    public void AttachPaneCommandBinding(UIElement pane)
+    {
+        AttachPageActionBinding(pane);
+        if (pane is LayoutDocumentPaneControl documentPane)
+        {
+            _documentPanes.Add(documentPane);
+            UpdateDocumentPaneChrome(documentPane);
+        }
     }
 
     public void Refresh()
@@ -112,6 +150,16 @@ internal sealed class ShellTopBarCoordinator
             tab.PreviewMouseLeftButtonDown += OnFocusedTabMouseDown;
             tab.PreviewMouseMove += OnFocusedTabMouseMove;
             tab.PreviewMouseLeftButtonUp += OnFocusedTabMouseUp;
+        }
+
+        foreach (var pane in _documentPanes.ToArray())
+        {
+            if (!pane.IsLoaded)
+            {
+                _documentPanes.Remove(pane);
+                continue;
+            }
+            UpdateDocumentPaneChrome(pane);
         }
     }
 
@@ -219,12 +267,12 @@ internal sealed class ShellTopBarCoordinator
     public void ToggleFloatingWindow(DependencyObject source)
     {
         var floating = FindAncestor<LayoutFloatingWindowControl>(source);
+        if (floating == null && TryResolvePageId(source, out var id))
+            floating = FindFloatingWindow(id);
         if (floating == null)
             return;
 
-        floating.WindowState = floating.WindowState == WindowState.Maximized
-            ? WindowState.Normal
-            : WindowState.Maximized;
+        SetFloatingWindowState(floating);
     }
 
     public bool TryResolvePageId(DependencyObject? source, out string id)
@@ -263,7 +311,7 @@ internal sealed class ShellTopBarCoordinator
         return false;
     }
 
-    private void AttachPageActionBinding(Window target)
+    private void AttachPageActionBinding(UIElement target)
     {
         if (target.CommandBindings.OfType<CommandBinding>().Any(binding =>
                 ReferenceEquals(binding.Command, _pageActionCommand)))
@@ -271,7 +319,9 @@ internal sealed class ShellTopBarCoordinator
             return;
         }
 
-        target.CommandBindings.Add(CreatePageActionBinding());
+        var binding = CreatePageActionBinding();
+        target.CommandBindings.Add(binding);
+        _pageActionBindings.Add((target, binding));
     }
 
     private CommandBinding CreatePageActionBinding()
@@ -304,9 +354,7 @@ internal sealed class ShellTopBarCoordinator
             if (action.Equals("toggle-floating", StringComparison.OrdinalIgnoreCase))
             {
                 if (FindFloatingWindow(id) is { } floating)
-                    floating.WindowState = floating.WindowState == WindowState.Maximized
-                        ? WindowState.Normal
-                        : WindowState.Maximized;
+                    SetFloatingWindowState(floating);
                 else
                     _log.Error(ChromeLogSource, $"页面 {id} 没有对应的独立浮窗宿主");
                 e.Handled = true;
@@ -406,10 +454,9 @@ internal sealed class ShellTopBarCoordinator
 
         context = context with { EmbeddedSize = ResolveEmbeddedPaneSize(id) };
         ApplyFloatingModelGeometry(context, FindLayoutContent(context.PageId));
-        _pendingFloatingContext = context;
         var completion = new TaskCompletionSource<bool>(
             TaskCreationOptions.RunContinuationsAsynchronously);
-        _pendingFloatingCompletion = completion;
+        SetPendingFloatingContext(context, completion);
         var floated = await _bus.ExecuteAsync(
             $"win.float name={CommandParser.QuoteArg(id)}", "UI").ConfigureAwait(true);
         if (!floated.Success)
@@ -432,7 +479,6 @@ internal sealed class ShellTopBarCoordinator
     private void OnFloatingWindowCreated(object? sender, LayoutFloatingWindowControlCreatedEventArgs e)
     {
         var created = e.LayoutFloatingWindowControl;
-        AttachPageActionBinding(created);
         created.StateChanged += OnFloatingWindowStateChanged;
         ApplyFloatingWindowStateChrome(created);
         _ = _window.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, Refresh);
@@ -467,10 +513,20 @@ internal sealed class ShellTopBarCoordinator
             }
         });
 
-    private static void OnFloatingWindowStateChanged(object? sender, EventArgs e)
+    private void OnFloatingWindowStateChanged(object? sender, EventArgs e)
     {
         if (sender is LayoutFloatingWindowControl floating)
+        {
             ApplyFloatingWindowStateChrome(floating);
+            foreach (var pane in _documentPanes)
+            {
+                if (pane.Model is LayoutDocumentPane { SelectedContent: LayoutContent selected } &&
+                    ModelContainsPage(floating.Model, selected.ContentId ?? string.Empty))
+                {
+                    UpdateDocumentPaneChrome(pane);
+                }
+            }
+        }
     }
 
     private static void ApplyFloatingWindowStateChrome(LayoutFloatingWindowControl floating)
@@ -512,6 +568,9 @@ internal sealed class ShellTopBarCoordinator
         _pendingHostSurface = surface;
         _pendingHostTarget = target;
         _pendingHostWasMaximized = hostWindow.WindowState == WindowState.Maximized;
+        _pendingHostRequiresHold = ShouldDelayHostDrag(
+            ReferenceEquals(hostWindow, _window),
+            hostWindow.WindowState);
         var multiplier = _pendingHostWasMaximized ? 2d : 1d;
         _hostDrag.Begin(
             Environment.TickCount64,
@@ -520,7 +579,8 @@ internal sealed class ShellTopBarCoordinator
             SystemParameters.MinimumVerticalDragDistance * multiplier);
         surface.CaptureMouse();
         _hostDragTimer.Stop();
-        _hostDragTimer.Start();
+        if (_pendingHostRequiresHold)
+            _hostDragTimer.Start();
         e.Handled = true;
     }
 
@@ -540,7 +600,12 @@ internal sealed class ShellTopBarCoordinator
         }
 
         var current = e.GetPosition(_pendingHostSurface);
-        if (_hostDrag.Update(Environment.TickCount64, current))
+        var shouldStart = _hostDrag.Update(Environment.TickCount64, current);
+        if (!_pendingHostRequiresHold && _hostDrag.HasReachedThreshold)
+            shouldStart = true;
+        if (_hostDrag.HasReachedThreshold)
+            _doubleClick.Cancel(_pendingHostTarget);
+        if (shouldStart)
         {
             StartPendingHostDrag(current);
             e.Handled = true;
@@ -570,6 +635,8 @@ internal sealed class ShellTopBarCoordinator
 
         var current = Mouse.GetPosition(_pendingHostSurface);
         _hostDrag.Update(Environment.TickCount64, current);
+        if (_hostDrag.HasReachedThreshold && _pendingHostTarget != null)
+            _doubleClick.Cancel(_pendingHostTarget);
         if (_hostDrag.TryActivate(Environment.TickCount64))
             StartPendingHostDrag(current);
     }
@@ -625,7 +692,7 @@ internal sealed class ShellTopBarCoordinator
             _pendingDockTabAnchor,
             ContinueWithDrag: false);
         ApplyFloatingModelGeometry(context, _pendingDockTab);
-        _pendingFloatingContext = context;
+        SetPendingFloatingContext(context);
         ClearPendingDockTab();
     }
 
@@ -633,13 +700,7 @@ internal sealed class ShellTopBarCoordinator
     {
         ClearPendingDockTab();
         if (_pendingFloatingContext is { ContinueWithDrag: false } context)
-        {
-            _ = _window.Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
-            {
-                if (_pendingFloatingContext == context && FindFloatingWindow(context.PageId) == null)
-                    _pendingFloatingContext = null;
-            });
-        }
+            _ = ExpirePendingFloatingContextAsync(context);
     }
 
     private static Point GetScreenPoint(FrameworkElement surface, MouseButtonEventArgs e)
@@ -696,6 +757,22 @@ internal sealed class ShellTopBarCoordinator
         }
     }
 
+    private static void SetFloatingWindowState(LayoutFloatingWindowControl floating)
+    {
+        var target = GetToggledWindowState(floating.WindowState);
+        _ = floating.Dispatcher.BeginInvoke(
+            DispatcherPriority.Input,
+            () => floating.WindowState = target);
+    }
+
+    internal static WindowState GetToggledWindowState(WindowState state)
+        => state == WindowState.Maximized
+            ? WindowState.Normal
+            : WindowState.Maximized;
+
+    internal static bool ShouldDelayHostDrag(bool isMainWindow, WindowState state)
+        => !isMainWindow || state == WindowState.Maximized;
+
     private void DetachFocusedTab(FrameworkElement tab)
     {
         tab.PreviewMouseLeftButtonDown -= OnFocusedTabMouseDown;
@@ -729,6 +806,7 @@ internal sealed class ShellTopBarCoordinator
         _pendingHostSurface = null;
         _pendingHostTarget = null;
         _pendingHostWasMaximized = false;
+        _pendingHostRequiresHold = false;
     }
 
     private void ClearPendingDockTab()
@@ -754,6 +832,28 @@ internal sealed class ShellTopBarCoordinator
             completion?.TrySetResult(true);
         else
             completion?.TrySetCanceled();
+    }
+
+    private void SetPendingFloatingContext(
+        FloatingDragContext context,
+        TaskCompletionSource<bool>? completion = null)
+    {
+        _pendingFloatingCompletion?.TrySetCanceled();
+        _pendingFloatingContext = context;
+        _pendingFloatingCompletion = completion;
+    }
+
+    private async Task ExpirePendingFloatingContextAsync(FloatingDragContext context)
+    {
+        await Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+        if (_disposed || _window.Dispatcher.HasShutdownStarted)
+            return;
+
+        await _window.Dispatcher.InvokeAsync(() =>
+        {
+            if (_pendingFloatingContext == context && FindFloatingWindow(context.PageId) == null)
+                ClearPendingFloatingContext(context);
+        }, DispatcherPriority.Background);
     }
 
     private Size ResolveEmbeddedPaneSize(string id)
@@ -832,6 +932,33 @@ internal sealed class ShellTopBarCoordinator
             .OfType<LayoutContent>()
             .FirstOrDefault(content =>
                 content.ContentId?.Equals(id, StringComparison.OrdinalIgnoreCase) == true);
+
+    private void UpdateDocumentPaneChrome(LayoutDocumentPaneControl pane)
+    {
+        pane.ApplyTemplate();
+        var selected = (pane.Model as LayoutDocumentPane)?.SelectedContent as LayoutContent;
+        var floating = selected?.ContentId is { Length: > 0 } id
+            ? FindFloatingWindow(id)
+            : null;
+
+        if (pane.Template.FindName("ShellChromeHost", pane) is ContentControl chromeHost)
+            chromeHost.Visibility = floating == null ? Visibility.Visible : Visibility.Collapsed;
+        if (pane.Template.FindName("FloatingDocumentMaxRestore", pane) is Button button)
+        {
+            button.Visibility = floating == null ? Visibility.Collapsed : Visibility.Visible;
+            button.ToolTip = floating?.WindowState == WindowState.Maximized
+                ? "向下还原"
+                : "最大化";
+        }
+        if (pane.Template.FindName("FloatingDocumentMaxRestoreIcon", pane) is
+            System.Windows.Shapes.Path icon &&
+            pane.TryFindResource(floating?.WindowState == WindowState.Maximized
+                ? "Shell.Icon.Restore"
+                : "Shell.Icon.Maximize") is Geometry geometry)
+        {
+            icon.Data = geometry;
+        }
+    }
 
     private static bool TryResolveTabPageId(DependencyObject? source, out string id)
     {

@@ -39,7 +39,7 @@
   占据该页页签行的右端；右键页签仍可打开完整菜单。
 - 消费方若在自己的视图里使用 `ListBox`/`ListView`/`TabControl`，请勿覆盖 Shell 提供的模板：
   WPF 默认模板会在禁用态与内容区刷上系统浅灰（`#F4F4F4`），深色模式下会漏色。
-- 浮动窗口的客户区与外框跟随主题；其系统标题栏由 Windows 绘制，深色模式下不变色。
+- 浮动窗口不显示独立系统标题栏；唯一页面顶栏跟随主题，并由 AppShell 统一处理延迟拖动、双击和最大化恢复。
 - 消费方若自建 `GridView` 表格，表头需显式设置
   `ColumnHeaderContainerStyle="{StaticResource Shell.GridHeader}"`（样式在
   `/AppShell.Shell;component/Themes/ShellControls.xaml`），否则 WPF 的默认表头容器样式

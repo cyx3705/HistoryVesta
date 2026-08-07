@@ -12,6 +12,7 @@ internal sealed class DelayedDragGesture(TimeSpan holdDuration)
     private double _verticalThreshold;
 
     public bool IsActive { get; private set; }
+    public bool HasReachedThreshold { get; private set; }
 
     public void Begin(
         long timestamp,
@@ -25,6 +26,7 @@ internal sealed class DelayedDragGesture(TimeSpan holdDuration)
         _horizontalThreshold = horizontalThreshold;
         _verticalThreshold = verticalThreshold;
         IsActive = true;
+        HasReachedThreshold = false;
     }
 
     public bool Update(long timestamp, Point position)
@@ -33,6 +35,8 @@ internal sealed class DelayedDragGesture(TimeSpan holdDuration)
             return false;
 
         _latest = position;
+        HasReachedThreshold = Math.Abs(_latest.X - _start.X) >= _horizontalThreshold ||
+                              Math.Abs(_latest.Y - _start.Y) >= _verticalThreshold;
         return CanStart(timestamp);
     }
 
@@ -40,11 +44,13 @@ internal sealed class DelayedDragGesture(TimeSpan holdDuration)
         => IsActive && CanStart(timestamp);
 
     public void Cancel()
-        => IsActive = false;
+    {
+        IsActive = false;
+        HasReachedThreshold = false;
+    }
 
     private bool CanStart(long timestamp)
         => timestamp >= _pressedAt &&
            timestamp - _pressedAt >= _holdMilliseconds &&
-           (Math.Abs(_latest.X - _start.X) >= _horizontalThreshold ||
-            Math.Abs(_latest.Y - _start.Y) >= _verticalThreshold);
+           HasReachedThreshold;
 }
