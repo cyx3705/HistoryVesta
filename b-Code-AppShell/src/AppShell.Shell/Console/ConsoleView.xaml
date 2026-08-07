@@ -37,16 +37,13 @@
             段内控件不再各带边框 —— 顶部只剩一个形状。
         -->
         <Border DockPanel.Dock="Top" Style="{StaticResource Shell.Segment.Bar}">
-            <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                          VerticalScrollBarVisibility="Disabled"
-                          CanContentScroll="False">
-                <StackPanel Orientation="Horizontal">
+            <WrapPanel Orientation="Horizontal">
                 <TextBlock Text="级别" Style="{StaticResource Shell.Segment.Label}" />
                 <ComboBox x:Name="LevelFilter" Width="76"
                           Style="{StaticResource Shell.Segment.ComboBox}"
                           SelectionChanged="OnLevelChanged" />
-                <TextBlock Text="来源" Style="{StaticResource Shell.Segment.Label}" />
-                <ComboBox x:Name="SourceFilter" Width="88"
+                <TextBlock Text="域" Style="{StaticResource Shell.Segment.Label}" />
+                <ComboBox x:Name="DomainFilter" Width="112"
                           Style="{StaticResource Shell.Segment.ComboBox}"
                           SelectionChanged="OnSourceChanged" />
 
@@ -66,9 +63,8 @@
                 <Border Visibility="Collapsed" Style="{StaticResource Shell.Segment.Divider}" />
 
                 <Button Content="清屏" Visibility="Collapsed" Style="{StaticResource Shell.Segment.Button}" Click="OnClearClick" />
-                    <Button Content="导出" Visibility="Collapsed" Style="{StaticResource Shell.Segment.Button}" Click="OnExportClick" />
-                </StackPanel>
-            </ScrollViewer>
+                <Button Content="导出" Visibility="Collapsed" Style="{StaticResource Shell.Segment.Button}" Click="OnExportClick" />
+            </WrapPanel>
         </Border>
 
         <!-- 指令输入区(C-10) -->
@@ -104,14 +100,18 @@
                  FontFamily="{DynamicResource Shell.Font.MonoFamily}"
                  FontSize="{DynamicResource Shell.Font.Mono}"
                  SelectionMode="Extended"
-                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                 HorizontalContentAlignment="Stretch"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                  ScrollViewer.CanContentScroll="True"
                  VirtualizingPanel.IsVirtualizing="True"
                  VirtualizingPanel.VirtualizationMode="Recycling"
                  VirtualizingPanel.ScrollUnit="Pixel">
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="{x:Type local:ConsoleRow}">
-                    <TextBlock Text="{Binding Text}">
+                    <TextBlock HorizontalAlignment="Stretch"
+                               Text="{Binding Text}"
+                               TextWrapping="Wrap">
                         <!--
                             ConsoleRow.Foreground 保留为公开兼容属性，但渲染颜色由当前
                             主题令牌统一决定，避免深色主题继续使用浅色硬编码画刷。
@@ -149,6 +149,7 @@
                 <Style TargetType="ListBoxItem">
                     <Setter Property="Padding" Value="6,0" />
                     <Setter Property="MinHeight" Value="16" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="SnapsToDevicePixels" Value="True" />
                     <Setter Property="Template">
                         <Setter.Value>
@@ -160,7 +161,8 @@
                                         SnapsToDevicePixels="True">
                                     <ContentPresenter Content="{TemplateBinding Content}"
                                                       ContentTemplate="{TemplateBinding ContentTemplate}"
-                                                      ContentStringFormat="{TemplateBinding ContentStringFormat}" />
+                                                      ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">

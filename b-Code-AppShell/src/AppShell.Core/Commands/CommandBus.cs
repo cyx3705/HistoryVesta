@@ -9,7 +9,7 @@ namespace AppShell.Core.Commands;
 /// 解析 → 查注册表 → 参数校验 → 拦截(二次确认) → 执行(可 UI 线程编组) → 结果回显。
 /// 任何指令抛出的异常都被捕获:程序不崩溃,错误进控制台与日志文件(P0)。
 /// 指令回显与普通日志共用 IShellLog 管道、不同类别(L-03):
-///   回显 = "cmd:来源",结果 = "cmd:result",进度 = "cmd:progress"。
+///   回显 = "cmd:来源",结果 = "cmd:result:域",进度 = "cmd:progress:域"。
 /// </summary>
 public sealed class CommandBus
 {
@@ -93,12 +93,13 @@ public sealed class CommandBus
         // 1. 回显
         var trimmed = text.Trim();
         var displayText = RedactSensitiveArguments(trimmed);
+        var domain = DomainOfCommandText(trimmed);
         _log.Log(ShellLogLevel.Info, EchoCategoryPrefix + source, displayText);
 
         CommandResult result;
         try
         {
-            result = await ExecuteCoreAsync(trimmed, source, cancellation).ConfigureAwait(false);
+            result = await ExecuteCoreAsync(trimmed, source, domain, cancellation).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
@@ -120,7 +121,7 @@ public sealed class CommandBus
         // 2. 结果回显(错误红色高亮由控制台按级别渲染,C-02)
         _log.Log(
             result.Success ? ShellLogLevel.Info : ShellLogLevel.Error,
-            ResultCategory,
+            $"{ResultCategory}:{domain}",
             (result.Success ? "✓ " : "✗ ") + result.Message);
 
         Executed?.Invoke(displayText, source, result);
@@ -270,6 +271,7 @@ public sealed class CommandBus
     private async Task<CommandResult> ExecuteCoreAsync(
         string text,
         string source,
+        string domain,
         CancellationToken cancellation)
     {
         var remote = RemoteExecutor;
@@ -318,7 +320,7 @@ public sealed class CommandBus
             return CommandResult.Fail($"{bindError}\n{FormatUsage(descriptor)}");
 
         var progress = new Progress<string>(line =>
-            _log.Log(ShellLogLevel.Info, ProgressCategory, line));
+            _log.Log(ShellLogLevel.Info, $"{ProgressCategory}:{domain}", line));
         var context = new CommandContext(descriptor, values, source, progress, cancellation);
 
         // 拦截:二次确认(§5.2;T-08/R-06 危险操作在“手输指令路径”的统一闸口)
@@ -368,6 +370,23 @@ public sealed class CommandBus
                 $"{descriptor.Name} 执行异常({ex.GetType().Name}): {safeError}");
             return CommandResult.Fail($"{descriptor.Name} 执行异常: {safeError}");
         }
+    }
+
+    private static string DomainOfCommandText(string text)
+    {
+        string name;
+        try
+        {
+            name = CommandParser.Parse(text).Name;
+        }
+        catch (CommandSyntaxException)
+        {
+            var separator = text.IndexOfAny([' ', '\t', '\r', '\n']);
+            name = separator >= 0 ? text[..separator] : text;
+        }
+
+        var dot = name.IndexOf('.');
+        return dot > 0 ? name[..dot] : "core";
     }
 
     private CommandResult RedactCommandResult(string commandText, CommandResult result)

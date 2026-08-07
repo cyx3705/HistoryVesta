@@ -354,7 +354,11 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="{DynamicResource Shell.Radius.Inner}"
                             SnapsToDevicePixels="True">
-                        <ScrollViewer Focusable="False" Padding="{TemplateBinding Padding}">
+                        <ScrollViewer Focusable="False"
+                                      Padding="{TemplateBinding Padding}"
+                                      HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                                      VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                                      CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}">
                             <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                         </ScrollViewer>
                     </Border>

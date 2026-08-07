@@ -13,6 +13,7 @@ public partial class McpToolsView : UserControl
     private readonly Func<CommandBus?> _busAccessor;
     private readonly CommandSelectionState _selection;
     private List<CommandCatalogRow> _allRows = [];
+    private IReadOnlyList<string> _domains = [];
     private bool _initialLoadDone;
     private bool _registryRefreshPending;
     private CommandRegistry? _observedRegistry;
@@ -101,6 +102,15 @@ public partial class McpToolsView : UserControl
             }
 
             _allRows = rows.ToList();
+            var domainsResult = await bus.ExecuteAsync("command.domains", "UI");
+            if (!domainsResult.Success
+                || !CommandResultData.TryRead<IReadOnlyList<CommandDomainInfo>>(
+                    domainsResult.Data, out var domainRows))
+            {
+                StatusText.Text = "命令域加载失败，详见控制台";
+                return;
+            }
+            _domains = domainRows.Select(row => row.Domain).ToList();
             if (_selection.CurrentCommandName is { } current
                 && !_allRows.Any(row => row.CommandName.Equals(current, StringComparison.OrdinalIgnoreCase)))
             {
@@ -120,8 +130,7 @@ public partial class McpToolsView : UserControl
     {
         var selected = DomainFilterBox.SelectedItem?.ToString() ?? "全部";
         var values = new List<string> { "全部" };
-        values.AddRange(_allRows.Select(row => row.Domain).Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(value => value, StringComparer.Ordinal));
+        values.AddRange(_domains);
         DomainFilterBox.ItemsSource = values;
         DomainFilterBox.SelectedItem = values.Contains(selected, StringComparer.OrdinalIgnoreCase)
             ? values.First(value => value.Equals(selected, StringComparison.OrdinalIgnoreCase))
@@ -155,15 +164,6 @@ public partial class McpToolsView : UserControl
             _ => rows,
         };
 
-        var source = SourceFilterBox.SelectedIndex switch
-        {
-            1 => "framework",
-            2 => "app",
-            3 => "module",
-            _ => null,
-        };
-        if (source != null)
-            rows = rows.Where(row => row.Source.Equals(source, StringComparison.OrdinalIgnoreCase));
         if (CustomizedOnlyCheck.IsChecked == true)
             rows = rows.Where(row => row.Customized);
         if (PendingOnlyCheck.IsChecked == true)

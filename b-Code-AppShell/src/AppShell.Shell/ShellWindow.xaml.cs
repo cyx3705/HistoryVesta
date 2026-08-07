@@ -354,7 +354,9 @@ public partial class ShellWindow : Window
 
         // C-15:Ctrl + ` 全局聚焦控制台输入框
         var focusConsole = new RoutedCommand();
-        CommandBindings.Add(new CommandBinding(focusConsole, (_, _) => FocusConsole()));
+        CommandBindings.Add(new CommandBinding(
+            focusConsole,
+            (_, _) => _ = _bus.ExecuteAsync("log.focus", "UI")));
         InputBindings.Add(new KeyBinding(focusConsole, Key.Oem3, ModifierKeys.Control));
 
         if (config.EnableMaximizeOnDoubleClick)
@@ -364,11 +366,6 @@ public partial class ShellWindow : Window
                 new MouseButtonEventHandler(OnDockDoubleClick),
                 handledEventsToo: true);
         }
-        DockManager.AddHandler(
-            ButtonBase.ClickEvent,
-            new RoutedEventHandler(OnDockButtonClick),
-            handledEventsToo: true);
-
         BuildMenus();
         UpdateLayoutIndicator();
         ApplyFocusChrome();
@@ -545,7 +542,7 @@ public partial class ShellWindow : Window
     {
         Toast.Visibility = Visibility.Collapsed;
         _toastTimer.Stop();
-        FocusConsole();
+        _ = _bus.ExecuteAsync("log.focus", "UI");
     }
 
     // ---------------------------------------------------------------- 顶栏窗口控件(UI-02)
@@ -559,17 +556,8 @@ public partial class ShellWindow : Window
     private void OnCloseClick(object sender, RoutedEventArgs e)
         => _ = _bus.ExecuteAsync("app.frontend.hide", "UI");
 
-    private void OnFloatingMaxRestoreClick(object sender, RoutedEventArgs e)
-        => _topBar.ToggleFloatingWindow((DependencyObject)sender);
-
-    private void OnDockButtonClick(object sender, RoutedEventArgs e)
-    {
-        if (e.OriginalSource is FrameworkElement { Tag: "FloatingMaxRestore" } button)
-        {
-            OnFloatingMaxRestoreClick(button, e);
-            e.Handled = true;
-        }
-    }
+    internal CommandResult SetFloatingWindowState(string id, string state)
+        => _topBar.SetFloatingWindowState(id, state);
 
     /// <summary>窗体最大化图标切换 + WindowChrome 溢出补偿(UI-02.5)。</summary>
     private void ApplyWindowStateChrome()
@@ -591,7 +579,7 @@ public partial class ShellWindow : Window
         if (_config.CloseBehavior == ShellCloseBehavior.Hide && !_allowClose)
         {
             e.Cancel = true;
-            Hide();
+            _ = _bus.ExecuteAsync("app.frontend.hide", "UI");
             _closing = false;
             return;
         }
@@ -1295,7 +1283,7 @@ public partial class ShellWindow : Window
         manual.ToolTip = helpError == null ? null : $"指令当前不可用: {helpError}";
         manual.Click += async (_, _) =>
         {
-            FocusConsole();
+            await _bus.ExecuteAsync("log.focus", "UI");
             await _bus.ExecuteAsync("help", "UI");
         };
         help.Items.Add(manual);

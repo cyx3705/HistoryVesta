@@ -6,8 +6,10 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using AppShell.Core;
 using AppShell.Core.Commands;
 using AppShell.Core.Logging;
+using AppShell.Shell.Mcp;
 
 namespace AppShell.Shell.Console;
 
@@ -34,7 +36,14 @@ public partial class ConsoleView : UserControl
     private RingCollection<ConsoleRow> _visible = new();
     private readonly DispatcherTimer _flushTimer;
     private ScrollViewer? _scroll;
-    private string _source = "全部";
+    private string _domain = "全部";
+    private IReadOnlyList<string> _domains = ["全部"];
+    private IReadOnlySet<string> _registeredDomains = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "core",
+    };
+    private bool _registryRefreshPending;
+    private bool _observingRegistry;
     private string _keyword = "";
     private bool _muteLayout;
     private bool _autoScroll = true;
@@ -58,8 +67,8 @@ public partial class ConsoleView : UserControl
 
         LevelFilter.ItemsSource = new[] { "全部", "Trace", "Debug", "Info", "Warn", "Error", "Fatal" };
         LevelFilter.SelectedIndex = 0;
-        SourceFilter.ItemsSource = new[] { "全部", "UI", "手动", "脚本", "layout", "日志" };
-        SourceFilter.SelectedIndex = 0;
+        DomainFilter.ItemsSource = new[] { "全部" };
+        DomainFilter.SelectedIndex = 0;
 
         Output.ItemsSource = _visible;
 
@@ -83,7 +92,13 @@ public partial class ConsoleView : UserControl
         // C-14:粘贴多行文本 → 按行拆分为多条指令顺序执行
         DataObject.AddPastingHandler(Input, OnInputPasting);
 
-        Loaded += (_, _) => _scroll ??= FindScrollViewer(Output);
+        Loaded += async (_, _) =>
+        {
+            _scroll ??= FindScrollViewer(Output);
+            ObserveRegistry();
+            await RefreshDomainsAsync();
+        };
+        Unloaded += (_, _) => StopObservingRegistry();
     }
 
     /// <summary>当前控制台显示级别(log.level,L-04;文件始终全量)。</summary>
@@ -105,25 +120,37 @@ public partial class ConsoleView : UserControl
         RebuildVisible();
     }
 
-    internal string SourceFilterValue => _source;
+    internal string SourceFilterValue => _domain;
     internal string KeywordFilterValue => _keyword;
     internal bool MuteLayoutEnabled => _muteLayout;
     internal bool AutoScrollEnabled => _autoScroll;
 
-    internal void SetSource(string source)
+    internal bool TrySetSource(string source, out IReadOnlyList<string> availableDomains)
     {
-        _source = string.IsNullOrWhiteSpace(source) ? "全部" : source;
+        FlushIncoming();
+        var requested = string.IsNullOrWhiteSpace(source) ? "全部" : source;
+        availableDomains = _domains;
+        var selected = availableDomains.FirstOrDefault(value =>
+            value.Equals(requested, StringComparison.OrdinalIgnoreCase));
+        if (selected == null)
+            return false;
+
+        _domain = selected;
         _suppressFilterEvents = true;
         try
         {
-            SourceFilter.SelectedItem = _source;
+            DomainFilter.SelectedItem = _domain;
         }
         finally
         {
             _suppressFilterEvents = false;
         }
         RebuildVisible();
+        return true;
     }
+
+    internal void SetSource(string source)
+        => _ = TrySetSource(source, out _);
 
     internal void SetKeyword(string keyword)
     {
@@ -288,17 +315,8 @@ public partial class ConsoleView : UserControl
         if (_muteLayout && row.SourceKey == "layout")
             return false;
 
-        var source = _source;
-        if (source != "全部")
-        {
-            var match = source switch
-            {
-                "日志" => row.SourceKey is not ("UI" or "手动" or "脚本" or "layout" or "result"),
-                _ => row.SourceKey == source,
-            };
-            if (!match)
-                return false;
-        }
+        if (_domain != "全部" && !EffectiveDomainOf(row).Equals(_domain, StringComparison.OrdinalIgnoreCase))
+            return false;
 
         var keyword = _keyword;
         if (keyword.Length > 0
@@ -336,10 +354,79 @@ public partial class ConsoleView : UserControl
 
     private void OnSourceChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (!IsLoaded || _suppressFilterEvents || SourceFilter.SelectedItem is not string source)
+        if (!IsLoaded || _suppressFilterEvents || DomainFilter.SelectedItem is not string source)
             return;
         _ = _bus.ExecuteAsync($"log.source source={CommandParser.QuoteArg(source)}", "UI");
     }
+
+    private void ObserveRegistry()
+    {
+        if (_observingRegistry)
+            return;
+        _bus.Registry.Changed += OnRegistryChanged;
+        _observingRegistry = true;
+    }
+
+    private void StopObservingRegistry()
+    {
+        if (!_observingRegistry)
+            return;
+        _bus.Registry.Changed -= OnRegistryChanged;
+        _observingRegistry = false;
+    }
+
+    private void OnRegistryChanged()
+    {
+        if (_registryRefreshPending)
+            return;
+        _registryRefreshPending = true;
+        Dispatcher.BeginInvoke(async () =>
+        {
+            await Task.Delay(200);
+            _registryRefreshPending = false;
+            if (IsLoaded)
+                await RefreshDomainsAsync();
+        });
+    }
+
+    private async Task RefreshDomainsAsync()
+    {
+        if (_bus.Validate("command.domains") != null)
+            return;
+
+        var result = await _bus.ExecuteAsync("command.domains", "UI");
+        if (!result.Success
+            || !CommandResultData.TryRead<IReadOnlyList<CommandDomainInfo>>(result.Data, out var rows))
+            return;
+
+        var registered = rows.Select(row => row.Domain)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(value => value, StringComparer.Ordinal)
+            .ToList();
+        _registeredDomains = registered.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        _domains = ["全部", .. registered];
+        var selected = _domains.FirstOrDefault(value => value.Equals(_domain, StringComparison.OrdinalIgnoreCase))
+                       ?? "全部";
+        var changed = !_domain.Equals(selected, StringComparison.Ordinal);
+        _domain = selected;
+        _suppressFilterEvents = true;
+        try
+        {
+            DomainFilter.ItemsSource = _domains;
+            DomainFilter.SelectedItem = selected;
+        }
+        finally
+        {
+            _suppressFilterEvents = false;
+        }
+
+        if (changed)
+            RebuildVisible();
+    }
+
+    private string EffectiveDomainOf(ConsoleRow row)
+        => _registeredDomains.Contains(row.DomainKey) ? row.DomainKey : "core";
 
     private void OnClearClick(object sender, RoutedEventArgs e)
         => _ = _bus.ExecuteAsync("log.clear", "UI");

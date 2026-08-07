@@ -264,15 +264,27 @@ internal sealed class ShellTopBarCoordinator : IDisposable
         => Math.Abs(current.X - start.X) >= horizontalThreshold * multiplier ||
            Math.Abs(current.Y - start.Y) >= verticalThreshold * multiplier;
 
-    public void ToggleFloatingWindow(DependencyObject source)
+    internal CommandResult SetFloatingWindowState(string id, string state)
     {
-        var floating = FindAncestor<LayoutFloatingWindowControl>(source);
-        if (floating == null && TryResolvePageId(source, out var id))
-            floating = FindFloatingWindow(id);
+        var floating = FindFloatingWindow(id);
         if (floating == null)
-            return;
+            return CommandResult.Fail($"页面 {id} 没有对应的独立浮窗宿主");
 
-        SetFloatingWindowState(floating);
+        var targetState = state.ToLowerInvariant() switch
+        {
+            "maximized" => (WindowState?)WindowState.Maximized,
+            "normal" => WindowState.Normal,
+            "toggle" => GetToggledWindowState(floating.WindowState),
+            _ => null,
+        };
+        if (targetState == null)
+            return CommandResult.Fail($"不支持的浮窗状态: {state}");
+        if (targetState == WindowState.Maximized)
+            SystemCommands.MaximizeWindow(floating);
+        else
+            SystemCommands.RestoreWindow(floating);
+        var label = targetState == WindowState.Maximized ? "最大化" : "普通";
+        return CommandResult.Ok($"{id} 独立浮窗已切换为{label}状态");
     }
 
     public bool TryResolvePageId(DependencyObject? source, out string id)
@@ -352,23 +364,16 @@ internal sealed class ShellTopBarCoordinator : IDisposable
 
             var quotedId = CommandParser.QuoteArg(id);
             if (action.Equals("toggle-floating", StringComparison.OrdinalIgnoreCase))
-            {
-                if (FindFloatingWindow(id) is { } floating)
-                    SetFloatingWindowState(floating);
-                else
-                    _log.Error(ChromeLogSource, $"页面 {id} 没有对应的独立浮窗宿主");
-                e.Handled = true;
-                return;
-            }
-
-            command = action.ToLowerInvariant() switch
-            {
-                "float" => $"win.float name={quotedId}",
-                "hide" => $"win.hide name={quotedId}",
-                "dock-document" => $"win.dock name={quotedId} pos=center",
-                "autohide" => $"win.autohide name={quotedId}",
-                _ => string.Empty,
-            };
+                command = $"win.float-state name={quotedId} state=toggle";
+            else
+                command = action.ToLowerInvariant() switch
+                {
+                    "float" => $"win.float name={quotedId}",
+                    "hide" => $"win.hide name={quotedId}",
+                    "dock-document" => $"win.dock name={quotedId} pos=center",
+                    "autohide" => $"win.autohide name={quotedId}",
+                    _ => string.Empty,
+                };
         }
 
         if (string.IsNullOrEmpty(command))
@@ -554,11 +559,11 @@ internal sealed class ShellTopBarCoordinator : IDisposable
             {
                 _ = _bus.ExecuteAsync("app.window state=toggle", "UI");
             }
-            else
+            else if (target.StartsWith("floating:", StringComparison.Ordinal))
             {
-                hostWindow.WindowState = hostWindow.WindowState == WindowState.Maximized
-                    ? WindowState.Normal
-                    : WindowState.Maximized;
+                var id = target["floating:".Length..];
+                _ = _bus.ExecuteAsync(
+                    $"win.float-state name={CommandParser.QuoteArg(id)} state=toggle", "UI");
             }
             e.Handled = true;
             return;
@@ -755,14 +760,6 @@ internal sealed class ShellTopBarCoordinator : IDisposable
         {
             _log.Warn(ChromeLogSource, $"窗口拖动未启动：{ex.Message}");
         }
-    }
-
-    private static void SetFloatingWindowState(LayoutFloatingWindowControl floating)
-    {
-        var target = GetToggledWindowState(floating.WindowState);
-        _ = floating.Dispatcher.BeginInvoke(
-            DispatcherPriority.Input,
-            () => floating.WindowState = target);
     }
 
     internal static WindowState GetToggledWindowState(WindowState state)

@@ -571,6 +571,33 @@ public static class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
+            Name = "win.float-state",
+            Summary = "设置独立浮窗宿主的最大化状态",
+            Example = $"win.float-state name={StandardWindowIds.Console} state=toggle",
+            RequiresUiThread = true,
+            Parameters =
+            [
+                nameParam,
+                new ParameterSpec
+                {
+                    Name = "state",
+                    Description = "maximized、normal 或 toggle",
+                    Default = "toggle",
+                    Position = 1,
+                    AllowedValues = ["maximized", "normal", "toggle"],
+                },
+            ],
+            Handler = CommandDescriptor.Sync(ctx =>
+            {
+                if (ResolveWindow(s, ctx) is { } error)
+                    return error;
+                return s.Window.SetFloatingWindowState(
+                    ctx.RequireString("name"), ctx.GetString("state") ?? "toggle");
+            }),
+        });
+
+        RegisterFrontend(r, new CommandDescriptor
+        {
             Name = "win.restore",
             Summary = "退出窗口最大化并恢复原布局",
             RequiresUiThread = true,
@@ -855,17 +882,18 @@ public static class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "log.source",
-            Summary = "设置控制台日志来源过滤",
-            Example = "log.source source=UI",
+            Summary = "设置控制台日志域过滤（兼容命令名）",
+            Example = "log.source source=app",
             RequiresUiThread = true,
-            Parameters = [new ParameterSpec { Name = "source", Description = "全部/UI/手动/脚本/layout/日志；省略时查询当前值", Position = 0, AllowedValues = ["全部", "UI", "手动", "脚本", "layout", "日志"] }],
+            Parameters = [new ParameterSpec { Name = "source", Description = "命令总线当前已注册的域；省略时查询当前值", Position = 0 }],
             Handler = CommandDescriptor.Sync(ctx =>
             {
                 var source = ctx.GetString("source");
                 if (source == null)
-                    return CommandResult.Ok($"当前日志来源: {s.Console.SourceFilterValue}");
-                s.Console.SetSource(source);
-                return CommandResult.Ok($"日志来源已设置为 {source}");
+                    return CommandResult.Ok($"当前日志域: {s.Console.SourceFilterValue}");
+                if (!s.Console.TrySetSource(source, out var available))
+                    return CommandResult.Fail($"日志域不存在: {source}；可用域: {string.Join(" / ", available)}");
+                return CommandResult.Ok($"日志域已设置为 {s.Console.SourceFilterValue}");
             }),
         });
 

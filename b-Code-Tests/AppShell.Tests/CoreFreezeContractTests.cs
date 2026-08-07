@@ -4,6 +4,7 @@ using AppShell.Core.Mcp;
 using AppShell.Services;
 using AppShell.Services.Mcp;
 using AppShell.Shell.Mcp;
+using System.Collections.Concurrent;
 using Xunit;
 
 namespace AppShell.Tests;
@@ -80,6 +81,76 @@ public sealed class CoreFreezeContractTests
         Assert.True(accepted.Success, accepted.Message);
         Assert.Equal("4:True", accepted.Message);
         Assert.Equal(1, executed);
+    }
+
+    [Fact]
+    public async Task CommandBusAddsCommandDomainToResultsAndProgressWithoutCrossingConcurrentRuns()
+    {
+        var registry = new CommandRegistry();
+        registry.Register(new CommandDescriptor
+        {
+            Name = "alpha.work",
+            Summary = "alpha",
+            Handler = async context =>
+            {
+                context.Progress?.Report("alpha-step");
+                await Task.Delay(25);
+                return CommandResult.Ok("alpha-done");
+            },
+        });
+        registry.Register(new CommandDescriptor
+        {
+            Name = "beta.work",
+            Summary = "beta",
+            Handler = async context =>
+            {
+                context.Progress?.Report("beta-step");
+                await Task.Delay(5);
+                return CommandResult.Ok("beta-done");
+            },
+        });
+        var log = new RecordingLog();
+        var bus = new CommandBus(registry, log);
+
+        await Task.WhenAll(
+            bus.ExecuteAsync("alpha.work", "Test"),
+            bus.ExecuteAsync("beta.work", "Test"));
+        Assert.True(SpinWait.SpinUntil(
+            () => log.Entries.Count(entry => entry.Category.StartsWith(
+                CommandBus.ProgressCategory, StringComparison.Ordinal)) == 2,
+            TimeSpan.FromSeconds(2)));
+
+        Assert.Contains(log.Entries, entry =>
+            entry.Category == "cmd:progress:alpha" && entry.Message == "alpha-step");
+        Assert.Contains(log.Entries, entry =>
+            entry.Category == "cmd:progress:beta" && entry.Message == "beta-step");
+        Assert.Contains(log.Entries, entry =>
+            entry.Category == "cmd:result:alpha" && entry.Message.Contains("alpha-done", StringComparison.Ordinal));
+        Assert.Contains(log.Entries, entry =>
+            entry.Category == "cmd:result:beta" && entry.Message.Contains("beta-done", StringComparison.Ordinal));
+        Assert.Equal("cmd:result", CommandBus.ResultCategory);
+        Assert.Equal("cmd:progress", CommandBus.ProgressCategory);
+    }
+
+    [Fact]
+    public async Task CommandBusUsesCoreForRootCommandsAndParsedPrefixForUnknownCommands()
+    {
+        var registry = new CommandRegistry();
+        registry.Register(new CommandDescriptor
+        {
+            Name = "ping",
+            Summary = "ping",
+            Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("pong")),
+        });
+        var log = new RecordingLog();
+        var bus = new CommandBus(registry, log);
+
+        Assert.True((await bus.ExecuteAsync("ping", "Test")).Success);
+        Assert.False((await bus.ExecuteAsync("missing.run", "Test")).Success);
+
+        Assert.Contains(log.Entries, entry => entry.Category == "cmd:result:core");
+        Assert.Contains(log.Entries, entry => entry.Category == "cmd:result:missing");
+        Assert.Equal(2, log.Entries.Count(entry => entry.Category == "cmd:Test"));
     }
 
 
@@ -172,5 +243,19 @@ public sealed class CoreFreezeContractTests
         public void Log(ShellLogLevel level, string category, string message) { }
         public event EventHandler<ShellLogEntry>? EntryAdded { add { } remove { } }
         public IReadOnlyList<ShellLogEntry> Snapshot() => [];
+    }
+
+    private sealed class RecordingLog : IShellLog
+    {
+        private readonly ConcurrentQueue<ShellLogEntry> _entries = new();
+
+        public IReadOnlyList<ShellLogEntry> Entries => _entries.ToArray();
+
+        public void Log(ShellLogLevel level, string category, string message)
+            => _entries.Enqueue(new ShellLogEntry(DateTime.UtcNow, level, category, message));
+
+        public event EventHandler<ShellLogEntry>? EntryAdded { add { } remove { } }
+
+        public IReadOnlyList<ShellLogEntry> Snapshot() => Entries;
     }
 }

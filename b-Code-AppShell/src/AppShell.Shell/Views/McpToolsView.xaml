@@ -20,7 +20,7 @@
     <DockPanel Margin="10">
         <!--
             3.1 修订:顶部原本是 10 列 Grid + 一排复选框共两层控件,
-            现在合成一个「切分圆角矩形」—— 搜索 / 三个筛选 / 三个开关 / 动作 四段,
+            现在合成一个「切分圆角矩形」—— 搜索 / 两个筛选 / 三个开关 / 动作 四段,
             段间用发丝线切分,窄宽度下整条自动换行。
         -->
         <Border DockPanel.Dock="Top" Style="{StaticResource Shell.Segment.Bar}">
@@ -46,16 +46,6 @@
                     <ComboBoxItem Content="硬排除" />
                     <ComboBoxItem Content="危险拒绝" />
                 </ComboBox>
-                <TextBlock Text="来源" Style="{StaticResource Shell.Segment.Label}" />
-                <ComboBox x:Name="SourceFilterBox" Width="112" SelectedIndex="0"
-                          Style="{StaticResource Shell.Segment.ComboBox}"
-                          SelectionChanged="OnFilterChanged">
-                    <ComboBoxItem Content="全部" />
-                    <ComboBoxItem Content="framework" />
-                    <ComboBoxItem Content="app" />
-                    <ComboBoxItem Content="module" />
-                </ComboBox>
-
                 <Border Style="{StaticResource Shell.Segment.Divider}" />
 
                 <CheckBox x:Name="CustomizedOnlyCheck" Content="自定义提示词"
@@ -88,7 +78,6 @@
                 <GridView ColumnHeaderContainerStyle="{StaticResource Shell.GridHeader}">
                     <GridViewColumn Header="指令" Width="185" DisplayMemberBinding="{Binding CommandName}" />
                     <GridViewColumn Header="域" Width="70" DisplayMemberBinding="{Binding Domain}" />
-                    <GridViewColumn Header="来源" Width="85" DisplayMemberBinding="{Binding Source}" />
                     <GridViewColumn Header="MCP" Width="85" DisplayMemberBinding="{Binding McpState}" />
                     <GridViewColumn Header="参数" Width="48" DisplayMemberBinding="{Binding ParameterCount}" />
                     <GridViewColumn Header="说明" Width="340" DisplayMemberBinding="{Binding Summary}" />

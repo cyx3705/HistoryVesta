@@ -1,8 +1,8 @@
 # AppShell API 与指令手册
 
-> 适用版本：AppShell 3.1.3（3.0.3 为冻结基线；3.1.1 为功能收口基线）
+> 适用版本：AppShell 3.1.4（3.0.3 为冻结基线；3.1.1 为功能收口基线）
 
-本手册给出稳定公开 API 的常用入口和 3.1.3 框架基础命令。完整签名以包内 `lib/<TFM>/AppShell.*.xml` 为准；源码仓中的四份 `PublicAPI.Shipped.txt` 是冻结门禁，不随运行包发布。最终命令集合以应用运行时的 `command.list`、`command.show` 和 `command.manual` 为准。
+本手册给出稳定公开 API 的常用入口和 3.1.4 框架基础命令。完整签名以包内 `lib/<TFM>/AppShell.*.xml` 为准；源码仓中的四份 `PublicAPI.Shipped.txt` 是冻结门禁，不随运行包发布。最终命令集合以应用运行时的 `command.list`、`command.show` 和 `command.manual` 为准。
 
 模块命令、消费方业务命令以及按面板、MCP、Web 能力启用的命令不会在每个宿主中同时出现。
 
@@ -185,10 +185,16 @@ registry.Register(new CommandDescriptor
 - 所有 UI、脚本、Web 和 MCP 调用最终都进入 `CommandBus.ExecuteAsync`。
 - `ExecutionSite=Local` 在当前宿主执行；`Frontend` 由服务转发给在线 Shell。
 - `Readonly`、`Dangerous` 和 `AllowMcpExecution` 是安全合同。前端/UI 命令默认不进入 MCP。
+- 命令集页面只显示一个“域”筛选器和一个“域”列：命令名取第一个 `.` 前缀，无点命令归 `core`。
+  `CommandCatalogRow.Source/SourceDetail`、`CommandRegistry.GetSource` 与 `FrontendCommandCatalog.Source`
+  仍表示注册来源，供结构化目录、模块管理和外部消费者使用，不再作为命令集页面筛选。
+- 控制台与命令集都通过 `command.domains` 读取同一份运行期已注册域集合。普通日志类别的第一个 `:` 或 `.`
+  前缀只有命中已注册域时才用于过滤，否则归入 `core`，不会产生控制台私有域。命令结果/进度类别在
+  `CommandBus.ResultCategory` / `ProgressCategory` 兼容前缀后附加命令域。长文本按当前窗格宽度软换行，复制和导出保留原始逻辑文本。
 
 ## 5. 基础命令目录
 
-以下是 3.1.3 框架命令快照。宿主只注册已启用能力对应的组；运行时 `command.list` 是最终权威目录。
+以下是 3.1.4 框架命令快照。宿主只注册已启用能力对应的组；运行时 `command.list` 是最终权威目录。
 
 ### 5.1 基础、应用与日志
 
@@ -208,7 +214,7 @@ registry.Register(new CommandDescriptor
 | `app.opendata` | 打开应用数据目录 |
 | `app.window [state=normal|minimized|maximized|toggle]` | 查询或设置主窗口状态 |
 | `log.level [level=trace|debug|info|warn|error|fatal]` | 无参数时查看当前控制台日志级别；带参数时修改显示级别 |
-| `log.source [source=全部|UI|手动|脚本|layout|日志]` | 查询或设置来源过滤 |
+| `log.source [source=<已注册域>|全部]` | 查询或设置控制台域过滤；命令名和参数名为兼容入口，候选由 `command.domains` 运行期生成，不存在的域会被拒绝并返回可用域 |
 | `log.keyword [text=...]` | 查询或设置关键字过滤 |
 | `log.mute [layout=true|false]` | 查询或设置 layout 来源屏蔽 |
 | `log.autoscroll [enabled=true|false]` | 查询或设置自动滚动（默认开启） |
@@ -222,6 +228,7 @@ registry.Register(new CommandDescriptor
 | `win.list` | 列出窗口状态、位置与比例 |
 | `win.show name=`、`win.hide name=`、`win.float name=`、`win.autohide name=`、`win.reset name=` | 显示、隐藏、浮动、切换自动隐藏或复位窗口；固定命令集主文档拒绝隐藏/浮动 |
 | `win.max name=`、`win.restore` | 最大化单窗或恢复整体布局 |
+| `win.float-state name= [state=maximized|normal|toggle]` | 设置独立浮窗宿主状态；页面按钮与浮窗标题双击使用同一命令 |
 | `win.dock name= pos=left|right|top|bottom|center|tab [target=] [ratio=]` | 停靠窗口；Center 进入主文档区，tab 需要目标；命令集只允许 Center；提供 ratio 时须满足 `0 < ratio < 1` |
 | `win.ratio name= value=` | 设置四边窗口占主窗体比例，须满足 `0 < value < 1`；中央页不支持比例调整 |
 | `layout.save name=`、`layout.load name=` | 保存或载入命名布局 |

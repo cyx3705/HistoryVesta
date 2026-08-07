@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shell;
 using System.Windows.Threading;
+using AppShell.Core.Commands;
 using AppShell.Core.Docking;
 using AppShell.Core.Logging;
 using AppShell.Core.Storage;
@@ -178,6 +179,26 @@ public sealed class ShellChromeContractTests
                     "the command row exists but its TextBlock is not visible");
             },
             log: log);
+    }
+
+    [Fact]
+    public void ConsoleRowsExtractDomainsFromCommandsOutputsAndLogCategories()
+    {
+        var now = DateTime.UtcNow;
+        var rows = new[]
+        {
+            ConsoleRow.From(new ShellLogEntry(now, ShellLogLevel.Info, "cmd:UI", "app.open target=x"))[0],
+            ConsoleRow.From(new ShellLogEntry(now, ShellLogLevel.Info, "cmd:UI", "help"))[0],
+            ConsoleRow.From(new ShellLogEntry(now, ShellLogLevel.Info, "cmd:result:app", "done"))[0],
+            ConsoleRow.From(new ShellLogEntry(now, ShellLogLevel.Info, "cmd:progress:app", "step"))[0],
+            ConsoleRow.From(new ShellLogEntry(now, ShellLogLevel.Info, "module:loader.detail", "loaded"))[0],
+            ConsoleRow.From(new ShellLogEntry(now, ShellLogLevel.Info, "render.frame", "drawn"))[0],
+        };
+
+        Assert.Equal(new[] { "app", "core", "app", "app", "module", "render" },
+            rows.Select(row => row.DomainKey));
+        Assert.Equal("UI", rows[0].SourceKey);
+        Assert.Equal("result", rows[2].SourceKey);
     }
 
     [Fact]
@@ -716,6 +737,40 @@ public sealed class ShellChromeContractTests
     }
 
     [Fact]
+    public void FloatingDocumentWindowStateIsOwnedByCommandBus()
+    {
+        RunShell(window =>
+        {
+            window.Docking.Show("center.state");
+            window.Docking.Float("center.state");
+            PumpDispatcher(900);
+
+            var manager = Assert.Single(FindVisualDescendants<AvalonDock.DockingManager>(window));
+            var floating = Assert.Single(manager.FloatingWindows.ToList());
+            var maximize = window.Commands.ExecuteAsync(
+                "win.float-state name=center.state state=maximized", "Test").GetAwaiter().GetResult();
+            Assert.True(maximize.Success, maximize.Message);
+            PumpDispatcher();
+            floating = Assert.Single(manager.FloatingWindows.ToList());
+            Assert.Equal(WindowState.Maximized, floating.WindowState);
+
+            var restore = window.Commands.ExecuteAsync(
+                "win.float-state name=center.state state=toggle", "Test").GetAwaiter().GetResult();
+            Assert.True(restore.Success, restore.Message);
+            PumpDispatcher();
+            floating = Assert.Single(manager.FloatingWindows.ToList());
+            Assert.Equal(WindowState.Normal, floating.WindowState);
+        }, configure: config => config.ToolWindows.Add(new ToolWindowDescriptor
+        {
+            Id = "center.state",
+            Title = "Center State",
+            DefaultSide = DockSide.Center,
+            DefaultRatio = 1,
+            ContentFactory = () => new Grid(),
+        }));
+    }
+
+    [Fact]
     public void PaneActionsSitInTheTabRowWithoutTheAutoHideButton()
     {
         RunShell(window =>
@@ -945,13 +1000,13 @@ public sealed class ShellChromeContractTests
     }
 
     [Fact]
-    public void ConsoleToolbarOnlyShowsLevelAndSource()
+    public void ConsoleToolbarOnlyShowsLevelAndDomain()
     {
         RunShell(window =>
         {
             var console = Assert.Single(FindVisualDescendants<ConsoleView>(window));
             Assert.Equal(Visibility.Visible, Assert.IsType<ComboBox>(console.FindName("LevelFilter")).Visibility);
-            Assert.Equal(Visibility.Visible, Assert.IsType<ComboBox>(console.FindName("SourceFilter")).Visibility);
+            Assert.Equal(Visibility.Visible, Assert.IsType<ComboBox>(console.FindName("DomainFilter")).Visibility);
             Assert.Equal(Visibility.Collapsed, Assert.IsType<TextBox>(console.FindName("KeywordFilter")).Visibility);
             Assert.Equal(Visibility.Collapsed, Assert.IsType<CheckBox>(console.FindName("MuteLayout")).Visibility);
             Assert.Equal(Visibility.Collapsed, Assert.IsType<CheckBox>(console.FindName("AutoScroll")).Visibility);
@@ -959,6 +1014,176 @@ public sealed class ShellChromeContractTests
             var status = window.Commands.ExecuteAsync("log.autoscroll", "Test").GetAwaiter().GetResult();
             Assert.True(status.Success, status.Message);
             Assert.Contains("True", status.Message, StringComparison.Ordinal);
+        });
+    }
+
+    [Fact]
+    public void ConsoleAndCommandCatalogShareRegisteredDomainsAndRejectPrivateValues()
+    {
+        var log = new RelayLog();
+        RunShell(
+            window =>
+            {
+                var console = Assert.Single(FindVisualDescendants<ConsoleView>(window));
+                var consoleFilter = Assert.IsType<ComboBox>(console.FindName("DomainFilter"));
+                window.Docking.Show(StandardWindowIds.Mcp);
+                PumpDispatcher(600);
+                var catalog = Assert.Single(FindVisualDescendants<AppShell.Shell.Views.McpToolsView>(window));
+                var catalogFilter = Assert.IsType<ComboBox>(catalog.FindName("DomainFilterBox"));
+
+                var consoleDomains = consoleFilter.Items.Cast<string>().ToList();
+                var catalogDomains = catalogFilter.Items.Cast<string>().ToList();
+                Assert.Equal(catalogDomains, consoleDomains);
+                Assert.Contains("core", consoleDomains);
+                Assert.Equal(consoleDomains.Skip(1).OrderBy(value => value, StringComparer.Ordinal),
+                    consoleDomains.Skip(1));
+                Assert.Equal(consoleDomains.Count,
+                    consoleDomains.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+
+                log.Raise(ShellLogLevel.Info, "private.worker", "private-log");
+                PumpDispatcher();
+                Assert.DoesNotContain("private", consoleFilter.Items.Cast<string>(),
+                    StringComparer.OrdinalIgnoreCase);
+                Assert.True(console.TrySetSource("core", out _));
+                var output = Assert.IsType<ListBox>(console.FindName("Output"));
+                Assert.Contains(output.Items.Cast<ConsoleRow>(), row =>
+                    row.Text.Contains("private-log", StringComparison.Ordinal));
+
+                Assert.True(console.TrySetSource("app", out _));
+                catalogFilter.SelectedItem = "app";
+                window.Commands.Registry.Register(new CommandDescriptor
+                {
+                    Name = "zeta.sample",
+                    Summary = "动态域同步测试",
+                    Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("ok")),
+                }, "test");
+                PumpDispatcher(600);
+                Assert.Contains("zeta", consoleFilter.Items.Cast<string>());
+                Assert.Contains("zeta", catalogFilter.Items.Cast<string>());
+                Assert.Equal("app", consoleFilter.SelectedItem);
+                Assert.Equal("app", catalogFilter.SelectedItem);
+
+                Assert.True(window.Commands.Registry.Unregister("zeta.sample"));
+                PumpDispatcher(600);
+                Assert.DoesNotContain("zeta", consoleFilter.Items.Cast<string>());
+                Assert.DoesNotContain("zeta", catalogFilter.Items.Cast<string>());
+                Assert.Equal("app", consoleFilter.SelectedItem);
+                Assert.Equal("app", catalogFilter.SelectedItem);
+                Assert.Equal(catalogFilter.Items.Cast<string>(), consoleFilter.Items.Cast<string>());
+
+                var rejected = window.Commands.ExecuteAsync("log.source source=missing-domain", "Test")
+                    .GetAwaiter().GetResult();
+                Assert.False(rejected.Success);
+                Assert.Contains("可用域", rejected.Message, StringComparison.Ordinal);
+                var parameter = window.Commands.Registry.All()
+                    .Single(command => command.Name == "log.source").Parameters.Single();
+                Assert.Null(parameter.AllowedValues);
+            },
+            log: log);
+    }
+
+    [Fact]
+    public void CommandCatalogUsesOneDomainFilterAndNoSourceColumn()
+    {
+        RunShell(window =>
+        {
+            window.Docking.Show(StandardWindowIds.Mcp);
+            PumpDispatcher(600);
+            var view = Assert.Single(FindVisualDescendants<AppShell.Shell.Views.McpToolsView>(window));
+            Assert.NotNull(view.FindName("DomainFilterBox"));
+            Assert.Null(view.FindName("SourceFilterBox"));
+
+            var list = Assert.IsType<ListView>(view.FindName("ToolList"));
+            var grid = Assert.IsType<GridView>(list.View);
+            Assert.Equal(new[] { "指令", "域", "MCP", "参数", "说明" },
+                grid.Columns.Select(column => column.Header?.ToString()));
+
+            var domainFilter = Assert.IsType<ComboBox>(view.FindName("DomainFilterBox"));
+            var domains = domainFilter.Items.Cast<string>().ToList();
+            Assert.Contains("core", domains);
+            Assert.Equal(domains.Count, domains.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+            domainFilter.SelectedItem = "app";
+            PumpDispatcher();
+            Assert.NotEmpty(list.Items);
+            Assert.All(list.Items.Cast<AppShell.Shell.Mcp.CommandCatalogRow>(), row =>
+                Assert.Equal("app", row.Domain, ignoreCase: true));
+        });
+    }
+
+    [Fact]
+    public void ConsoleLongLinesWrapAtCurrentWidthWithoutHorizontalExtentOrLogicalNewlines()
+    {
+        RunSta(() =>
+        {
+            var log = new RelayLog();
+            var logicalText = new string('W', 320);
+            log.Raise(ShellLogLevel.Info, "wrap.test", logicalText);
+            var console = new ConsoleView(
+                log,
+                new CommandBus(new CommandRegistry(), log),
+                new CommandHistory(Path.Combine(Path.GetTempPath(), $"appshell-history-{Guid.NewGuid():N}.txt")));
+            var host = new Window
+            {
+                Content = console,
+                Width = 760,
+                Height = 420,
+                ShowInTaskbar = false,
+            };
+            var exportPath = Path.Combine(Path.GetTempPath(), $"appshell-console-{Guid.NewGuid():N}.txt");
+            try
+            {
+                host.Show();
+                PumpDispatcher();
+                var output = Assert.IsType<ListBox>(console.FindName("Output"));
+                var row = Assert.Single(output.Items.Cast<ConsoleRow>());
+                output.ScrollIntoView(row);
+                host.UpdateLayout();
+                var container = Assert.IsType<ListBoxItem>(output.ItemContainerGenerator.ContainerFromItem(row));
+                var text = Assert.Single(FindVisualDescendants<TextBlock>(container));
+                var scroll = Assert.Single(FindVisualDescendants<ScrollViewer>(output));
+                var horizontalBar = FindVisualDescendants<ScrollBar>(scroll)
+                    .Single(bar => bar.Orientation == Orientation.Horizontal);
+                var wideHeight = text.ActualHeight;
+
+                Assert.Equal(TextWrapping.Wrap, text.TextWrapping);
+                Assert.True(scroll.CanContentScroll);
+                Assert.Equal(ScrollBarVisibility.Disabled,
+                    ScrollViewer.GetHorizontalScrollBarVisibility(output));
+                Assert.Equal(0, scroll.ScrollableWidth);
+                Assert.Equal(Visibility.Collapsed, horizontalBar.Visibility);
+
+                host.Width = 360;
+                host.UpdateLayout();
+                PumpDispatcher();
+                var narrowHeight = text.ActualHeight;
+                Assert.True(narrowHeight > wideHeight,
+                    $"narrow={narrowHeight}, wide={wideHeight}");
+                Assert.Equal(0, scroll.ScrollableWidth);
+
+                host.Width = 760;
+                host.UpdateLayout();
+                PumpDispatcher();
+                Assert.True(text.ActualHeight < narrowHeight,
+                    $"rewidened={text.ActualHeight}, narrow={narrowHeight}");
+                Assert.Equal(0, scroll.ScrollableWidth);
+                Assert.DoesNotContain('\n', row.Text);
+
+                output.SelectedItem = row;
+                var copy = console.CopySelected();
+                Assert.Contains("已复制", copy, StringComparison.Ordinal);
+                Assert.Equal(row.Text, Clipboard.GetText());
+
+                var export = console.ExportVisible(exportPath);
+                Assert.Contains("已导出", export, StringComparison.Ordinal);
+                var exported = Assert.Single(File.ReadAllLines(exportPath));
+                Assert.Contains(logicalText, exported, StringComparison.Ordinal);
+            }
+            finally
+            {
+                host.Close();
+                if (File.Exists(exportPath))
+                    File.Delete(exportPath);
+            }
         });
     }
 
@@ -974,14 +1199,15 @@ public sealed class ShellChromeContractTests
                     "log.level", "log.source", "log.keyword", "log.mute", "log.autoscroll",
                     "log.clear", "log.export", "log.copy", "log.focus", "cls",
                     "app.frontend.hide", "app.frontend.show", "app.frontend.focus-console", "app.frontend.exit",
-                    "app.window", "win.autohide", "command.copy-example", "panel.select-file", "panel.select-directory",
+                    "app.window", "win.autohide", "win.float-state", "command.copy-example",
+                    "panel.select-file", "panel.select-directory",
                 },
                 name => Assert.Contains(name, names));
             Assert.DoesNotContain(names, name => name.StartsWith("res.", StringComparison.OrdinalIgnoreCase));
             Assert.DoesNotContain(names, name => name.StartsWith("motor.", StringComparison.OrdinalIgnoreCase));
 
             Assert.True(window.Commands.ExecuteAsync("log.level level=error", "Test").GetAwaiter().GetResult().Success);
-            Assert.True(window.Commands.ExecuteAsync("log.source source=UI", "Test").GetAwaiter().GetResult().Success);
+            Assert.True(window.Commands.ExecuteAsync("log.source source=全部", "Test").GetAwaiter().GetResult().Success);
             Assert.True(window.Commands.ExecuteAsync("log.keyword text=timeout", "Test").GetAwaiter().GetResult().Success);
             Assert.True(window.Commands.ExecuteAsync("log.mute layout=true", "Test").GetAwaiter().GetResult().Success);
             Assert.True(window.Commands.ExecuteAsync("log.autoscroll enabled=false", "Test").GetAwaiter().GetResult().Success);
