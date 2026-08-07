@@ -114,7 +114,7 @@ public static class ModuleCatalogReader
         var moduleResult = await bus.ExecuteAsync("module.list", "UI", cancellationToken);
         if (!moduleResult.Success)
             return new(false, $"模块清单加载失败: {FirstLine(moduleResult.Message)}", null);
-        if (moduleResult.Data is not IReadOnlyList<ModuleMeta> modules)
+        if (!CommandResultData.TryRead<IReadOnlyList<ModuleMeta>>(moduleResult.Data, out var modules))
             return new(false, "模块清单返回了无法识别的数据", null);
 
         IReadOnlyList<ModuleCommandInfo> commands;
@@ -127,7 +127,7 @@ public static class ModuleCatalogReader
             var commandResult = await bus.ExecuteAsync("command.list", "UI", cancellationToken);
             if (!commandResult.Success)
                 return new(false, $"命令目录加载失败: {FirstLine(commandResult.Message)}", null);
-            if (commandResult.Data is not IReadOnlyList<CommandCatalogRow> rows)
+            if (!CommandResultData.TryRead<IReadOnlyList<CommandCatalogRow>>(commandResult.Data, out var rows))
                 return new(false, "命令目录返回了无法识别的数据", null);
             commands = rows.Select(row => new ModuleCommandInfo(
                 row.CommandName,

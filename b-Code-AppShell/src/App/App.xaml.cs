@@ -1,10 +1,18 @@
 using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Windows;
 using AppShell.Core;
 using AppShell.Core.Commands;
 using AppShell.Core.Docking;
 using AppShell.Core.Logging;
+using AppShell.Core.Input;
+using AppShell.ServiceHost;
 using AppShell.Services;
+using AppShell.Services.Input;
+using AppShell.Services.Modules;
+using AppShell.Services.Web;
 using AppShell.Shell;
 
 namespace AppShell.App;
@@ -18,10 +26,28 @@ namespace AppShell.App;
 public partial class App : Application
 {
     private ShellLog? _log;
+    private ShellServiceClient? _serviceClient;
+    private Mutex? _frontendMutex;
+
+    private const string FrontendMutexName = "Local\\OneHistory.AppShell.Frontend";
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        _frontendMutex = new Mutex(initiallyOwned: true, FrontendMutexName, out var created);
+        if (!created)
+        {
+            ActivateExistingFrontend();
+            Shutdown();
+            return;
+        }
 
         AppIdentity.Use(typeof(App).Assembly);
         var identity = AppIdentity.Current;
@@ -29,41 +55,30 @@ public partial class App : Application
         var log = new ShellLog(paths);
         var settings = new SettingsService(paths);
         _log = log;
+        RemoveLegacyDemoPanel(paths, log);
 
-        // N-05:全局未处理异常捕获 → 落日志 → 友好提示,不崩溃
+        // N-05:全局未处理异常捕获 → 落日志并由 Shell 自动打开控制台,不弹错误框
         DispatcherUnhandledException += (_, args) =>
         {
             log.Log(ShellLogLevel.Fatal, "app", $"未处理异常: {args.Exception}");
-            MessageBox.Show($"发生未处理异常,已记录日志:\n{args.Exception.Message}",
-                identity.Name, MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
             log.Log(ShellLogLevel.Fatal, "app", $"未处理异常(非 UI 线程): {args.ExceptionObject}");
 
-        // 工作区(§9 流程第 6 条):根目录可经 res.root 指令更改并持久化
-        var workspace = new WorkspaceService(
-            settings.Get(WorkspaceService.KeyRoot) ?? paths.WorkspaceDir);
-
-        // 控制面板演示(§9 流程第 4 条):首启把 motor.json 写入 panels/ 目录
-        SeedDemoPanel(paths, log);
-
         var config = new ShellConfig
         {
             AppName = identity.Name,
             AppVersion = identity.Version,
-            Workspace = workspace,
+            EnableModules = false,
+            EnableUiModules = true,
+            EnableRemoteManagementViews = true,
+            CloseBehavior = ShellCloseBehavior.Hide,
+            // AppShell 独立宿主是模块生命周期的最终所有者；OHS 等产品只声明
+            // 自己的业务窗口与模块，不再包装第二套 ModuleHost/ModulesView。
         };
 
-        // 默认布局按附录 A:资源(左 18%)| 主窗口 | 控制面板(右 22%)，控制台位于底部(28%)
-        config.ToolWindows.Add(new ToolWindowDescriptor
-        {
-            Id = "resource",
-            Title = "资源窗口",
-            DefaultSide = DockSide.Left,
-            DefaultRatio = 0.18,
-            // 资源窗口内容由 Shell 提供(Workspace 已配置);此处只声明停靠位置
-        });
+        // 默认布局保留控制台底部停靠位置；业务页面由模块提供。
         config.ToolWindows.Add(new ToolWindowDescriptor
         {
             Id = "console",
@@ -72,18 +87,43 @@ public partial class App : Application
             DefaultRatio = 0.28,
             // 控制台内容由 Shell 提供(§4.4);此处只声明停靠位置
         });
-        // 控制窗口群:面板由 panels/*.json 声明(motor 演示面板经 SeedDemoPanel 写入),
-        // 每个面板自动注册为独立可停靠窗口,无需在此声明
-
+        config.ToolWindows.Add(new ToolWindowDescriptor
+        {
+            Id = StandardWindowIds.Modules,
+            Title = "模块管理",
+            DefaultSide = DockSide.Right,
+            DefaultRatio = 0.32,
+            // 内容由 Shell 的 ModulesView 接管；这里只声明独立宿主的默认位置。
+        });
         // 派生应用自定义指令示范(§5.3):与内置指令同表、help 自动收录
         config.ConfigureCommands = registry =>
         {
             registry.Register(BuildLogFloodCommand(log));
-            RegisterMotorDemo(registry, log);
         };
 
         var window = new ShellWindow(config, new FileLayoutStore(paths), log, settings, paths.Root);
         MainWindow = window;
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+        var executablePath = ResolveExecutablePath();
+        var endpointPath = Path.Combine(paths.Root, "service", "endpoint.json");
+        var service = ConnectToService(endpointPath, executablePath, log);
+        if (service != null)
+        {
+            _serviceClient = service;
+            service.LogReceived += (_, entry) => window.AddTransientLog(entry);
+            service.ModuleRevisionReceived += revision =>
+            {
+                var modules = window.Modules;
+                if (modules != null)
+                    _ = Task.Run(modules.Reload);
+            };
+            window.Commands.RemoteExecutor = service.ExecuteAsync;
+            window.Commands.ShouldUseRemoteCommand = (text, source) =>
+                !text.TrimStart().StartsWith("app.frontend.", StringComparison.OrdinalIgnoreCase)
+                && !source.Equals("Service:Relay", StringComparison.OrdinalIgnoreCase);
+            _ = service.RunEventLoopAsync(window.Commands);
+        }
         window.Show();
 
         log.Info("app", $"{identity.Name} {identity.Version} 启动完成,数据目录: {paths.Root}");
@@ -102,6 +142,9 @@ public partial class App : Application
             startupCommands.Add(e.Args[++i]);
         }
 
+        if (e.Args.Any(arg => arg.Equals("--focus-console", StringComparison.OrdinalIgnoreCase)))
+            startupCommands.Add("app.frontend.focus-console");
+
         if (startupCommands.Count > 0)
             _ = RunStartupCommandsAsync(window, startupCommands);
     }
@@ -112,10 +155,258 @@ public partial class App : Application
             await window.Commands.ExecuteAsync(command, "脚本:startup");
     }
 
+    internal static ServiceComposition BuildServiceComposition(string executablePath)
+    {
+        AppIdentity.Use(typeof(App).Assembly);
+        var identity = AppIdentity.Current;
+        var paths = new AppPaths(identity.Name);
+        var servicePaths = new AppPaths(identity.Name, Path.Combine(paths.Root, "service"));
+        var log = new ShellLog(servicePaths);
+        var settings = new SettingsService(servicePaths);
+        var registry = new CommandRegistry();
+        var bus = new CommandBus(registry, log);
+        var shortcuts = new GlobalShortcutService(bus, log);
+        var moduleDirectory = settings.Get("module.dir") ?? paths.ModulesDir;
+        var modules = new ModuleHost(moduleDirectory, log)
+        {
+            EnableCommands = true,
+            EnableUiModules = false,
+            GlobalShortcuts = shortcuts,
+        };
+        var web = new WebGateway(() => bus, settings, log)
+        {
+            ServerId = identity.Name + ".service",
+        };
+        long moduleRevision = 0;
+        modules.ReloadCompleted += () =>
+            web.PublishModuleRevision(Interlocked.Increment(ref moduleRevision));
+
+        modules.Attach(registry);
+        RegisterServiceModuleCommands(registry, modules, settings);
+
+        // Two physical presses on the slash key are intentionally non-suppressing.
+        shortcuts.Register(new GlobalShortcutDescriptor(
+            "focus-console",
+            [
+                new GlobalShortcutStroke(0xBF),
+                new GlobalShortcutStroke(0xBF),
+            ],
+            "app.frontend.focus-console"),
+            "framework");
+        return new ServiceComposition
+        {
+            ServiceName = identity.Name + ".Backend",
+            Registry = registry,
+            Bus = bus,
+            Settings = settings,
+            Log = log,
+            Modules = modules,
+            GlobalShortcuts = shortcuts,
+            Web = web,
+            EndpointFile = Path.Combine(servicePaths.Root, "endpoint.json"),
+            RegisterAutostartOnFirstRun = true,
+            Autostart = new WindowsRunAutostartManager(),
+        };
+    }
+
+    private static void RegisterServiceModuleCommands(
+        CommandRegistry registry,
+        ModuleHost host,
+        SettingsService settings)
+    {
+        registry.Register(new CommandDescriptor
+        {
+            Name = "module.list",
+            Summary = "列出已加载模块",
+            Readonly = true,
+            Handler = CommandDescriptor.Sync(_ =>
+                CommandResult.Ok(
+                    host.Modules.Count == 0
+                        ? $"当前无已加载模块。模块目录: {host.ModulesDirectory}"
+                        : string.Join('\n', host.Modules.Select(module =>
+                            $"{module.ModuleName} {module.Version} ({module.CommandCount} 条指令)")),
+                    host.Modules)),
+        }, "framework:service");
+
+        registry.Register(new CommandDescriptor
+        {
+            Name = "module.reload",
+            Summary = "重载全部后台模块",
+            Handler = async _ =>
+            {
+                await Task.Run(host.Reload).ConfigureAwait(false);
+                return CommandResult.Ok($"重载完成: {host.Modules.Count} 个模块");
+            },
+        }, "framework:service");
+
+        registry.Register(new CommandDescriptor
+        {
+            Name = "module.dir",
+            Summary = "查看或切换后台模块目录",
+            Parameters = [new ParameterSpec
+            {
+                Name = "path",
+                Description = "模块目录绝对路径;省略时查看当前值",
+                Position = 0,
+            }],
+            Handler = async ctx =>
+            {
+                var path = ctx.GetString("path");
+                if (string.IsNullOrWhiteSpace(path))
+                    return CommandResult.Ok($"当前模块目录: {host.ModulesDirectory}");
+                path = Path.GetFullPath(path.Trim());
+                settings.Set("module.dir", path);
+                await Task.Run(() => host.ChangeDirectory(path)).ConfigureAwait(false);
+                return CommandResult.Ok($"模块目录已切换并重载: {path}");
+            },
+        }, "framework:service");
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
+        _serviceClient?.Dispose();
         _log?.Dispose(); // 冲刷文件写入队列
+        try { _frontendMutex?.ReleaseMutex(); } catch (ApplicationException) { }
+        _frontendMutex?.Dispose();
         base.OnExit(e);
+    }
+
+    private static string ResolveExecutablePath()
+    {
+        var processPath = Environment.ProcessPath;
+        if (!string.IsNullOrWhiteSpace(processPath) &&
+            Path.GetExtension(processPath).Equals(".exe", StringComparison.OrdinalIgnoreCase))
+            return processPath;
+        return Path.ChangeExtension(typeof(App).Assembly.Location, ".exe");
+    }
+
+    private static ShellServiceClient? ConnectToService(
+        string endpointPath,
+        string executablePath,
+        IShellLog log)
+    {
+        try
+        {
+            var endpoint = ReadEndpoint(endpointPath);
+            if (endpoint is { Port: > 0 })
+            {
+                var existing = CreateServiceClient(endpoint);
+                if (existing.WaitForReadyAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult())
+                    return existing;
+                existing.Dispose();
+            }
+
+            endpoint = null;
+            if (endpoint == null)
+            {
+                var start = new ProcessStartInfo(executablePath, "--service")
+                {
+                    UseShellExecute = true,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                };
+                Process.Start(start);
+                var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(8);
+                while (DateTime.UtcNow < deadline && (endpoint = ReadEndpoint(endpointPath)) == null)
+                    Thread.Sleep(100);
+            }
+
+            if (endpoint == null || endpoint.Port <= 0)
+            {
+                log.Warn("service", "后台服务端点不可用，前端以本地模式继续运行");
+                return null;
+            }
+
+            var client = CreateServiceClient(endpoint);
+            if (!client.WaitForReadyAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult())
+            {
+                client.Dispose();
+                log.Warn("service", "后台服务未在期限内就绪，前端以本地模式继续运行");
+                return null;
+            }
+            return client;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException
+                                   or System.ComponentModel.Win32Exception)
+        {
+            log.Warn("service", $"后台连接失败，前端以本地模式继续运行: {ex.Message}");
+            return null;
+        }
+    }
+
+    private static ShellServiceClient CreateServiceClient(ServiceEndpoint endpoint)
+    {
+        var profile = new ShellEndpointProfile(
+            new Uri($"http://127.0.0.1:{endpoint.Port}/"),
+            Guid.NewGuid().ToString("N"),
+            ServerId: endpoint.ServerId,
+            ConnectTimeout: TimeSpan.FromSeconds(5));
+        return new ShellServiceClient(profile, "AppShell.Frontend");
+    }
+
+    private static ServiceEndpoint? ReadEndpoint(string path)
+    {
+        if (!File.Exists(path))
+            return null;
+        try
+        {
+            return JsonSerializer.Deserialize<ServiceEndpoint>(
+                File.ReadAllText(path),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+    }
+
+    private static void ActivateExistingFrontend()
+    {
+        try
+        {
+            var current = Environment.ProcessId;
+            foreach (var process in Process.GetProcessesByName("AppShell"))
+            {
+                try
+                {
+                    if (process.Id == current || process.MainWindowHandle == IntPtr.Zero)
+                        continue;
+                    ShowWindowAsync(process.MainWindowHandle, 9);
+                    SetForegroundWindow(process.MainWindowHandle);
+                    break;
+                }
+                finally
+                {
+                    process.Dispose();
+                }
+            }
+        }
+        catch
+        {
+            // A duplicate launch must never surface a dialog or crash the existing frontend.
+        }
+    }
+
+    private sealed record ServiceEndpoint(int Port, string ServerId, int ProcessId);
+
+    private static void RemoveLegacyDemoPanel(AppPaths paths, IShellLog log)
+    {
+        var legacyPanel = Path.Combine(paths.PanelsDir, "motor.json");
+        try
+        {
+            if (!File.Exists(legacyPanel))
+                return;
+            File.Delete(legacyPanel);
+            log.Info("migration", $"已删除旧版演示电机面板: {legacyPanel}");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            log.Warn("migration", $"删除旧版演示电机面板失败: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -192,84 +483,5 @@ public partial class App : Application
     };
 
     // ---------------------------------------------------------------- 演示面板与指令(M4)
-
-    /// <summary>首启写入 motor 演示面板(§4.5 配置示例;验收 6 的载体)。</summary>
-    private static void SeedDemoPanel(AppPaths paths, ShellLog log)
-    {
-        try
-        {
-            var file = System.IO.Path.Combine(paths.PanelsDir, "motor.json");
-            if (System.IO.File.Exists(file))
-                return;
-
-            System.IO.File.WriteAllText(file,
-                """
-                {
-                  "id": "motor",
-                  "title": "电机控制",
-                  "visible": true,
-                  "side": "right",
-                  "ratio": 0.22,
-                  "controls": [
-                    { "type": "combo",  "id": "axis",  "label": "轴",   "items": ["X", "Y", "Z"], "default": "X" },
-                    { "type": "number", "id": "speed", "label": "速度", "min": 0, "max": 3000, "default": "100" },
-                    { "type": "slider", "id": "accel", "label": "加速度", "min": 10, "max": 500, "step": 10, "default": "100" },
-                    { "type": "check",  "id": "fine",  "label": "精细模式" },
-                    { "type": "label",  "id": "status","label": "状态", "default": "就绪" },
-                    { "type": "button", "label": "点动", "command": "motor.jog axis={axis} speed={speed} accel={accel} fine={fine}" },
-                    { "type": "button", "label": "停止", "command": "motor.stop axis={axis}", "style": "danger" }
-                  ]
-                }
-                """);
-            log.Info("app", "已写入演示面板 panels/motor.json");
-        }
-        catch (Exception ex)
-        {
-            log.Error("app", $"演示面板初始化失败: {ex.Message}");
-        }
-    }
-
-    /// <summary>motor.* 演示指令:模拟耗时动作 + panel.set 反向驱动状态灯(P-07 示范)。</summary>
-    private static void RegisterMotorDemo(CommandRegistry registry, ShellLog log)
-    {
-        registry.Register(new CommandDescriptor
-        {
-            Name = "motor.jog",
-            Summary = "演示:模拟电机点动(异步长任务 + 进度上报)",
-            Example = "motor.jog axis=X speed=200 accel=100 fine=false",
-            Parameters =
-            [
-                new ParameterSpec { Name = "axis", Description = "轴", Required = true, Position = 0, AllowedValues = ["X", "Y", "Z"] },
-                new ParameterSpec { Name = "speed", Description = "速度", Type = ParamType.Double, Default = "100" },
-                new ParameterSpec { Name = "accel", Description = "加速度", Type = ParamType.Double, Default = "100" },
-                new ParameterSpec { Name = "fine", Description = "精细模式", Type = ParamType.Bool, Default = "false" },
-            ],
-            Handler = async ctx =>
-            {
-                var axis = ctx.RequireString("axis");
-                var speed = ctx.GetDouble("speed", 100);
-                for (var pct = 25; pct <= 100; pct += 25)
-                {
-                    await Task.Delay(150);
-                    ctx.Progress?.Report($"{pct}%");
-                }
-
-                return CommandResult.Ok($"{axis} 轴点动完成(speed={speed}, fine={ctx.GetBool("fine")})");
-            },
-        });
-
-        registry.Register(new CommandDescriptor
-        {
-            Name = "motor.stop",
-            Summary = "演示:停止电机",
-            Example = "motor.stop axis=X",
-            Parameters =
-            [
-                new ParameterSpec { Name = "axis", Description = "轴", Required = true, Position = 0, AllowedValues = ["X", "Y", "Z"] },
-            ],
-            Handler = CommandDescriptor.Sync(ctx =>
-                CommandResult.Ok($"{ctx.RequireString("axis")} 轴已停止")),
-        });
-    }
 
 }

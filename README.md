@@ -1,7 +1,15 @@
-# AppShell 3.0
+# AppShell 3.1.3
 
-本仓库是 OneHistory AppShell 的独立源码、合同与发布资产真值。`3.0.3` 是 V3 最终冻结基线，
+本仓库是 OneHistory AppShell 的独立源码、合同与发布资产真值。`3.0.3` 是 V3 冻结基线，
 冻结标签为 `v3.0.3`；版本线不再与 OneHistoryStudio 对齐，`0.7.x` 仅保留用于回滚。
+
+当前源码为 `3.1.3`：在 3.1.2 命令目录修复基础上，收口独立浮窗最大化下拖、顶栏延迟拖动、页签拖出尺寸与鼠标锚点；AppShell 采用单 EXE 双进程运行模型，后台服务承载
+命令、模块、日志和全局快捷键，WPF 前端只负责窗口与 UI 模块。双 `/` 唤出并聚焦控制台；前端关闭默认隐藏而不停止后台。
+删除 AppShell
+内置资源/Workspace 与演示电机页，并保留 `ModulesView` 作为唯一模块管理页面。资源浏览未来由独立模块提供；
+全局 `OneHistory-Projects\\*\\z-*` 扫描不在本版本范围。AppShell 独立可执行宿主显式启用模块生命周期与模块管理页；
+消费方仍按最小能力原则自行决定是否启用，OHS 不再维护第二套模块宿主或管理页面。V3.1/V3.2 方案与实施记录已归档到
+`b-Office/history/`；当前规则见 [断头指令审计表](b-Office/current/断头指令审计表.md)。
 
 ## AI 与维护入口
 
@@ -21,9 +29,10 @@
 
 | 路径 | 内容 |
 |---|---|
-| `b-Code-AppShell/` | Core、Services、Shell、ServiceHost、演示宿主与测试 |
+| `b-Code-AppShell/` | Core、Services、Shell、ServiceHost、演示宿主与工程脚本 |
+| `b-Code-Tests/` | AppShell 回归、布局、命令、安全与包合同测试 |
 | `b-Code-Samples/` | 模块开发示例 |
-| `b-Office/OneHistoryAppShell/` | 消费文档编辑源 |
+| `b-Office/package/` | 消费文档编辑源 |
 | `b-Office/current/` | 现行项目、验证、升级与发布合同 |
 | `b-Code-AppShell/eng/release/` | 发布清单和生成模板等机器输入 |
 | `b-Office/` | 冻结契约、内部设计与执行证据 |
@@ -39,9 +48,9 @@
 ```powershell
 dotnet restore .\AppShell.sln --locked-mode
 dotnet build .\AppShell.sln -c Debug --no-restore
-dotnet test .\b-Code-AppShell\tests\AppShell.Tests\AppShell.Tests.csproj -c Debug --no-build --no-restore
+dotnet test .\b-Code-Tests\AppShell.Tests\AppShell.Tests.csproj -c Debug --no-build --no-restore
 dotnet build .\AppShell.sln -c Release --no-restore
-dotnet test .\b-Code-AppShell\tests\AppShell.Tests\AppShell.Tests.csproj -c Release --no-build --no-restore
+dotnet test .\b-Code-Tests\AppShell.Tests\AppShell.Tests.csproj -c Release --no-build --no-restore
 dotnet format .\AppShell.sln --verify-no-changes --no-restore
 ```
 
@@ -49,10 +58,10 @@ dotnet format .\AppShell.sln --verify-no-changes --no-restore
 
 ```powershell
 # 重建 b-Publish/current 下的可覆盖审核候选
-.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.0.3
+.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.1.3
 
 # 仅在审核通过、代码和消费文档均已提交且干净后执行
-.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.0.3 -Publish
+.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.1.3 -Publish
 
 # 使用 b-Publish/history 中的历史包验证发布生成链，只更新 b-Publish/virtual
 .\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 0.7.2 -VirtualPublish

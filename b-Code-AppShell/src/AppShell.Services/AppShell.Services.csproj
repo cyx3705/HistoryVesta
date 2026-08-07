@@ -7,7 +7,7 @@
     <RootNamespace>AppShell.Services</RootNamespace>
     <PackageId>OneHistory.AppShell.Services</PackageId>
     <Title>OneHistory AppShell Services</Title>
-    <Description>Settings, logging, file-backed state, workspace, module hosting, and MCP services for OneHistory AppShell.</Description>
+    <Description>Settings, logging, file-backed state, module hosting, and MCP services for OneHistory AppShell.</Description>
     <PackageTags>onehistory;appshell;storage;modules;mcp</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>

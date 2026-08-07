@@ -306,6 +306,23 @@ public sealed class DockingHost : IDockingService
         }
     }
 
+    internal void ToggleAutoHide(string id)
+    {
+        RestoreLayoutFromMaximized();
+        EnsureRegistered(id);
+        using (Suppress())
+        {
+            if (FindCenterDocument(id) != null)
+                throw new InvalidOperationException($"窗口 {id} 是文档页，不支持自动隐藏");
+
+            var anchorable = FindRequiredAnchorable(id);
+            if (anchorable.IsHidden)
+                anchorable.Show();
+            anchorable.ToggleAutoHide();
+            EnsureCentralWorkspace();
+        }
+    }
+
     public void Dock(string id, DockSide side, double? ratio = null, string? targetId = null)
     {
         RestoreLayoutFromMaximized();

@@ -13,10 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\AppShell.Core\AppShell.Core.csproj" />
-    <ProjectReference Include="..\..\src\AppShell.ServiceHost\AppShell.ServiceHost.csproj" />
-    <ProjectReference Include="..\..\src\AppShell.Services\AppShell.Services.csproj" />
-    <ProjectReference Include="..\..\src\AppShell.Shell\AppShell.Shell.csproj" />
+    <ProjectReference Include="..\..\b-Code-AppShell\src\AppShell.Core\AppShell.Core.csproj" />
+    <ProjectReference Include="..\..\b-Code-AppShell\src\AppShell.ServiceHost\AppShell.ServiceHost.csproj" />
+    <ProjectReference Include="..\..\b-Code-AppShell\src\AppShell.Services\AppShell.Services.csproj" />
+    <ProjectReference Include="..\..\b-Code-AppShell\src\AppShell.Shell\AppShell.Shell.csproj" />
   </ItemGroup>
 
 </Project>

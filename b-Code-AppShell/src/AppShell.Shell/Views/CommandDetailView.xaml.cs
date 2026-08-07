@@ -40,7 +40,7 @@ public partial class CommandDetailView : UserControl
         Dispatcher.BeginInvoke(async () =>
         {
             if (unloaded && _selection.CurrentCommandName == null)
-                ClearDetails("指令已卸载");
+                ClearDetails();
             else
                 await LoadSelectionAsync();
         });
@@ -54,7 +54,8 @@ public partial class CommandDetailView : UserControl
         var commandName = _selection.CurrentCommandName;
         if (commandName == null)
         {
-            ClearDetails("(在命令集窗口选择指令)");
+            // 空选中态不显示任何提示行(3.1 修订)
+            ClearDetails();
             return;
         }
 
@@ -65,18 +66,16 @@ public partial class CommandDetailView : UserControl
         var commandResult = await bus.ExecuteAsync($"command.show name={name}", "UI");
         if (!IsCurrent(commandName))
             return;
-        if (!commandResult.Success || commandResult.Data is not CommandCatalogDetail detail)
+        if (!commandResult.Success
+            || !CommandResultData.TryRead<CommandCatalogDetail>(commandResult.Data, out var detail))
         {
             _selection.CurrentCommandName = null;
-            ClearDetails("指令已卸载");
+            ClearDetails();
             return;
         }
 
         _current = detail.Command;
         DetailTabs.IsEnabled = true;
-        DetailTitle.Text = detail.Command.SourceDetail == null
-            ? $"{detail.Command.CommandName}  [{detail.Command.Source} / {detail.Command.McpState}]"
-            : $"{detail.Command.CommandName}  [module:{detail.Command.SourceDetail} / {detail.Command.McpState}]";
         SummaryBox.Text = detail.Command.Summary;
         ExampleBox.Text = detail.Command.Example ?? "(无示例)";
         ParameterList.ItemsSource = detail.Parameters;
@@ -122,7 +121,7 @@ public partial class CommandDetailView : UserControl
         if (!IsCurrent(commandName))
             return;
 
-        if (statusResult.Data is PromptStatus status)
+        if (CommandResultData.TryRead<PromptStatus>(statusResult.Data, out var status))
         {
             RevisionStatusText.Text =
                 $"当前修订: {status.CurrentRevision?.Id ?? "(默认)"} | 待处理提案: {status.OpenProposals}";
@@ -130,10 +129,10 @@ public partial class CommandDetailView : UserControl
             DescBox.Text = status.EffectiveDescription;
             ResetButton.IsEnabled = status.CurrentRevision?.Description != null;
         }
-        RevisionList.ItemsSource = historyResult.Data as IReadOnlyList<PromptRevision> ?? [];
-        ProposalList.ItemsSource = proposalsResult.Data as IReadOnlyList<PromptProposal> ?? [];
-        CorrectionList.ItemsSource = correctionsResult.Data as IReadOnlyList<PromptCorrection> ?? [];
-        IncidentList.ItemsSource = incidentsResult.Data as IReadOnlyList<PromptIncident> ?? [];
+        RevisionList.ItemsSource = ReadList<PromptRevision>(historyResult.Data);
+        ProposalList.ItemsSource = ReadList<PromptProposal>(proposalsResult.Data);
+        CorrectionList.ItemsSource = ReadList<PromptCorrection>(correctionsResult.Data);
+        IncidentList.ItemsSource = ReadList<PromptIncident>(incidentsResult.Data);
         RevisionList.SelectedItem = null;
         ProposalList.SelectedItem = null;
         RevertButton.IsEnabled = false;
@@ -147,12 +146,13 @@ public partial class CommandDetailView : UserControl
                    ?? Task.FromResult(CommandResult.Fail("总线未就绪")));
     }
 
-    private void OnCopyExampleClick(object sender, RoutedEventArgs e)
+    private async void OnCopyExampleClick(object sender, RoutedEventArgs e)
     {
-        if (_current?.Example is not { Length: > 0 } example)
+        if (_current?.Example is not { Length: > 0 } || _busAccessor() is not { } bus)
             return;
-        Clipboard.SetText(example);
-        StatusText.Text = "示例已复制";
+        var result = await bus.ExecuteAsync(
+            $"command.copy-example name={CommandParser.QuoteArg(_current.CommandName)}", "UI");
+        StatusText.Text = result.Success ? "示例已复制" : "复制失败，详见控制台";
     }
 
     private async void OnSchemaClick(object sender, RoutedEventArgs e)
@@ -264,6 +264,9 @@ public partial class CommandDetailView : UserControl
         RevertButton.IsEnabled = false;
     }
 
+    private static IReadOnlyList<T> ReadList<T>(object? data)
+        => CommandResultData.TryRead<IReadOnlyList<T>>(data, out var items) ? items : [];
+
     private void ClearGovernanceCollections()
     {
         RevisionList.ItemsSource = null;
@@ -273,11 +276,10 @@ public partial class CommandDetailView : UserControl
         ClearProposalDetails();
     }
 
-    private void ClearDetails(string title)
+    private void ClearDetails()
     {
         _current = null;
         DetailTabs.IsEnabled = false;
-        DetailTitle.Text = title;
         StatusText.Text = "";
         SummaryBox.Text = "";
         ParameterList.ItemsSource = null;

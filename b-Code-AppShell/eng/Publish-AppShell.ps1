@@ -20,6 +20,8 @@ $RepoRoot = [IO.Path]::GetFullPath((Join-Path $ComponentRoot ".."))
 $PublishRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "b-Publish"))
 $FormalRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "z-Package-AppShell"))
 $OfficeRoot = Join-Path $RepoRoot "b-Office"
+# The repository keeps the editable consumer contract beside the AppShell-specific
+# office documents. The manifest is the source of truth for this location.
 $PackageDocumentRoot = Join-Path $OfficeRoot "package"
 $ReleaseDocumentRoot = Join-Path $ComponentRoot "eng\release"
 $ConsumerDocumentManifest = Join-Path $ReleaseDocumentRoot "consumer-docs.json"
@@ -106,6 +108,7 @@ Assert-File $CurrentSnapshotReadmeTemplate
 
 $ReleaseInputs = @(
     "b-Code-AppShell"
+    "b-Code-Tests"
     $ConsumerDocumentNames | ForEach-Object { "b-Office/package/$_" }
 )
 $sourceStatus = (& git -C $RepoRoot status --porcelain -- @ReleaseInputs) -join "`n"
@@ -754,10 +757,10 @@ try {
     $artifactsProperty = "-p:ArtifactsPath=$BuildArtifacts"
     Invoke-Dotnet @("restore", "AppShell.sln", "--locked-mode", $artifactsProperty)
     Invoke-Dotnet @("build", "AppShell.sln", "-c", "Debug", "--no-restore", $artifactsProperty)
-    Invoke-Dotnet @("test", "tests\AppShell.Tests\AppShell.Tests.csproj", "-c", "Debug",
+    Invoke-Dotnet @("test", "..\b-Code-Tests\AppShell.Tests\AppShell.Tests.csproj", "-c", "Debug",
         "--no-build", "--no-restore", $artifactsProperty)
     Invoke-Dotnet @("build", "AppShell.sln", "-c", "Release", "--no-restore", $artifactsProperty)
-    Invoke-Dotnet @("test", "tests\AppShell.Tests\AppShell.Tests.csproj", "-c", "Release",
+    Invoke-Dotnet @("test", "..\b-Code-Tests\AppShell.Tests\AppShell.Tests.csproj", "-c", "Release",
         "--no-build", "--no-restore", $artifactsProperty)
 
     $auditPath = Join-Path $StageRoot "vulnerability-audit.json"

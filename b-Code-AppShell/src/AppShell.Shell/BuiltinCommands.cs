@@ -4,7 +4,6 @@ using System.Text;
 using System.Windows;
 using AppShell.Core.Commands;
 using AppShell.Core.Docking;
-using AppShell.Core.Files;
 using AppShell.Core.Logging;
 using AppShell.Core.Storage;
 using AppShell.Services;
@@ -33,16 +32,13 @@ public sealed class ShellCommandServices
 
     public required string DataDirectory { get; init; }
 
-    /// <summary>工作区文件服务(M4);null 时 res.* 指令组不注册。</summary>
-    public IWorkspaceService? Workspace { get; init; }
-
     /// <summary>控制窗口群管理器(M4);null 时 panel.* 指令组不注册。</summary>
     public PanelManager? Panels { get; init; }
 }
 
 /// <summary>
-/// 框架内置指令组(§5.3 / 附录 B):help / cls / history / run /
-/// app.* / log.level / win.* / layout.*、res.* 与 panel.*。
+/// 框架内置指令组(§5.3 / 附录 B):help / history / run /
+/// app.* / log.* / win.* / layout.* 与 panel.*；cls 仅为 log.clear 的兼容别名。
 /// </summary>
 public static class BuiltinCommands
 {
@@ -53,158 +49,42 @@ public static class BuiltinCommands
         RegisterLog(r, s);
         RegisterWin(r, s);
         RegisterLayout(r, s);
-        if (s.Workspace != null)
-            RegisterRes(r, s, s.Workspace);
         if (s.Panels != null)
             RegisterPanel(r, s, s.Panels);
-    }
-
-    // ---------------------------------------------------------------- res.*(§4.6 / 附录 B,M4)
-
-    private static void RegisterRes(CommandRegistry r, ShellCommandServices s, IWorkspaceService ws)
-    {
-        var pathParam = new ParameterSpec
-        {
-            Name = "path",
-            Description = "相对工作区根目录的路径",
-            Required = true,
-            Position = 0,
-        };
-
-        RegisterFrontend(r, new CommandDescriptor
-        {
-            Name = "res.root",
-            Summary = "查看 / 切换工作区根目录",
-            Example = "res.root path=D:\\我的工程",
-            Parameters =
-            [
-                new ParameterSpec { Name = "path", Description = "新根目录(绝对路径);省略时查看当前值", Position = 0 },
-            ],
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var path = ctx.GetString("path");
-                if (path == null)
-                    return CommandResult.Ok($"工作区根目录: {ws.Root}");
-
-                ws.SetRoot(path);
-                s.Settings.Set(WorkspaceService.KeyRoot, path);
-                return CommandResult.Ok($"工作区根目录已切换为 {ws.Root}");
-            }),
-        });
-
-        RegisterFrontend(r, new CommandDescriptor
-        {
-            Name = "res.list",
-            Summary = "列出目录内容",
-            Example = "res.list path=配方",
-            Readonly = true,
-            Parameters =
-            [
-                new ParameterSpec { Name = "path", Description = "目录(相对根);省略为根目录", Position = 0 },
-            ],
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var entries = ws.List(ctx.GetString("path"));
-                if (entries.Count == 0)
-                    return CommandResult.Ok("(空目录)", new WorkspaceListing(ws.Root, entries));
-
-                var sb = new StringBuilder($"共 {entries.Count} 项:");
-                foreach (var e in entries)
-                {
-                    sb.Append(e.IsDirectory
-                        ? $"\n  [目录] {e.Name}"
-                        : $"\n  {e.Name}  ({e.Size} B, {e.Modified:yyyy-MM-dd HH:mm})");
-                }
-
-                return CommandResult.Ok(sb.ToString(), new WorkspaceListing(ws.Root, entries));
-            }),
-        });
-
-        RegisterFrontend(r, new CommandDescriptor
-        {
-            Name = "res.open",
-            Summary = "用系统默认程序打开文件",
-            Example = "res.open path=说明.txt",
-            Parameters = [pathParam],
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var full = ws.ResolveFull(ctx.RequireString("path"));
-                Process.Start(new ProcessStartInfo(full) { UseShellExecute = true });
-                return CommandResult.Ok($"已打开 {full}");
-            }),
-        });
-
-        RegisterFrontend(r, new CommandDescriptor
-        {
-            Name = "res.reveal",
-            Summary = "在系统资源管理器中显示",
-            Example = "res.reveal path=配方",
-            Parameters = [pathParam],
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var full = ws.ResolveFull(ctx.RequireString("path"));
-                Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{full}\"")
-                {
-                    UseShellExecute = true,
-                });
-                return CommandResult.Ok($"已在资源管理器中显示 {full}");
-            }),
-        });
-
-        RegisterFrontend(r, new CommandDescriptor
-        {
-            Name = "res.mkdir",
-            Summary = "新建文件夹(限工作区内)",
-            Example = "res.mkdir path=新配方",
-            Parameters = [pathParam],
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var path = ctx.RequireString("path");
-                ws.CreateDirectory(path);
-                return CommandResult.Ok($"已创建文件夹 {path}");
-            }),
-        });
-
-        RegisterFrontend(r, new CommandDescriptor
-        {
-            Name = "res.rename",
-            Summary = "重命名文件或文件夹",
-            Example = "res.rename path=\"配方/旧.json\" to=\"新.json\"",
-            Parameters =
-            [
-                pathParam,
-                new ParameterSpec { Name = "to", Description = "新名字(不含路径)", Required = true, Position = 1 },
-            ],
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var path = ctx.RequireString("path");
-                var to = ctx.RequireString("to");
-                ws.Rename(path, to);
-                return CommandResult.Ok($"已把 {path} 改名为 {to}");
-            }),
-        });
-
-        RegisterFrontend(r, new CommandDescriptor
-        {
-            Name = "res.delete",
-            Summary = "删除到回收站(需二次确认,不做永久删除)",
-            Example = "res.delete path=旧配方",
-            // R-06:删除必须二次确认——UI 与手输共用总线拦截器
-            ConfirmPrompt = ctx => $"将把 {ctx.RequireString("path")} 删除到回收站,确认继续?",
-            Parameters = [pathParam],
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var path = ctx.RequireString("path");
-                ws.DeleteToRecycleBin(path);
-                return CommandResult.Ok($"已把 {path} 移入回收站");
-            }),
-        });
     }
 
     // ---------------------------------------------------------------- panel.*(§4.5 / 附录 B,M4)
 
     private static void RegisterPanel(CommandRegistry r, ShellCommandServices s, PanelManager panels)
     {
+        RegisterFrontend(r, new CommandDescriptor
+        {
+            Name = "panel.select-file",
+            Summary = "选择本地文件",
+            RequiresUiThread = true,
+            Handler = CommandDescriptor.Sync(_ =>
+            {
+                var dialog = new Microsoft.Win32.OpenFileDialog();
+                return dialog.ShowDialog(s.Window) == true
+                    ? CommandResult.Ok($"已选择 {dialog.FileName}", dialog.FileName)
+                    : CommandResult.Ok("已取消选择");
+            }),
+        });
+
+        RegisterFrontend(r, new CommandDescriptor
+        {
+            Name = "panel.select-directory",
+            Summary = "选择本地目录",
+            RequiresUiThread = true,
+            Handler = CommandDescriptor.Sync(_ =>
+            {
+                var dialog = new Microsoft.Win32.OpenFolderDialog();
+                return dialog.ShowDialog(s.Window) == true
+                    ? CommandResult.Ok($"已选择 {dialog.FolderName}", dialog.FolderName)
+                    : CommandResult.Ok("已取消选择");
+            }),
+        });
+
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "panel.list",
@@ -235,7 +115,7 @@ public static class BuiltinCommands
         {
             Name = "panel.show",
             Summary = "显示控制面板(等价 win.show)",
-            Example = "panel.show id=motor",
+            Example = "panel.show id=my-panel",
             RequiresUiThread = true,
             Parameters =
             [
@@ -260,7 +140,7 @@ public static class BuiltinCommands
         {
             Name = "panel.set",
             Summary = "程序向面板控件回写值(P-07)",
-            Example = "panel.set panel=motor control=speed value=800",
+            Example = "panel.set panel=my-panel control=speed value=800",
             RequiresUiThread = true,
             Parameters =
             [
@@ -305,13 +185,30 @@ public static class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "cls",
-            Summary = "清空控制台显示(不清日志文件)",
+            Name = "command.copy-example",
+            Summary = "复制指定命令的示例",
+            Example = "command.copy-example name=log.level",
             RequiresUiThread = true,
-            Handler = CommandDescriptor.Sync(_ =>
+            Parameters =
+            [
+                new ParameterSpec { Name = "name", Description = "命令名", Required = true, Position = 0 },
+            ],
+            Handler = CommandDescriptor.Sync(ctx =>
             {
-                s.Console.Cls();
-                return CommandResult.Ok("控制台已清空");
+                var name = ctx.RequireString("name");
+                if (!s.Bus.Registry.TryGet(name, out var descriptor))
+                    return CommandResult.Fail($"未知指令: {name}");
+                if (string.IsNullOrWhiteSpace(descriptor.Example))
+                    return CommandResult.Fail($"{name} 没有示例");
+                try
+                {
+                    Clipboard.SetText(descriptor.Example);
+                    return CommandResult.Ok($"已复制 {name} 的示例");
+                }
+                catch (Exception ex)
+                {
+                    return CommandResult.Fail($"复制失败: {ex.Message}");
+                }
             }),
         });
 
@@ -357,7 +254,7 @@ public static class BuiltinCommands
                 new ParameterSpec
                 {
                     Name = "file",
-                    Description = "脚本路径;相对路径基于工作区目录",
+                    Description = "脚本路径;相对路径基于应用数据目录",
                     Required = true,
                     Position = 0,
                 },
@@ -374,7 +271,7 @@ public static class BuiltinCommands
                 var raw = ctx.RequireString("file");
                 var path = Path.IsPathRooted(raw)
                     ? raw
-                    : Path.Combine(AppPaths.GetWorkspaceDir(s.DataDirectory), raw);
+                    : Path.Combine(s.DataDirectory, raw);
                 if (!File.Exists(path))
                     return CommandResult.Fail($"脚本不存在: {path}");
 
@@ -571,36 +468,6 @@ public static class BuiltinCommands
 
     // ---------------------------------------------------------------- log.*
 
-    private static void RegisterLog(CommandRegistry r, ShellCommandServices s)
-    {
-        RegisterFrontend(r, new CommandDescriptor
-        {
-            Name = "log.level",
-            Summary = "调整控制台日志显示级别(文件始终全量)",
-            Example = "log.level warn",
-            RequiresUiThread = true,
-            Parameters =
-            [
-                new ParameterSpec
-                {
-                    Name = "level",
-                    Description = "显示级别;省略时查看当前值",
-                    Position = 0,
-                    AllowedValues = ["trace", "debug", "info", "warn", "error", "fatal"],
-                },
-            ],
-            Handler = CommandDescriptor.Sync(ctx =>
-            {
-                var text = ctx.GetString("level");
-                if (text == null)
-                    return CommandResult.Ok($"当前控制台显示级别: {s.Console.MinLevel}");
-
-                var level = Enum.Parse<ShellLogLevel>(text, ignoreCase: true);
-                s.Console.SetMinLevel(level);
-                return CommandResult.Ok($"控制台显示级别已调整为 {level}(文件始终全量)");
-            }),
-        });
-    }
 
     // ---------------------------------------------------------------- win.*
 
@@ -653,6 +520,33 @@ public static class BuiltinCommands
             (d, id) => { d.Hide(id); return $"{id} 已隐藏"; });
         RegisterWindowVerb(r, s, "win.float", "把窗口浮动为独立顶层窗口",
             (d, id) => { d.Float(id); return $"{id} 已浮动"; });
+        RegisterFrontend(r, new CommandDescriptor
+        {
+            Name = "win.autohide",
+            Summary = "切换工具窗口的自动隐藏状态",
+            Example = $"win.autohide name={StandardWindowIds.Console}",
+            RequiresUiThread = true,
+            Parameters = [nameParam],
+            Handler = CommandDescriptor.Sync(ctx =>
+            {
+                if (ResolveWindow(s, ctx) is { } error)
+                    return error;
+
+                if (s.Docking is not DockingHost host)
+                    return CommandResult.Fail("当前停靠宿主不支持自动隐藏");
+
+                var id = ctx.RequireString("name");
+                try
+                {
+                    host.ToggleAutoHide(id);
+                    return CommandResult.Ok($"{id} 已切换自动隐藏状态");
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return CommandResult.Fail(ex.Message);
+                }
+            }),
+        });
         RegisterWindowVerb(r, s, "win.reset", "把窗口复位到注册时的默认位置",
             (d, id) => { d.ResetWindow(id); return $"{id} 已复位到默认位置"; });
 
@@ -900,4 +794,191 @@ public static class BuiltinCommands
 
     private static void RegisterFrontend(CommandRegistry registry, CommandDescriptor descriptor)
         => registry.Register(descriptor, FrontendCommandCatalog.Source);
+    // ---------------------------------------------------------------- log.*
+
+    private static void RegisterLog(CommandRegistry r, ShellCommandServices s)
+    {
+        RegisterFrontend(r, new CommandDescriptor
+        {
+            Name = "log.level",
+            Summary = "设置控制台显示级别",
+            Example = "log.level level=warn",
+            RequiresUiThread = true,
+            Parameters = [new ParameterSpec { Name = "level", Description = "trace/debug/info/warn/error/fatal；省略时查询当前值", Position = 0, AllowedValues = ["trace", "debug", "info", "warn", "error", "fatal"] }],
+            Handler = CommandDescriptor.Sync(ctx =>
+            {
+                var text = ctx.GetString("level");
+                if (text == null)
+                    return CommandResult.Ok($"当前控制台级别: {s.Console.MinLevel.ToString().ToLowerInvariant()}");
+                if (!Enum.TryParse<ShellLogLevel>(text, true, out var level))
+                    return CommandResult.Fail($"未知日志级别: {text}");
+                s.Console.SetMinLevel(level);
+                return CommandResult.Ok($"控制台级别已设置为 {level.ToString().ToLowerInvariant()}");
+            }),
+        });
+
+        RegisterFrontend(r, new CommandDescriptor
+        {
+            Name = "app.window",
+            Summary = "设置主窗口状态",
+            Example = "app.window state=toggle",
+            RequiresUiThread = true,
+            Parameters =
+            [
+                new ParameterSpec
+                {
+                    Name = "state",
+                    Description = "normal/minimized/maximized/toggle；省略时查询当前值",
+                    Position = 0,
+                    AllowedValues = ["normal", "minimized", "maximized", "toggle"],
+                },
+            ],
+            Handler = CommandDescriptor.Sync(ctx =>
+            {
+                var state = ctx.GetString("state");
+                if (state == null)
+                    return CommandResult.Ok($"主窗口状态: {s.Window.WindowState.ToString().ToLowerInvariant()}");
+
+                s.Window.WindowState = state.ToLowerInvariant() switch
+                {
+                    "normal" => WindowState.Normal,
+                    "minimized" => WindowState.Minimized,
+                    "maximized" => WindowState.Maximized,
+                    _ => s.Window.WindowState == WindowState.Maximized
+                        ? WindowState.Normal
+                        : WindowState.Maximized,
+                };
+                return CommandResult.Ok($"主窗口状态已设置为 {s.Window.WindowState.ToString().ToLowerInvariant()}");
+            }),
+        });
+
+        RegisterFrontend(r, new CommandDescriptor
+        {
+            Name = "log.source",
+            Summary = "设置控制台日志来源过滤",
+            Example = "log.source source=UI",
+            RequiresUiThread = true,
+            Parameters = [new ParameterSpec { Name = "source", Description = "全部/UI/手动/脚本/layout/日志；省略时查询当前值", Position = 0, AllowedValues = ["全部", "UI", "手动", "脚本", "layout", "日志"] }],
+            Handler = CommandDescriptor.Sync(ctx =>
+            {
+                var source = ctx.GetString("source");
+                if (source == null)
+                    return CommandResult.Ok($"当前日志来源: {s.Console.SourceFilterValue}");
+                s.Console.SetSource(source);
+                return CommandResult.Ok($"日志来源已设置为 {source}");
+            }),
+        });
+
+        RegisterFrontend(r, new CommandDescriptor
+        {
+            Name = "log.keyword",
+            Summary = "设置控制台关键字过滤",
+            Example = "log.keyword text=timeout",
+            RequiresUiThread = true,
+            Parameters = [new ParameterSpec { Name = "text", Description = "关键字；省略时查询当前值", Position = 0 }],
+            Handler = CommandDescriptor.Sync(ctx =>
+            {
+                var text = ctx.GetString("text");
+                if (text == null)
+                    return CommandResult.Ok(string.IsNullOrEmpty(s.Console.KeywordFilterValue) ? "当前关键字: (无)" : $"当前关键字: {s.Console.KeywordFilterValue}");
+                s.Console.SetKeyword(text);
+                return CommandResult.Ok(string.IsNullOrEmpty(text) ? "关键字过滤已清除" : $"关键字已设置为 {text}");
+            }),
+        });
+
+        RegisterFrontend(r, new CommandDescriptor
+        {
+            Name = "log.mute",
+            Summary = "屏蔽或恢复 layout 来源",
+            Example = "log.mute layout=true",
+            RequiresUiThread = true,
+            Parameters = [new ParameterSpec { Name = "layout", Description = "true/false；省略时查询当前值", Type = ParamType.Bool, Position = 0 }],
+            Handler = CommandDescriptor.Sync(ctx =>
+            {
+                if (!ctx.Has("layout"))
+                    return CommandResult.Ok($"layout 屏蔽: {s.Console.MuteLayoutEnabled}");
+                var enabled = ctx.GetBool("layout");
+                s.Console.SetMuteLayout(enabled);
+                return CommandResult.Ok($"layout 屏蔽已设置为 {enabled}");
+            }),
+        });
+
+        RegisterFrontend(r, new CommandDescriptor
+        {
+            Name = "log.autoscroll",
+            Summary = "设置控制台自动滚动",
+            Example = "log.autoscroll enabled=false",
+            RequiresUiThread = true,
+            Parameters = [new ParameterSpec { Name = "enabled", Description = "true/false；省略时查询当前值", Type = ParamType.Bool, Position = 0 }],
+            Handler = CommandDescriptor.Sync(ctx =>
+            {
+                if (!ctx.Has("enabled"))
+                    return CommandResult.Ok($"自动滚动: {s.Console.AutoScrollEnabled}");
+                var enabled = ctx.GetBool("enabled");
+                s.Console.SetAutoScroll(enabled);
+                return CommandResult.Ok($"自动滚动已设置为 {enabled}");
+            }),
+        });
+
+        RegisterFrontend(r, new CommandDescriptor
+        {
+            Name = "log.clear",
+            Summary = "清空控制台可见缓冲",
+            RequiresUiThread = true,
+            Handler = CommandDescriptor.Sync(_ =>
+            {
+                s.Console.Cls();
+                return CommandResult.Ok("控制台已清空");
+            }),
+        });
+
+        RegisterFrontend(r, new CommandDescriptor
+        {
+            Name = "cls",
+            Summary = "兼容别名，转发到 log.clear",
+            RequiresUiThread = true,
+            Handler = CommandDescriptor.Sync(_ =>
+            {
+                s.Console.Cls();
+                return CommandResult.Ok("控制台已清空");
+            }),
+        });
+
+        RegisterFrontend(r, new CommandDescriptor
+        {
+            Name = "log.export",
+            Summary = "导出控制台当前可见内容",
+            Example = "log.export path=console.txt",
+            RequiresUiThread = true,
+            Parameters = [new ParameterSpec { Name = "path", Description = "目标文件路径；省略时打开保存对话框", Position = 0 }],
+            Handler = CommandDescriptor.Sync(ctx => CommandResult.Ok(s.Console.ExportVisible(ctx.GetString("path")))),
+        });
+
+        RegisterFrontend(r, new CommandDescriptor
+        {
+            Name = "log.copy",
+            Summary = "复制控制台选中行",
+            RequiresUiThread = true,
+            Handler = CommandDescriptor.Sync(_ => CommandResult.Ok(s.Console.CopySelected())),
+        });
+
+        RegisterFrontend(r, new CommandDescriptor
+        {
+            Name = "log.focus",
+            Summary = "聚焦控制台，可选仅显示错误",
+            Example = "log.focus errors=true",
+            RequiresUiThread = true,
+            Parameters = [new ParameterSpec { Name = "errors", Description = "true 时切换到错误过滤", Type = ParamType.Bool, Default = "false", Position = 0 }],
+            Handler = CommandDescriptor.Sync(ctx =>
+            {
+                var errors = ctx.GetBool("errors");
+                if (errors)
+                    s.Console.FilterErrorsOnly();
+                s.Docking.Show(StandardWindowIds.Console);
+                s.Console.FocusInput();
+                return CommandResult.Ok(errors ? "已聚焦控制台错误" : "已聚焦控制台");
+            }),
+        });
+    }
+
 }

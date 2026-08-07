@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppShell.ServiceHost", "b-C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "App", "b-Code-AppShell\src\App\App.csproj", "{DAC78FF9-E7FA-4C13-8361-AEECCC44F1C2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppShell.Tests", "b-Code-AppShell\tests\AppShell.Tests\AppShell.Tests.csproj", "{635B097E-7F87-43E7-AA5D-F6D106A1E9B0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppShell.Tests", "b-Code-Tests\AppShell.Tests\AppShell.Tests.csproj", "{635B097E-7F87-43E7-AA5D-F6D106A1E9B0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

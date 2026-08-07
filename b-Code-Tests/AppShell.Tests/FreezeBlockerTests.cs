@@ -8,13 +8,11 @@ using System.Text.Json;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using AppShell.Core.Commands;
-using AppShell.Core.Files;
 using AppShell.Core.Logging;
 using AppShell.Core.Mcp;
 using AppShell.Core.Storage;
 using AppShell.Services.Web;
 using AppShell.Shell;
-using AppShell.Shell.Resource;
 using Xunit;
 
 namespace AppShell.Tests;
@@ -377,34 +375,6 @@ public sealed class FreezeBlockerTests
         Assert.True(await waiter);
     }
 
-    [Fact]
-    public async Task RemoteWorkspaceCancelsAnUnresponsiveRequestWithinFiveSeconds()
-    {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        using var hold = new CancellationTokenSource();
-        var holdConnection = Task.Run(async () =>
-        {
-            using var connection = await listener.AcceptTcpClientAsync();
-            try { await Task.Delay(Timeout.InfiniteTimeSpan, hold.Token); }
-            catch (OperationCanceledException) { }
-        });
-        using var client = new ShellServiceClient(
-            new Uri($"http://127.0.0.1:{port}/"), "TimeoutTest");
-        var workspace = new RemoteWorkspaceService(client);
-        var stopwatch = Stopwatch.StartNew();
-
-        var exception = await Assert.ThrowsAsync<TimeoutException>(
-            () => Task.Run(() => workspace.List()));
-
-        stopwatch.Stop();
-        Assert.Contains("5 秒", exception.Message, StringComparison.Ordinal);
-        Assert.InRange(stopwatch.Elapsed, TimeSpan.FromSeconds(4.5), TimeSpan.FromSeconds(6.5));
-        hold.Cancel();
-        listener.Stop();
-        await holdConnection;
-    }
 
     [Fact]
     public void CommandHistoryMigratesLegacySecretsAndStoresOnlyRedactedManualEchoes()
@@ -548,53 +518,6 @@ public sealed class FreezeBlockerTests
         }
     }
 
-    [Fact]
-    public void ResourceReloadDoesNotBlockTheDispatcherAndShowsAnErrorState()
-    {
-        Exception? failure = null;
-        using var finished = new ManualResetEventSlim();
-        var thread = new Thread(() =>
-        {
-            try
-            {
-                SynchronizationContext.SetSynchronizationContext(
-                    new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
-                var workspace = new BlockingWorkspace();
-                var view = new ResourceView(
-                    workspace,
-                    new CommandBus(new CommandRegistry(), new MemoryLog()),
-                    new MemoryLog(),
-                    openHandler: null);
-                var stopwatch = Stopwatch.StartNew();
-                view.ReloadTree();
-                stopwatch.Stop();
-                Assert.True(stopwatch.Elapsed < TimeSpan.FromMilliseconds(250),
-                    $"ReloadTree blocked for {stopwatch.Elapsed}");
-                Assert.True(workspace.Started.Wait(TimeSpan.FromSeconds(2)));
-                workspace.Release.Set();
-                PumpDispatcher(TimeSpan.FromMilliseconds(500));
-
-                var tree = Assert.IsType<TreeView>(view.FindName("Tree"));
-                var item = Assert.IsType<TreeViewItem>(Assert.Single(tree.Items));
-                var text = Assert.IsType<TextBlock>(item.Header);
-                Assert.Contains("读取失败", text.Text, StringComparison.Ordinal);
-            }
-            catch (Exception ex)
-            {
-                failure = ex;
-            }
-            finally
-            {
-                finished.Set();
-            }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        Assert.True(finished.Wait(TimeSpan.FromSeconds(5)));
-        thread.Join();
-        if (failure != null)
-            throw failure;
-    }
 
     [Fact]
     public async Task MalformedWebSocketJsonDoesNotKillFrontendLoop()
@@ -735,28 +658,6 @@ public sealed class FreezeBlockerTests
         public IReadOnlyList<KeyValuePair<string, string>> All() => _values.ToList();
     }
 
-    private sealed class BlockingWorkspace : IWorkspaceService
-    {
-        public ManualResetEventSlim Started { get; } = new();
-        public ManualResetEventSlim Release { get; } = new();
-
-        public string Root => "remote";
-        public bool CanSelectLocalRoot => false;
-        public event Action? Changed { add { } remove { } }
-        public void SetRoot(string path) { }
-
-        public IReadOnlyList<WorkspaceEntry> List(string? relativePath = null)
-        {
-            Started.Set();
-            Release.Wait(TimeSpan.FromSeconds(2));
-            throw new InvalidOperationException("remote unavailable");
-        }
-
-        public void CreateDirectory(string relativePath) { }
-        public void Rename(string relativePath, string newName) { }
-        public void DeleteToRecycleBin(string relativePath) { }
-        public string ResolveFull(string relativePath) => relativePath;
-    }
 
     private sealed class MemoryLog : IShellLog
     {

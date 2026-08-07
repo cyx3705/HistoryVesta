@@ -1,4 +1,42 @@
 #nullable enable
+AppShell.Core.Input.GlobalShortcutDescriptor
+AppShell.Core.Input.GlobalShortcutDescriptor.GlobalShortcutDescriptor(string! Id, System.Collections.Generic.IReadOnlyList<AppShell.Core.Input.GlobalShortcutStroke!>! Strokes, string! CommandText, int MaxIntervalMilliseconds = 350) -> void
+AppShell.Core.Input.GlobalShortcutDescriptor.CommandText.get -> string!
+AppShell.Core.Input.GlobalShortcutDescriptor.CommandText.init -> void
+AppShell.Core.Input.GlobalShortcutDescriptor.Id.get -> string!
+AppShell.Core.Input.GlobalShortcutDescriptor.Id.init -> void
+AppShell.Core.Input.GlobalShortcutDescriptor.MaxIntervalMilliseconds.get -> int
+AppShell.Core.Input.GlobalShortcutDescriptor.MaxIntervalMilliseconds.init -> void
+AppShell.Core.Input.GlobalShortcutDescriptor.Strokes.get -> System.Collections.Generic.IReadOnlyList<AppShell.Core.Input.GlobalShortcutStroke!>!
+AppShell.Core.Input.GlobalShortcutDescriptor.Strokes.init -> void
+AppShell.Core.Input.GlobalShortcutModifiers
+AppShell.Core.Input.GlobalShortcutModifiers.Alt = 1 -> AppShell.Core.Input.GlobalShortcutModifiers
+AppShell.Core.Input.GlobalShortcutModifiers.Control = 2 -> AppShell.Core.Input.GlobalShortcutModifiers
+AppShell.Core.Input.GlobalShortcutModifiers.None = 0 -> AppShell.Core.Input.GlobalShortcutModifiers
+AppShell.Core.Input.GlobalShortcutModifiers.Shift = 4 -> AppShell.Core.Input.GlobalShortcutModifiers
+AppShell.Core.Input.GlobalShortcutModifiers.Windows = 8 -> AppShell.Core.Input.GlobalShortcutModifiers
+AppShell.Core.Input.GlobalShortcutRegistrationInfo
+AppShell.Core.Input.GlobalShortcutRegistrationInfo.CommandText.get -> string!
+AppShell.Core.Input.GlobalShortcutRegistrationInfo.CommandText.init -> void
+AppShell.Core.Input.GlobalShortcutRegistrationInfo.Id.get -> string!
+AppShell.Core.Input.GlobalShortcutRegistrationInfo.Id.init -> void
+AppShell.Core.Input.GlobalShortcutRegistrationInfo.MaxIntervalMilliseconds.get -> int
+AppShell.Core.Input.GlobalShortcutRegistrationInfo.MaxIntervalMilliseconds.init -> void
+AppShell.Core.Input.GlobalShortcutRegistrationInfo.Owner.get -> string!
+AppShell.Core.Input.GlobalShortcutRegistrationInfo.Owner.init -> void
+AppShell.Core.Input.GlobalShortcutRegistrationInfo.Strokes.get -> System.Collections.Generic.IReadOnlyList<AppShell.Core.Input.GlobalShortcutStroke!>!
+AppShell.Core.Input.GlobalShortcutRegistrationInfo.Strokes.init -> void
+AppShell.Core.Input.GlobalShortcutRegistrationInfo.GlobalShortcutRegistrationInfo(string! Id, string! Owner, System.Collections.Generic.IReadOnlyList<AppShell.Core.Input.GlobalShortcutStroke!>! Strokes, string! CommandText, int MaxIntervalMilliseconds) -> void
+AppShell.Core.Input.GlobalShortcutStroke
+AppShell.Core.Input.GlobalShortcutStroke.GlobalShortcutStroke(int VirtualKey, AppShell.Core.Input.GlobalShortcutModifiers Modifiers = AppShell.Core.Input.GlobalShortcutModifiers.None) -> void
+AppShell.Core.Input.GlobalShortcutStroke.Modifiers.get -> AppShell.Core.Input.GlobalShortcutModifiers
+AppShell.Core.Input.GlobalShortcutStroke.Modifiers.init -> void
+AppShell.Core.Input.GlobalShortcutStroke.VirtualKey.get -> int
+AppShell.Core.Input.GlobalShortcutStroke.VirtualKey.init -> void
+AppShell.Core.Input.IGlobalShortcutModule
+AppShell.Core.Input.IGlobalShortcutModule.RegisterShortcuts(AppShell.Core.Input.IGlobalShortcutRegistrar! registrar) -> void
+AppShell.Core.Input.IGlobalShortcutRegistrar
+AppShell.Core.Input.IGlobalShortcutRegistrar.Register(AppShell.Core.Input.GlobalShortcutDescriptor! descriptor) -> System.IDisposable!
 AppShell.Core.AppIdentity
 AppShell.Core.ApplicationIdentity
 AppShell.Core.ApplicationIdentity.ApplicationIdentity(string! Name, string! Version, string! InformationalVersion, string! FileVersion) -> void
@@ -255,34 +293,6 @@ AppShell.Core.Docking.ToolWindowInfo.Side.init -> void
 AppShell.Core.Docking.ToolWindowInfo.Title.get -> string!
 AppShell.Core.Docking.ToolWindowInfo.Title.init -> void
 AppShell.Core.Docking.ToolWindowInfo.ToolWindowInfo(string! Id, string! Title, bool IsVisible, bool IsFloating, AppShell.Core.Docking.DockSide? Side, double? Ratio, string! Owner = "framework") -> void
-AppShell.Core.Files.IWorkspaceService
-AppShell.Core.Files.IWorkspaceService.CanSelectLocalRoot.get -> bool
-AppShell.Core.Files.IWorkspaceService.Changed -> System.Action?
-AppShell.Core.Files.IWorkspaceService.CreateDirectory(string! relativePath) -> void
-AppShell.Core.Files.IWorkspaceService.DeleteToRecycleBin(string! relativePath) -> void
-AppShell.Core.Files.IWorkspaceService.List(string? relativePath = null) -> System.Collections.Generic.IReadOnlyList<AppShell.Core.Files.WorkspaceEntry!>!
-AppShell.Core.Files.IWorkspaceService.Rename(string! relativePath, string! newName) -> void
-AppShell.Core.Files.IWorkspaceService.ResolveFull(string! relativePath) -> string!
-AppShell.Core.Files.IWorkspaceService.Root.get -> string!
-AppShell.Core.Files.IWorkspaceService.SetRoot(string! path) -> void
-AppShell.Core.Files.WorkspaceEntry
-AppShell.Core.Files.WorkspaceEntry.IsDirectory.get -> bool
-AppShell.Core.Files.WorkspaceEntry.IsDirectory.init -> void
-AppShell.Core.Files.WorkspaceEntry.Modified.get -> System.DateTime
-AppShell.Core.Files.WorkspaceEntry.Modified.init -> void
-AppShell.Core.Files.WorkspaceEntry.Name.get -> string!
-AppShell.Core.Files.WorkspaceEntry.Name.init -> void
-AppShell.Core.Files.WorkspaceEntry.RelativePath.get -> string!
-AppShell.Core.Files.WorkspaceEntry.RelativePath.init -> void
-AppShell.Core.Files.WorkspaceEntry.Size.get -> long
-AppShell.Core.Files.WorkspaceEntry.Size.init -> void
-AppShell.Core.Files.WorkspaceEntry.WorkspaceEntry(string! Name, string! RelativePath, bool IsDirectory, long Size, System.DateTime Modified) -> void
-AppShell.Core.Files.WorkspaceListing
-AppShell.Core.Files.WorkspaceListing.Entries.get -> System.Collections.Generic.IReadOnlyList<AppShell.Core.Files.WorkspaceEntry!>!
-AppShell.Core.Files.WorkspaceListing.Entries.init -> void
-AppShell.Core.Files.WorkspaceListing.Root.get -> string!
-AppShell.Core.Files.WorkspaceListing.Root.init -> void
-AppShell.Core.Files.WorkspaceListing.WorkspaceListing(string! Root, System.Collections.Generic.IReadOnlyList<AppShell.Core.Files.WorkspaceEntry!>! Entries) -> void
 AppShell.Core.Logging.IShellLog
 AppShell.Core.Logging.IShellLog.EntryAdded -> System.EventHandler<AppShell.Core.Logging.ShellLogEntry!>?
 AppShell.Core.Logging.IShellLog.Log(AppShell.Core.Logging.ShellLogLevel level, string! category, string! message) -> void
@@ -449,7 +459,6 @@ const AppShell.Core.Docking.StandardWindowIds.CommandDetail = "commanddetail" ->
 const AppShell.Core.Docking.StandardWindowIds.Console = "console" -> string!
 const AppShell.Core.Docking.StandardWindowIds.Mcp = "mcp" -> string!
 const AppShell.Core.Docking.StandardWindowIds.Modules = "modules" -> string!
-const AppShell.Core.Docking.StandardWindowIds.Resource = "resource" -> string!
 static AppShell.Core.AppIdentity.Current.get -> AppShell.Core.ApplicationIdentity!
 static AppShell.Core.AppIdentity.From(System.Reflection.Assembly! assembly) -> AppShell.Core.ApplicationIdentity!
 static AppShell.Core.AppIdentity.Use(System.Reflection.Assembly! assembly) -> void

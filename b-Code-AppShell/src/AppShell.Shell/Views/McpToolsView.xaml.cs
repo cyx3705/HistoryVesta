@@ -93,7 +93,8 @@ public partial class McpToolsView : UserControl
             }
 
             var result = await bus.ExecuteAsync("command.list", "UI");
-            if (!result.Success || result.Data is not IReadOnlyList<CommandCatalogRow> rows)
+            if (!result.Success
+                || !CommandResultData.TryRead<IReadOnlyList<CommandCatalogRow>>(result.Data, out var rows))
             {
                 StatusText.Text = "命令集加载失败，详见控制台";
                 return;

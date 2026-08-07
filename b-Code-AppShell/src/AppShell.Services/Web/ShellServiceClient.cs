@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using AppShell.Core.Commands;
+using AppShell.Core.Logging;
 
 namespace AppShell.Services.Web;
 
@@ -33,6 +34,10 @@ public sealed class ShellServiceClient : IDisposable
     public ShellConnectionState State { get; private set; } = ShellConnectionState.Disconnected;
 
     public event Action<ShellConnectionState>? StateChanged;
+
+    public event EventHandler<ShellLogEntry>? LogReceived;
+
+    public event Action<long>? ModuleRevisionReceived;
 
     internal TimeSpan RemoteRequestTimeout => _profile.EffectiveConnectTimeout;
 
@@ -305,7 +310,7 @@ public sealed class ShellServiceClient : IDisposable
         }, cancellationToken).ConfigureAwait(false);
     }
 
-    private static async Task ReceiveEventsAsync(
+    private async Task ReceiveEventsAsync(
         ClientWebSocket socket,
         CommandBus localBus,
         CancellationToken cancellationToken)
@@ -364,6 +369,31 @@ public sealed class ShellServiceClient : IDisposable
                         ["id"] = id,
                         ["approved"] = approved,
                     }, cancellationToken).ConfigureAwait(false);
+                }
+                else if (type.GetString() == "log")
+                {
+                    var time = root.TryGetProperty("time", out var timeValue)
+                               && DateTime.TryParse(timeValue.GetString(), out var parsedTime)
+                        ? parsedTime
+                        : DateTime.Now;
+                    var level = root.TryGetProperty("level", out var levelValue)
+                                && Enum.TryParse<ShellLogLevel>(levelValue.GetString(), true, out var parsedLevel)
+                        ? parsedLevel
+                        : ShellLogLevel.Info;
+                    var category = root.TryGetProperty("category", out var categoryValue)
+                        ? categoryValue.GetString() ?? "service"
+                        : "service";
+                    var message = root.TryGetProperty("message", out var messageValue)
+                        ? messageValue.GetString() ?? ""
+                        : "";
+                    LogReceived?.Invoke(this, new ShellLogEntry(time, level, category, message));
+                }
+                else if (type.GetString() == "moduleRevision")
+                {
+                    var revision = root.TryGetProperty("revision", out var revisionValue)
+                        ? revisionValue.GetInt64()
+                        : 0;
+                    ModuleRevisionReceived?.Invoke(revision);
                 }
             }
         }

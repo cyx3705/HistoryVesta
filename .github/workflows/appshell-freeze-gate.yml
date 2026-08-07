@@ -32,7 +32,7 @@ jobs:
 
       - name: Test Debug
         run: >-
-          dotnet test .\b-Code-AppShell\tests\AppShell.Tests\AppShell.Tests.csproj
+          dotnet test .\b-Code-Tests\AppShell.Tests\AppShell.Tests.csproj
           -c Debug --no-build --no-restore
           --logger "trx;LogFileName=debug.trx"
           --results-directory artifacts\test-results
@@ -42,7 +42,7 @@ jobs:
 
       - name: Test Release
         run: >-
-          dotnet test .\b-Code-AppShell\tests\AppShell.Tests\AppShell.Tests.csproj
+          dotnet test .\b-Code-Tests\AppShell.Tests\AppShell.Tests.csproj
           -c Release --no-build --no-restore
           --logger "trx;LogFileName=release.trx"
           --results-directory artifacts\test-results

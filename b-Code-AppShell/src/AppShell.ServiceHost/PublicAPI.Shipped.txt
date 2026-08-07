@@ -1,4 +1,8 @@
 #nullable enable
+AppShell.ServiceHost.ServiceComposition.GlobalShortcuts.get -> AppShell.Services.Input.GlobalShortcutService?
+AppShell.ServiceHost.ServiceComposition.GlobalShortcuts.init -> void
+AppShell.ServiceHost.ServiceComposition.EndpointFile.get -> string?
+AppShell.ServiceHost.ServiceComposition.EndpointFile.init -> void
 AppShell.ServiceHost.IAutostartManager
 AppShell.ServiceHost.IAutostartManager.IsEnabled(string! name) -> bool
 AppShell.ServiceHost.IAutostartManager.IsEnabled(string! name, string! executablePath, System.Collections.Generic.IReadOnlyList<string!>! arguments) -> bool

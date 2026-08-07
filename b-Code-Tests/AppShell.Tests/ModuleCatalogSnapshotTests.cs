@@ -3,6 +3,7 @@ using AppShell.Core.Logging;
 using AppShell.Services.Modules;
 using AppShell.Shell.Mcp;
 using AppShell.Shell.Views;
+using System.Text.Json;
 using Xunit;
 
 namespace AppShell.Tests;
@@ -60,6 +61,24 @@ public sealed class ModuleCatalogSnapshotTests
 
         Assert.True(result.Success, result.Message);
         Assert.Equal(["module.list", "command.list"], calls);
+        Assert.Equal("calc.add", Assert.Single(result.Snapshot!.CommandsFor("Math")).Name);
+    }
+
+    [Fact]
+    public async Task ReaderDeserializesJsonDataReturnedAcrossProcessBoundary()
+    {
+        var modules = new List<ModuleMeta> { Module("Math", 1) };
+        var commands = new List<CommandCatalogRow> { CatalogRow("calc.add", "Math") };
+        var bus = new CommandBus(new CommandRegistry(), new TestLog())
+        {
+            RemoteExecutor = (text, _, _) => Task.FromResult(text == "module.list"
+                ? CommandResult.Ok("modules", JsonSerializer.SerializeToElement(modules))
+                : CommandResult.Ok("commands", JsonSerializer.SerializeToElement(commands))),
+        };
+
+        var result = await ModuleCatalogReader.LoadAsync(bus);
+
+        Assert.True(result.Success, result.Message);
         Assert.Equal("calc.add", Assert.Single(result.Snapshot!.CommandsFor("Math")).Name);
     }
 

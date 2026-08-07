@@ -21,7 +21,12 @@
   <ItemGroup>
     <ProjectReference Include="..\AppShell.Core\AppShell.Core.csproj" />
     <ProjectReference Include="..\AppShell.Services\AppShell.Services.csproj" />
+    <ProjectReference Include="..\AppShell.ServiceHost\AppShell.ServiceHost.csproj" />
     <ProjectReference Include="..\AppShell.Shell\AppShell.Shell.csproj" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <StartupObject>AppShell.App.Program</StartupObject>
+  </PropertyGroup>
 
 </Project>

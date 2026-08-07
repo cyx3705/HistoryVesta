@@ -1,5 +1,4 @@
 using AppShell.Core.Commands;
-using AppShell.Core.Files;
 using AppShell.Shell.Panels;
 
 namespace AppShell.Shell;
@@ -43,7 +42,6 @@ public static class FrontendCommandCatalog
             Log = null!,
             Bus = null!,
             DataDirectory = "",
-            Workspace = CatalogWorkspaceService.Instance,
             Panels = new PanelManager(),
         });
 
@@ -57,29 +55,6 @@ public static class FrontendCommandCatalog
             .ToList();
         return new CatalogSnapshot(frontend, sharedBuiltins);
     }
-
-    private sealed class CatalogWorkspaceService : IWorkspaceService
-    {
-        public static readonly CatalogWorkspaceService Instance = new();
-
-        public string Root => throw CatalogOnly();
-
-        public event Action? Changed
-        {
-            add { }
-            remove { }
-        }
-
-        public void SetRoot(string path) => throw CatalogOnly();
-        public IReadOnlyList<WorkspaceEntry> List(string? relativePath = null) => throw CatalogOnly();
-        public void CreateDirectory(string relativePath) => throw CatalogOnly();
-        public void Rename(string relativePath, string newName) => throw CatalogOnly();
-        public void DeleteToRecycleBin(string relativePath) => throw CatalogOnly();
-        public string ResolveFull(string relativePath) => throw CatalogOnly();
-    }
-
-    private static InvalidOperationException CatalogOnly()
-        => new("前端目录依赖仅用于生成描述符，不可执行");
 
     private sealed record CatalogSnapshot(
         IReadOnlyList<CommandDescriptor> Frontend,

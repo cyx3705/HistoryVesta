@@ -1,6 +1,13 @@
-# AppShell 3.0 运行时约束与已知限制
+# AppShell 3.2 运行时约束与已知限制
 
-适用版本：`3.0.x`。本文件记录消费应用必须遵守的运行时约束、默认值和已知限制。
+适用版本：`3.1.3`。本文件记录消费应用必须遵守的运行时约束、默认值和已知限制。
+
+## 顶栏与浮窗
+
+- 空白顶栏按住满 120ms 且越过系统阈值后才移动宿主；最大化宿主使用两倍阈值，并在下拖时恢复为普通窗口。
+- 嵌入或专注页面只能拖真实页签成为独立浮窗；普通页签使用 AvalonDock 原生流程，专注页签先恢复布局再浮动。
+- 新浮窗采用恢复后嵌入窗格的实际宽高，并保持鼠标在原页签抓取位置；跨显示器定位按目标显示器 DPI 与工作区裁剪。
+- 这些行为属于 Shell 内部实现，不新增公共 .NET API；消费方不得依赖 AvalonDock internal API 覆盖该流程。
 
 ## 运行时边界
 
@@ -10,8 +17,8 @@
 | 未释放资源 | `McpGateway`、`WebGateway` 的监听器和 `CancellationTokenSource` 均在 Stop/Dispose 释放；WebSocket 会话、文件监视器、去抖定时器、日志流及模块加载上下文均有退出路径。 |
 | 硬编码 | MCP/Web 默认端口按稳定应用名派生并可显式覆盖；端口重试、限流、缓存容量、命令历史、控制台容量、MCP 执行/确认超时均可配置。协议报文 1 MiB 上限和 Web 前端中继 15 秒超时是 3.0 安全契约，不作为业务调优项。 |
 | 跨应用共享资源 | `%AppData%/<应用名>/`、ServiceHost 本地互斥体、MCP/Web 默认端口均按稳定应用名隔离；端口冲突自动顺延。相同 `ServiceName` 的 ServiceHost 仍为有意的单实例服务。 |
-| null 降级路径 | `Workspace=null` 时不注册 `res.*` 且资源窗口不接管；`CommandSelection=null` 时 Shell 创建本地状态；MCP/提示词治理不依赖数据库；前端离线时前端目录仍可查阅，执行返回明确失败。 |
-| 线程亲和 | 窗口、布局、面板、对话框和控制台命令均声明 `RequiresUiThread`；CommandBus 统一编组到 `UiContext`。ModuleHost 只通过注入的 `SynchronizationContext` 创建/销毁 UI，无窗服务保持 null。客户端资源树把远程工作区读取移到后台线程，并使用 `ShellEndpointProfile.ConnectTimeout`（默认 5 秒），不会在 UI Dispatcher 同步等待 HTTP。 |
+| null 降级路径 | `CommandSelection=null` 时 Shell 创建本地状态；MCP/提示词治理不依赖数据库；前端离线时前端目录仍可查阅，执行返回明确失败。 |
+| 线程亲和 | 窗口、布局、面板、对话框和控制台命令均声明 `RequiresUiThread`；CommandBus 统一编组到 `UiContext`。ModuleHost 只通过注入的 `SynchronizationContext` 创建/销毁 UI，无窗服务保持 null。 |
 
 ## 默认值
 
@@ -43,6 +50,6 @@
 3. 前端目录按 `FrontendName` 持久缓存。超过 `web.frontendcataloglimit` 时会确定性淘汰其它离线应用目录；在线会话目录不受影响，重新连接会再次发布。
 4. `ShellServiceClient` 在建立 WebSocket 时发布目录。运行期间动态注册的新命令需重连后进入服务端权威目录；AppShell 的内置命令、启动期应用命令和启动期模块命令均在连接前完成注册。
 5. `McpExposurePolicy` 的兼容装配委托仍是进程级静态入口。3.0 已保证并发读写安全，但不支持同一进程承载多套彼此不同的模块暴露策略；此类多租户隔离将在 3.1 通过实例策略演进。普通“一桌面 Shell + 一无窗 ServiceHost”分进程部署不受影响。
-6. `CommandManualGenerator.Render` 使用调用前确定的 `AppIdentity.Current` 生成标题和版本。宿主必须在生成手册前调用 `AppIdentity.Use(...)`；身份显式注入重载计划随 3.1 API 演进提供。
+6. `CommandManualGenerator.Render` 使用调用前确定的 `AppIdentity.Current` 生成标题和版本。宿主必须在生成手册前调用 `AppIdentity.Use(...)`。
 
 遇到上述限制时，应记录根因和复现；禁止在消费方复制命令清单、删除布局文件或改写框架状态来掩盖问题。

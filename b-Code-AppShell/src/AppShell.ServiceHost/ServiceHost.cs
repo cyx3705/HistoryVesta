@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Threading;
 using AppShell.Core.Logging;
@@ -76,11 +78,24 @@ public static class ServiceHost
             () => app.Shutdown(),
             servicePath,
             serviceArguments: serviceArguments);
+        if (composition.GlobalShortcuts != null && OperatingSystem.IsWindows())
+        {
+            try
+            {
+                composition.GlobalShortcuts.Start();
+            }
+            catch (Exception ex)
+            {
+                composition.Log.Warn("hotkey", $"全局快捷键服务启动失败: {ex.Message}");
+            }
+        }
         if (composition.Web != null)
         {
             composition.Bus.FrontendExecutor = composition.Web.RelayFrontendCommandAsync;
             var (started, message) = composition.Web.Start();
             LogResult(composition.Log, "web", started, message);
+            if (started && composition.EndpointFile != null)
+                WriteEndpoint(composition.EndpointFile, composition);
         }
 
         if (composition.Mcp != null)
@@ -128,6 +143,12 @@ public static class ServiceHost
         }
         finally
         {
+            if (composition.EndpointFile != null)
+            {
+                try { File.Delete(composition.EndpointFile); }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+            }
             composition.Dispose();
             mutex.ReleaseMutex();
         }
@@ -165,6 +186,28 @@ public static class ServiceHost
         catch (AbandonedMutexException)
         {
             return true;
+        }
+    }
+
+    private static void WriteEndpoint(string path, ServiceComposition composition)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var temporary = path + ".tmp." + Guid.NewGuid().ToString("N");
+        try
+        {
+            File.WriteAllText(temporary, JsonSerializer.Serialize(new
+            {
+                port = composition.Web?.Port ?? 0,
+                serverId = composition.Web?.ServerId ?? composition.ServiceName,
+                processId = Environment.ProcessId,
+            }));
+            File.Move(temporary, path, overwrite: true);
+        }
+        finally
+        {
+            try { File.Delete(temporary); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
     }
 }

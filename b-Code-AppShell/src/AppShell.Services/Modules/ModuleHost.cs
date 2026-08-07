@@ -5,6 +5,7 @@ using System.Runtime.Loader;
 using System.Text.Json;
 using System.Xml.Linq;
 using AppShell.Core.Commands;
+using AppShell.Core.Input;
 using AppShell.Core.Logging;
 using AppShell.Core.Modules;
 
@@ -54,8 +55,14 @@ public sealed class ModuleHost : IDisposable
     /// <summary>是否实例化模块 UI。无窗服务进程必须关闭。</summary>
     public bool EnableUiModules { get; set; } = true;
 
+    /// <summary>Whether this host owns filesystem change detection for the module directory.</summary>
+    public bool EnableFileWatching { get; set; } = true;
+
     /// <summary>模块内嵌界面的宿主注册器;无窗服务进程保持 null。</summary>
     public IShellUiRegistrar? ShellUi { get; set; }
+
+    /// <summary>后台宿主提供的全局快捷键注册器；前端 UI 宿主保持 null。</summary>
+    public Input.GlobalShortcutService? GlobalShortcuts { get; set; }
 
     public string ModulesDirectory => _dir;
 
@@ -71,8 +78,11 @@ public sealed class ModuleHost : IDisposable
     {
         Directory.CreateDirectory(_dir);
         Reload();
-        StartWatcher();
-        _log.Info("module", $"正在监听模块目录: {_dir}");
+        if (EnableFileWatching)
+        {
+            StartWatcher();
+            _log.Info("module", $"正在监听模块目录: {_dir}");
+        }
     }
 
     /// <summary>module.dir path=:切换模块目录并整体重载。</summary>
@@ -83,7 +93,8 @@ public sealed class ModuleHost : IDisposable
         _dir = newDir;
         Directory.CreateDirectory(_dir);
         Reload();
-        StartWatcher();
+        if (EnableFileWatching)
+            StartWatcher();
         _log.Info("module", $"模块目录已切换: {_dir}");
     }
 
@@ -172,6 +183,8 @@ public sealed class ModuleHost : IDisposable
 
     private void SwapRegistrations(Snapshot old, Snapshot next)
     {
+        DisposeShortcutRegistrations(old);
+
         if (_registry == null || !EnableCommands)
         {
             next.FinalizeMetas();
@@ -315,6 +328,27 @@ public sealed class ModuleHost : IDisposable
         var infoTypes = types.Where(t => t.IsPublic && !t.IsAbstract && IsModuleInfo(t)).ToList();
         if (infoTypes.Count == 0)
             return;
+
+        if (GlobalShortcuts != null && OperatingSystem.IsWindows())
+        {
+            var owner = slot.Length > 0 ? slot : Path.GetFileNameWithoutExtension(dllPath);
+            foreach (var shortcutType in types.Where(type =>
+                         type.IsPublic && !type.IsAbstract
+                         && typeof(IGlobalShortcutModule).IsAssignableFrom(type)))
+            {
+                try
+                {
+                    var module = (IGlobalShortcutModule)snap.GetInstance(shortcutType);
+                    var registrar = GlobalShortcuts.CreateOwnerRegistrar(owner);
+                    module.RegisterShortcuts(registrar);
+                    snap.ShortcutRegistrations.Add(registrar);
+                }
+                catch (Exception ex)
+                {
+                    _log.Warn("hotkey", $"模块 {owner} 快捷键注册失败: {ex.Message}");
+                }
+            }
+        }
 
         if (uiEnabled && EnableUiModules)
         {
@@ -645,6 +679,7 @@ public sealed class ModuleHost : IDisposable
     {
         _watcher?.Dispose();
         _debounce?.Dispose();
+        DisposeShortcutRegistrations(_current);
         var ui = UiContext;
         if (ui != null)
         {
@@ -657,6 +692,16 @@ public sealed class ModuleHost : IDisposable
                 _log.Warn("module", $"退出时销毁 UI 模块失败: {ex.Message}");
             }
         }
+    }
+
+    private static void DisposeShortcutRegistrations(Snapshot snapshot)
+    {
+        foreach (var registration in snapshot.ShortcutRegistrations)
+        {
+            try { registration.Dispose(); }
+            catch { }
+        }
+        snapshot.ShortcutRegistrations.Clear();
     }
 
     // ---------------------------------------------------------------- 快照与加载上下文
@@ -676,6 +721,8 @@ public sealed class ModuleHost : IDisposable
         public List<string> RegisteredNames { get; } = new();
 
         public List<(IUiModule Module, string Owner)> UiModules { get; } = new();
+
+        public List<IDisposable> ShortcutRegistrations { get; } = new();
 
         /// <summary>模块元信息(module.list);CommandCount 在注册完成后定稿。</summary>
         public List<(string Name, string Desc, string Author, string Version, bool Open, string File, string Slot, bool Ui)> Metas { get; } = new();

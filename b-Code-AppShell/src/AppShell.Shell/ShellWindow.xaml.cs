@@ -3,8 +3,11 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shell;
+using System.Windows.Threading;
 using AppShell.Core.Commands;
 using AppShell.Core.Docking;
 using AppShell.Core.Logging;
@@ -18,7 +21,9 @@ using AvalonDock.Layout;
 namespace AppShell.Shell;
 
 /// <summary>
-/// 主程序窗体(Main Frame,§2):菜单栏 + 停靠系统容器 + 状态栏。
+/// 主程序窗体(Main Frame,§2)。3.1 起为自绘顶栏 + 停靠系统容器两段结构:
+/// 菜单折叠进顶栏右上角的菜单按钮(UI-03),常驻菜单行与底部状态栏均已取消
+/// (UI-05,原状态栏信息改由顶栏徽章、布局文本和瞬时回执承担)。
 /// M2 起指令总线为一切操作的汇聚点:菜单项点击同样是发指令(S-02),
 /// 控制台手输、脚本、布局手势与派生应用共用同一张指令注册表。
 /// </summary>
@@ -31,7 +36,6 @@ public partial class ShellWindow : Window
     private readonly CommandBus _bus;
     private readonly CommandHistory _history;
     private readonly ConsoleView _console;
-    private readonly Resource.ResourceView? _resourceView;
     private readonly Panels.PanelManager _panels;
 
     // 0.4.4 反哺能力:由 Shell 自行装配,派生应用经下方只读属性取用
@@ -45,8 +49,37 @@ public partial class ShellWindow : Window
     // 派生应用那时拿不到 window,故联动实例必须由派生侧创建并传入。
     private readonly CommandSelectionState _commandSelection;
 
+    // UI-03:折叠后的菜单挂在顶栏菜单按钮上(挂上去才能继承窗体资源与样式)
+    private readonly ContextMenu _menu = new();
+
+    // UI-05.2:指令结果瞬时回执的收起计时器
+    private readonly DispatcherTimer _toastTimer;
+
     private int _errorCount;
     private bool _menusInitialized;
+
+    // UI-09.1:true 表示已接管窗体非客户区;false 表示宿主改过 WindowStyle,
+    // 只降级边框接管方式,顶栏四个按钮仍然保留并可用。
+    private bool _customChrome;
+
+    // Alt 单独按下(未与其他键组合)才呼出菜单,避免抢走 Alt+Tab 等组合
+    private bool _altPressedAlone;
+
+    // 主题字典副本:窗格基底样式与 3.1 卡片/专注模板都从这里取
+    private ResourceDictionary? _themeResources;
+
+    // UI-08:浅色/深色令牌整份切换(app.theme),设置项持久化
+    private readonly ISettingsService _settings;
+    private string _theme = ThemeLight;
+
+    // 右上角按钮组要在最上一排页签里占位,避免页签跑到按钮底下
+    private readonly DispatcherTimer _chromeUpkeep;
+    private bool _reservePending;
+    private bool _closing;
+    private bool _allowClose;
+    private ContentControl? _chromeHost;
+    private FrameworkElement? _chromeDragSurface;
+    private readonly ShellTopBarCoordinator _topBar;
 
     public ShellWindow(
         ShellConfig config,
@@ -61,14 +94,35 @@ public partial class ShellWindow : Window
         _log = log;
         _dataDirectory = dataDirectory;
         _commandSelection = config.CommandSelection ?? new CommandSelectionState();
+        _settings = settings;
         Title = $"{config.AppName} v{config.AppVersion}";
+
+        // UI-03:菜单按钮的弹出层;挂到按钮上才能继承窗体资源(菜单项样式)
+        MenuButton.ContextMenu = _menu;
+
+        // UI-08:上次选择的主题先于任何界面成型生效,避免启动瞬间闪一下浅色
+        ApplyTheme(settings.Get(ThemeSettingsKey) ?? ThemeLight, persist: false);
+
+        // UI-05.2:成功 2.5s、失败 6s 后收起,间隔在 ShowToast 里按结果设定
+        _toastTimer = new DispatcherTimer(DispatcherPriority.Background);
+        _toastTimer.Tick += (_, _) =>
+        {
+            _toastTimer.Stop();
+            Toast.Visibility = Visibility.Collapsed;
+        };
+
+        StateChanged += (_, _) => ApplyWindowStateChrome();
+        SourceInitialized += OnShellSourceInitialized;
+        PreviewKeyDown += OnShellPreviewKeyDown;
+        PreviewKeyUp += OnShellPreviewKeyUp;
 
         // 主窗体边界先于停靠布局恢复:布局像素尺寸相对窗体记录,
         // 窗体尺寸一致才能做到“重启后布局原样恢复”(验收 1 / 3)
         RestoreWindowBounds();
 
         DockManager.Theme = new AppShellTheme();
-        ApplyTabsTopStyle();
+        LoadThemeResources();
+        ApplyPaneStyles(chromeless: false);
 
         // ---- 指令核心(§5):注册表 + 总线 + 历史 + 控制台
         var registry = new CommandRegistry();
@@ -84,15 +138,6 @@ public partial class ShellWindow : Window
 
         // 控制台窗口内容由 Shell 接管(§4.4 标准窗口;描述符位置仍由派生应用决定)
         TakeOverDescriptor(StandardWindowIds.Console, "控制台", DockSide.Bottom, 0.25, () => _console);
-
-        // 工作区已配置时,资源窗口(§4.6)由 Shell 提供(M4)
-        if (config.Workspace != null)
-        {
-            _resourceView = new Resource.ResourceView(
-                config.Workspace, _bus, log, config.OnResourceOpen,
-                Services.AppPaths.GetWorkspaceDir(dataDirectory));
-            TakeOverDescriptor(StandardWindowIds.Resource, "资源窗口", DockSide.Left, 0.18, () => _resourceView);
-        }
 
         // 0.4.4:反哺能力自带的管理窗口。窗口内容工厂只依赖总线与选中状态(指令实际执行在 command.list/
         // mcp.status/module.list),故可在此(DockingHost 构建前)接管;网关/模块宿主的创建与指令注册
@@ -119,8 +164,31 @@ public partial class ShellWindow : Window
 
         _docking = new DockingHost(DockManager, config.ToolWindows, layoutStore, log, settings);
         _docking.CommandGenerated += (_, e) =>
-            Dispatcher.BeginInvoke(() => StatusLeft.Text = $"[{e.Source}] {e.CommandText}");
+            Dispatcher.BeginInvoke(() => ShowToast($"[{e.Source}] {e.CommandText}", success: true));
         _docking.Initialize();
+        _topBar = new ShellTopBarCoordinator(
+            this,
+            DockManager,
+            _docking,
+            _bus,
+            _log,
+            (RoutedCommand)Resources["Shell.Command.PageAction"]);
+        // 按钮组占位与浮动窗口主题需要在「布局稳定之后」才算得准,但不能挂
+        // LayoutUpdated:那个事件每帧都发,回调里任何写操作都会再触发一次布局,
+        // 直接转成 100% CPU 的死循环(实测)。改为低频巡检 + 幂等写入。
+        _chromeUpkeep = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(400),
+        };
+        _chromeUpkeep.Tick += (_, _) =>
+        {
+            if (_closing)
+                return;
+            AttachChromeBarToMainDocumentPane();
+            ReserveSpaceForChromeBar();
+            ApplyThemeToFloatingWindows();
+        };
+        Loaded += (_, _) => _chromeUpkeep.Start();
         _shellUi = new Modules.ShellUiRegistrar(_docking, Dispatcher, log);
         _docking.WindowsChanged += (_, _) => Dispatcher.BeginInvoke(() =>
         {
@@ -132,7 +200,15 @@ public partial class ShellWindow : Window
             {
                 _log.Error("menu", $"菜单重建失败，已保留上一版菜单: {ex.Message}");
             }
-            UpdateStatusRight();
+            UpdateLayoutIndicator();
+
+            // UI-04:页面最大化态与常规态的窗格外观、顶栏形态在此切换。
+            // WindowsChanged 是 MaximizeWindow / RestoreLayoutFromMaximized 的共同出口。
+            ApplyFocusChrome();
+
+            // R4-3:刚拖出来的浮动窗口带的是自己那份浅色令牌,补一次主题
+            ApplyThemeToFloatingWindows();
+            _topBar.Refresh();
         });
 
         // ---- 内置指令组 + 派生应用自定义指令(冲突此时报错,§5.3)
@@ -146,8 +222,37 @@ public partial class ShellWindow : Window
             Log = log,
             Bus = _bus,
             DataDirectory = dataDirectory,
-            Workspace = config.Workspace,
             Panels = _panels,
+        });
+
+        RegisterFrontendLifecycleCommands(registry);
+
+        // UI-08:主题切换也是一条指令(S-02),菜单项与控制台走同一条路径
+        registry.Register(new CommandDescriptor
+        {
+            Name = "app.theme",
+            Summary = "切换界面主题(浅色 / 深色)",
+            Example = "app.theme mode=dark",
+            RequiresUiThread = true,
+            Parameters =
+            [
+                new ParameterSpec
+                {
+                    Name = "mode",
+                    Description = "light、dark 或 toggle",
+                    Position = 0,
+                    Default = "toggle",
+                    AllowedValues = [ThemeLight, ThemeDark, "toggle"],
+                },
+            ],
+            Handler = CommandDescriptor.Sync(ctx =>
+            {
+                var mode = ctx.GetString("mode") ?? "toggle";
+                if (mode.Equals("toggle", StringComparison.OrdinalIgnoreCase))
+                    mode = _theme == ThemeDark ? ThemeLight : ThemeDark;
+                ApplyTheme(mode, persist: true);
+                return CommandResult.Ok($"界面主题已切换为 {_theme}");
+            }),
         });
         // ---- 0.4.4 反哺能力:模块托管与 MCP 服务(默认关闭,ShellConfig 显式开启)
         //      注册次序在内置指令之后、派生自定义指令之前——派生应用因此可以在
@@ -162,6 +267,7 @@ public partial class ShellWindow : Window
                 ShellUi = _shellUi,
                 EnableCommands = config.EnableModules,
                 EnableUiModules = config.EnableModules || config.EnableUiModules,
+                EnableFileWatching = config.EnableModules || !config.EnableRemoteManagementViews,
             };
 
             // MD-08:窗口成型前先做一次文件级面板同步,上一会话遗留的模块旁面板本次即成窗口
@@ -216,19 +322,33 @@ public partial class ShellWindow : Window
                 log.Warn("mcp", message);
         }
 
-        // S-03:状态栏左侧显示最近一条指令结果摘要;右侧错误计数
+        // 成功仍给瞬时回执；失败直接打开控制台，避免错误浮层遮挡工作区。
         _bus.Executed += (text, source, result) => Dispatcher.BeginInvoke(() =>
         {
             var summary = result.Message.Split('\n')[0];
-            StatusLeft.Text = $"{(result.Success ? "✓" : "✗")} [{source}] {text} —— {summary}";
-            UpdateStatusRight();
+            if (result.Success)
+            {
+                ShowToast($"✓ [{source}] {text} —— {summary}", success: true);
+            }
+            else
+            {
+                Toast.Visibility = Visibility.Collapsed;
+                _toastTimer.Stop();
+                FocusConsole(resetFilters: true, preserveMaximizedLayout: true);
+            }
+            UpdateLayoutIndicator();
         });
         log.EntryAdded += (_, entry) =>
         {
             if (entry.Level >= ShellLogLevel.Error)
             {
                 Interlocked.Increment(ref _errorCount);
-                Dispatcher.BeginInvoke(UpdateErrorBadge);
+                Dispatcher.BeginInvoke(() =>
+                {
+                    UpdateErrorBadge();
+                    if (entry.Level >= ShellLogLevel.Fatal)
+                        FocusConsole(resetFilters: true, preserveMaximizedLayout: true);
+                });
             }
         };
 
@@ -240,15 +360,53 @@ public partial class ShellWindow : Window
         if (config.EnableMaximizeOnDoubleClick)
         {
             DockManager.AddHandler(
-                Control.MouseDoubleClickEvent,
+                UIElement.PreviewMouseLeftButtonDownEvent,
                 new MouseButtonEventHandler(OnDockDoubleClick),
                 handledEventsToo: true);
         }
+        DockManager.AddHandler(
+            ButtonBase.ClickEvent,
+            new RoutedEventHandler(OnDockButtonClick),
+            handledEventsToo: true);
 
         BuildMenus();
-        UpdateStatusRight();
+        UpdateLayoutIndicator();
+        ApplyFocusChrome();
 
         Closing += OnShellClosing;
+    }
+
+    /// <summary>
+    /// UI-02 / UI-09.1:非客户区接管必须推迟到窗体句柄就绪 —— 派生应用常在对象
+    /// 初始化器里(即构造函数返回之后)设置 WindowStyle,构造期判定会误判成标准窗体。
+    /// 用事件而非 override:protected 成员属于公开面,3.1 不新增公开 API。
+    /// </summary>
+    private void OnShellSourceInitialized(object? sender, EventArgs e)
+    {
+        if (WindowStyle == WindowStyle.SingleBorderWindow)
+        {
+            WindowChrome.SetWindowChrome(this, new WindowChrome
+            {
+                // 不再让隐藏标题区横跨整个窗体顶部：它会吞掉工具窗格的 ▼/×。
+                // 窗体拖动只由中央文档页签行的空白区域处理。
+                CaptionHeight = 0,
+                ResizeBorderThickness = new Thickness(6),
+                GlassFrameThickness = new Thickness(0),
+                // Q-4:Win10 IoT 无系统窗口圆角,窗体外缘一律直角
+                CornerRadius = new CornerRadius(0),
+                UseAeroCaptionButtons = false,
+            });
+            _customChrome = true;
+        }
+        else
+        {
+            // 只降级边框接管方式;顶栏的菜单与三个窗口按钮保持不变(UI-09.1)
+            _customChrome = false;
+            _log.Info("shell", $"宿主使用 WindowStyle={WindowStyle},已跳过非客户区接管,顶部按钮组仍然可用");
+        }
+
+        ApplyWindowStateChrome();
+        ScheduleChromeReserve();
     }
 
     /// <summary>停靠系统门面。</summary>
@@ -256,6 +414,28 @@ public partial class ShellWindow : Window
 
     /// <summary>指令总线(派生应用 / 启动参数经此执行指令)。</summary>
     public CommandBus Commands => _bus;
+
+    /// <summary>Adds a backend log entry to the in-memory console without writing a second log file.</summary>
+    public void AddTransientLog(ShellLogEntry entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        // The frontend command bus already records its local echo/result. Do not show
+        // the same command categories again when the backend event stream arrives.
+        if (entry.Category.StartsWith(CommandBus.EchoCategoryPrefix, StringComparison.OrdinalIgnoreCase)
+            || entry.Category.Equals(CommandBus.ResultCategory, StringComparison.OrdinalIgnoreCase))
+            return;
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(() => AddTransientLog(entry));
+            return;
+        }
+
+        _console.AddTransientEntry(entry);
+        if (entry.Level < ShellLogLevel.Error)
+            return;
+        Interlocked.Increment(ref _errorCount);
+        UpdateErrorBadge();
+    }
 
     /// <summary>模块托管宿主(0.4.4);EnableModules=false 时为 null。</summary>
     public Services.Modules.ModuleHost? Modules => _modules;
@@ -319,49 +499,104 @@ public partial class ShellWindow : Window
         };
     }
 
-    private void FocusConsole()
+    private void FocusConsole(bool resetFilters = false, bool preserveMaximizedLayout = false)
     {
+        if (resetFilters)
+            _console.ResetFilters();
+        if (preserveMaximizedLayout && _docking.MaximizedId != null)
+        {
+            if (_docking.MaximizedId.Equals(StandardWindowIds.Console, StringComparison.OrdinalIgnoreCase))
+                _console.FocusInput();
+            return;
+        }
         _docking.Show(StandardWindowIds.Console);
         _console.FocusInput();
     }
 
     private void OnDockDoubleClick(object sender, MouseButtonEventArgs e)
-    {
-        string? id = null;
-        for (DependencyObject? current = e.OriginalSource as DependencyObject;
-             current != null;
-             current = VisualTreeHelper.GetParent(current))
-        {
-            if (current is AnchorablePaneTitle { Model: LayoutAnchorable anchorable })
-            {
-                id = anchorable.ContentId;
-                break;
-            }
-        }
+        => _topBar.HandleDockTabMouseLeftButtonDown(e);
 
-        if (id == null)
-            return;
-        if (_docking.MaximizedId?.Equals(id, StringComparison.OrdinalIgnoreCase) == true)
-            _docking.RestoreLayoutFromMaximized();
-        else
-            _docking.MaximizeWindow(id);
-        e.Handled = true;
-    }
+    // ---------------------------------------------------------------- 顶栏状态(UI-05)
 
+    /// <summary>UI-05.3:原状态栏错误计数,点击行为不变(聚焦控制台并只看错误)。</summary>
     private void UpdateErrorBadge()
     {
-        StatusErrors.Text = $"错误: {_errorCount}";
-        StatusErrors.Visibility = _errorCount > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ErrorBadge.Content = $"错误 {_errorCount}";
+        ErrorBadge.Visibility = _errorCount > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private void OnStatusErrorsClick(object sender, MouseButtonEventArgs e)
+    private void OnErrorBadgeClick(object sender, RoutedEventArgs e)
+        => _ = _bus.ExecuteAsync("log.focus errors=true", "UI");
+
+    /// <summary>UI-05.2:指令结果瞬时回执;失败停留更久,点击跳控制台看全文。</summary>
+    private void ShowToast(string text, bool success)
     {
+        ToastText.Text = text;
+        if (TryFindResource(success ? "Shell.Brush.TextPrimary" : "Shell.Brush.Danger") is Brush brush)
+            ToastText.Foreground = brush;
+        Toast.Visibility = Visibility.Visible;
+        _toastTimer.Stop();
+        _toastTimer.Interval = TimeSpan.FromSeconds(success ? 2.5 : 6);
+        _toastTimer.Start();
+    }
+
+    private void OnToastClick(object sender, MouseButtonEventArgs e)
+    {
+        Toast.Visibility = Visibility.Collapsed;
+        _toastTimer.Stop();
         FocusConsole();
-        _console.FilterErrorsOnly();
+    }
+
+    // ---------------------------------------------------------------- 顶栏窗口控件(UI-02)
+
+    private void OnMinimizeClick(object sender, RoutedEventArgs e)
+        => _ = _bus.ExecuteAsync("app.window state=minimized", "UI");
+
+    private void OnMaximizeRestoreClick(object sender, RoutedEventArgs e)
+        => _ = _bus.ExecuteAsync("app.window state=toggle", "UI");
+
+    private void OnCloseClick(object sender, RoutedEventArgs e)
+        => _ = _bus.ExecuteAsync("app.frontend.hide", "UI");
+
+    private void OnFloatingMaxRestoreClick(object sender, RoutedEventArgs e)
+        => _topBar.ToggleFloatingWindow((DependencyObject)sender);
+
+    private void OnDockButtonClick(object sender, RoutedEventArgs e)
+    {
+        if (e.OriginalSource is FrameworkElement { Tag: "FloatingMaxRestore" } button)
+        {
+            OnFloatingMaxRestoreClick(button, e);
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>窗体最大化图标切换 + WindowChrome 溢出补偿(UI-02.5)。</summary>
+    private void ApplyWindowStateChrome()
+    {
+        var maximized = WindowState == WindowState.Maximized;
+        if (TryFindResource(maximized ? "Shell.Icon.Restore" : "Shell.Icon.Maximize") is Geometry icon)
+            MaximizeIcon.Data = icon;
+        MaximizeButton.ToolTip = maximized ? "向下还原" : "最大化";
+
+        // 接管非客户区后,最大化的窗体会按可调整边框宽度溢出工作区,
+        // 不补偿则顶栏被裁掉一截。
+        RootBorder.Padding = _customChrome && maximized
+            ? SystemParameters.WindowResizeBorderThickness
+            : default;
     }
 
     private void OnShellClosing(object? sender, CancelEventArgs e)
     {
+        if (_config.CloseBehavior == ShellCloseBehavior.Hide && !_allowClose)
+        {
+            e.Cancel = true;
+            Hide();
+            _closing = false;
+            return;
+        }
+
+        _closing = true;
+        _chromeUpkeep.Stop();
         _history.Save();
         SaveWindowBounds();
         _docking.SaveCurrentLayout();
@@ -371,6 +606,71 @@ public partial class ShellWindow : Window
         // 派生应用不再需要(也不应该)重复 Dispose 这两件。
         _mcp?.Dispose();
         _modules?.Dispose();
+    }
+
+    private void RegisterFrontendLifecycleCommands(CommandRegistry registry)
+    {
+        registry.Register(new CommandDescriptor
+        {
+            Name = "app.frontend.hide",
+            Summary = "隐藏 AppShell 前端窗口并保持后台连接",
+            RequiresUiThread = true,
+            Handler = CommandDescriptor.Sync(_ =>
+            {
+                Hide();
+                return CommandResult.Ok("前端窗口已隐藏");
+            }),
+        }, FrontendCommandCatalog.Source);
+
+        registry.Register(new CommandDescriptor
+        {
+            Name = "app.frontend.show",
+            Summary = "显示并激活 AppShell 前端窗口",
+            RequiresUiThread = true,
+            Handler = CommandDescriptor.Sync(_ =>
+            {
+                Show();
+                if (WindowState == WindowState.Minimized)
+                    WindowState = WindowState.Normal;
+                Activate();
+                return CommandResult.Ok("前端窗口已显示");
+            }),
+        }, FrontendCommandCatalog.Source);
+
+        registry.Register(new CommandDescriptor
+        {
+            Name = "app.frontend.focus-console",
+            Summary = "显示并聚焦控制台",
+            RequiresUiThread = true,
+            Handler = CommandDescriptor.Sync(_ =>
+            {
+                Show();
+                if (WindowState == WindowState.Minimized)
+                    WindowState = WindowState.Normal;
+                Activate();
+                if (_docking.MaximizedId != null &&
+                    !_docking.MaximizedId.Equals(StandardWindowIds.Console, StringComparison.OrdinalIgnoreCase))
+                    _docking.RestoreLayoutFromMaximized();
+                _docking.Show(StandardWindowIds.Console);
+                if (!string.Equals(_docking.MaximizedId, StandardWindowIds.Console, StringComparison.OrdinalIgnoreCase))
+                    _docking.MaximizeWindow(StandardWindowIds.Console);
+                _console.FocusInput();
+                return CommandResult.Ok("控制台已聚焦");
+            }),
+        }, FrontendCommandCatalog.Source);
+
+        registry.Register(new CommandDescriptor
+        {
+            Name = "app.frontend.exit",
+            Summary = "退出 AppShell 前端进程",
+            RequiresUiThread = true,
+            Handler = CommandDescriptor.Sync(_ =>
+            {
+                _allowClose = true;
+                Close();
+                return CommandResult.Ok("前端正在退出");
+            }),
+        }, FrontendCommandCatalog.Source);
     }
 
     // ---------------------------------------------------------------- 主窗体边界持久化
@@ -430,39 +730,464 @@ public partial class ShellWindow : Window
         }
     }
 
+    // ---------------------------------------------------------------- 主题(UI-08)
+
+    private const string ThemeSettingsKey = "ui.theme";
+    private const string ThemeLight = "light";
+    private const string ThemeDark = "dark";
+
+    private static readonly Uri LightTokensUri =
+        new("/AppShell.Shell;component/Themes/ShellTokens.xaml", UriKind.Relative);
+
+    private static readonly Uri DarkTokensUri =
+        new("/AppShell.Shell;component/Themes/ShellTokens.Dark.xaml", UriKind.Relative);
+
     /// <summary>
-    /// 标签条置顶(W-04):以主题内置的窗格样式为基底(继承 ItemContainerStyle、
-    /// 背景等全部视觉),仅覆盖 TabStripPlacement 与模板(标签行移到顶部)。
-    /// 经 DockingManager.AnchorablePaneControlStyle 下发,主停靠区与浮动窗一并生效。
-    /// v5 迁移注意:基底样式的资源键随主题版本变化,需同步调整。
+    /// 令牌字典整份替换:应用色与 AvalonDock 主题画刷键都在同一份令牌里,
+    /// 因此不会出现「界面已深色、页签仍浅色」。三处都要换:
+    /// 窗体(视图)、DockingManager(停靠区,压过 VS2013 主题)、应用级(浮动窗口是独立 Window)。
     /// </summary>
-    private void ApplyTabsTopStyle()
+    private void ApplyTheme(string mode, bool persist)
     {
-        Style? baseStyle = null;
+        var dark = mode.Equals(ThemeDark, StringComparison.OrdinalIgnoreCase);
+        var uri = dark ? DarkTokensUri : LightTokensUri;
+
+        SwapTokens(Resources, uri, atEnd: false);
+        SwapTokens(DockManager.Resources, uri, atEnd: true);
+        if (Application.Current != null)
+            SwapTokens(Application.Current.Resources, uri, atEnd: true);
+        ApplyThemeToFloatingWindows(uri);
+
+        _theme = dark ? ThemeDark : ThemeLight;
+        if (persist)
+        {
+            _settings.Set(ThemeSettingsKey, _theme);
+            if (_menusInitialized)
+                BuildMenus();
+        }
+    }
+
+    /// <summary>
+    /// R4-3:浮动窗口是独立 Window,自带一份 AvalonDock 主题字典(里面是浅色令牌),
+    /// 优先级高于应用级资源 —— 不单独换,拖出来的工具页外框就一直是白的。
+    /// 新浮动窗口在 WindowsChanged 后补一次。
+    /// </summary>
+    private void ApplyThemeToFloatingWindows(Uri? tokensUri = null)
+    {
+        var uri = tokensUri ?? (_theme == ThemeDark ? DarkTokensUri : LightTokensUri);
+        foreach (var floating in DockManager.FloatingWindows.ToList())
+        {
+            // 已经是目标主题就整窗跳过 —— 本方法在布局回调里跑,不幂等会死循环
+            if (!SwapTokens(floating.Resources, uri, atEnd: true))
+                continue;
+            if (floating.TryFindResource("Shell.Brush.Surface") is Brush surface)
+                floating.Background = surface;
+            if (floating.TryFindResource("Shell.Brush.Hairline") is Brush hairline)
+                floating.BorderBrush = hairline;
+        }
+    }
+
+    /// <summary>
+    /// 令牌字典换位。必须幂等:这个方法会被布局回调反复调用,
+    /// 每次都无脑换字典会让资源全量失效 → 触发布局 → 再回调,直接转成死循环。
+    /// </summary>
+    private static bool SwapTokens(ResourceDictionary target, Uri uri, bool atEnd)
+    {
+        var existing = target.MergedDictionaries
+            .Where(dictionary => dictionary.Source == LightTokensUri || dictionary.Source == DarkTokensUri)
+            .ToList();
+        if (existing.Count == 1 && existing[0].Source == uri)
+            return false;
+
+        foreach (var dictionary in existing)
+            target.MergedDictionaries.Remove(dictionary);
+
+        var tokens = new ResourceDictionary { Source = uri };
+        if (atEnd)
+            target.MergedDictionaries.Add(tokens);
+        else
+            target.MergedDictionaries.Insert(0, tokens);
+        return true;
+    }
+
+    // ---------------------------------------------------------------- 窗格样式
+
+    private void LoadThemeResources()
+    {
         try
         {
-            var themeDict = new ResourceDictionary { Source = DockManager.Theme.GetResourceUri() };
-            baseStyle = FindInDictionary(themeDict, "AvalonDockThemeVs2013AnchorablePaneControlStyle") as Style;
+            _themeResources = new ResourceDictionary { Source = DockManager.Theme.GetResourceUri() };
         }
         catch (Exception ex)
         {
-            _log.Warn("shell", $"读取主题窗格样式失败: {ex.Message}");
+            _themeResources = null;
+            _log.Warn("shell", $"读取主题字典失败,窗格保持 AvalonDock 默认外观: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 窗格外观下发(W-04 标签条置顶 + UI-01 卡片化 + UI-04 专注形态)。
+    /// 必须经 DockingManager.AnchorablePaneControlStyle / DocumentPaneControlStyle 属性下发:
+    /// 主题字典里的隐式 Style 不会命中窗格控件,浮动窗口也走这两个属性。
+    /// 以主题内置窗格样式为基底(继承 ItemContainerStyle 等),只覆盖标签位置与模板。
+    /// v5 迁移注意:基底样式的资源键随主题版本变化,需同步调整。
+    /// </summary>
+    private void ApplyPaneStyles(bool chromeless)
+    {
+        var suffix = chromeless ? ".Chromeless" : string.Empty;
+
+        if (BuildPaneStyle(
+                typeof(AvalonDock.Controls.LayoutAnchorablePaneControl),
+                "AvalonDockThemeVs2013AnchorablePaneControlStyle",
+                $"Shell.Docking.AnchorablePaneTemplate{suffix}",
+                "Shell.Docking.AnchorableTabContainerStyle") is { } anchorableStyle)
+        {
+            DockManager.AnchorablePaneControlStyle = anchorableStyle;
         }
 
-        if (baseStyle == null)
+        if (BuildPaneStyle(
+                typeof(AvalonDock.Controls.LayoutDocumentPaneControl),
+                "AvalonDockThemeVs2013DocumentPaneControlStyle",
+                $"Shell.Docking.DocumentPaneTemplate{suffix}",
+                "Shell.Docking.DocumentTabContainerStyle") is { } documentStyle)
         {
-            // 找不到基底样式时保持主题默认(标签在底部),不破坏可用性
-            _log.Warn("shell", "未找到主题窗格基底样式,标签条置顶改造未生效");
+            DockManager.DocumentPaneControlStyle = documentStyle;
+        }
+
+        ScheduleChromeReserve();
+    }
+
+    private Style? BuildPaneStyle(
+        Type paneType, string baseStyleKey, string templateKey, string tabItemStyleKey)
+    {
+        if (_themeResources == null)
+            return null;
+
+        if (FindInDictionary(_themeResources, templateKey) is not ControlTemplate template)
+        {
+            _log.Warn("shell", $"未找到窗格模板 {templateKey},该窗格保持主题默认外观");
+            return null;
+        }
+
+        // 基底样式取不到时不放弃改造:直接建裸样式,只是失去主题的 ItemContainerStyle 等继承项
+        var baseStyle = FindInDictionary(_themeResources, baseStyleKey) as Style;
+        if (baseStyle == null)
+            _log.Warn("shell", $"未找到主题窗格基底样式 {baseStyleKey},已改用裸样式");
+
+        var style = baseStyle == null ? new Style(paneType) : new Style(paneType, baseStyle);
+        style.Setters.Add(new Setter(TabControl.TabStripPlacementProperty, Dock.Top));
+        style.Setters.Add(new Setter(Control.PaddingProperty, default(Thickness)));
+        style.Setters.Add(new Setter(Control.TemplateProperty, template));
+
+        // 窗格样式同时应用到 AvalonDock 的独立内容宿主。事件必须随样式下发，
+        // 不能只扫描主 DockingManager 的视觉树，否则浮窗页头收不到拖动输入。
+        style.Setters.Add(new EventSetter(
+            UIElement.PreviewMouseLeftButtonDownEvent,
+            new MouseButtonEventHandler(OnPanePreviewMouseLeftButtonDown))
+        {
+            HandledEventsToo = true,
+        });
+        style.Setters.Add(new EventSetter(
+            UIElement.PreviewMouseMoveEvent,
+            new MouseEventHandler(OnPanePreviewMouseMove))
+        {
+            HandledEventsToo = true,
+        });
+        style.Setters.Add(new EventSetter(
+            UIElement.PreviewMouseLeftButtonUpEvent,
+            new MouseButtonEventHandler(OnPanePreviewMouseLeftButtonUp))
+        {
+            HandledEventsToo = true,
+        });
+        style.Setters.Add(new EventSetter(
+            Mouse.LostMouseCaptureEvent,
+            new MouseEventHandler(OnPaneLostMouseCapture))
+        {
+            HandledEventsToo = true,
+        });
+
+        // UI-06:页签容器样式随窗格样式下发(同心圆角 + 主题色选中态)
+        if (FindInDictionary(_themeResources, tabItemStyleKey) is Style tabStyle)
+            style.Setters.Add(new Setter(TabControl.ItemContainerStyleProperty, tabStyle));
+        else
+            _log.Warn("shell", $"未找到页签样式 {tabItemStyleKey},页签保持主题默认外观");
+
+        return style;
+    }
+
+    private void OnPanePreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        => _topBar.HandlePaneMouseLeftButtonDown(sender, e);
+
+    private void OnPanePreviewMouseMove(object sender, MouseEventArgs e)
+        => _topBar.HandlePaneMouseMove(sender, e);
+
+    private void OnPanePreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        => _topBar.HandlePaneMouseLeftButtonUp(sender, e);
+
+    private void OnPaneLostMouseCapture(object sender, MouseEventArgs e)
+        => _topBar.HandlePaneLostMouseCapture(sender, e);
+
+    // ---------------------------------------------------------------- 顶部按钮组占位
+
+    private void ScheduleChromeReserve()
+    {
+        if (_reservePending || _closing)
+            return;
+        _reservePending = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+        {
+            _reservePending = false;
+            if (_closing)
+                return;
+            AttachChromeBarToMainDocumentPane();
+            ReserveSpaceForChromeBar();
+
+            // R4-3:浮动窗口是布局后才建出来的,在这里补主题最稳妥
+            ApplyThemeToFloatingWindows();
+        });
+    }
+
+    /// <summary>
+    /// 窗口按钮组与页签同处一行(3.1 修订),因此必须把最右上那一排页签的右边距撑开,
+    /// 否则页签会滑到按钮底下点不到。专注态没有页签行,不需要占位。
+    /// </summary>
+    private void ReserveSpaceForChromeBar()
+    {
+        if (!IsLoaded || ChromeBar.ActualWidth <= 0)
+            return;
+
+        // ChromeBar 已经属于中央文档窗格时，工具窗格不需要再为它让位。
+        // 仅在布局尚未生成中央宿主的回退阶段保留旧的右边距逻辑。
+        var reserve = _chromeHost == null
+            ? ChromeBar.ActualWidth
+            : 0;
+        foreach (var header in FindDescendants<Grid>(DockManager)
+                     .Where(grid => grid.Tag as string == PaneHeaderTag))
+        {
+            var wanted = IsAtWindowTopRight(header) ? reserve : 0;
+            var margin = header.Margin;
+            var target = new Thickness(margin.Left, margin.Top, BaseTabStripRight + wanted, margin.Bottom);
+            if (Math.Abs(margin.Right - target.Right) > 0.5)
+                header.Margin = target;
+        }
+    }
+
+    /// <summary>
+    /// 将窗口控制栏挂到主窗口的中央文档窗格。AvalonDock 的浮动窗格位于独立
+    /// Window，不会出现在 DockManager 的视觉树中，因此不会获得这组按钮。
+    /// </summary>
+    private void AttachChromeBarToMainDocumentPane()
+    {
+        if (!IsLoaded || _closing)
+            return;
+
+        var focused = _docking.MaximizedId != null;
+        ChromeBar.Visibility = Visibility.Visible;
+
+        var host = FindDescendants<ContentControl>(DockManager)
+            .FirstOrDefault(control => control.IsVisible &&
+                Equals(control.Tag, focused
+                    ? "FocusedShellChromeHost"
+                    : "ShellChromeHost"));
+        if (host == null)
+        {
+            SetChromeDragSurface(null);
+            if (_chromeHost != null)
+            {
+                _chromeHost.Content = null;
+                _chromeHost = null;
+            }
+
+            if (!ReferenceEquals(ChromeBar.Parent, RootGrid))
+                RootGrid.Children.Insert(1, ChromeBar);
             return;
         }
 
-        var style = new Style(typeof(AvalonDock.Controls.LayoutAnchorablePaneControl), baseStyle);
-        style.Setters.Add(new Setter(TabControl.TabStripPlacementProperty, Dock.Top));
-        style.Setters.Add(new Setter(
-            Control.TemplateProperty,
-            (ControlTemplate)Resources["TabsTopAnchorablePaneTemplate"]));
-        DockManager.AnchorablePaneControlStyle = style;
+        if (ReferenceEquals(_chromeHost, host) && ReferenceEquals(host.Content, ChromeBar))
+            return;
+
+        if (_chromeHost != null)
+            _chromeHost.Content = null;
+        if (ChromeBar.Parent is Panel parent)
+            parent.Children.Remove(ChromeBar);
+
+        host.Content = ChromeBar;
+        _chromeHost = host;
+        SetChromeDragSurface(FindAncestor<FrameworkElement>(
+            host,
+            element => Equals(element.Tag,
+                focused ? "FocusedShellPaneHeader" : "ShellPaneHeader")));
     }
+
+    private void SetChromeDragSurface(FrameworkElement? surface)
+    {
+        if (ReferenceEquals(_chromeDragSurface, surface))
+            return;
+
+        if (_chromeDragSurface != null)
+        {
+            _chromeDragSurface.PreviewMouseLeftButtonDown -= OnMainChromeMouseLeftButtonDown;
+            _chromeDragSurface.PreviewMouseMove -= OnMainChromeMouseMove;
+            _chromeDragSurface.PreviewMouseLeftButtonUp -= OnMainChromeMouseLeftButtonUp;
+            _chromeDragSurface.LostMouseCapture -= OnMainChromeLostMouseCapture;
+        }
+        _chromeDragSurface = surface;
+        if (_chromeDragSurface != null)
+        {
+            _chromeDragSurface.PreviewMouseLeftButtonDown += OnMainChromeMouseLeftButtonDown;
+            _chromeDragSurface.PreviewMouseMove += OnMainChromeMouseMove;
+            _chromeDragSurface.PreviewMouseLeftButtonUp += OnMainChromeMouseLeftButtonUp;
+            _chromeDragSurface.LostMouseCapture += OnMainChromeLostMouseCapture;
+        }
+        _topBar.Refresh();
+    }
+
+    private void OnMainChromeMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        => _topBar.HandleMainMouseLeftButtonDown(sender, e);
+
+    private void OnMainChromeMouseMove(object sender, MouseEventArgs e)
+        => _topBar.HandleMainMouseMove(sender, e);
+
+    private void OnMainChromeMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        => _topBar.HandleMainMouseLeftButtonUp(sender, e);
+
+    private void OnMainChromeLostMouseCapture(object sender, MouseEventArgs e)
+        => _topBar.HandleMainLostMouseCapture(sender, e);
+
+    /// <summary>窗格模板里页签行容器的标记(见 ShellDocking.xaml)。</summary>
+    private const string PaneHeaderTag = "ShellPaneHeader";
+
+    /// <summary>页签条模板里的右边距基线(Shell.Space.TabStrip 的右值)。</summary>
+    private const double BaseTabStripRight = 3;
+
+    private bool IsAtWindowTopRight(FrameworkElement panel)
+    {
+        if (!panel.IsVisible || !panel.IsDescendantOf(this))
+            return false;
+        try
+        {
+            var origin = panel.TransformToAncestor(this).Transform(new Point(0, 0));
+            var right = origin.X + panel.ActualWidth;
+            return origin.Y <= ChromeBar.ActualHeight && right >= ActualWidth - ChromeBar.ActualWidth - 8;
+        }
+        catch (InvalidOperationException)
+        {
+            // 元素刚从可视树摘除(拖拽停靠中),下一轮布局会再算一次
+            return false;
+        }
+    }
+
+    private static IEnumerable<T> FindDescendants<T>(DependencyObject parent)
+        where T : DependencyObject
+    {
+        var count = VisualTreeHelper.GetChildrenCount(parent);
+        for (var index = 0; index < count; index++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, index);
+            if (child is T match)
+                yield return match;
+            foreach (var descendant in FindDescendants<T>(child))
+                yield return descendant;
+        }
+    }
+
+    private static T? FindAncestor<T>(DependencyObject source, Func<T, bool>? predicate = null)
+        where T : DependencyObject
+    {
+        for (DependencyObject? current = source; current != null; current = VisualTreeHelper.GetParent(current))
+        {
+            if (current is T match && (predicate == null || predicate(match)))
+                return match;
+        }
+
+        return null;
+    }
+
+    // ---------------------------------------------------------------- 专注模式(UI-04)
+
+    /// <summary>
+    /// 页面最大化 = 专注态:窗格去标题条与页签并铺满,顶栏只保留主窗口控制组。
+    /// 由 DockingHost.WindowsChanged 驱动 —— MaximizeWindow 与
+    /// RestoreLayoutFromMaximized 都从那里出口,不需要新增公开 API。
+    /// </summary>
+    private void ApplyFocusChrome()
+    {
+        var focused = _docking.MaximizedId != null;
+
+        ExitFocusButton.Visibility = focused ? Visibility.Visible : Visibility.Collapsed;
+        ExitFocusButton.ToolTip = focused ? "退出聚焦" : null;
+        ChromeBar.Visibility = Visibility.Visible;
+
+        // CaptionHeight 永久为零，避免隐藏命中区覆盖任意工具窗格顶部。
+        // 文档页头显式拖动主窗口；工具页头由协调器显式拖出工具浮窗。
+        if (WindowChrome.GetWindowChrome(this) is { } chrome)
+            chrome.CaptionHeight = 0;
+
+        ApplyPaneStyles(chromeless: focused);
+        ScheduleChromeReserve();
+        _topBar.Refresh();
+    }
+
+    private string FindTitle(string id)
+        => _docking.Descriptors
+               .FirstOrDefault(d => d.Id.Equals(id, StringComparison.OrdinalIgnoreCase))?.Title
+           ?? id;
+
+    private void OnExitFocusClick(object sender, RoutedEventArgs e)
+        => _ = _bus.ExecuteAsync("win.restore", "UI");
+
+    /// <summary>F11:在当前活动页的专注态与常规态之间切换。</summary>
+    private void ToggleFocusMode()
+    {
+        if (_docking.MaximizedId != null)
+        {
+            _ = _bus.ExecuteAsync("win.restore", "UI");
+            return;
+        }
+
+        var id = DockManager.Layout?.ActiveContent?.ContentId;
+        if (!string.IsNullOrWhiteSpace(id))
+            _ = _bus.ExecuteAsync($"win.max name={id}", "UI");
+    }
+
+    // ---------------------------------------------------------------- 键盘(UI-03.4 / UI-04.4)
+
+    private void OnShellPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        var alt = e.Key == Key.System && e.SystemKey is Key.LeftAlt or Key.RightAlt;
+        _altPressedAlone = alt && !_menu.IsOpen;
+
+        if (e.Key == Key.F10 && Keyboard.Modifiers == ModifierKeys.None)
+        {
+            OpenShellMenu();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.F11 && Keyboard.Modifiers == ModifierKeys.None)
+        {
+            ToggleFocusMode();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape && _docking.MaximizedId != null && !IsTextInputFocused())
+        {
+            _ = _bus.ExecuteAsync("win.restore", "UI");
+            e.Handled = true;
+        }
+    }
+
+    private void OnShellPreviewKeyUp(object sender, KeyEventArgs e)
+    {
+        // Alt 单独按下抬起才呼出菜单;与其他键组合(Alt+Tab、Alt+F4、助记符)一律放行
+        if (_altPressedAlone && e.Key == Key.System && e.SystemKey is Key.LeftAlt or Key.RightAlt)
+        {
+            _altPressedAlone = false;
+            OpenShellMenu();
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>Esc 退出专注不得抢走控制台等输入控件的 Esc(UI-04.4)。</summary>
+    private static bool IsTextInputFocused()
+        => Keyboard.FocusedElement is TextBoxBase or ComboBox or PasswordBox;
 
     private static object? FindInDictionary(ResourceDictionary dict, object key)
     {
@@ -477,7 +1202,18 @@ public partial class ShellWindow : Window
         return null;
     }
 
-    // ---------------------------------------------------------------- 菜单(S-01)
+    // ---------------------------------------------------------------- 菜单(S-01,3.1 折叠为顶栏弹出层 UI-03)
+
+    private void OnMenuButtonClick(object sender, RoutedEventArgs e) => OpenShellMenu();
+
+    private void OpenShellMenu()
+    {
+        if (_menu.Items.Count == 0)
+            return;
+        _menu.PlacementTarget = MenuButton;
+        _menu.Placement = PlacementMode.Bottom;
+        _menu.IsOpen = true;
+    }
 
     private void BuildMenus()
     {
@@ -509,6 +1245,11 @@ public partial class ShellWindow : Window
         restore.IsEnabled = _docking.MaximizedId != null;
         view.Items.Add(restore);
         view.Items.Add(Item("重置默认布局", "layout.reset"));
+        // UI-08:主题切换(S-02,同样是发指令)
+        view.Items.Add(new Separator());
+        view.Items.Add(_theme == ThemeDark
+            ? Item("切换到浅色模式", $"app.theme mode={ThemeLight}")
+            : Item("切换到深色模式", $"app.theme mode={ThemeDark}"));
         rebuilt.Add(view);
 
         // 工具
@@ -537,9 +1278,9 @@ public partial class ShellWindow : Window
         help.Items.Add(Item("关于(_A)", "app.about"));
         rebuilt.Add(help);
 
-        MainMenu.Items.Clear();
+        _menu.Items.Clear();
         foreach (var item in rebuilt)
-            MainMenu.Items.Add(item);
+            _menu.Items.Add(item);
         _menusInitialized = true;
     }
 
@@ -563,8 +1304,10 @@ public partial class ShellWindow : Window
     private static InvalidOperationException InvalidMenuCommand(string commandText, string validationError)
         => new($"菜单引用了无效指令 [{commandText}]: {validationError}");
 
-    private void UpdateStatusRight()
-        => StatusRight.Text = _docking.MaximizedId == null
-            ? $"布局: {_docking.CurrentLayoutName}"
-            : $"布局: {_docking.CurrentLayoutName} · 最大化: {_docking.MaximizedId}";
+    /// <summary>
+    /// UI-05.4:原状态栏右侧的布局名。3.1 取消独立标题栏后没有常驻文本位,
+    /// 改挂菜单按钮提示 —— 需要时一悬停就能看到,不占任何常驻像素。
+    /// </summary>
+    private void UpdateLayoutIndicator()
+        => MenuButton.ToolTip = $"菜单 (Alt) · 布局 {_docking.CurrentLayoutName}";
 }

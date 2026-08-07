@@ -27,7 +27,8 @@ public sealed partial class PanelView : UserControl
         _bus = bus;
         _log = log;
         _def = def;
-        Background = Brushes.White;
+        // UI-01:底色由窗格卡片提供,面板自身不再画一块白
+        Background = Brushes.Transparent;
         Rebuild(def);
     }
 
@@ -88,8 +89,9 @@ public sealed partial class PanelView : UserControl
                     };
                     if (c.Style == "danger")
                     {
-                        button.Foreground = Brushes.White;
-                        button.Background = new SolidColorBrush(Color.FromRgb(0xC4, 0x25, 0x25));
+                        // UI-07:令牌经资源引用延迟解析 —— 控件此刻尚未进入可视树,
+                        // 直接 TryFindResource 取不到窗体资源。
+                        button.SetResourceReference(ForegroundProperty, "Shell.Brush.Danger");
                     }
 
                     var command = c.Command;
@@ -106,9 +108,9 @@ public sealed partial class PanelView : UserControl
                     var text = new TextBlock
                     {
                         Text = c.Default ?? "",
-                        Foreground = Brushes.Gray,
                         VerticalAlignment = VerticalAlignment.Center,
                     };
+                    text.SetResourceReference(ForegroundProperty, "Shell.Brush.TextSecondary");
                     if (c.Id != null)
                     {
                         _getters[c.Id] = () => text.Text;
@@ -171,8 +173,8 @@ public sealed partial class PanelView : UserControl
                         Width = 44,
                         TextAlignment = TextAlignment.Right,
                         VerticalAlignment = VerticalAlignment.Center,
-                        Foreground = Brushes.Gray,
                     };
+                    valueText.SetResourceReference(ForegroundProperty, "Shell.Brush.TextSecondary");
                     valueText.Text = Format(slider.Value);
                     slider.ValueChanged += (_, _) => valueText.Text = Format(slider.Value);
 
@@ -201,20 +203,13 @@ public sealed partial class PanelView : UserControl
                     var box = new TextBox { Text = c.Default ?? "", VerticalContentAlignment = VerticalAlignment.Center };
                     var browse = new Button { Content = "…", Padding = new Thickness(8, 0, 8, 0), Margin = new Thickness(4, 0, 0, 0) };
                     var isDir = c.Type.Equals("dir", StringComparison.OrdinalIgnoreCase);
-                    browse.Click += (_, _) =>
+                    browse.Click += async (_, _) =>
                     {
-                        if (isDir)
-                        {
-                            var dialog = new Microsoft.Win32.OpenFolderDialog();
-                            if (dialog.ShowDialog() == true)
-                                box.Text = dialog.FolderName;
-                        }
-                        else
-                        {
-                            var dialog = new Microsoft.Win32.OpenFileDialog();
-                            if (dialog.ShowDialog() == true)
-                                box.Text = dialog.FileName;
-                        }
+                        var command = isDir ? "panel.select-directory" : "panel.select-file";
+                        var result = await _bus.ExecuteAsync(command, "UI");
+                        if (result.Success
+                            && CommandResultData.TryRead<string>(result.Data, out var selected))
+                            box.Text = selected;
                     };
 
                     var panel = new DockPanel();
@@ -253,8 +248,8 @@ public sealed partial class PanelView : UserControl
             Text = c.Label ?? c.Id ?? "",
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 8, 0),
-            Foreground = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44)),
         };
+        label.SetResourceReference(ForegroundProperty, "Shell.Brush.TextPrimary");
         label.SetValue(Grid.RowProperty, row);
         label.SetValue(Grid.ColumnProperty, 0);
         input.Margin = new Thickness(0, 3, 0, 3);

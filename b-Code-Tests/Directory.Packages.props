@@ -1,0 +1,6 @@
+<Project>
+
+  <!-- Keep test dependency versions aligned with the AppShell product graph. -->
+  <Import Project="..\b-Code-AppShell\Directory.Packages.props" />
+
+</Project>

@@ -4,7 +4,6 @@ namespace AppShell.Core.Docking;
 public static class StandardWindowIds
 {
     public const string Console = "console";
-    public const string Resource = "resource";
     public const string Mcp = "mcp";
     public const string CommandDetail = "commanddetail";
     public const string Modules = "modules";

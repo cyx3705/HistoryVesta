@@ -82,59 +82,7 @@ public sealed class CoreFreezeContractTests
         Assert.Equal(1, executed);
     }
 
-    [Fact]
-    public void WorkspaceRejectsTraversalAndAbsoluteEscape()
-    {
-        var root = TemporaryDirectory();
-        var outside = TemporaryDirectory();
-        try
-        {
-            using var workspace = new WorkspaceService(root + Path.DirectorySeparatorChar);
 
-            Assert.Equal(Path.GetFullPath(root), workspace.ResolveFull(""));
-            Assert.Equal(Path.Combine(root, "child"), workspace.ResolveFull("child"));
-            Assert.Throws<InvalidOperationException>(() => workspace.ResolveFull("..\\escape"));
-            Assert.Throws<InvalidOperationException>(() => workspace.ResolveFull(outside));
-        }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-            Directory.Delete(outside, recursive: true);
-        }
-    }
-
-    [Fact]
-    public void WorkspaceRejectsReparsePointTraversalForEveryFileOperation()
-    {
-        var root = TemporaryDirectory();
-        var outside = TemporaryDirectory();
-        var link = Path.Combine(root, "outside-link");
-        var victim = Path.Combine(outside, "victim.txt");
-        File.WriteAllText(victim, "keep");
-        Directory.CreateSymbolicLink(link, outside);
-
-        try
-        {
-            using var workspace = new WorkspaceService(root);
-
-            Assert.Throws<InvalidOperationException>(() => workspace.ResolveFull("outside-link"));
-            Assert.Throws<InvalidOperationException>(() => workspace.List("outside-link"));
-            Assert.Throws<InvalidOperationException>(() => workspace.CreateDirectory("outside-link\\new\\nested"));
-            Assert.Throws<InvalidOperationException>(() => workspace.Rename("outside-link\\victim.txt", "renamed.txt"));
-            Assert.Throws<InvalidOperationException>(() => workspace.DeleteToRecycleBin("outside-link\\victim.txt"));
-
-            Assert.True(File.Exists(victim));
-            Assert.False(Directory.Exists(Path.Combine(outside, "new")));
-            Assert.False(File.Exists(Path.Combine(outside, "renamed.txt")));
-        }
-        finally
-        {
-            if (Directory.Exists(link))
-                Directory.Delete(link);
-            Directory.Delete(root, recursive: true);
-            Directory.Delete(outside, recursive: true);
-        }
-    }
 
     [Fact]
     public async Task PromptCommandsReturnSafeIntegrityValidationErrors()

@@ -34,6 +34,11 @@ public partial class ConsoleView : UserControl
     private RingCollection<ConsoleRow> _visible = new();
     private readonly DispatcherTimer _flushTimer;
     private ScrollViewer? _scroll;
+    private string _source = "全部";
+    private string _keyword = "";
+    private bool _muteLayout;
+    private bool _autoScroll = true;
+    private bool _suppressFilterEvents;
 
     // 输入区状态
     private int _historyIndex = -1;
@@ -88,7 +93,62 @@ public partial class ConsoleView : UserControl
     public void SetMinLevel(ShellLogLevel level)
     {
         MinLevel = level;
-        LevelFilter.SelectedIndex = level == ShellLogLevel.Trace ? 0 : (int)level + 1;
+        _suppressFilterEvents = true;
+        try
+        {
+            LevelFilter.SelectedIndex = level == ShellLogLevel.Trace ? 0 : (int)level + 1;
+        }
+        finally
+        {
+            _suppressFilterEvents = false;
+        }
+        RebuildVisible();
+    }
+
+    internal string SourceFilterValue => _source;
+    internal string KeywordFilterValue => _keyword;
+    internal bool MuteLayoutEnabled => _muteLayout;
+    internal bool AutoScrollEnabled => _autoScroll;
+
+    internal void SetSource(string source)
+    {
+        _source = string.IsNullOrWhiteSpace(source) ? "全部" : source;
+        _suppressFilterEvents = true;
+        try
+        {
+            SourceFilter.SelectedItem = _source;
+        }
+        finally
+        {
+            _suppressFilterEvents = false;
+        }
+        RebuildVisible();
+    }
+
+    internal void SetKeyword(string keyword)
+    {
+        _keyword = keyword ?? "";
+        _suppressFilterEvents = true;
+        try { KeywordFilter.Text = _keyword; }
+        finally { _suppressFilterEvents = false; }
+        RebuildVisible();
+    }
+
+    internal void SetMuteLayout(bool enabled)
+    {
+        _muteLayout = enabled;
+        _suppressFilterEvents = true;
+        try { MuteLayout.IsChecked = enabled; }
+        finally { _suppressFilterEvents = false; }
+        RebuildVisible();
+    }
+
+    internal void SetAutoScroll(bool enabled)
+    {
+        _autoScroll = enabled;
+        _suppressFilterEvents = true;
+        try { AutoScroll.IsChecked = enabled; }
+        finally { _suppressFilterEvents = false; }
     }
 
     /// <summary>cls 指令入口:清空显示(不清日志文件,C-06)。</summary>
@@ -99,19 +159,87 @@ public partial class ConsoleView : UserControl
         Output.ItemsSource = _visible;
     }
 
+    internal void AddTransientEntry(ShellLogEntry entry) => EnqueueIncoming(entry);
+
+    internal string CopySelected()
+    {
+        if (Output.SelectedItems.Count == 0)
+            return "没有选中的控制台行";
+
+        var selected = new HashSet<object>(Output.SelectedItems.Cast<object>());
+        var text = string.Join(Environment.NewLine, _visible.Where(selected.Contains).Select(row => row.Text));
+        try
+        {
+            Clipboard.SetText(text);
+            return $"已复制 {selected.Count} 行";
+        }
+        catch (Exception ex)
+        {
+            _log.Error("console", $"复制失败: {ex.Message}");
+            return "复制失败";
+        }
+    }
+
+    internal string ExportVisible(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "导出控制台可见内容",
+                FileName = $"console-{DateTime.Now:yyyyMMdd-HHmmss}.txt",
+                Filter = "文本文件 (*.txt)|*.txt|全部文件 (*.*)|*.*",
+            };
+            if (dialog.ShowDialog(Window.GetWindow(this)) != true)
+                return "已取消导出";
+            path = dialog.FileName;
+        }
+
+        try
+        {
+            File.WriteAllLines(path, _visible.ToList().Select(row => row.Text));
+            _log.Info("console", $"已导出 {_visible.Count} 行到 {path}");
+            return $"已导出 {_visible.Count} 行到 {path}";
+        }
+        catch (Exception ex)
+        {
+            _log.Error("console", $"导出失败: {ex.Message}");
+            return $"导出失败: {ex.Message}";
+        }
+    }
+
     /// <summary>聚焦输入框(C-15 全局快捷键落点)。</summary>
     public void FocusInput()
     {
-        Input.Focus();
-        Input.CaretIndex = Input.Text.Length;
+        // AvalonDock may finish showing the anchorable after this method returns.
+        // Queue the focus operation so the real TextBox, rather than its host, receives keys.
+        Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+        {
+            if (!IsVisible)
+                return;
+
+            Input.Focusable = true;
+            Keyboard.Focus(Input);
+            Input.CaretIndex = Input.Text.Length;
+        }));
     }
 
     /// <summary>把仅 Error 级别可见设为当前过滤(状态栏错误计数跳转用,S-03)。</summary>
     public void FilterErrorsOnly()
     {
-        LevelFilter.SelectedIndex = 5; // Error
-        SourceFilter.SelectedIndex = 0;
-        MuteLayout.IsChecked = false;
+        SetMinLevel(ShellLogLevel.Error);
+        SetSource("全部");
+        SetKeyword("");
+        SetMuteLayout(false);
+    }
+
+    /// <summary>错误自动跳转使用：清除过滤，保证输入回显与错误结果同时可见。</summary>
+    internal void ResetFilters()
+    {
+        SetMinLevel(ShellLogLevel.Trace);
+        SetSource("全部");
+        SetKeyword("");
+        SetMuteLayout(false);
     }
 
     // ---------------------------------------------------------------- 输出区
@@ -148,7 +276,7 @@ public partial class ConsoleView : UserControl
         _all.TrimTo(_bufferLimit);
         _visible.TrimTo(_bufferLimit);
 
-        if (appended && AutoScroll.IsChecked == true)
+        if (appended && _autoScroll)
             _scroll?.ScrollToBottom();
     }
 
@@ -157,10 +285,10 @@ public partial class ConsoleView : UserControl
         if (row.Level < MinLevel)
             return false;
 
-        if (MuteLayout.IsChecked == true && row.SourceKey == "layout")
+        if (_muteLayout && row.SourceKey == "layout")
             return false;
 
-        var source = SourceFilter.SelectedItem as string ?? "全部";
+        var source = _source;
         if (source != "全部")
         {
             var match = source switch
@@ -172,7 +300,7 @@ public partial class ConsoleView : UserControl
                 return false;
         }
 
-        var keyword = KeywordFilter.Text;
+        var keyword = _keyword;
         if (keyword.Length > 0
             && !row.Text.Contains(keyword, StringComparison.OrdinalIgnoreCase))
         {
@@ -182,15 +310,8 @@ public partial class ConsoleView : UserControl
         return true;
     }
 
-    private void OnFilterChanged(object sender, RoutedEventArgs e)
+    private void RebuildVisible()
     {
-        if (!IsLoaded)
-            return;
-
-        MinLevel = LevelFilter.SelectedIndex <= 0
-            ? ShellLogLevel.Trace
-            : (ShellLogLevel)(LevelFilter.SelectedIndex - 1);
-
         // 重建可见列表(换新集合整体重绑,避免几万条增量通知)
         var next = new RingCollection<ConsoleRow>();
         foreach (var row in _all)
@@ -201,57 +322,33 @@ public partial class ConsoleView : UserControl
 
         _visible = next;
         Output.ItemsSource = _visible;
-        if (AutoScroll.IsChecked == true)
+        if (_autoScroll)
             _scroll?.ScrollToBottom();
     }
 
+    private void OnLevelChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded || _suppressFilterEvents || LevelFilter.SelectedIndex < 0)
+            return;
+        var level = LevelFilter.SelectedIndex == 0 ? "trace" : ((ShellLogLevel)(LevelFilter.SelectedIndex - 1)).ToString().ToLowerInvariant();
+        _ = _bus.ExecuteAsync($"log.level level={level}", "UI");
+    }
+
+    private void OnSourceChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded || _suppressFilterEvents || SourceFilter.SelectedItem is not string source)
+            return;
+        _ = _bus.ExecuteAsync($"log.source source={CommandParser.QuoteArg(source)}", "UI");
+    }
+
     private void OnClearClick(object sender, RoutedEventArgs e)
-        => _ = _bus.ExecuteAsync("cls", "UI");
+        => _ = _bus.ExecuteAsync("log.clear", "UI");
 
     private void OnCopyClick(object sender, RoutedEventArgs e)
-    {
-        if (Output.SelectedItems.Count == 0)
-            return;
-
-        var selected = new HashSet<object>(Output.SelectedItems.Cast<object>());
-        var sb = new StringBuilder();
-        foreach (var row in _visible)
-        {
-            if (selected.Contains(row))
-                sb.AppendLine(row.Text);
-        }
-
-        try
-        {
-            Clipboard.SetText(sb.ToString());
-        }
-        catch (Exception)
-        {
-            // 剪贴板被占用时忽略
-        }
-    }
+        => _ = _bus.ExecuteAsync("log.copy", "UI");
 
     private void OnExportClick(object sender, RoutedEventArgs e)
-    {
-        var dialog = new Microsoft.Win32.SaveFileDialog
-        {
-            Title = "导出控制台可见内容",
-            FileName = $"console-{DateTime.Now:yyyyMMdd-HHmmss}.txt",
-            Filter = "文本文件 (*.txt)|*.txt|全部文件 (*.*)|*.*",
-        };
-        if (dialog.ShowDialog() != true)
-            return;
-
-        try
-        {
-            File.WriteAllLines(dialog.FileName, _visible.ToList().Select(r => r.Text));
-            _log.Info("console", $"已导出 {_visible.Count} 行到 {dialog.FileName}");
-        }
-        catch (Exception ex)
-        {
-            _log.Error("console", $"导出失败: {ex.Message}");
-        }
-    }
+        => _ = _bus.ExecuteAsync("log.export", "UI");
 
     // ---------------------------------------------------------------- 输入区
 
@@ -296,7 +393,23 @@ public partial class ConsoleView : UserControl
         _historyIndex = -1;
         _draft = "";
         SetInputText("");
-        _ = _bus.ExecuteAsync(text, "手动");
+        _ = ExecuteAndFlushAsync(text, "手动");
+    }
+
+    private async Task ExecuteAndFlushAsync(string text, string source)
+    {
+        var execution = _bus.ExecuteAsync(text, source);
+        FlushIncoming();
+        try
+        {
+            await execution.ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            _log.Error("console", $"指令执行异常: {ex.GetType().Name}");
+        }
+
+        FlushIncoming();
     }
 
     private void NavigateHistory(int direction)
@@ -411,7 +524,7 @@ public partial class ConsoleView : UserControl
     {
         foreach (var line in lines)
         {
-            await _bus.ExecuteAsync(line, "手动");
+            await ExecuteAndFlushAsync(line, "手动");
         }
     }
 

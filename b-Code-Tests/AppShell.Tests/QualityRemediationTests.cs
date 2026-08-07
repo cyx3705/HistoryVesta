@@ -21,7 +21,6 @@ public sealed class QualityRemediationTests
         Assert.False(config.EnableUiModules);
         Assert.False(config.EnableMcp);
         Assert.False(config.EnableRemoteManagementViews);
-        Assert.Null(config.Workspace);
         Assert.Empty(config.Panels);
     }
 

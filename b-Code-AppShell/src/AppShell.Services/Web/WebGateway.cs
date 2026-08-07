@@ -82,6 +82,17 @@ public sealed class WebGateway : IDisposable
 
     public int ConnectedShells => _clients.Values.Count(client => client.Session.Kind == ClientKind.Shell);
 
+    public void PublishModuleRevision(long revision)
+    {
+        var payload = new JsonObject
+        {
+            ["type"] = "moduleRevision",
+            ["revision"] = revision,
+        };
+        foreach (var client in _clients.Values.Where(client => client.Session.Kind == ClientKind.Shell))
+            client.TryQueueLog(payload);
+    }
+
     public int DisconnectDevice(string deviceId)
     {
         if (string.IsNullOrWhiteSpace(deviceId))

@@ -5,6 +5,7 @@ using AppShell.Core.Storage;
 using AppShell.Services.Mcp;
 using AppShell.Services.Modules;
 using AppShell.Services.Web;
+using AppShell.Services.Input;
 
 namespace AppShell.ServiceHost;
 
@@ -23,9 +24,14 @@ public sealed class ServiceComposition : IDisposable
 
     public ModuleHost? Modules { get; init; }
 
+    public GlobalShortcutService? GlobalShortcuts { get; init; }
+
     public McpGateway? Mcp { get; init; }
 
     public WebGateway? Web { get; init; }
+
+    /// <summary>Optional loopback endpoint file used by a cooperating desktop frontend.</summary>
+    public string? EndpointFile { get; init; }
 
     public IReadOnlyList<IDeferredStartupWork> DeferredWork { get; init; } = [];
 
@@ -40,6 +46,7 @@ public sealed class ServiceComposition : IDisposable
         Web?.Dispose();
         Mcp?.Dispose();
         Modules?.Dispose();
+        GlobalShortcuts?.Dispose();
         DisposeApplicationServices?.Invoke();
         if (Log is IDisposable disposable)
             disposable.Dispose();

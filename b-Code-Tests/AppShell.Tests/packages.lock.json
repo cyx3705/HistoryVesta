@@ -107,14 +107,14 @@
       "OneHistory.AppShell.ServiceHost": {
         "type": "Project",
         "dependencies": {
-          "OneHistory.AppShell.Core": "[3.0.3, )",
-          "OneHistory.AppShell.Services": "[3.0.3, )"
+          "OneHistory.AppShell.Core": "[3.1.3, )",
+          "OneHistory.AppShell.Services": "[3.1.3, )"
         }
       },
       "OneHistory.AppShell.Services": {
         "type": "Project",
         "dependencies": {
-          "OneHistory.AppShell.Core": "[3.0.3, )"
+          "OneHistory.AppShell.Core": "[3.1.3, )"
         }
       },
       "OneHistory.AppShell.Shell": {
@@ -122,8 +122,8 @@
         "dependencies": {
           "Dirkster.AvalonDock": "[4.72.1, )",
           "Dirkster.AvalonDock.Themes.VS2013": "[4.72.1, )",
-          "OneHistory.AppShell.Core": "[3.0.3, )",
-          "OneHistory.AppShell.Services": "[3.0.3, )"
+          "OneHistory.AppShell.Core": "[3.1.3, )",
+          "OneHistory.AppShell.Services": "[3.1.3, )"
         }
       },
       "Dirkster.AvalonDock": {

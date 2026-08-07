@@ -1,13 +1,23 @@
 #nullable enable
+AppShell.Services.Input.GlobalShortcutService
+AppShell.Services.Input.GlobalShortcutService.CreateOwnerRegistrar(string! owner) -> AppShell.Core.Input.IGlobalShortcutRegistrar!
+AppShell.Services.Input.GlobalShortcutService.Dispose() -> void
+AppShell.Services.Input.GlobalShortcutService.GlobalShortcutService(AppShell.Core.Commands.CommandBus! bus, AppShell.Core.Logging.IShellLog! log) -> void
+AppShell.Services.Input.GlobalShortcutService.IsEnabled.get -> bool
+AppShell.Services.Input.GlobalShortcutService.Register(AppShell.Core.Input.GlobalShortcutDescriptor! descriptor, string! owner) -> System.IDisposable!
+AppShell.Services.Input.GlobalShortcutService.Registrations.get -> System.Collections.Generic.IReadOnlyList<AppShell.Core.Input.GlobalShortcutRegistrationInfo!>!
+AppShell.Services.Input.GlobalShortcutService.Start() -> void
+AppShell.Services.Input.GlobalShortcutService.Stop() -> void
+AppShell.Services.Input.GlobalShortcutService.UnregisterOwner(string! owner) -> void
 AppShell.Services.AppPaths
 AppShell.Services.AppPaths.AppPaths(string! appName, bool createBusinessDirectories = true) -> void
+AppShell.Services.AppPaths.AppPaths(string! appName, string! rootDirectory, bool createBusinessDirectories = true) -> void
 AppShell.Services.AppPaths.DataDir.get -> string!
 AppShell.Services.AppPaths.LayoutDir.get -> string!
 AppShell.Services.AppPaths.LogsDir.get -> string!
 AppShell.Services.AppPaths.ModulesDir.get -> string!
 AppShell.Services.AppPaths.PanelsDir.get -> string!
 AppShell.Services.AppPaths.Root.get -> string!
-AppShell.Services.AppPaths.WorkspaceDir.get -> string!
 AppShell.Services.FileLayoutStore
 AppShell.Services.FileLayoutStore.DeleteCurrent() -> void
 AppShell.Services.FileLayoutStore.FileLayoutStore(AppShell.Services.AppPaths! paths) -> void
@@ -153,8 +163,12 @@ AppShell.Services.Modules.ModuleHost.ChangeDirectory(string! newDir) -> void
 AppShell.Services.Modules.ModuleHost.Dispose() -> void
 AppShell.Services.Modules.ModuleHost.EnableCommands.get -> bool
 AppShell.Services.Modules.ModuleHost.EnableCommands.set -> void
+AppShell.Services.Modules.ModuleHost.EnableFileWatching.get -> bool
+AppShell.Services.Modules.ModuleHost.EnableFileWatching.set -> void
 AppShell.Services.Modules.ModuleHost.EnableUiModules.get -> bool
 AppShell.Services.Modules.ModuleHost.EnableUiModules.set -> void
+AppShell.Services.Modules.ModuleHost.GlobalShortcuts.get -> AppShell.Services.Input.GlobalShortcutService?
+AppShell.Services.Modules.ModuleHost.GlobalShortcuts.set -> void
 AppShell.Services.Modules.ModuleHost.ModuleHost(string! modulesDir, AppShell.Core.Logging.IShellLog! log) -> void
 AppShell.Services.Modules.ModuleHost.Modules.get -> System.Collections.Generic.IReadOnlyList<AppShell.Services.Modules.ModuleMeta!>!
 AppShell.Services.Modules.ModuleHost.ModulesDirectory.get -> string!
@@ -228,17 +242,6 @@ AppShell.Services.Web.IDeviceAuthenticationProvider
 AppShell.Services.Web.IDeviceAuthenticationProvider.Authenticate(string! deviceId, string! token, string? remoteAddress) -> AppShell.Services.Web.DeviceAuthenticationResult!
 AppShell.Services.Web.IDevicePairingProvider
 AppShell.Services.Web.IDevicePairingProvider.Pair(string! code, string! deviceId, string! deviceName, string? remoteAddress) -> AppShell.Services.Web.DevicePairingResult!
-AppShell.Services.Web.RemoteWorkspaceService
-AppShell.Services.Web.RemoteWorkspaceService.CanSelectLocalRoot.get -> bool
-AppShell.Services.Web.RemoteWorkspaceService.Changed -> System.Action?
-AppShell.Services.Web.RemoteWorkspaceService.CreateDirectory(string! relativePath) -> void
-AppShell.Services.Web.RemoteWorkspaceService.DeleteToRecycleBin(string! relativePath) -> void
-AppShell.Services.Web.RemoteWorkspaceService.List(string? relativePath = null) -> System.Collections.Generic.IReadOnlyList<AppShell.Core.Files.WorkspaceEntry!>!
-AppShell.Services.Web.RemoteWorkspaceService.RemoteWorkspaceService(AppShell.Services.Web.ShellServiceClient! client) -> void
-AppShell.Services.Web.RemoteWorkspaceService.Rename(string! relativePath, string! newName) -> void
-AppShell.Services.Web.RemoteWorkspaceService.ResolveFull(string! relativePath) -> string!
-AppShell.Services.Web.RemoteWorkspaceService.Root.get -> string!
-AppShell.Services.Web.RemoteWorkspaceService.SetRoot(string! path) -> void
 AppShell.Services.Web.ShellConnectionState
 AppShell.Services.Web.ShellConnectionState.Connecting = 1 -> AppShell.Services.Web.ShellConnectionState
 AppShell.Services.Web.ShellConnectionState.Disconnected = 0 -> AppShell.Services.Web.ShellConnectionState
@@ -267,6 +270,8 @@ AppShell.Services.Web.ShellServiceClient.DataDeserializer.get -> System.Func<str
 AppShell.Services.Web.ShellServiceClient.DataDeserializer.set -> void
 AppShell.Services.Web.ShellServiceClient.Dispose() -> void
 AppShell.Services.Web.ShellServiceClient.ExecuteAsync(string! text, string! source, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<AppShell.Core.Commands.CommandResult!>!
+AppShell.Services.Web.ShellServiceClient.LogReceived -> System.EventHandler<AppShell.Core.Logging.ShellLogEntry!>?
+AppShell.Services.Web.ShellServiceClient.ModuleRevisionReceived -> System.Action<long>?
 AppShell.Services.Web.ShellServiceClient.PairAsync(string! code, string! deviceName, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<AppShell.Services.Web.DevicePairingResult!>!
 AppShell.Services.Web.ShellServiceClient.ReconnectAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 AppShell.Services.Web.ShellServiceClient.RunEventLoopAsync(AppShell.Core.Commands.CommandBus! localBus, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
@@ -289,6 +294,7 @@ AppShell.Services.Web.WebGateway.DisconnectDevice(string! deviceId) -> int
 AppShell.Services.Web.WebGateway.Dispose() -> void
 AppShell.Services.Web.WebGateway.IsRunning.get -> bool
 AppShell.Services.Web.WebGateway.Port.get -> int
+AppShell.Services.Web.WebGateway.PublishModuleRevision(long revision) -> void
 AppShell.Services.Web.WebGateway.RelayFrontendCommandAsync(string! text, string! source, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<AppShell.Core.Commands.CommandResult!>!
 AppShell.Services.Web.WebGateway.RequestWebConfirmation(string! prompt, string! source, System.TimeSpan timeout) -> bool
 AppShell.Services.Web.WebGateway.ServerId.get -> string!
@@ -297,17 +303,6 @@ AppShell.Services.Web.WebGateway.Start(int? port = null) -> (bool Success, strin
 AppShell.Services.Web.WebGateway.Stop() -> (bool Success, string! Message)
 AppShell.Services.Web.WebGateway.TryGetSession(string! source, out AppShell.Core.Mcp.ClientSession! session) -> bool
 AppShell.Services.Web.WebGateway.WebGateway(System.Func<AppShell.Core.Commands.CommandBus?>! busAccessor, AppShell.Core.Storage.ISettingsService! settings, AppShell.Core.Logging.IShellLog! log) -> void
-AppShell.Services.WorkspaceService
-AppShell.Services.WorkspaceService.Changed -> System.Action?
-AppShell.Services.WorkspaceService.CreateDirectory(string! relativePath) -> void
-AppShell.Services.WorkspaceService.DeleteToRecycleBin(string! relativePath) -> void
-AppShell.Services.WorkspaceService.Dispose() -> void
-AppShell.Services.WorkspaceService.List(string? relativePath = null) -> System.Collections.Generic.IReadOnlyList<AppShell.Core.Files.WorkspaceEntry!>!
-AppShell.Services.WorkspaceService.Rename(string! relativePath, string! newName) -> void
-AppShell.Services.WorkspaceService.ResolveFull(string! relativePath) -> string!
-AppShell.Services.WorkspaceService.Root.get -> string!
-AppShell.Services.WorkspaceService.SetRoot(string! path) -> void
-AppShell.Services.WorkspaceService.WorkspaceService(string! rootPath) -> void
 const AppShell.Services.Mcp.McpGateway.KeyAutostart = "mcp.autostart" -> string!
 const AppShell.Services.Mcp.McpGateway.KeyConfirm = "mcp.confirm" -> string!
 const AppShell.Services.Mcp.McpGateway.KeyConfirmTimeout = "mcp.confirmtimeout" -> string!
@@ -329,11 +324,9 @@ const AppShell.Services.Web.WebGateway.KeyPortRetries = "web.portretries" -> str
 const AppShell.Services.Web.WebGateway.KeyRateLimit = "web.ratelimit" -> string!
 const AppShell.Services.Web.WebGateway.KeyRateWindowLimit = "web.ratewindowlimit" -> string!
 const AppShell.Services.Web.WebGateway.KeyToken = "web.token" -> string!
-const AppShell.Services.WorkspaceService.KeyRoot = "workspace.root" -> string!
 static AppShell.Services.AppPaths.GetDataDir(string! root) -> string!
 static AppShell.Services.AppPaths.GetModulesDir(string! root) -> string!
 static AppShell.Services.AppPaths.GetPanelsDir(string! root) -> string!
-static AppShell.Services.AppPaths.GetWorkspaceDir(string! root) -> string!
 static AppShell.Services.Modules.ModuleHost.FindModuleDomainConflicts(System.Collections.Generic.IEnumerable<string!>! reservedCommandNames, System.Collections.Generic.IEnumerable<string!>! moduleCommandNames) -> System.Collections.Generic.IReadOnlySet<string!>!
 static AppShell.Services.Modules.ModulePanelSync.SyncFiles(string! modulesDir, string! panelsDir, AppShell.Core.Logging.IShellLog! log) -> bool
 static AppShell.Services.Web.DeviceAuthenticationResult.Accept(string! deviceId, string! subject, System.Collections.Generic.IEnumerable<string!>! scopes) -> AppShell.Services.Web.DeviceAuthenticationResult!

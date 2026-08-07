@@ -79,8 +79,7 @@ $markdownFiles = [Collections.Generic.List[string]]::new()
 $markdownFiles.Add((Join-Path $repoRoot 'README.md'))
 $markdownFiles.Add((Join-Path $repoRoot 'b-Office\README.md'))
 $markdownFiles.Add((Join-Path $repoRoot 'b-Office\文档中心.md'))
-$markdownFiles.Add((Join-Path $repoRoot 'b-Office\package\README.md'))
-$markdownFiles.Add((Join-Path $repoRoot 'b-Office\maintenance\README.md'))
+$markdownFiles.Add((Join-Path $repoRoot 'b-Office\OneHistoryAppShell\README.md'))
 
 if ($null -ne $manifest) {
     if ((Test-RequiredProperty $manifest 'schemaVersion' 'manifest') -and $manifest.schemaVersion -ne 1) {
@@ -112,9 +111,23 @@ if ($null -ne $manifest) {
         if ($manifest.project.id -ne '2026-023' -or $manifest.project.name -ne 'AppShell') {
             Add-ContractError 'Project identity must be 2026-023/AppShell.'
         }
-        if ($manifest.project.status -ne 'frozen' -or $manifest.project.version -ne '3.0.3' -or
-            $manifest.project.freezeTag -ne 'v3.0.3') {
-            Add-ContractError 'Frozen identity must remain AppShell 3.0.3 / v3.0.3.'
+        # The V3 freeze tag stays v3.0.3. From 3.1 the version line may move forward,
+        # but project.version must always match AppShellVersion.props (DEC-009).
+        # Keep this file ASCII only: it has no BOM, so Windows PowerShell would
+        # decode non-ASCII bytes with the system code page and fail to parse.
+        if ($manifest.project.freezeTag -ne 'v3.0.3') {
+            Add-ContractError 'V3 freeze tag must remain v3.0.3.'
+        }
+        $versionPropsPath = Join-Path $repoRoot 'b-Code-AppShell\AppShellVersion.props'
+        if (Test-Path $versionPropsPath) {
+            $sourceVersion = ([xml](Get-Content $versionPropsPath -Raw)).Project.PropertyGroup.AppShellVersion
+            if ([string]$sourceVersion -ne [string]$manifest.project.version) {
+                $versionMismatch = "project.version ($($manifest.project.version)) must match AppShellVersion.props ($sourceVersion)."
+                Add-ContractError $versionMismatch
+            }
+        }
+        else {
+            Add-ContractError 'b-Code-AppShell\AppShellVersion.props is missing.'
         }
     }
 

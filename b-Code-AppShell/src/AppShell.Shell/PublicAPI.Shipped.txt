@@ -1,6 +1,5 @@
 #nullable enable
 AppShell.Shell.Console.ConsoleView.InitializeComponent() -> void
-AppShell.Shell.Resource.ResourceView.InitializeComponent() -> void
 AppShell.Shell.ShellWindow.InitializeComponent() -> void
 AppShell.Shell.Views.CommandDetailView.InitializeComponent() -> void
 AppShell.Shell.Views.McpToolsView.InitializeComponent() -> void
@@ -172,12 +171,6 @@ AppShell.Shell.Panels.PanelView.PanelId.get -> string!
 AppShell.Shell.Panels.PanelView.PanelView(AppShell.Core.Panels.PanelDefinition! def, AppShell.Core.Commands.CommandBus! bus, AppShell.Core.Logging.IShellLog! log) -> void
 AppShell.Shell.Panels.PanelView.Rebuild(AppShell.Core.Panels.PanelDefinition! def) -> void
 AppShell.Shell.Panels.PanelView.TrySetValue(string! controlId, string! value) -> bool
-AppShell.Shell.Resource.InputDialog
-AppShell.Shell.Resource.InputDialog.InputDialog(System.Windows.Window! owner, string! title, string! prompt, string! initial = "") -> void
-AppShell.Shell.Resource.InputDialog.Value.get -> string!
-AppShell.Shell.Resource.ResourceView
-AppShell.Shell.Resource.ResourceView.ReloadTree() -> void
-AppShell.Shell.Resource.ResourceView.ResourceView(AppShell.Core.Files.IWorkspaceService! workspace, AppShell.Core.Commands.CommandBus! bus, AppShell.Core.Logging.IShellLog! log, System.Func<string!, bool>? openHandler, string? defaultRoot = null) -> void
 AppShell.Shell.ShellCommandServices
 AppShell.Shell.ShellCommandServices.Bus.get -> AppShell.Core.Commands.CommandBus!
 AppShell.Shell.ShellCommandServices.Bus.init -> void
@@ -198,8 +191,6 @@ AppShell.Shell.ShellCommandServices.Settings.init -> void
 AppShell.Shell.ShellCommandServices.ShellCommandServices() -> void
 AppShell.Shell.ShellCommandServices.Window.get -> AppShell.Shell.ShellWindow!
 AppShell.Shell.ShellCommandServices.Window.init -> void
-AppShell.Shell.ShellCommandServices.Workspace.get -> AppShell.Core.Files.IWorkspaceService?
-AppShell.Shell.ShellCommandServices.Workspace.init -> void
 AppShell.Shell.ShellConfig
 AppShell.Shell.ShellConfig.AppName.get -> string!
 AppShell.Shell.ShellConfig.AppName.init -> void
@@ -217,6 +208,8 @@ AppShell.Shell.ShellConfig.EnableModules.get -> bool
 AppShell.Shell.ShellConfig.EnableModules.set -> void
 AppShell.Shell.ShellConfig.EnableRemoteManagementViews.get -> bool
 AppShell.Shell.ShellConfig.EnableRemoteManagementViews.set -> void
+AppShell.Shell.ShellConfig.CloseBehavior.get -> AppShell.Shell.ShellCloseBehavior
+AppShell.Shell.ShellConfig.CloseBehavior.set -> void
 AppShell.Shell.ShellConfig.EnableUiModules.get -> bool
 AppShell.Shell.ShellConfig.EnableUiModules.set -> void
 AppShell.Shell.ShellConfig.Identity.get -> AppShell.Core.ApplicationIdentity?
@@ -225,22 +218,22 @@ AppShell.Shell.ShellConfig.McpAuditLog.get -> AppShell.Core.Mcp.IMcpAuditLog?
 AppShell.Shell.ShellConfig.McpAuditLog.set -> void
 AppShell.Shell.ShellConfig.McpRemoteConfirm.get -> System.Func<string!, string!, int, bool?>?
 AppShell.Shell.ShellConfig.McpRemoteConfirm.set -> void
-AppShell.Shell.ShellConfig.OnResourceOpen.get -> System.Func<string!, bool>?
-AppShell.Shell.ShellConfig.OnResourceOpen.set -> void
 AppShell.Shell.ShellConfig.Panels.get -> System.Collections.Generic.List<AppShell.Core.Panels.PanelDefinition!>!
 AppShell.Shell.ShellConfig.ShellConfig() -> void
 AppShell.Shell.ShellConfig.ToolMenuActions.get -> System.Collections.Generic.List<AppShell.Shell.ShellMenuAction!>!
 AppShell.Shell.ShellConfig.ToolWindows.get -> System.Collections.Generic.List<AppShell.Core.Docking.ToolWindowDescriptor!>!
-AppShell.Shell.ShellConfig.Workspace.get -> AppShell.Core.Files.IWorkspaceService?
-AppShell.Shell.ShellConfig.Workspace.set -> void
 AppShell.Shell.ShellMenuAction
 AppShell.Shell.ShellMenuAction.CommandText.get -> string!
 AppShell.Shell.ShellMenuAction.CommandText.init -> void
 AppShell.Shell.ShellMenuAction.Header.get -> string!
 AppShell.Shell.ShellMenuAction.Header.init -> void
 AppShell.Shell.ShellMenuAction.ShellMenuAction(string! Header, string! CommandText) -> void
+AppShell.Shell.ShellCloseBehavior
+AppShell.Shell.ShellCloseBehavior.Exit = 0 -> AppShell.Shell.ShellCloseBehavior
+AppShell.Shell.ShellCloseBehavior.Hide = 1 -> AppShell.Shell.ShellCloseBehavior
 AppShell.Shell.ShellWindow
 AppShell.Shell.ShellWindow.AboutText.get -> string!
+AppShell.Shell.ShellWindow.AddTransientLog(AppShell.Core.Logging.ShellLogEntry! entry) -> void
 AppShell.Shell.ShellWindow.Commands.get -> AppShell.Core.Commands.CommandBus!
 AppShell.Shell.ShellWindow.CommandSelection.get -> AppShell.Core.Commands.CommandSelectionState!
 AppShell.Shell.ShellWindow.Docking.get -> AppShell.Core.Docking.IDockingService!
@@ -319,6 +312,5 @@ static AppShell.Shell.Mcp.CommandCatalogCommands.Snapshot(AppShell.Core.Commands
 static AppShell.Shell.Mcp.McpCommands.RegisterAll(AppShell.Core.Commands.CommandRegistry! registry, System.Func<AppShell.Core.Commands.CommandBus?>! busAccessor, System.Func<AppShell.Services.Mcp.McpGateway?>! gateway, AppShell.Core.Storage.ISettingsService! settings, AppShell.Services.Mcp.PromptGovernanceStore! prompts, string! source = "app") -> void
 static AppShell.Shell.Mcp.PromptGovernanceCommands.RegisterAll(AppShell.Core.Commands.CommandRegistry! registry, AppShell.Core.Mcp.CommandSchemaExporter! exporter, AppShell.Services.Mcp.PromptGovernanceStore! store, string! source = "app") -> void
 static AppShell.Shell.Modules.ModuleCommands.RegisterAll(AppShell.Core.Commands.CommandRegistry! registry, AppShell.Services.Modules.ModuleHost! host, AppShell.Core.Storage.ISettingsService! settings, string! source = "app") -> void
-static AppShell.Shell.Resource.InputDialog.Show(System.Windows.Window! owner, string! title, string! prompt, string! initial = "") -> string?
 static AppShell.Shell.Views.ModuleCatalogReader.LoadAsync(AppShell.Core.Commands.CommandBus! bus, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<AppShell.Shell.Views.ModuleCatalogLoadResult!>!
 static AppShell.Shell.Views.ModuleCatalogSnapshot.TryCreate(System.Collections.Generic.IReadOnlyList<AppShell.Services.Modules.ModuleMeta!>! modules, System.Collections.Generic.IEnumerable<AppShell.Shell.Views.ModuleCommandInfo!>! commands, out AppShell.Shell.Views.ModuleCatalogSnapshot? snapshot, out string! error) -> bool
