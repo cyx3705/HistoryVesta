@@ -6,7 +6,7 @@ using OneHistoryStudio.Smoke.Suites;
 //   Smoke.exe                                      依次运行全部默认套件
 //   Smoke.exe --suite RepositoryTargets            只运行指定功能套件
 //   Smoke.exe --suite GitRules --real-template     向功能套件透传可选参数
-//   Smoke.exe --suite Docking --real-mouse         在隔离窗口执行真实鼠标交互
+//   Smoke.exe --suite ProjectOperations             运行项目操作页规则行为
 
 // 冒烟宿主不运行 WPF 装配点，因此在此显式登记应用身份。
 AppIdentity.Use(typeof(OneHistoryStudio.Git.ProjectService).Assembly);
@@ -14,17 +14,13 @@ Environment.CurrentDirectory = SmokeKit.RepoRoot;
 
 var suites = new (string Name, Func<string[], Task> Run)[]
 {
-    ("Wiring", WiringSuite.RunAsync),
     ("VersionProjection", VersionProjectionSuite.RunAsync),
     ("TestArchitecture", TestArchitectureSuite.RunAsync),
     ("GitRules", GitRulesSuite.RunAsync),
-    ("PromptGovernance", PromptGovernanceSuite.RunAsync),
     ("BranchHistory", BranchHistorySuite.RunAsync),
     ("SubmoduleSafety", SubmoduleSafetySuite.RunAsync),
     ("RepositoryTargets", RepositoryTargetsSuite.RunAsync),
-    ("ServiceWeb", ServiceWebSuite.RunAsync),
-    ("Docking", DockingSuite.RunAsync),
-    ("LanSingleExe", LanSingleExeSuite.RunAsync),
+    ("ProjectOperations", ProjectOperationsSuite.RunAsync),
 };
 
 var selected = ReadSuiteName(args);

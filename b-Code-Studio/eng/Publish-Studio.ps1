@@ -99,8 +99,8 @@ if (-not (Test-Path -LiteralPath $appShellManifestPath -PathType Leaf) -or
 $appShellManifest = [IO.File]::ReadAllText($appShellManifestPath) | ConvertFrom-Json
 $appShellVersion = [string]$appShellManifest.version
 $appShellManifestSha256 = (Get-FileHash -LiteralPath $appShellManifestPath -Algorithm SHA256).Hash
-if ([version]$appShellVersion -lt [version]'3.1.8') {
-    throw "OHS 3.0.0 requires AppShell 3.1.8 or newer; found $appShellVersion"
+if ([version]$appShellVersion -lt [version]'3.1.9') {
+    throw "OHS $Version requires AppShell 3.1.9 or newer; found $appShellVersion"
 }
 
 $sourcePaths = @('b-Code-Studio', 'b-Code-Verify', 'b-Office', 'README.md', '.gitattributes', '.gitignore', 'OHS.sln')

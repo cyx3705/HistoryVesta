@@ -31,6 +31,7 @@ internal static class TestArchitectureSuite
 
         VerifyGitHubModuleBoundary(separator);
         VerifyV3HostBoundary();
+        VerifyThemeBoundary();
 
         var smokeRoot = Path.Combine(VerifyRoot, "Smoke");
         var suitesRoot = Path.Combine(smokeRoot, "Suites");
@@ -64,9 +65,8 @@ internal static class TestArchitectureSuite
             .ToArray();
         string[] expected =
         [
-            "Wiring", "VersionProjection", "TestArchitecture", "GitRules",
-            "PromptGovernance", "BranchHistory", "SubmoduleSafety", "RepositoryTargets",
-            "ServiceWeb", "Docking", "LanSingleExe",
+            "VersionProjection", "TestArchitecture", "GitRules", "BranchHistory",
+            "SubmoduleSafety", "RepositoryTargets", "ProjectOperations",
         ];
         True(registered.SequenceEqual(expected),
             "test runner registers the reviewed functional suite order");
@@ -77,7 +77,10 @@ internal static class TestArchitectureSuite
 
         var project = XDocument.Load(Path.Combine(smokeRoot, "Smoke.csproj"));
         Equal(1, project.Descendants("ProjectReference").Count(),
-            "test architecture uses one product reference and one compiled host");
+            "test architecture uses the single module product reference");
+        Contains(project.Descendants("ProjectReference").Single().Attribute("Include")?.Value ?? "",
+            "OneHistoryStudio.Module.csproj",
+            "test architecture references the module project");
         var kit = File.ReadAllText(Path.Combine(smokeRoot, "SmokeKit.cs"));
         Contains(kit, "Path.GetTempPath()",
             "test architecture centralizes temporary data outside the source tree");
@@ -109,12 +112,14 @@ internal static class TestArchitectureSuite
                 $"V3 business composition receives host dependency: {injected}");
         }
 
-        var legacyHost = File.ReadAllText(Path.Combine(
-            RepoRoot, "Service", "StudioServiceCompositionFactory.cs"));
-        Contains(legacyHost, "StudioBusinessCompositionFactory.Register(",
-            "legacy ServiceHost is an adapter over the V3 business boundary");
-        True(!legacyHost.Contains("new ProjectService(", StringComparison.Ordinal),
-            "legacy ServiceHost no longer constructs OHS business services directly");
+        True(!File.Exists(Path.Combine(RepoRoot, "Studio.csproj")),
+            "module boundary: legacy Studio project is absent");
+        True(!File.Exists(Path.Combine(RepoRoot, "Program.cs")),
+            "module boundary: legacy process entry is absent");
+        True(!Directory.Exists(Path.Combine(RepoRoot, "Connection")),
+            "module boundary: legacy connection tree is absent");
+        True(!Directory.Exists(Path.Combine(RepoRoot, "Service")),
+            "module boundary: legacy service tree is absent");
     }
 
     private static void VerifyGitHubModuleBoundary(char separator)
@@ -161,6 +166,60 @@ internal static class TestArchitectureSuite
                 True(!source.Contains(identifier, StringComparison.OrdinalIgnoreCase),
                     $"OHS host does not contain GitHub module identifier {identifier}: " +
                     Path.GetRelativePath(RepoRoot, path));
+        }
+    }
+
+    private static void VerifyThemeBoundary()
+    {
+        var viewsRoot = Path.Combine(RepoRoot, "Views");
+        var literalColor = new Regex(
+            "(?:Background|Foreground|BorderBrush|Fill|Stroke|Value)\\s*=\\s*\\\"(?:White|Black|Gray|#[0-9A-Fa-f]+)\\\"",
+            RegexOptions.CultureInvariant);
+        var views = Directory.EnumerateFiles(viewsRoot, "*.xaml", SearchOption.TopDirectoryOnly)
+            .ToArray();
+        True(views.Length > 0, "theme governance discovers module XAML views");
+        foreach (var path in views)
+        {
+            var source = File.ReadAllText(path);
+            True(!literalColor.IsMatch(source),
+                $"view uses AppShell dynamic color tokens: {Path.GetFileName(path)}");
+        }
+
+        var primaryViews = new[]
+        {
+            "OverviewView.xaml", "MetaView.xaml", "BranchTreeView.xaml",
+            "BranchHistoryView.xaml", "ProjectOperationsView.xaml",
+        };
+        foreach (var name in primaryViews)
+        {
+            var source = File.ReadAllText(Path.Combine(viewsRoot, name));
+            Contains(source, "Background=\"{DynamicResource Shell.Brush.Surface}\"",
+                $"theme governance: {name} uses the AppShell surface token");
+            Contains(source, "Shell.Brush.TextPrimary",
+                $"theme governance: {name} uses the host primary text token");
+        }
+
+        foreach (var name in new[]
+                 {
+                     "OverviewView.xaml", "MetaView.xaml", "BranchHistoryView.xaml",
+                     "BranchTreeView.xaml", "ProjectOperationsView.xaml",
+                 })
+        {
+            var source = File.ReadAllText(Path.Combine(viewsRoot, name));
+            True(source.Contains("Shell.Brush.Surface}", StringComparison.Ordinal)
+                 && source.Contains("Shell.Brush.Hairline}", StringComparison.Ordinal),
+                $"theme governance: {name} content controls use surface and hairline tokens");
+        }
+
+        var projectOperations = File.ReadAllText(Path.Combine(viewsRoot, "ProjectOperationsView.xaml"));
+        foreach (var token in new[]
+                 {
+                     "Shell.Brush.SurfaceAlt", "Shell.Brush.ControlBorder",
+                     "Shell.Brush.AccentSoft", "Shell.Brush.Accent", "Shell.Brush.Hairline",
+                 })
+        {
+            Contains(projectOperations, token,
+                $"theme governance: project operations uses {token}");
         }
     }
 }

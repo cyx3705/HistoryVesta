@@ -1,6 +1,6 @@
 # OneHistoryStudio 源码
 
-本目录拥有 OHS 业务源码和模块发布管道。V3 正式交付工程是 `Module/OneHistoryStudio.Module.csproj`；`Studio.csproj` 只保留迁移回归所需的旧应用编译面，不进入正式包。
+本目录拥有 OHS 业务源码和模块发布管道。当前正式交付工程是 `Module/OneHistoryStudio.Module.csproj`；旧 EXE、Service、Connection 和启动入口已删除，生产边界只保留模块源码。
 
 ## 权威入口
 

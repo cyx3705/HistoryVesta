@@ -1,5 +1,8 @@
 using System.IO;
 using System.Reflection;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 using AppShell.Core;
 using AppShell.Core.Commands;
 using AppShell.Core.Docking;
@@ -59,7 +62,7 @@ if (host.Modules.Count != 1)
 
 var meta = host.Modules[0];
 if (!meta.ModuleName.Equals("OneHistoryStudio", StringComparison.Ordinal)
-    || !meta.Version.Equals("3.0.0", StringComparison.Ordinal)
+    || !meta.Version.Equals("3.0.1", StringComparison.Ordinal)
     || !meta.Ui
     || meta.CommandCount < 29)
 {
@@ -97,7 +100,7 @@ foreach (var commandName in businessCommands)
     }
 }
 var result = await bus.ExecuteAsync("OneHistoryStudio.Status", "ModuleSmoke");
-if (!result.Success || !result.Message.Contains("3.0.0", StringComparison.Ordinal))
+if (!result.Success || !result.Message.Contains("3.0.1", StringComparison.Ordinal))
     throw new InvalidOperationException($"module command failed: {result.Message}");
 
 var projectList = await bus.ExecuteAsync("proj.list", "ModuleSmoke");
@@ -199,6 +202,18 @@ static IReadOnlyList<string> ConstructPages(
                 if (!ReferenceEquals(accessor(), expectedBus))
                     throw new InvalidOperationException(
                         $"window {descriptor.Id} is not connected to the host command bus");
+                if (page is Control control)
+                {
+                    control.Resources["Shell.Brush.TextPrimary"] = Brushes.Black;
+                    var lightForeground = control.Foreground;
+                    control.Resources["Shell.Brush.TextPrimary"] = Brushes.White;
+                    var darkForeground = control.Foreground;
+                    if (lightForeground != Brushes.Black || darkForeground != Brushes.White)
+                    {
+                        throw new InvalidOperationException(
+                            $"window {descriptor.Id} did not resolve dynamic text theme resources");
+                    }
+                }
                 return page.GetType().Name;
             }).ToList();
         }

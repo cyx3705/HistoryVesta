@@ -1,23 +1,51 @@
 <UserControl x:Class="OneHistoryStudio.Views.ProjectOperationsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="White">
+             Background="{DynamicResource Shell.Brush.Surface}"
+             Foreground="{DynamicResource Shell.Brush.TextPrimary}">
     <UserControl.Resources>
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{DynamicResource Shell.Brush.SurfaceAlt}" />
+            <Setter Property="Foreground" Value="{DynamicResource Shell.Brush.TextSecondary}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Shell.Brush.Hairline}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="6,4" />
+        </Style>
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="{DynamicResource Shell.Brush.Surface}" />
+            <Setter Property="Foreground" Value="{DynamicResource Shell.Brush.TextPrimary}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Shell.Brush.Hairline}" />
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource Shell.Brush.AccentSoft}" />
+                    <Setter Property="Foreground" Value="{DynamicResource Shell.Brush.TextPrimary}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="DataGridCell">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource Shell.Brush.TextPrimary}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Shell.Brush.Hairline}" />
+        </Style>
         <Style x:Key="OperationSegment" TargetType="RadioButton">
             <Setter Property="MinHeight" Value="46" />
             <Setter Property="Margin" Value="0,0,1,0" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="SegmentBorder" BorderBrush="#C8CDD3" BorderThickness="1"
-                                Background="#F7F8FA" Padding="5,4">
+                        <Border x:Name="SegmentBorder"
+                                BorderBrush="{DynamicResource Shell.Brush.ControlBorder}"
+                                BorderThickness="1"
+                                Background="{DynamicResource Shell.Brush.SurfaceAlt}" Padding="5,4">
                             <TextBlock Text="{TemplateBinding Content}" TextAlignment="Center"
                                        TextWrapping="Wrap" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="SegmentBorder" Property="Background" Value="#E7F0FA" />
-                                <Setter TargetName="SegmentBorder" Property="BorderBrush" Value="#4D759C" />
+                                <Setter TargetName="SegmentBorder" Property="Background"
+                                        Value="{DynamicResource Shell.Brush.AccentSoft}" />
+                                <Setter TargetName="SegmentBorder" Property="BorderBrush"
+                                        Value="{DynamicResource Shell.Brush.Accent}" />
                                 <Setter Property="FontWeight" Value="SemiBold" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
@@ -30,7 +58,8 @@
         </Style>
     </UserControl.Resources>
     <DockPanel Margin="8">
-        <TextBlock DockPanel.Dock="Bottom" x:Name="StatusText" Foreground="#555"
+        <TextBlock DockPanel.Dock="Bottom" x:Name="StatusText"
+                   Foreground="{DynamicResource Shell.Brush.TextSecondary}"
                    Margin="0,6,0,0" Text="选择项目后管理文件格式规则" TextWrapping="Wrap" />
 
         <GroupBox DockPanel.Dock="Top" Header="项目" Margin="0,0,0,8">
@@ -133,13 +162,23 @@
             </ScrollViewer>
 
             <!-- 选择项目自动加载全格式台账；刷新规则强制刷新缓存。 -->
-            <Border DockPanel.Dock="Top" Background="#F7F7F7" BorderBrush="#DDD" BorderThickness="1"
+            <Border DockPanel.Dock="Top"
+                    Background="{DynamicResource Shell.Brush.SurfaceAlt}"
+                    BorderBrush="{DynamicResource Shell.Brush.Hairline}" BorderThickness="1"
                     Padding="6" Margin="0,0,0,6">
-                <TextBlock x:Name="CoverageText" Foreground="#555" TextWrapping="Wrap"
+                <TextBlock x:Name="CoverageText"
+                           Foreground="{DynamicResource Shell.Brush.TextSecondary}" TextWrapping="Wrap"
                            Text="格式覆盖：选择项目后自动读取全部文件格式" />
             </Border>
 
-            <DataGrid x:Name="RuleGrid" AutoGenerateColumns="False" CanUserAddRows="False"
+            <DataGrid x:Name="RuleGrid"
+                      Background="{DynamicResource Shell.Brush.Surface}"
+                      Foreground="{DynamicResource Shell.Brush.TextPrimary}"
+                      BorderBrush="{DynamicResource Shell.Brush.Hairline}"
+                      RowBackground="{DynamicResource Shell.Brush.Surface}"
+                      AlternatingRowBackground="{DynamicResource Shell.Brush.SurfaceAlt}"
+                      HorizontalGridLinesBrush="{DynamicResource Shell.Brush.Hairline}"
+                      AutoGenerateColumns="False" CanUserAddRows="False"
                       CanUserDeleteRows="False" SelectionMode="Single" SelectionUnit="FullRow"
                       SelectionChanged="OnRuleSelected" HeadersVisibility="Column"
                       GridLinesVisibility="Horizontal" HorizontalScrollBarVisibility="Auto">

@@ -1,7 +1,8 @@
 <UserControl x:Class="OneHistoryStudio.Views.BranchTreeView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="White">
+             Background="{DynamicResource Shell.Brush.Surface}"
+             Foreground="{DynamicResource Shell.Brush.TextPrimary}">
     <DockPanel Margin="8">
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
             <Button x:Name="RescanButton" Content="重新扫描"
@@ -11,9 +12,13 @@
             <Button x:Name="CollapseAllButton" Content="全部折叠" IsEnabled="False"
                     Padding="12,3" Margin="8,0,0,0" Click="OnCollapseAllClick" />
             <TextBlock x:Name="TreeStatus" VerticalAlignment="Center" Margin="12,0,0,0"
-                       Foreground="#888" Text="启动时自动加载缓存;树有变化点「重新扫描」" />
+                       Foreground="{DynamicResource Shell.Brush.TextSecondary}"
+                       Text="启动时自动加载缓存;树有变化点「重新扫描」" />
         </StackPanel>
-        <TreeView x:Name="BranchTree" BorderThickness="1"
+        <TreeView x:Name="BranchTree"
+                  Background="{DynamicResource Shell.Brush.Surface}"
+                  Foreground="{DynamicResource Shell.Brush.TextPrimary}"
+                  BorderBrush="{DynamicResource Shell.Brush.Hairline}" BorderThickness="1"
                   SelectedItemChanged="OnBranchSelected"
                   PreviewMouseRightButtonDown="OnTreePreviewMouseRightButtonDown">
             <TreeView.ContextMenu>
@@ -37,11 +42,13 @@
                             <StackPanel MaxWidth="500">
                                 <TextBlock Text="{Binding BranchName}" FontWeight="Bold" />
                                 <TextBlock Text="{Binding Description}" TextWrapping="Wrap" />
-                                <TextBlock Text="{Binding LastPushTime}" FontSize="10" Foreground="Gray" />
+                                <TextBlock Text="{Binding LastPushTime}" FontSize="10"
+                                           Foreground="{DynamicResource Shell.Brush.TextSecondary}" />
                             </StackPanel>
                         </StackPanel.ToolTip>
                         <TextBlock Text="{Binding BranchName}" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding LastPushTime}" Foreground="#999" FontSize="11"
+                        <TextBlock Text="{Binding LastPushTime}"
+                                   Foreground="{DynamicResource Shell.Brush.TextSecondary}" FontSize="11"
                                    Margin="8,0,0,0" VerticalAlignment="Center" />
                     </StackPanel>
                 </HierarchicalDataTemplate>

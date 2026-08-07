@@ -5,10 +5,19 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AppShellPackageRoot Condition="'$(AppShellPackageRoot)' == ''">C:\OneHistory\OneHistory-Projects\2026-023-AppShell\z-Package-AppShell</AppShellPackageRoot>
+    <AppShellHostRoot Condition="'$(AppShellHostRoot)' == ''">$(AppShellPackageRoot)\host</AppShellHostRoot>
   </PropertyGroup>
   <ItemGroup>
     <Using Include="System.IO" />
     <Using Include="System.Net.Http" />
-    <ProjectReference Include="..\..\b-Code-Studio\Studio.csproj" />
+    <Reference Include="AppShell.Core">
+      <HintPath>$(AppShellHostRoot)\AppShell.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="AppShell.Services">
+      <HintPath>$(AppShellHostRoot)\AppShell.Services.dll</HintPath>
+    </Reference>
+    <ProjectReference Include="..\..\b-Code-Studio\Module\OneHistoryStudio.Module.csproj" />
   </ItemGroup>
 </Project>

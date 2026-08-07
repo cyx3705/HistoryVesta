@@ -6,9 +6,10 @@
 
 - 正式快照：`z-Package-OneHistoryStudio`。
 - 模块名：`OneHistoryStudio`。
-- 版本：`3.0.0`。
+- 版本：`3.0.1`。
 - 入口：`OneHistoryStudio.dll`。
-- 宿主基线：AppShell `3.1.8` current-host 快照，从 `2026-023-AppShell/z-Package-AppShell` 消费；该快照的 `sourceDirty` 仍由 AppShell manifest 如实标记。
+- 宿主基线：AppShell `3.1.9` current-host 快照，从 `2026-023-AppShell/z-Package-AppShell` 消费；该快照的 `sourceDirty` 仍由 AppShell manifest 如实标记。
+- 主题：页面使用 AppShell `Shell.Brush.*` 动态资源，跟随宿主深色/浅色切换，不在模块内维护第二套主题。
 - 命令来源：`module:OneHistoryStudio`。
 - UI：启用。
 - MCP：只读投影。

@@ -1,6 +1,6 @@
 {
   "name": "OneHistoryStudio",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "OneHistoryStudio 项目与 Git 治理模块",
   "artifact": "OneHistoryStudio.dll",
   "docs": "OneHistoryStudio.xml",

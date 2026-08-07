@@ -1,6 +1,5 @@
 using System.Text.Json;
 using OneHistoryStudio.Git;
-using OneHistoryStudio.Service;
 using Xunit;
 
 namespace OneHistoryStudio.Contracts;
@@ -32,7 +31,8 @@ public sealed class BranchTreeContractTests
 
         var json = JsonSerializer.SerializeToElement(source);
         var restored = Assert.IsType<BranchTreeNode>(
-            StudioCommandDataDeserializer.Deserialize("proj.tree", json));
+            JsonSerializer.Deserialize<BranchTreeNode>(
+                json.GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true }));
 
         Assert.True(restored.TryValidate(out var nodeCount, out var error), error);
         Assert.Equal(4, nodeCount);
@@ -48,7 +48,9 @@ public sealed class BranchTreeContractTests
             """{"branchName":"root","description":"","lastPushTime":"","children":[],"future":true}""");
 
         var restored = Assert.IsType<BranchTreeNode>(
-            StudioCommandDataDeserializer.Deserialize("proj.tree", json.RootElement));
+            JsonSerializer.Deserialize<BranchTreeNode>(
+                json.RootElement.GetRawText(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }));
 
         Assert.Empty(restored.Children);
         Assert.Equal("root", restored.BranchName);

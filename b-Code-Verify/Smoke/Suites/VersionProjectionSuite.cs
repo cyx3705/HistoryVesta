@@ -3,10 +3,6 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using AppShell.Core.Commands;
-using AppShell.ServiceHost;
-using AppShell.Services;
-using AppShell.Shell;
 using OneHistoryStudio.Git;
 using static OneHistoryStudio.Smoke.SmokeKit;
 
@@ -15,36 +11,29 @@ namespace OneHistoryStudio.Smoke.Suites;
 /// <summary>验证 OHS 模块版本、AppShell 宿主合同和模块发布边界。</summary>
 internal static class VersionProjectionSuite
 {
-    private const string LegacyAppShellVersion = "3.0.3";
-    private const string ModuleHostVersion = "3.1.8";
-
     public static async Task RunAsync(string[] args)
     {
         var studioRoot = Path.Combine(ParentDir, "b-Code-Studio");
         var studioVersion = ReadSingleVersion(
             Path.Combine(studioRoot, "StudioVersion.props"), "OneHistoryStudioVersion");
 
-        AssertRuntimeAssemblies(LegacyAppShellVersion,
-        [
-            typeof(CommandBus).Assembly,
-            typeof(SettingsService).Assembly,
-            typeof(ShellWindow).Assembly,
-            typeof(ServiceComposition).Assembly,
-        ]);
         AssertRuntimeAssemblies(studioVersion, [typeof(ProjectService).Assembly]);
 
-        const string studioProject = "b-Code-Studio/Studio.csproj";
-        var evaluated = await EvaluateAsync(Path.Combine(ParentDir, studioProject));
-        AssertEvaluatedVersion(evaluated, studioVersion, studioProject);
         const string moduleProject = "b-Code-Studio/Module/OneHistoryStudio.Module.csproj";
         var moduleEvaluation = await EvaluateAsync(Path.Combine(ParentDir, moduleProject));
         AssertEvaluatedVersion(moduleEvaluation, studioVersion, moduleProject);
+        using (var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(
+                   studioRoot, "Module", "module.manifest.json"))))
+        {
+            Equal(studioVersion, manifest.RootElement.GetProperty("version").GetString(),
+                "version projection: module manifest matches the single version source");
+        }
 
         AssertPackageConsumers();
         AssertCurrentSourceAndDocumentation();
         await AssertPublishAreaGovernanceAsync();
         await AssertPublishTransactionAsync(studioRoot);
-        Console.WriteLine($"version projection: OHS module {studioVersion}, AppShell host {ModuleHostVersion}");
+        Console.WriteLine($"version projection: OHS module {studioVersion}");
     }
 
     private static string ReadSingleVersion(string path, string propertyName)
@@ -133,21 +122,6 @@ internal static class VersionProjectionSuite
 
     private static void AssertPackageConsumers()
     {
-        var legacyPackages = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "OneHistory.AppShell.Core",
-            "OneHistory.AppShell.Services",
-            "OneHistory.AppShell.Shell",
-            "OneHistory.AppShell.ServiceHost",
-        };
-        var studioProject = XDocument.Load(Path.Combine(ParentDir, "b-Code-Studio", "Studio.csproj"));
-        var studioPackages = studioProject.Descendants("PackageReference")
-            .Where(item => legacyPackages.Contains((string?)item.Attribute("Include") ?? ""))
-            .ToArray();
-        Equal(4, studioPackages.Length, "migration regression: legacy Studio still compiles against four AppShell packages");
-        True(studioPackages.All(item => (string?)item.Attribute("Version") == LegacyAppShellVersion),
-            "migration regression: legacy Studio dependencies remain isolated from the V3 module");
-
         var moduleProject = XDocument.Load(Path.Combine(
             ParentDir, "b-Code-Studio", "Module", "OneHistoryStudio.Module.csproj"));
         True(moduleProject.Descendants("Import").Any(item =>
@@ -162,12 +136,31 @@ internal static class VersionProjectionSuite
         Equal(0, moduleProject.Descendants("PackageReference").Count(),
             "module consumption: module does not restore legacy AppShell packages");
 
-        True(studioProject.Descendants("ProjectReference").All(item =>
-                !(((string?)item.Attribute("Include")) ?? "")
-                    .Contains("b-Code-AppShell", StringComparison.OrdinalIgnoreCase)),
-            "package consumption: no AppShell source project reference remains");
-        True(!Directory.Exists(Path.Combine(ParentDir, "b-Code-Studio.Service")),
-            "single entry: legacy Service project directory is removed");
+        True(!File.Exists(Path.Combine(ParentDir, "b-Code-Studio", "Studio.csproj")),
+            "single entry: legacy Studio project is removed");
+        True(!File.Exists(Path.Combine(ParentDir, "b-Code-Studio", "Program.cs")),
+            "single entry: legacy EXE entry is removed");
+        foreach (var relative in new[]
+                 {
+                     "App.xaml", "App.xaml.cs", "app.manifest", "StartupMigrations.cs",
+                     "Views/ConnectionSettingsView.xaml", "Views/ConnectionSettingsView.xaml.cs",
+                 })
+        {
+            True(!File.Exists(Path.Combine(
+                    ParentDir, "b-Code-Studio", relative.Replace('/', Path.DirectorySeparatorChar))),
+                $"single entry: legacy host file is removed: {relative}");
+        }
+        True(!Directory.Exists(Path.Combine(ParentDir, "b-Code-Studio", "Connection"))
+             && !Directory.Exists(Path.Combine(ParentDir, "b-Code-Studio", "Service")),
+            "single entry: legacy connection and service trees are removed");
+
+        var solution = File.ReadAllText(Path.Combine(ParentDir, "OHS.sln"));
+        True(!solution.Contains("Studio.csproj", StringComparison.OrdinalIgnoreCase),
+            "solution boundary: legacy Studio project is absent");
+        Equal(4, File.ReadAllLines(Path.Combine(ParentDir, "OHS.sln")).Count(line =>
+                line.StartsWith("Project(", StringComparison.Ordinal)
+                && line.Contains(".csproj\"", StringComparison.OrdinalIgnoreCase)),
+            "solution boundary: module and three verification projects are the only build projects");
 
         True(!Directory.Exists(Path.Combine(ParentDir, "b-Code-AppShell")),
             "repository boundary: AppShell source is not embedded in OHS");
@@ -199,6 +192,8 @@ internal static class VersionProjectionSuite
             "publish governance: module package uses an exact file-set gate");
         Contains(publish, "ModuleSmoke",
             "publish governance: UI and headless module lifecycle are release gates");
+        Contains(publish, "3.1.9",
+            "publish governance: theme-aware OHS requires the AppShell 3.1.9 host contract");
         Equal(1, Regex.Matches(
                 publish,
                 @"^\s*\$PackageRoot\s*=",
