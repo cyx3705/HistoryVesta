@@ -1,60 +1,225 @@
 {
     "schemaVersion":  1,
     "product":  "AppShell",
-    "version":  "3.0.3",
-    "channel":  "formal",
-    "generatedAtUtc":  "2026-07-29T14:37:07.9089097Z",
-    "sourceCommit":  "dcfc56f936e9836535fe33ca395d0425af1ea2f5",
+    "version":  "3.1.7",
+    "channel":  "current-host",
+    "runtime":  "win-x64-framework-dependent",
+    "executable":  "host/AppShell.exe",
+    "selfContained":  false,
+    "sourceCommit":  "d50234589ccd420eb5b26e18b4894c22a347b5e8",
     "sourceDirty":  false,
-    "sourceContractVersion":  "3.0.3",
-    "compatibilityValidated":  true,
-    "packages":  [
-                     {
-                         "file":  "feed/OneHistory.AppShell.Core.3.0.3.nupkg",
-                         "bytes":  65185,
-                         "sha256":  "23780E24E671FDFD29038C342F958028B51D52E51B86BF4A50901B493A28DFB9"
-                     },
-                     {
-                         "file":  "feed/OneHistory.AppShell.ServiceHost.3.0.3.nupkg",
-                         "bytes":  16096,
-                         "sha256":  "8BC4A00609830DEF2CAECD8B3420B5159A2C4E73F7F27481A44B08D674E8E8FC"
-                     },
-                     {
-                         "file":  "feed/OneHistory.AppShell.Services.3.0.3.nupkg",
-                         "bytes":  100771,
-                         "sha256":  "AC918D99F0554196C3B83905D988B5951BDC691AFAA4F25366D8B06698510BFA"
-                     },
-                     {
-                         "file":  "feed/OneHistory.AppShell.Shell.3.0.3.nupkg",
-                         "bytes":  128960,
-                         "sha256":  "0B0C004C5EDBAE80FF2670DE70F4798FE60F0D01C4F33EFBB9D138DFA9EE76D4"
-                     }
-                 ],
     "documents":  [
-                      {
-                          "file":  "docs/AppShell_API与指令手册.md",
-                          "bytes":  17242,
-                          "sha256":  "94CA867080D6890E168A08DD365B0ED325C161436CBE6C9BFB053D85C4E0DA60"
-                      },
-                      {
-                          "file":  "docs/AppShell_3.0_模块与MCP接入.md",
-                          "bytes":  7497,
-                          "sha256":  "C4837D4D8D9670B6E044E4FFD860730A5016673FD6DCDE6DAB950F23BF1AABC0"
-                      },
-                      {
-                          "file":  "docs/AppShell_3.0_运行时约束与已知限制.md",
-                          "bytes":  5637,
-                          "sha256":  "0B636B1917898202C75C3EEBFFBC0DD00FAF9475535E7F87DDC6D42E372DE815"
-                      },
-                      {
-                          "file":  "docs/AppShell_3.0_消费变更摘要.md",
-                          "bytes":  2710,
-                          "sha256":  "147FA0CED0D47DE892C235B937AFB652196960365E2BEB205D9978CEDA935C9D"
-                      }
+                      "docs/AppShell_API与指令手册.md",
+                      "docs/AppShell_3.0_模块与MCP接入.md",
+                      "docs/AppShell_3.0_运行时约束与已知限制.md",
+                      "docs/AppShell_3.0_消费变更摘要.md",
+                      "docs/AppShell_UI风格与嵌入页面规范.md"
                   ],
-    "reuse":  {
-                  "file":  "AppShell.reuse.md",
-                  "bytes":  3669,
-                  "sha256":  "7A2B086CACA931D45D1F3FA5C507191464005BF407CD08F3FD288B8430E1D42F"
-              }
+    "files":  [
+                  {
+                      "file":  "AppShell.reuse.md",
+                      "bytes":  4691,
+                      "sha256":  "EFBC2E1B1B08823976F562A1C907E974416530C385DAE6060DAD0D1B36048C09"
+                  },
+                  {
+                      "file":  "docs/AppShell_3.0_模块与MCP接入.md",
+                      "bytes":  7514,
+                      "sha256":  "AE9DCB227CEE1101F5B771862C4E692ED188AB56A12E24EB2E549973A03759A2"
+                  },
+                  {
+                      "file":  "docs/AppShell_3.0_消费变更摘要.md",
+                      "bytes":  8304,
+                      "sha256":  "09C53CDCD54D79ED5EA140C700FDF2F7D197108F4EF2359B1773455E5F0FFE45"
+                  },
+                  {
+                      "file":  "docs/AppShell_3.0_运行时约束与已知限制.md",
+                      "bytes":  6736,
+                      "sha256":  "942BC2924B7B03D2AFE86BB6B827DDAB19F0CCA5D251CFA7D012925A6C925230"
+                  },
+                  {
+                      "file":  "docs/AppShell_API与指令手册.md",
+                      "bytes":  20982,
+                      "sha256":  "19347F10BF6D62BF730B5B82678FED0C9275A623BB88006C170B3A3EA6A6E01B"
+                  },
+                  {
+                      "file":  "docs/AppShell_UI风格与嵌入页面规范.md",
+                      "bytes":  8576,
+                      "sha256":  "87468B15D25E684101F652A38E3A472111EB4202B4B58C60FF0E6F957989B556"
+                  },
+                  {
+                      "file":  "host/AppShell.Core.dll",
+                      "bytes":  108544,
+                      "sha256":  "1760B2AD5B0853D70E18362114745ED4B068618736740F2AEAE2D67E20910DFB"
+                  },
+                  {
+                      "file":  "host/AppShell.Core.pdb",
+                      "bytes":  39320,
+                      "sha256":  "A1CB99A4437DCFAF5D0BC0FA4154F0EBF89127846012573CDEDA9472BCF41838"
+                  },
+                  {
+                      "file":  "host/AppShell.Core.xml",
+                      "bytes":  81004,
+                      "sha256":  "20B74108DDEF8FF429F0CDB642A932B521D4DE3D859779118BD01B8497AFD23F"
+                  },
+                  {
+                      "file":  "host/AppShell.deps.json",
+                      "bytes":  7220,
+                      "sha256":  "716870553FCD7D5B21DE9913B17308676F47F77213F508FCDF832D8122B16B2C"
+                  },
+                  {
+                      "file":  "host/AppShell.dll",
+                      "bytes":  35840,
+                      "sha256":  "8425DE1FC999105362C8593889F51C5EF6C6DEABB0C628BE6A1380B3114F5744"
+                  },
+                  {
+                      "file":  "host/AppShell.exe",
+                      "bytes":  152064,
+                      "sha256":  "6A83398A013529914F3EFFD1D04379DDFBC446AEA4089E11D762337898007985"
+                  },
+                  {
+                      "file":  "host/AppShell.pdb",
+                      "bytes":  19604,
+                      "sha256":  "0BCDAFEB8BED046A2C64E790E663CC33067562EDFC5029091D4F3B813F12391E"
+                  },
+                  {
+                      "file":  "host/AppShell.runtimeconfig.json",
+                      "bytes":  515,
+                      "sha256":  "89AD1EA5C9C20B6B266547EF27C0AE3840CAB5642D3C2AEDF06B7026245671DD"
+                  },
+                  {
+                      "file":  "host/AppShell.ServiceHost.dll",
+                      "bytes":  35840,
+                      "sha256":  "24430580B75F187F0C7FD14C785482B2BE3311B9B8D4998B994D36F9B591FBFD"
+                  },
+                  {
+                      "file":  "host/AppShell.ServiceHost.pdb",
+                      "bytes":  17476,
+                      "sha256":  "D5654F3942575D032CF1D144E3908B907D7A76975AEDCBFDF9B6BBAF9018815C"
+                  },
+                  {
+                      "file":  "host/AppShell.Services.dll",
+                      "bytes":  224768,
+                      "sha256":  "47C8394036D644F53BC66E9D24A046A3FD99FDD3EFC9A8866D04688552D07547"
+                  },
+                  {
+                      "file":  "host/AppShell.Services.pdb",
+                      "bytes":  55088,
+                      "sha256":  "D7FDBF7724E3802BC2C17EEE0C23104D3FE60115A277FAF794FE5A80B129E9F5"
+                  },
+                  {
+                      "file":  "host/AppShell.Services.xml",
+                      "bytes":  45232,
+                      "sha256":  "0CECA57204A13B228A268B15B3F55EC354222E7715F7D118BAC8A306B992AE42"
+                  },
+                  {
+                      "file":  "host/AppShell.Shell.dll",
+                      "bytes":  367104,
+                      "sha256":  "F502E96C921D652CDC28956BBE59D7F326FD5BAEC378A724E1E9114E382ADECC"
+                  },
+                  {
+                      "file":  "host/AppShell.Shell.pdb",
+                      "bytes":  88864,
+                      "sha256":  "0BDFCBF548A5883477CC049D48958412A015D85EFE5FC5935CCE1D67C86921A4"
+                  },
+                  {
+                      "file":  "host/AvalonDock.dll",
+                      "bytes":  500736,
+                      "sha256":  "B122C1B983DADC185D9E8B59E58C3B11DDAF5E1CFBA4E1BFCF2107BF83333D42"
+                  },
+                  {
+                      "file":  "host/AvalonDock.Themes.VS2013.dll",
+                      "bytes":  130048,
+                      "sha256":  "2BAB0CD6C345258E73E6142BD1B1B452D02F59284C94B53BBD18065B11230FFC"
+                  },
+                  {
+                      "file":  "host/ca-ES/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "8BE396EE58DC23190160733E77CDE12815AA6B64F51E5583F0283E75A5A73F14"
+                  },
+                  {
+                      "file":  "host/cs-CZ/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "3796254A4F2A9705ED99F3BAC5A012F52230A0E0183E59581F505C502764FEDD"
+                  },
+                  {
+                      "file":  "host/de/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "3677239A313FE140120BF194C5C1D226841EF418207040BFE74E4B4008460217"
+                  },
+                  {
+                      "file":  "host/es/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "BDDCFC7185416B3458BFF2C1091840216999C08BD86CC009596281FADD29F507"
+                  },
+                  {
+                      "file":  "host/fr/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "4E0162C5DF26FAE1624174EC57A4766B2918246E74912C746CFA255B7E92ECE7"
+                  },
+                  {
+                      "file":  "host/hu/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "72908DCF31AF35A26A7E82705AEE0065D2904B3523BE1C4DDDFFF9AFB3062E27"
+                  },
+                  {
+                      "file":  "host/it/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "9E590BBEE8A97D0EC0AB97CA2EC401DC8E7E9EFE6EB420E9E7017FB9E54A2C3A"
+                  },
+                  {
+                      "file":  "host/ja/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "CB9D56AFE46E023AF446EFB603EBB55CF24E56D0E3073A960EE911DFE9506C7D"
+                  },
+                  {
+                      "file":  "host/ko/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "63033D3FDF4A432BFAAB3F18F155C5B27BF0DDD293AC064BD38AF993718B052D"
+                  },
+                  {
+                      "file":  "host/nl-BE/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "9A469564A127C404DC2E23659582CD2FC2E4C05A3F0FB463A1626269C4D658A2"
+                  },
+                  {
+                      "file":  "host/pl/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "0FA10E5510D3C2E6D3F7E93E6F86C104B340A98BE9D989A2F7B16B1CD8F3E030"
+                  },
+                  {
+                      "file":  "host/pt/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "058F4B0983F3F8C61C29229D76B976CC33843ACEFEC28603A6BE8ADAA409F43F"
+                  },
+                  {
+                      "file":  "host/ro/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "D4D3D185009AD45964E8B0A576EF7A62A901D953514D8D28F6DE0D273DEB306B"
+                  },
+                  {
+                      "file":  "host/ru/AvalonDock.resources.dll",
+                      "bytes":  6656,
+                      "sha256":  "6560B0C49E8C59094170D877D2101497869461C5BD3FD52B975D8DE31ED1399D"
+                  },
+                  {
+                      "file":  "host/sv/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "B6969C5183CCA0D8D01E3B7F3CC7A4DB7D4C3E1D51540FF323B0D448E111B465"
+                  },
+                  {
+                      "file":  "host/zh-Hans/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "9ADA7F06AECAAA39A1E52F278F1072FE02B4EB9696632FD8662C2C87A8A4B343"
+                  },
+                  {
+                      "file":  "host/zh-Hant/AvalonDock.resources.dll",
+                      "bytes":  6144,
+                      "sha256":  "E12491E16E77AF2130FE9B9D79AD12C64D5AEFAD62E8A181EEA7B0A23835A4EC"
+                  },
+                  {
+                      "file":  "README.md",
+                      "bytes":  416,
+                      "sha256":  "60A81711627DB2B983810CC3B8CD28E9F53C12F1A8FEE93B7F555DE489C17133"
+                  }
+              ]
 }
