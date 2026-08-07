@@ -10,10 +10,13 @@ namespace OneHistoryStudio;
 /// </summary>
 public static class DebugCommands
 {
-    public static void RegisterAll(CommandRegistry registry, IShellLog log)
+    public static void RegisterAll(
+        CommandRegistry registry,
+        IShellLog log,
+        string source = "app")
     {
-        registry.Register(BuildLogFlood(log), "app");
-        registry.Register(BuildSleep(), "app");
+        registry.Register(BuildLogFlood(log), source);
+        registry.Register(BuildSleep(), source);
     }
 
     /// <summary>
