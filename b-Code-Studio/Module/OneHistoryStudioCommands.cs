@@ -7,5 +7,5 @@ public sealed class OneHistoryStudioCommands
 {
     [ModuleCommand(Readonly = true)]
     public string Status()
-        => "OneHistoryStudio 3.0.0-preview.1 已由 AppShell 3.1.7 模块宿主加载;业务服务迁移待服务模块合同冻结";
+        => "OneHistoryStudio 3.0.0-preview.1 已由 AppShell 3.1.7 加载;已注册项目总览、继承树、Meta、项目操作和分支历史页面;业务总线接入待服务模块合同冻结";
 }

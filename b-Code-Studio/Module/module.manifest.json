@@ -1,7 +1,7 @@
 {
   "name": "OneHistoryStudio",
   "version": "3.0.0-preview.1",
-  "description": "OneHistoryStudio V3 模块迁移骨架",
+  "description": "OneHistoryStudio V3 业务页面模块候选",
   "artifact": "OneHistoryStudio.dll",
   "docs": "OneHistoryStudio.xml",
   "mcpExposure": "readonly",
