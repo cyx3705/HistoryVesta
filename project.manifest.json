@@ -15,7 +15,7 @@
       "package"
     ],
     "status": "active",
-    "version": "3.1.5",
+    "version": "3.1.7",
     "branch": "2026-023-AppShell",
     "freezeTag": "v3.0.3"
   },
@@ -69,7 +69,8 @@
     "apiManual": "b-Office/package/AppShell_API与指令手册.md",
     "moduleAndMcp": "b-Office/package/AppShell_3.0_模块与MCP接入.md",
     "runtimeLimits": "b-Office/package/AppShell_3.0_运行时约束与已知限制.md",
-    "consumerChanges": "b-Office/package/AppShell_3.0_消费变更摘要.md"
+    "consumerChanges": "b-Office/package/AppShell_3.0_消费变更摘要.md",
+    "uiStyle": "b-Office/package/AppShell_UI风格与嵌入页面规范.md"
   },
   "commands": {
     "setup": "dotnet restore .\\AppShell.sln --locked-mode",
@@ -77,7 +78,8 @@
     "test": "dotnet test .\\b-Code-Tests\\AppShell.Tests\\AppShell.Tests.csproj -c Release --no-build --no-restore",
     "verify": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\b-Code-AppShell\\eng\\Test-ProjectContract.ps1 -Instantiation",
     "run": "dotnet run --project .\\b-Code-AppShell\\src\\App\\App.csproj",
-    "package": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\b-Code-AppShell\\eng\\Publish-AppShell.ps1 -Version 3.1.5",
+    "package": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\b-Code-AppShell\\eng\\Publish-AppShellHost.ps1 -Version 3.1.7",
+    "deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\b-Code-AppShell\\eng\\Publish-AppShellHost.ps1 -Version 3.1.7 -DeployToZ",
     "publicApiGate": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\b-Code-AppShell\\eng\\Assert-PublicApiBaseline.ps1",
     "qualityGate": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\b-Code-AppShell\\eng\\Test-QualityGate.ps1"
   },

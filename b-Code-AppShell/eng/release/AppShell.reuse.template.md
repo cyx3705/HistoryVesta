@@ -1,21 +1,25 @@
 # AppShell 复用说明
 
-这是其他项目和 AI 接入 AppShell 时应优先读取的首要入口。当前正式版本为 **{{VERSION}}**，正式包位于同级 `feed/`，当前版本消费合同位于同级 `docs/`；不要扫描发布归档、历史版本或框架源码来推断用法。
+这是其他项目和 AI 接入 AppShell 时应优先读取的首要入口。当前正式版本为 **{{VERSION}}**，
+可运行宿主位于同级 `host/`，当前版本消费合同位于同级 `docs/`；不要扫描发布归档、历史版本或框架源码来推断用法。
 
-## 平台与引用
+## 平台与运行
 
 - 目标框架：.NET 8。
-- `Shell` 和 `ServiceHost` 仅支持 Windows，并依赖 WPF。
-- 包版本必须固定一致；禁止跨项目 `ProjectReference`、源码复制和直接修改 AppShell 包。
-- 本地包源指向 `z-Package-AppShell/feed`，第三方依赖仍从 NuGet.org 恢复。
+- 正式宿主仅支持 Windows x64，并依赖已安装的 .NET 8 Desktop Runtime。
+- 运行入口为 `host/AppShell.exe`；同一 EXE 以普通参数启动前端，以 `--service` 启动后台服务。
+- 外置模块必须遵守同版本 API、命令和 UI 风格合同；禁止复制 AppShell 源码或修改部署目录中的程序集。
 
-桌面应用只直接引用 Shell；`Core` 和 `Services` 会传递进入：
+当前正式部署不提供 NuGet feed。确需把 AppShell 作为库嵌入其他宿主时，四个框架包必须从单独批准的
+兼容包源取得并固定为同一版本；不要把历史 Z feed 当作当前 {{VERSION}} 合同。
+
+兼容桌面应用只直接引用 Shell；`Core` 和 `Services` 会传递进入：
 
 ```xml
 <PackageReference Include="OneHistory.AppShell.Shell" Version="{{VERSION}}" />
 ```
 
-无窗服务宿主只直接引用 ServiceHost；`Core` 和 `Services` 会传递进入：
+兼容无窗服务宿主只直接引用 ServiceHost；`Core` 和 `Services` 会传递进入：
 
 ```xml
 <PackageReference Include="OneHistory.AppShell.ServiceHost" Version="{{VERSION}}" />
@@ -58,9 +62,11 @@
 
 ## 当前版本消费合同
 
+- [AppShell UI 风格与嵌入页面规范](docs/AppShell_UI风格与嵌入页面规范.md)
 - [AppShell API 与指令手册](docs/AppShell_API与指令手册.md)
 - [AppShell 3.0 模块与 MCP 接入](docs/AppShell_3.0_模块与MCP接入.md)
 - [AppShell 3.0 运行时约束与已知限制](docs/AppShell_3.0_运行时约束与已知限制.md)
 - [AppShell 3.0 消费变更摘要](docs/AppShell_3.0_消费变更摘要.md)
 
-上述文档与 `feed/` 中的包作为同一快照发布，是当前正式版本的稳定消费合同。完整维护资料、测试证据、历史版本和发布归档不属于当前消费合同，需要时再从 `b-Publish/` 查阅。
+上述文档与 `host/` 中的宿主作为同一快照发布，是当前正式版本的稳定消费合同。兼容包资产仅供仍以
+`PackageReference` 嵌入框架的项目使用，不是 AppShell 自身部署物。完整维护资料、测试证据、历史版本和发布归档不属于当前消费合同，需要时再从 `b-Publish/` 查阅。

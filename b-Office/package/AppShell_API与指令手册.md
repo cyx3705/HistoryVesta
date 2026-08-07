@@ -1,8 +1,14 @@
 # AppShell API 与指令手册
 
-> 适用版本：AppShell 3.1.5（3.0.3 为冻结基线；3.1.1 为功能收口基线）
+> 适用版本：AppShell 3.1.7（3.0.3 为冻结基线；3.1.1 为功能收口基线）
 
-本手册给出稳定公开 API 的常用入口和 3.1.5 框架基础命令。完整签名以包内 `lib/<TFM>/AppShell.*.xml` 为准；源码仓中的四份 `PublicAPI.Shipped.txt` 是冻结门禁，不随运行包发布。最终命令集合以应用运行时的 `command.list`、`command.show` 和 `command.manual` 为准。
+本手册给出稳定公开 API 的常用入口和 3.1.7 框架基础命令。正式宿主运行入口为
+`host/AppShell.exe`，程序集 XML 文档位于同一 `host/` 目录；兼容框架包的完整签名位于
+`lib/<TFM>/AppShell.*.xml`。源码仓中的四份 `PublicAPI.Shipped.txt` 是冻结门禁，不随运行宿主发布。
+最终命令集合以应用运行时的 `command.list`、`command.show` 和 `command.manual` 为准。
+
+当前 3.1.7 正式部署只生成宿主快照，不生成 NuGet 包。以下包表和最小宿主代码用于仍走单独批准兼容包源的
+嵌入式消费方，不代表 `z-Package-AppShell` 提供 3.1.7 feed。
 
 模块命令、消费方业务命令以及按面板、MCP、Web 能力启用的命令不会在每个宿主中同时出现。
 
@@ -194,7 +200,7 @@ registry.Register(new CommandDescriptor
 
 ## 5. 基础命令目录
 
-以下是 3.1.5 框架命令快照。宿主只注册已启用能力对应的组；运行时 `command.list` 是最终权威目录。
+以下是 3.1.7 框架命令快照。宿主只注册已启用能力对应的组；运行时 `command.list` 是最终权威目录。
 
 ### 5.1 基础、应用与日志
 

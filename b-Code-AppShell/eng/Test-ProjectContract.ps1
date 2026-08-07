@@ -179,6 +179,29 @@ if ($null -ne $manifest) {
                 $markdownFiles.Add($fullPath)
             }
         }
+
+        $uiStyleProperty = $manifest.documents.PSObject.Properties['uiStyle']
+        if ($null -ne $uiStyleProperty) {
+            $uiStylePath = Resolve-ContractPath -RelativePath ([string]$uiStyleProperty.Value) -Context 'documents.uiStyle'
+            $themeDirectory = Join-Path $repoRoot 'b-Code-AppShell\src\AppShell.Shell\Themes'
+            if ($null -ne $uiStylePath -and (Test-Path -LiteralPath $uiStylePath -PathType Leaf)) {
+                $uiStyleText = Get-Content -LiteralPath $uiStylePath -Raw -Encoding UTF8
+                $tokenKeys = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+                foreach ($tokenFileName in @('ShellTokens.xaml', 'ShellTokens.Dark.xaml')) {
+                    $tokenText = Get-Content -LiteralPath (Join-Path $themeDirectory $tokenFileName) -Raw -Encoding UTF8
+                    foreach ($tokenMatch in [regex]::Matches(
+                            $tokenText,
+                            'x:Key="(?<key>Shell\.(?:Brush|Radius|Font|Space|Size)\.[^"]+)"')) {
+                        $null = $tokenKeys.Add($tokenMatch.Groups['key'].Value)
+                    }
+                }
+                foreach ($tokenKey in $tokenKeys) {
+                    if ($uiStyleText.IndexOf($tokenKey, [StringComparison]::Ordinal) -lt 0) {
+                        Add-ContractError "UI style contract is missing theme token: $tokenKey"
+                    }
+                }
+            }
+        }
     }
 
     if ($null -ne $manifest.commands) {

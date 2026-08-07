@@ -1,9 +1,10 @@
-# AppShell 3.1.5
+# AppShell 3.1.7
 
 本仓库是 OneHistory AppShell 的独立源码、合同与发布资产真值。`3.0.3` 是 V3 冻结基线，
 冻结标签为 `v3.0.3`；版本线不再与 OneHistoryStudio 对齐，`0.7.x` 仅保留用于回滚。
 
-当前源码为 `3.1.5`：在 3.1.3 浮窗几何基线上统一控制台与命令集的域筛选，并让控制台长文本按当前窗格宽度自动换行且不产生水平滚动；AppShell 采用单 EXE 双进程运行模型，后台服务承载
+当前源码为 `3.1.7`：新增随宿主部署的 UI 风格合同，统一嵌入页面的浅色/深色色板、字体、字号、
+圆角、间距、控件尺寸、顶栏归属和响应式验收规则；AppShell 采用单 EXE 双进程运行模型，后台服务承载
 命令、模块、日志和全局快捷键，WPF 前端只负责窗口与 UI 模块。双 `/` 唤出并聚焦控制台；前端关闭默认隐藏而不停止后台。
 删除 AppShell
 内置资源/Workspace 与演示电机页，并保留 `ModulesView` 作为唯一模块管理页面。资源浏览未来由独立模块提供；
@@ -32,7 +33,7 @@
 | `b-Code-AppShell/` | Core、Services、Shell、ServiceHost、演示宿主与工程脚本 |
 | `b-Code-Tests/` | AppShell 回归、布局、命令、安全与包合同测试 |
 | `b-Code-Samples/` | 模块开发示例 |
-| `b-Office/package/` | 消费文档编辑源 |
+| `b-Office/package/` | 消费文档与嵌入页面 UI 风格合同编辑源 |
 | `b-Office/current/` | 现行项目、验证、升级与发布合同 |
 | `b-Code-AppShell/eng/release/` | 发布清单和生成模板等机器输入 |
 | `b-Office/` | 冻结契约、内部设计与执行证据 |
@@ -54,15 +55,20 @@ dotnet test .\b-Code-Tests\AppShell.Tests\AppShell.Tests.csproj -c Release --no-
 dotnet format .\AppShell.sln --verify-no-changes --no-restore
 ```
 
-## 审核候选与正式发布
+## 宿主候选与正式部署
 
 ```powershell
-# 重建 b-Publish/current 下的可覆盖审核候选
-.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.1.5
+# 生成 b-Publish/current 下的宿主 + 文档完整候选
+.\b-Code-AppShell\eng\Publish-AppShellHost.ps1 -Version 3.1.7
 
-# 仅在审核通过、代码和消费文档均已提交且干净后执行
-.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.1.5 -Publish
+# 候选审核通过后，将同一完整快照一次性部署到 z-Package-AppShell
+.\b-Code-AppShell\eng\Publish-AppShellHost.ps1 -Version 3.1.7 -DeployToZ
+```
 
+当前交付物是可直接运行的 AppShell 宿主，不是 NuGet 包。历史四包发布脚本只保留用于库消费兼容、
+历史验证和回滚，不是 3.1.7 宿主部署入口：
+
+```powershell
 # 使用 b-Publish/history 中的历史包验证发布生成链，只更新 b-Publish/virtual
 .\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 0.7.2 -VirtualPublish
 
@@ -70,10 +76,10 @@ dotnet format .\AppShell.sln --verify-no-changes --no-restore
 .\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 0.7.2 -VirtualPublish -DeployToZ
 ```
 
-审核阶段的消费方必须临时指向
-`b-Publish/current/packages`；正式提升后改用 `z-Package-AppShell/feed`。`z-Package-AppShell`
-始终只保留一个当前发布快照；正式发布后，同一最小快照按版本写入 `b-Publish/history/`。
-发布脚本不会执行 Git commit、tag、push，也不会推送 NuGet.org。
+宿主候选位于 `b-Publish/current`，正式运行入口位于 `z-Package-AppShell/host/AppShell.exe`，
+UI 风格合同位于 `z-Package-AppShell/docs/AppShell_UI风格与嵌入页面规范.md`。
+旧候选整体归档到 `b-Publish/history/<版本>/`。宿主部署脚本不会执行 Git commit、tag、push，
+也不会生成或推送 NuGet 包。
 
 桌面消费者通常引用 `OneHistory.AppShell.Shell`；服务化宿主额外引用
 `OneHistory.AppShell.ServiceHost`。当前已验证消费方为 OneHistoryStudio（020）和 WBall（022）。

@@ -4,6 +4,10 @@
 
 本目录只保存面向消费方的 AppShell 合同文档编辑源。它是 023 内部源目录，不是消费者运行时目录；发布副本不得直接修改。
 
+AppShell 3.1.7 的正式交付物是“宿主 + 同版本文档”快照：候选位于 `../../b-Publish/current/`，
+审核通过后整体部署到 `../../z-Package-AppShell/`，运行入口为 `host/AppShell.exe`。本目录中的 NuGet/API 文档仍服务于需要嵌入框架的消费方，
+不代表本轮宿主部署会生成或发布 NuGet 包。
+
 ## 文档流向
 
 ```text
@@ -19,6 +23,7 @@ b-Office/package/
 
 ## 消费合同
 
+- [AppShell UI 风格与嵌入页面规范](AppShell_UI风格与嵌入页面规范.md)：颜色、字体、字号、圆角、间距、控件和嵌入页布局合同。
 - [AppShell API 与指令手册](AppShell_API与指令手册.md)：包选择、公开 API、命令合同和最小宿主。
 - [模块与 MCP 接入](AppShell_3.0_模块与MCP接入.md)：模块、工具窗口、MCP 和 Web 接入边界。
 - [运行时约束与已知限制](AppShell_3.0_运行时约束与已知限制.md)：消费方必须遵守的运行时限制。

@@ -60,6 +60,17 @@ public partial class App : Application
         // N-05:全局未处理异常捕获 → 落日志并由 Shell 自动打开控制台,不弹错误框
         DispatcherUnhandledException += (_, args) =>
         {
+            // AvalonDock can raise a stale visual-tree mouse-leave exception while
+            // a pane template is replaced during focus/maximize. It is harmless
+            // after the layout has been rebuilt, but must not look like an AppShell
+            // fatal error in the console.
+            if (IsTransientAvalonDockMouseLeave(args.Exception))
+            {
+                log.Log(ShellLogLevel.Debug, "shell.chrome", "Ignored transient AvalonDock mouse-leave exception during pane rebuild");
+                args.Handled = true;
+                return;
+            }
+
             log.Log(ShellLogLevel.Fatal, "app", $"未处理异常: {args.Exception}");
             args.Handled = true;
         };
@@ -269,6 +280,16 @@ public partial class App : Application
         try { _frontendMutex?.ReleaseMutex(); } catch (ApplicationException) { }
         _frontendMutex?.Dispose();
         base.OnExit(e);
+    }
+
+    private static bool IsTransientAvalonDockMouseLeave(Exception exception)
+    {
+        if (exception is not NullReferenceException)
+            return false;
+
+        return exception.StackTrace?.Contains(
+            "AvalonDock.Controls.AnchorablePaneTabPanel.OnMouseLeave",
+            StringComparison.Ordinal) == true;
     }
 
     private static string ResolveExecutablePath()
