@@ -3,126 +3,80 @@ param(
     [switch]$Apply
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-. (Join-Path $PSScriptRoot "Publish-Transaction.ps1")
+. (Join-Path $PSScriptRoot 'Publish-Transaction.ps1')
 
-$ComponentRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
-$RepoRoot = [IO.Path]::GetFullPath((Join-Path $ComponentRoot ".."))
-$PackageRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "z-Package"))
-$DeploymentParent = [IO.Path]::GetFullPath("C:\OneHistory\OneHistory-Push")
-$DeploymentRoot = [IO.Path]::GetFullPath((Join-Path $DeploymentParent "OneHistoryStudio"))
+$ComponentRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$RepoRoot = [IO.Path]::GetFullPath((Join-Path $ComponentRoot '..'))
+$PackageRoot = Join-Path $RepoRoot 'z-Package-OneHistoryStudio'
+$appData = [Environment]::GetFolderPath([Environment+SpecialFolder]::ApplicationData)
+$Targets = @(
+    (Join-Path $appData 'AppShell\Modules\OneHistoryStudio'),
+    (Join-Path $appData 'AppShell\service\Modules\OneHistoryStudio')
+)
 
-function Assert-UnderRoot {
-    param([string]$Path, [string]$Root, [string]$Name)
-    $fullPath = [IO.Path]::GetFullPath($Path)
-    $fullRoot = [IO.Path]::GetFullPath($Root).TrimEnd([IO.Path]::DirectorySeparatorChar) +
-        [IO.Path]::DirectorySeparatorChar
-    if (-not $fullPath.StartsWith($fullRoot, [StringComparison]::OrdinalIgnoreCase)) {
-        throw "$Name escaped its root: $fullPath"
-    }
-    return $fullPath
+if (-not (Test-Path -LiteralPath (Join-Path $PackageRoot 'module.manifest.json') -PathType Leaf)) {
+    throw "Formal module package is missing: $PackageRoot"
 }
+$manifest = [IO.File]::ReadAllText((Join-Path $PackageRoot 'module.manifest.json')) | ConvertFrom-Json
+if ([string]::IsNullOrWhiteSpace($Version)) { $Version = [string]$manifest.version }
+Assert-ModulePackage $PackageRoot $Version 'formal'
 
-function Copy-DirectoryContents {
-    param([string]$Source, [string]$Destination)
-    New-Item -ItemType Directory -Force -Path $Destination | Out-Null
-    Get-ChildItem -LiteralPath $Source -Force | ForEach-Object {
-        Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $Destination $_.Name) -Recurse -Force
-    }
-}
-
-if (-not (Test-Path -LiteralPath $PackageRoot -PathType Container)) {
-    throw "Formal package root is missing: $PackageRoot"
-}
-
-$manifests = @(Get-ChildItem -LiteralPath (Join-Path $PackageRoot "release") -Filter "*.json" -File)
-if ([string]::IsNullOrWhiteSpace($Version)) {
-    if ($manifests.Count -ne 1) {
-        throw "Expected exactly one formal package manifest; found $($manifests.Count)"
-    }
-    $Version = [IO.Path]::GetFileNameWithoutExtension($manifests[0].Name)
-}
-
-Assert-ReleaseTree $PackageRoot $Version "package"
-
-Write-Host "Formal package: $PackageRoot"
+Write-Host "Formal module: $PackageRoot"
 Write-Host "Version: $Version"
-Write-Host "Deployment target: $DeploymentRoot"
+foreach ($target in $Targets) { Write-Host "Deployment target: $target" }
 if (-not $Apply) {
-    Write-Host "Preview only. Re-run with -Apply after all OneHistoryStudio processes are closed."
+    Write-Host 'Preview only. Re-run with -Apply while AppShell is closed.'
     return
 }
 
-# Keep the retired process name for one compatibility cycle so an old deployment cannot be overwritten while running.
-$running = @(Get-Process -Name "OneHistoryStudio", "OneHistoryStudio.Service" -ErrorAction SilentlyContinue)
+$running = @(Get-Process -Name 'AppShell' -ErrorAction SilentlyContinue)
 if ($running.Count -ne 0) {
-    $processes = ($running | ForEach-Object { "$($_.ProcessName)($($_.Id))" }) -join ", "
-    throw "Close all OneHistoryStudio processes before deployment: $processes"
+    $summary = ($running | ForEach-Object { "AppShell($($_.Id))" }) -join ', '
+    throw "Close AppShell before module deployment: $summary"
 }
 
-New-Item -ItemType Directory -Force -Path $DeploymentParent | Out-Null
-$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$transactionId = [Guid]::NewGuid().ToString("N")
-$candidate = Assert-UnderRoot `
-    (Join-Path $DeploymentParent "OneHistoryStudio.__new-$transactionId") $DeploymentParent "deployment candidate"
-
-$installedVersion = "unknown"
-if (Test-Path -LiteralPath $DeploymentRoot -PathType Container) {
-    $installedManifest = @(Get-ChildItem -LiteralPath (Join-Path $DeploymentRoot "release") `
-        -Filter "*.json" -File -ErrorAction SilentlyContinue)
-    if ($installedManifest.Count -eq 1) {
-        $installedVersion = [IO.Path]::GetFileNameWithoutExtension($installedManifest[0].Name)
-    }
-}
-$backup = Assert-UnderRoot `
-    (Join-Path $DeploymentParent "OneHistoryStudio-rollback-$installedVersion-$timestamp") `
-    $DeploymentParent "deployment backup"
-$quarantine = Assert-UnderRoot `
-    (Join-Path $DeploymentParent "OneHistoryStudio-failed-$Version-$timestamp-$transactionId") `
-    $DeploymentParent "failed deployment"
-
-$applicationDataRoot = Join-Path `
-    ([Environment]::GetFolderPath([Environment+SpecialFolder]::ApplicationData)) "OneHistoryStudio"
-$databaseCandidates = @(
-    (Join-Path (Join-Path $applicationDataRoot "data") "main.db"),
-    (Join-Path $applicationDataRoot "main.db")
-)
-$database = $databaseCandidates | Where-Object {
-    Test-Path -LiteralPath $_ -PathType Leaf
-} | Select-Object -First 1
-if ($null -ne $database) {
-    $databaseBackupRoot = Assert-UnderRoot `
-        (Join-Path $DeploymentParent "OneHistoryStudio-DatabaseBackups") $DeploymentParent "database backup"
-    New-Item -ItemType Directory -Force -Path $databaseBackupRoot | Out-Null
-    $databaseBackup = Join-Path $databaseBackupRoot "main-db-predeploy-$Version-$timestamp.db"
-    Copy-Item -LiteralPath $database -Destination $databaseBackup
-    Write-Host "Database backup: $database -> $databaseBackup"
-}
+$timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+$transactionId = [Guid]::NewGuid().ToString('N')
+$completed = [Collections.Generic.List[object]]::new()
 
 try {
-    Copy-DirectoryContents $PackageRoot $candidate
-    $validateDeployment = {
-        param($Root)
-        Assert-ReleaseTree $Root $Version "package"
+    foreach ($target in $Targets) {
+        $parent = Split-Path -Parent $target
+        New-Item -ItemType Directory -Force -Path $parent | Out-Null
+        $candidate = Join-Path $parent "OneHistoryStudio.__new-$transactionId"
+        $backup = Join-Path $parent "OneHistoryStudio-rollback-$timestamp"
+        if (Test-Path -LiteralPath $candidate) { throw "Deployment candidate already exists: $candidate" }
+        if (Test-Path -LiteralPath $backup) { throw "Deployment backup already exists: $backup" }
+        Copy-Item -LiteralPath $PackageRoot -Destination $candidate -Recurse
+        Assert-ModulePackage $candidate $Version 'formal'
+        if (Test-Path -LiteralPath $target) { Move-Item -LiteralPath $target -Destination $backup }
+        try {
+            Move-Item -LiteralPath $candidate -Destination $target
+            Assert-ModulePackage $target $Version 'formal'
+            $completed.Add([pscustomobject]@{ Target = $target; Backup = $backup })
+        }
+        catch {
+            if (Test-Path -LiteralPath $target) { Remove-Item -LiteralPath $target -Recurse -Force }
+            if (Test-Path -LiteralPath $backup) { Move-Item -LiteralPath $backup -Destination $target }
+            throw
+        }
     }
-    Invoke-DirectoryPromotion $candidate $DeploymentRoot $backup $quarantine $validateDeployment
-    Write-Host "Deployed OneHistoryStudio $Version to $DeploymentRoot"
-    if (Test-Path -LiteralPath $backup) {
-        Write-Host "Rollback directory retained at $backup"
-    }
-    Write-Host "Deployment does not start or restart the application or service."
 }
 catch {
     $deploymentError = $_
-    if ((Test-Path -LiteralPath $candidate) -and (-not (Test-Path -LiteralPath $quarantine))) {
-        try {
-            Move-Item -LiteralPath $candidate -Destination $quarantine
-        }
-        catch {
-            throw "Deployment failed: $($deploymentError.Exception.Message); candidate quarantine failed: $($_.Exception.Message)"
-        }
+    for ($index = $completed.Count - 1; $index -ge 0; $index--) {
+        $entry = $completed[$index]
+        if (Test-Path -LiteralPath $entry.Target) { Remove-Item -LiteralPath $entry.Target -Recurse -Force }
+        if (Test-Path -LiteralPath $entry.Backup) { Move-Item -LiteralPath $entry.Backup -Destination $entry.Target }
     }
     throw $deploymentError
 }
+
+Write-Host "Deployed OneHistoryStudio module $Version to both AppShell module slots."
+foreach ($entry in $completed) {
+    if (Test-Path -LiteralPath $entry.Backup) { Write-Host "Rollback retained: $($entry.Backup)" }
+}
+Write-Host 'Deployment did not start AppShell and did not modify startup settings.'

@@ -41,8 +41,8 @@ public partial class ProjectOperationsView
         var scan = await scanTask;
         var list = await listTask;
         DetachRuleRows();
-        if (scan.Success && scan.Data is InventoryReport report
-            && list.Success && list.Data is IReadOnlyList<GitFileRuleInfo> declared)
+        if (scan.Success && ModuleResultData.TryRead(scan.Data, out InventoryReport? report)
+            && list.Success && ModuleResultData.TryRead(list.Data, out IReadOnlyList<GitFileRuleInfo>? declared))
         {
             foreach (var row in MergeRows(report, declared))
             {
@@ -142,7 +142,7 @@ public partial class ProjectOperationsView
         try
         {
             var preview = await bus.ExecuteAsync(command + " apply=false", "UI");
-            if (!preview.Success || preview.Data is not GitFileRuleBatchPreview batch)
+            if (!preview.Success || !ModuleResultData.TryRead(preview.Data, out GitFileRuleBatchPreview? batch))
             {
                 StatusText.Text = "规则自动保存预览失败，修改仍保留；详见控制台";
                 return false;
@@ -197,7 +197,9 @@ public partial class ProjectOperationsView
         var command = $"git.rule.remove name={CommandParser.QuoteArg(project)} " +
                       $"pattern={CommandParser.QuoteArg(rule.Pattern)}";
         var preview = await bus.ExecuteAsync(command + " apply=false", "UI");
-        if (!preview.Success || preview.Data is not GitFileRulePreview { Changed: true })
+        if (!preview.Success
+            || !ModuleResultData.TryRead(preview.Data, out GitFileRulePreview? singlePreview)
+            || singlePreview is not { Changed: true })
         {
             StatusText.Text = preview.Success ? "规则不存在或无需删除" : "删除预览失败，详见控制台";
             return;

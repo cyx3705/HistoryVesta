@@ -54,7 +54,7 @@ public partial class OverviewView : UserControl
         try
         {
             var result = await bus.ExecuteAsync("proj.list", "UI");
-            if (!result.Success || result.Data is not List<WorktreeInfo> list)
+            if (!result.Success || !ModuleResultData.TryRead(result.Data, out List<WorktreeInfo>? list))
             {
                 StatusText.Text = "项目加载失败，详见控制台";
                 return;

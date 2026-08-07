@@ -1,7 +1,7 @@
 {
   "name": "OneHistoryStudio",
-  "version": "3.0.0-preview.1",
-  "description": "OneHistoryStudio V3 业务页面模块候选",
+  "version": "3.0.0",
+  "description": "OneHistoryStudio 项目与 Git 治理模块",
   "artifact": "OneHistoryStudio.dll",
   "docs": "OneHistoryStudio.xml",
   "mcpExposure": "readonly",

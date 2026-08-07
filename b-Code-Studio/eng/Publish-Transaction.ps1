@@ -212,3 +212,78 @@ function Invoke-DirectoryPromotion {
         throw $promotionError
     }
 }
+
+function Assert-ModulePackage {
+    param(
+        [Parameter(Mandatory = $true)][string]$Root,
+        [Parameter(Mandatory = $true)][string]$ExpectedVersion,
+        [string]$ExpectedChannel
+    )
+
+    $fullRoot = [IO.Path]::GetFullPath($Root)
+    $packageDocs = @(Get-ChildItem -LiteralPath (Join-Path $fullRoot 'package') -Filter '*.md' -File -ErrorAction SilentlyContinue)
+    if ($packageDocs.Count -ne 1) {
+        throw "Module package must contain exactly one API Markdown document"
+    }
+    $apiRelative = 'package/' + $packageDocs[0].Name
+    $expectedFiles = @(
+        'OneHistoryStudio.dll',
+        'OneHistoryStudio.xml',
+        'module.manifest.json',
+        $apiRelative,
+        'SHA256SUMS'
+    )
+    if (-not (Test-Path -LiteralPath $fullRoot -PathType Container)) {
+        throw "Module package root is missing: $fullRoot"
+    }
+
+    $actualFiles = @(Get-ChildItem -LiteralPath $fullRoot -Recurse -File | ForEach-Object {
+        Get-ReleaseRelativePath $_.FullName $fullRoot
+    } | Sort-Object)
+    $expectedSorted = @($expectedFiles | Sort-Object)
+    if (($actualFiles -join "`n") -ne ($expectedSorted -join "`n")) {
+        throw "Module package file set is invalid. Actual: $($actualFiles -join ', ')"
+    }
+
+    $manifestPath = Join-Path $fullRoot 'module.manifest.json'
+    try {
+        $manifest = [IO.File]::ReadAllText($manifestPath) | ConvertFrom-Json
+    }
+    catch {
+        throw "Module manifest is invalid JSON: $($_.Exception.Message)"
+    }
+    if ([string]$manifest.name -ne 'OneHistoryStudio' -or
+        [string]$manifest.version -ne $ExpectedVersion -or
+        [string]$manifest.artifact -ne 'OneHistoryStudio.dll' -or
+        [string]$manifest.docs -ne 'OneHistoryStudio.xml' -or
+        [string]$manifest.mcpExposure -ne 'readonly' -or
+        $manifest.ui -ne $true) {
+        throw "Module manifest identity does not match OneHistoryStudio $ExpectedVersion"
+    }
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedChannel) -and
+        [string]$manifest.channel -ne $ExpectedChannel) {
+        throw "Module manifest channel is $($manifest.channel), expected $ExpectedChannel"
+    }
+
+    $checksumPath = Join-Path $fullRoot 'SHA256SUMS'
+    $checksums = Read-ReleaseChecksumMap $checksumPath
+    $hashedFiles = @($expectedFiles | Where-Object { $_ -ne 'SHA256SUMS' } | Sort-Object)
+    if ($checksums.Count -ne $hashedFiles.Count) {
+        throw "Module checksum must cover exactly $($hashedFiles.Count) files"
+    }
+    foreach ($relative in $hashedFiles) {
+        if (-not $checksums.ContainsKey($relative)) {
+            throw "Module checksum is missing $relative"
+        }
+        $resolved = Resolve-ReleaseArtifactPath $fullRoot $relative
+        $hash = (Get-FileHash -LiteralPath $resolved.FullPath -Algorithm SHA256).Hash
+        if ($checksums[$relative] -ne $hash) {
+            throw "Module checksum mismatch: $relative"
+        }
+    }
+
+    $assembly = [Reflection.AssemblyName]::GetAssemblyName((Join-Path $fullRoot 'OneHistoryStudio.dll'))
+    if ($assembly.Version.ToString() -ne "$ExpectedVersion.0") {
+        throw "Module assembly version is $($assembly.Version), expected $ExpectedVersion.0"
+    }
+}

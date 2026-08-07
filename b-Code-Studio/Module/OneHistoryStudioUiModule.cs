@@ -1,3 +1,4 @@
+using System.IO;
 using AppShell.Core.Commands;
 using AppShell.Core.Docking;
 using AppShell.Core.Modules;
@@ -6,15 +7,36 @@ using OneHistoryStudio.Views;
 namespace OneHistoryStudio.Module;
 
 /// <summary>Registers the existing OHS business pages into the AppShell host.</summary>
-public sealed class OneHistoryStudioUiModule : IUiModule, IShellUiAware
+public sealed class OneHistoryStudioUiModule : IUiModule, IShellUiAware, IModuleContextAware
 {
     private readonly List<IDisposable> _registrations = [];
     private readonly ProjectSelectionState _selection = new();
     private IShellUiRegistrar? _shellUi;
+    private IModuleContext? _context;
+    private StudioBusinessComposition? _business;
 
     IShellUiRegistrar IShellUiAware.ShellUi
     {
         set => _shellUi = value;
+    }
+
+    public void Attach(IModuleContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        if (_context != null)
+            throw new InvalidOperationException("OneHistoryStudio module context is already attached.");
+
+        _context = context;
+        context.RegisterCommands(registry =>
+        {
+            _business = StudioBusinessCompositionFactory.Register(
+                registry,
+                context.Bus,
+                context.Settings,
+                context.Log,
+                Path.Combine(context.DataDirectory, "OneHistoryStudio"),
+                "module:OneHistoryStudio");
+        });
     }
 
     public void CreateUi()
@@ -22,11 +44,8 @@ public sealed class OneHistoryStudioUiModule : IUiModule, IShellUiAware
         if (_shellUi == null || _registrations.Count != 0)
             return;
 
-        // AppShell 3.1.7 does not yet inject a host CommandBus into IUiModule.
-        // Keep the page command boundary intact; service-contract migration will
-        // replace this accessor with the host-owned bus without changing pages.
-        Func<CommandBus?> busAccessor = static () => null;
-        Func<string, bool> isProtected = static _ => false;
+        Func<CommandBus?> busAccessor = () => _context?.Bus;
+        Func<string, bool> isProtected = branch => _business?.Projects.IsProtected(branch) == true;
 
         foreach (var descriptor in CreateDescriptors(busAccessor, _selection, isProtected))
             _registrations.Add(_shellUi.RegisterToolWindow(descriptor, "OneHistoryStudio"));

@@ -45,7 +45,7 @@ public partial class MetaView : UserControl
         try
         {
             var result = await bus.ExecuteAsync("proj.metalist", "UI");
-            if (result.Success && result.Data is List<MetaFolderInfo> list)
+            if (result.Success && ModuleResultData.TryRead(result.Data, out List<MetaFolderInfo>? list))
             {
                 _allRows = list
                     .Select(m => new MetaRow(m.ProjectName, m.MetaName, m.LastWriteTime, m.FullPath))

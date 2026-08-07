@@ -6,13 +6,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AppShellPackageRoot Condition="'$(AppShellPackageRoot)' == ''">C:\OneHistory\OneHistory-Projects\2026-023-AppShell\z-Package-AppShell</AppShellPackageRoot>
+    <AppShellHostRoot Condition="'$(AppShellHostRoot)' == ''">$(AppShellPackageRoot)\host</AppShellHostRoot>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AppShell.Core">
-      <HintPath>$(AppShellPackageRoot)\host\AppShell.Core.dll</HintPath>
+      <HintPath>$(AppShellHostRoot)\AppShell.Core.dll</HintPath>
     </Reference>
     <Reference Include="AppShell.Services">
-      <HintPath>$(AppShellPackageRoot)\host\AppShell.Services.dll</HintPath>
+      <HintPath>$(AppShellHostRoot)\AppShell.Services.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

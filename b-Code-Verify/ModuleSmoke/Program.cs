@@ -1,9 +1,11 @@
 using System.IO;
+using System.Reflection;
 using AppShell.Core;
 using AppShell.Core.Commands;
 using AppShell.Core.Docking;
 using AppShell.Core.Logging;
 using AppShell.Core.Modules;
+using AppShell.Core.Storage;
 using AppShell.Services.Modules;
 
 if (args.Length != 1)
@@ -23,7 +25,16 @@ AppIdentity.Use(typeof(Program).Assembly);
 var log = new MemoryLog();
 var registry = new CommandRegistry();
 var bus = new CommandBus(registry, log);
+var settings = new MemorySettings();
+var dataDirectory = Path.Combine(Path.GetTempPath(), "OneHistoryStudio-ModuleSmoke", Guid.NewGuid().ToString("N"));
 var shellUi = new RecordingShellUiRegistrar();
+registry.Register(new CommandDescriptor
+{
+    Name = "OneHistoryStudio.Status",
+    Summary = "frontend proxy placeholder",
+    Readonly = true,
+    Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("proxy")),
+}, "frontend:AppShell.Frontend");
 using var host = new ModuleHost(moduleDirectory, log)
 {
     EnableCommands = true,
@@ -36,7 +47,7 @@ using var host = new ModuleHost(moduleDirectory, log)
     ShellUi = shellUi,
 };
 
-host.Attach(registry);
+host.Attach(registry, bus, settings, dataDirectory);
 host.Start();
 
 if (host.Modules.Count != 1)
@@ -48,9 +59,9 @@ if (host.Modules.Count != 1)
 
 var meta = host.Modules[0];
 if (!meta.ModuleName.Equals("OneHistoryStudio", StringComparison.Ordinal)
-    || !meta.Version.Equals("3.0.0-preview.1", StringComparison.Ordinal)
+    || !meta.Version.Equals("3.0.0", StringComparison.Ordinal)
     || !meta.Ui
-    || meta.CommandCount != 1)
+    || meta.CommandCount < 29)
 {
     throw new InvalidOperationException(
         $"unexpected module metadata: {meta.ModuleName} {meta.Version} ui={meta.Ui} commands={meta.CommandCount}");
@@ -61,12 +72,37 @@ if (!registry.TryGet("OneHistoryStudio.Status", out var descriptor)
     || !registry.GetSource("OneHistoryStudio.Status")
         .Equals("module:OneHistoryStudio", StringComparison.Ordinal))
 {
-    throw new InvalidOperationException("module command contract is not projected correctly");
+    throw new InvalidOperationException(
+        $"module command contract is not projected correctly: exists={registry.TryGet("OneHistoryStudio.Status", out _)} "
+        + $"source={registry.GetSource("OneHistoryStudio.Status")} "
+        + string.Join("; ", log.Snapshot().Where(entry => entry.Category == "module").Select(entry => entry.Message)));
 }
 
+var businessCommands = new[]
+{
+    "proj.list",
+    "proj.tree",
+    "proj.commit",
+    "proj.push",
+    "proj.history",
+    "git.rule.list",
+    "git.rule.batch-set",
+};
+foreach (var commandName in businessCommands)
+{
+    if (!registry.TryGet(commandName, out _)
+        || !registry.GetSource(commandName).Equals("module:OneHistoryStudio", StringComparison.Ordinal))
+    {
+        throw new InvalidOperationException($"business command is not module-owned: {commandName}");
+    }
+}
 var result = await bus.ExecuteAsync("OneHistoryStudio.Status", "ModuleSmoke");
-if (!result.Success || !result.Message.Contains("3.0.0-preview.1", StringComparison.Ordinal))
+if (!result.Success || !result.Message.Contains("3.0.0", StringComparison.Ordinal))
     throw new InvalidOperationException($"module command failed: {result.Message}");
+
+var projectList = await bus.ExecuteAsync("proj.list", "ModuleSmoke");
+if (!projectList.Success)
+    throw new InvalidOperationException($"real project command failed: {projectList.Message}");
 
 var expectedWindows = new[] { "overview", "tree", "meta", "projops", "history" };
 var actualWindows = shellUi.Descriptors.Select(item => item.Id).ToArray();
@@ -79,7 +115,7 @@ if (!expectedWindows.SequenceEqual(actualWindows, StringComparer.Ordinal))
 if (shellUi.Descriptors.Any(item => item.Title.Equals("OneHistoryStudio", StringComparison.Ordinal)))
     throw new InvalidOperationException("placeholder main window is still registered");
 
-var pageTypes = ConstructPages(shellUi.Descriptors);
+var pageTypes = ConstructPages(shellUi.Descriptors, bus);
 var expectedPageTypes = new[]
 {
     "OverviewView",
@@ -91,14 +127,58 @@ var expectedPageTypes = new[]
 if (!expectedPageTypes.SequenceEqual(pageTypes, StringComparer.Ordinal))
     throw new InvalidOperationException($"unexpected page types: [{string.Join(", ", pageTypes)}]");
 
+var commandCount = registry.All().Count;
+var moduleSource = registry.GetSource(descriptor.Name);
+host.Reload();
+if (registry.All().Count != commandCount
+    || businessCommands.Any(commandName => !registry.TryGet(commandName, out _)))
+{
+    throw new InvalidOperationException("module reload did not replace the business command snapshot cleanly");
+}
+
+var emptyModuleDirectory = Path.Combine(dataDirectory, "empty-modules");
+Directory.CreateDirectory(emptyModuleDirectory);
+host.ChangeDirectory(emptyModuleDirectory);
+if (businessCommands.Any(commandName => registry.TryGet(commandName, out _))
+    || registry.TryGet("OneHistoryStudio.Status", out _))
+{
+    throw new InvalidOperationException("module unload left owned commands in the host registry");
+}
+
+var serviceRegistry = new CommandRegistry();
+var serviceBus = new CommandBus(serviceRegistry, log);
+var serviceReloads = 0;
+using (var serviceHost = new ModuleHost(moduleDirectory, log)
+{
+    EnableCommands = true,
+    EnableUiModules = false,
+    EnableFileWatching = false,
+})
+{
+    serviceHost.ReloadCompleted += () => serviceReloads++;
+    serviceHost.Attach(serviceRegistry, serviceBus, settings, dataDirectory);
+    serviceHost.Start();
+    if (serviceReloads != 1
+        || !serviceRegistry.TryGet("proj.list", out _)
+        || !serviceRegistry.TryGet("git.rule.list", out _))
+    {
+        throw new InvalidOperationException(
+            "headless service host did not publish the module business commands");
+    }
+}
+if (serviceRegistry.TryGet("proj.list", out _))
+    throw new InvalidOperationException("disposing the headless host left module commands registered");
+
 Console.WriteLine(
     $"PASS module={meta.ModuleName} version={meta.Version} commands={meta.CommandCount} "
-    + $"source={registry.GetSource(descriptor.Name)} windows={string.Join(",", actualWindows)} "
+    + $"source={moduleSource} windows={string.Join(",", actualWindows)} "
     + $"pages={string.Join(",", pageTypes)}");
 
 return 0;
 
-static IReadOnlyList<string> ConstructPages(IReadOnlyList<ToolWindowDescriptor> descriptors)
+static IReadOnlyList<string> ConstructPages(
+    IReadOnlyList<ToolWindowDescriptor> descriptors,
+    CommandBus expectedBus)
 {
     List<string>? pageTypes = null;
     Exception? failure = null;
@@ -111,6 +191,14 @@ static IReadOnlyList<string> ConstructPages(IReadOnlyList<ToolWindowDescriptor> 
                 var page = descriptor.ContentFactory?.Invoke()
                            ?? throw new InvalidOperationException(
                                $"window {descriptor.Id} has no content factory");
+                var accessor = page.GetType()
+                    .GetField("_busAccessor", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(page) as Func<CommandBus?>
+                    ?? throw new InvalidOperationException(
+                        $"window {descriptor.Id} does not retain the host bus accessor");
+                if (!ReferenceEquals(accessor(), expectedBus))
+                    throw new InvalidOperationException(
+                        $"window {descriptor.Id} is not connected to the host command bus");
                 return page.GetType().Name;
             }).ToList();
         }
@@ -176,4 +264,18 @@ sealed class MemoryLog : IShellLog
         _entries.Add(entry);
         EntryAdded?.Invoke(this, entry);
     }
+}
+
+sealed class MemorySettings : ISettingsService
+{
+    private readonly Dictionary<string, string> _values = new(StringComparer.OrdinalIgnoreCase);
+
+    public string? Get(string key) => _values.GetValueOrDefault(key);
+
+    public int GetInt(string key, int fallback)
+        => int.TryParse(Get(key), out var value) ? value : fallback;
+
+    public void Set(string key, string value) => _values[key] = value;
+
+    public IReadOnlyList<KeyValuePair<string, string>> All() => _values.ToList();
 }
