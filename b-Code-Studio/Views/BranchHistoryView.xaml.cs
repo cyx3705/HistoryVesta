@@ -95,7 +95,7 @@ public partial class BranchHistoryView : UserControl
             if (cancellation.IsCancellationRequested || version != _loadVersion ||
                 !IsCurrentProject(project))
                 return;
-            if (!result.Success || result.Data is not BranchHistoryReport report)
+            if (!result.Success || !ModuleResultData.TryRead(result.Data, out BranchHistoryReport? report))
             {
                 _report = null;
                 HistoryList.ItemsSource = null;
@@ -201,7 +201,7 @@ public partial class BranchHistoryView : UserControl
         var result = await bus.ExecuteAsync(
             $"proj.history.show name={CommandParser.QuoteArg(branch)} sha={entry.Sha}", "UI");
         StatusText.Text = ViewKit.ResultSummary(result);
-        if (!result.Success || result.Data is not CommitDetail detail)
+        if (!result.Success || !ModuleResultData.TryRead(result.Data, out CommitDetail? detail))
             return;
 
         var body = new StringBuilder()
@@ -229,7 +229,7 @@ public partial class BranchHistoryView : UserControl
         var result = await bus.ExecuteAsync(
             $"proj.history.diff name={CommandParser.QuoteArg(branch)} sha={entry.Sha}", "UI");
         StatusText.Text = ViewKit.ResultSummary(result);
-        if (!result.Success || result.Data is not BranchDiffReport report)
+        if (!result.Success || !ModuleResultData.TryRead(result.Data, out BranchDiffReport? report))
             return;
         var header = $"目标：{report.TargetSha}\n当前：{report.HeadSha}\n" +
                      $"提交：{report.CommitCount}  文件：{report.FileCount}\n{report.ShortStat}";

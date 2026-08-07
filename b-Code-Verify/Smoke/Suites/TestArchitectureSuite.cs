@@ -30,6 +30,7 @@ internal static class TestArchitectureSuite
         }
 
         VerifyGitHubModuleBoundary(separator);
+        VerifyV3HostBoundary();
 
         var smokeRoot = Path.Combine(VerifyRoot, "Smoke");
         var suitesRoot = Path.Combine(smokeRoot, "Suites");
@@ -82,6 +83,38 @@ internal static class TestArchitectureSuite
             "test architecture centralizes temporary data outside the source tree");
 
         return Task.CompletedTask;
+    }
+
+    private static void VerifyV3HostBoundary()
+    {
+        var businessPath = Path.Combine(RepoRoot, "StudioBusinessComposition.cs");
+        var business = File.ReadAllText(businessPath);
+        foreach (var prohibited in new[]
+                 {
+                     "ServiceHost", "ModuleHost", "McpGateway", "WebGateway",
+                     "ShellServiceClient", "ShellWindow",
+                 })
+        {
+            True(!business.Contains(prohibited, StringComparison.Ordinal),
+                $"V3 business composition does not own host capability: {prohibited}");
+        }
+
+        foreach (var injected in new[]
+                 {
+                     "CommandRegistry registry", "CommandBus bus", "ISettingsService settings",
+                     "IShellLog log", "string dataDirectory", "string commandSource",
+                 })
+        {
+            Contains(business, injected,
+                $"V3 business composition receives host dependency: {injected}");
+        }
+
+        var legacyHost = File.ReadAllText(Path.Combine(
+            RepoRoot, "Service", "StudioServiceCompositionFactory.cs"));
+        Contains(legacyHost, "StudioBusinessCompositionFactory.Register(",
+            "legacy ServiceHost is an adapter over the V3 business boundary");
+        True(!legacyHost.Contains("new ProjectService(", StringComparison.Ordinal),
+            "legacy ServiceHost no longer constructs OHS business services directly");
     }
 
     private static void VerifyGitHubModuleBoundary(char separator)

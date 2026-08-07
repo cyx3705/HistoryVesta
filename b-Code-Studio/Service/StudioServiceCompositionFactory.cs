@@ -35,23 +35,19 @@ public static class StudioServiceCompositionFactory
 
         var registry = new CommandRegistry();
         var bus = new CommandBus(registry, log);
-        var history = new HistoryRecorder(paths.Root, log);
-        var projects = new ProjectService(
+        var business = StudioBusinessCompositionFactory.Register(
+            registry,
+            bus,
             settings,
-            prompt => bus.Confirmation?.Confirm(prompt) == true,
+            log,
             paths.Root);
-        projects.EnsureDefaultSettings();
-        projects.NotesProvider = history.AllNotes;
-        var gitRules = new GitFileRuleService(projects);
-        var branchHistory = new BranchHistoryService(projects);
-        var formatInventory = new FormatInventoryService(projects, log, paths.Root);
         // 服务宿主承载自持窗口的模块界面(活动坞)。宿主不提供 ShellUi,停靠型模块据此自行弃权。
         var modules = new ModuleHost(paths.ModulesDir, log)
         {
             EnableUiModules = true,
         };
         var tools = new ToolSyncService(
-            projects,
+            business.Projects,
             paths.Root,
             log,
             () => modules.ModulesDirectory,
@@ -65,7 +61,7 @@ public static class StudioServiceCompositionFactory
             () => bus,
             settings,
             log,
-            history,
+            business.History,
             prompts,
             identity,
             confirmation.ConfirmRemote);
@@ -92,11 +88,7 @@ public static class StudioServiceCompositionFactory
         WebCommands.RegisterAll(registry, web, settings);
         LanCommands.RegisterAll(registry, lanDevices, web, lanConfiguration, lanDiscovery);
 
-        ProjectCommands.RegisterAll(registry, projects, history);
-        BranchHistoryCommands.RegisterAll(registry, branchHistory, history);
-        GitRuleCommands.RegisterAll(registry, gitRules, formatInventory, projects);
         ToolCommands.RegisterAll(registry, tools);
-        DebugCommands.RegisterAll(registry, log);
 
         McpExposurePolicy.ModuleOfCommand = commandName =>
         {

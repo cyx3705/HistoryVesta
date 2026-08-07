@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\StudioVersion.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>OneHistoryStudio</AssemblyName>
+    <RootNamespace>OneHistoryStudio.Module</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1573;CS1591</NoWarn>
+    <AppShellPackageRoot Condition="'$(AppShellPackageRoot)' == ''">C:\OneHistory\OneHistory-Projects\2026-023-AppShell\z-Package-AppShell</AppShellPackageRoot>
+    <AppShellHostRoot Condition="'$(AppShellHostRoot)' == ''">$(AppShellPackageRoot)\host</AppShellHostRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="AppShell.Core">
+      <HintPath>$(AppShellHostRoot)\AppShell.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AppShell.Services">
+      <HintPath>$(AppShellHostRoot)\AppShell.Services.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- The first UI migration keeps the existing pages and their domain contracts
+       in one self-contained module assembly. Host-owned process and shell code
+       remains outside this project. -->
+  <ItemGroup>
+    <Compile Include="..\StudioBusinessComposition.cs" Link="StudioBusinessComposition.cs" />
+    <Compile Include="..\DebugCommands.cs" Link="DebugCommands.cs" />
+    <Compile Include="..\Git\**\*.cs" Link="Git\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Views\**\*.cs"
+             Exclude="..\Views\ConnectionSettingsView.xaml.cs"
+             Link="Views\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Page Include="..\Views\**\*.xaml"
+          Exclude="..\Views\ConnectionSettingsView.xaml"
+          Link="Views\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="module.manifest.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -42,7 +42,7 @@ public partial class BranchTreeView : UserControl
         {
             var result = await bus.ExecuteAsync(command, "UI");
             var validationError = "";
-            if (result.Success && result.Data is BranchTreeNode root
+            if (result.Success && ModuleResultData.TryRead(result.Data, out BranchTreeNode? root)
                 && root.TryValidate(out var nodeCount, out validationError))
             {
                 var displayRoot = BranchTreeItem.FromContract(root);
@@ -61,7 +61,7 @@ public partial class BranchTreeView : UserControl
                 ExpandAllButton.IsEnabled = true;
                 CollapseAllButton.IsEnabled = true;
             }
-            else if (result.Success && result.Data is BranchTreeNode)
+            else if (result.Success && ModuleResultData.TryRead(result.Data, out BranchTreeNode? ignoredRoot))
             {
                 ClearTree($"继承树数据无效: {validationError}");
             }

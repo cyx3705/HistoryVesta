@@ -12,10 +12,11 @@ using static OneHistoryStudio.Smoke.SmokeKit;
 
 namespace OneHistoryStudio.Smoke.Suites;
 
-/// <summary>验证 OHS 自有版本与冻结 AppShell 包版本彼此独立且完整投影。</summary>
+/// <summary>验证 OHS 模块版本、AppShell 宿主合同和模块发布边界。</summary>
 internal static class VersionProjectionSuite
 {
-    private const string FrozenAppShellVersion = "3.0.3";
+    private const string LegacyAppShellVersion = "3.0.3";
+    private const string ModuleHostVersion = "3.1.8";
 
     public static async Task RunAsync(string[] args)
     {
@@ -23,7 +24,7 @@ internal static class VersionProjectionSuite
         var studioVersion = ReadSingleVersion(
             Path.Combine(studioRoot, "StudioVersion.props"), "OneHistoryStudioVersion");
 
-        AssertRuntimeAssemblies(FrozenAppShellVersion,
+        AssertRuntimeAssemblies(LegacyAppShellVersion,
         [
             typeof(CommandBus).Assembly,
             typeof(SettingsService).Assembly,
@@ -35,12 +36,15 @@ internal static class VersionProjectionSuite
         const string studioProject = "b-Code-Studio/Studio.csproj";
         var evaluated = await EvaluateAsync(Path.Combine(ParentDir, studioProject));
         AssertEvaluatedVersion(evaluated, studioVersion, studioProject);
+        const string moduleProject = "b-Code-Studio/Module/OneHistoryStudio.Module.csproj";
+        var moduleEvaluation = await EvaluateAsync(Path.Combine(ParentDir, moduleProject));
+        AssertEvaluatedVersion(moduleEvaluation, studioVersion, moduleProject);
 
         AssertPackageConsumers();
         AssertCurrentSourceAndDocumentation();
         await AssertPublishAreaGovernanceAsync();
         await AssertPublishTransactionAsync(studioRoot);
-        Console.WriteLine($"version projection: OHS {studioVersion}, AppShell {FrozenAppShellVersion}");
+        Console.WriteLine($"version projection: OHS module {studioVersion}, AppShell host {ModuleHostVersion}");
     }
 
     private static string ReadSingleVersion(string path, string propertyName)
@@ -129,7 +133,7 @@ internal static class VersionProjectionSuite
 
     private static void AssertPackageConsumers()
     {
-        var expectedPackages = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        var legacyPackages = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "OneHistory.AppShell.Core",
             "OneHistory.AppShell.Services",
@@ -138,11 +142,25 @@ internal static class VersionProjectionSuite
         };
         var studioProject = XDocument.Load(Path.Combine(ParentDir, "b-Code-Studio", "Studio.csproj"));
         var studioPackages = studioProject.Descendants("PackageReference")
-            .Where(item => expectedPackages.Contains((string?)item.Attribute("Include") ?? ""))
+            .Where(item => legacyPackages.Contains((string?)item.Attribute("Include") ?? ""))
             .ToArray();
-        Equal(4, studioPackages.Length, "package consumption: Studio references all four AppShell packages");
-        True(studioPackages.All(item => (string?)item.Attribute("Version") == FrozenAppShellVersion),
-            "package consumption: Studio AppShell references use the frozen version");
+        Equal(4, studioPackages.Length, "migration regression: legacy Studio still compiles against four AppShell packages");
+        True(studioPackages.All(item => (string?)item.Attribute("Version") == LegacyAppShellVersion),
+            "migration regression: legacy Studio dependencies remain isolated from the V3 module");
+
+        var moduleProject = XDocument.Load(Path.Combine(
+            ParentDir, "b-Code-Studio", "Module", "OneHistoryStudio.Module.csproj"));
+        True(moduleProject.Descendants("Import").Any(item =>
+                ((string?)item.Attribute("Project"))?.EndsWith("StudioVersion.props", StringComparison.OrdinalIgnoreCase) == true),
+            "module consumption: module imports the single OHS version source");
+        var moduleReferences = moduleProject.Descendants("Reference")
+            .Select(item => (string?)item.Attribute("Include"))
+            .Where(item => item is not null)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        True(moduleReferences.SetEquals(["AppShell.Core", "AppShell.Services"]),
+            "module consumption: module references only public AppShell host contracts");
+        Equal(0, moduleProject.Descendants("PackageReference").Count(),
+            "module consumption: module does not restore legacy AppShell packages");
 
         True(studioProject.Descendants("ProjectReference").All(item =>
                 !(((string?)item.Attribute("Include")) ?? "")
@@ -150,13 +168,6 @@ internal static class VersionProjectionSuite
             "package consumption: no AppShell source project reference remains");
         True(!Directory.Exists(Path.Combine(ParentDir, "b-Code-Studio.Service")),
             "single entry: legacy Service project directory is removed");
-
-        var nuget = XDocument.Load(Path.Combine(ParentDir, "nuget.config"));
-        True(nuget.Descendants("add").Any(item =>
-                ((string?)item.Attribute("value"))?.Replace('/', '\\')
-                    .Equals("..\\2026-023-AppShell\\z-Package-AppShell\\feed",
-                        StringComparison.OrdinalIgnoreCase) == true),
-            "package consumption: NuGet source points to the independent AppShell project");
 
         True(!Directory.Exists(Path.Combine(ParentDir, "b-Code-AppShell")),
             "repository boundary: AppShell source is not embedded in OHS");
@@ -169,60 +180,60 @@ internal static class VersionProjectionSuite
              && !publish.Contains("b-Code-AppShell", StringComparison.OrdinalIgnoreCase),
             "publish boundary: OHS publish does not build or publish AppShell");
         Contains(publish, "sourceDirty", "publish governance: OHS records source state");
-        Contains(publish, "\"b-Code-Studio\", \"b-Code-Verify\", \"b-Office\"",
-            "publish governance: product, verification, and documentation must all be clean");
+        Contains(publish, "sourcePaths", "publish governance: source and documents must all be clean");
         Contains(publish, "Invoke-DirectoryPromotion",
             "publish governance: OHS uses the tested promotion transaction");
-        Contains(publish, "\"b-Publish\"",
-            "publish governance: b-Publish is the local build and history root");
-        Contains(publish, "\"candidate\"",
+        Contains(publish, "'b-Publish'", "publish governance: b-Publish is the local build and history root");
+        Contains(publish, "'candidate'",
             "publish governance: b-Publish/candidate is the replaceable release candidate");
-        Contains(publish, "Removed legacy b-Publish/current staging slot",
-            "publish governance: the retired current slot is cleaned during migration");
-        Contains(publish, "Join-Path $PublishRoot \"history\"",
+        Contains(publish, "Join-Path $PublishRoot 'history'",
             "publish governance: formal package history is flat under b-Publish/history");
         True(!publish.Contains("history/candidate", StringComparison.OrdinalIgnoreCase)
              && !publish.Contains("Join-Path $HistoryRoot \"candidate", StringComparison.Ordinal),
             "publish governance: release candidates are never archived as history");
-        Contains(publish, "Previous candidate discarded after successful replacement",
-            "publish governance: only the latest release candidate is retained");
         True(!publish.Contains("Join-Path $RepoRoot \"stage\"", StringComparison.Ordinal),
             "publish governance: the removed stage root is not recreated");
-        Contains(publish, "\"z-Package\"",
-            "publish governance: z-Package is the formal package root");
+        Contains(publish, "z-Package-OneHistoryStudio",
+            "publish governance: named z-level directory is the formal package root");
+        Contains(publish, "Assert-ModulePackage",
+            "publish governance: module package uses an exact file-set gate");
+        Contains(publish, "ModuleSmoke",
+            "publish governance: UI and headless module lifecycle are release gates");
         Equal(1, Regex.Matches(
                 publish,
                 @"^\s*\$PackageRoot\s*=",
                 RegexOptions.Multiline | RegexOptions.IgnoreCase).Count,
             "publish governance: formal PackageRoot is assigned exactly once");
-        Contains(publish, "$DocumentationPackageRoot",
-            "publish governance: consumer documentation uses a distinct variable");
+        Contains(publish, "$ApiDocumentSource",
+            "publish governance: the single consumer API document has an explicit source");
 
         var developmentDeployPath = Path.Combine(
             ParentDir, "b-Code-Studio", "eng", "Test-Deploy-Studio.ps1");
         True(File.Exists(developmentDeployPath),
             "development governance: lightweight test deployment entry exists");
         var developmentDeploy = File.ReadAllText(developmentDeployPath);
-        Contains(developmentDeploy, "\"candidate\"",
+        Contains(developmentDeploy, "'candidate'",
             "development governance: lightweight verification writes the shared candidate slot");
         True(!developmentDeploy.Contains("dev-current", StringComparison.OrdinalIgnoreCase),
             "development governance: no extra development delivery layer exists");
         Contains(developmentDeploy, "--suite",
             "development governance: targeted Smoke is required");
-        True(!developmentDeploy.Contains("-c\", \"Release", StringComparison.Ordinal)
+        True(!developmentDeploy.Contains("'Release'", StringComparison.Ordinal)
              && !developmentDeploy.Contains("--generate-manual", StringComparison.Ordinal)
-             && !developmentDeploy.Contains("\"z-Package\"", StringComparison.Ordinal),
+             && !developmentDeploy.Contains("z-Package-OneHistoryStudio", StringComparison.Ordinal),
             "development governance: lightweight verification does not cross release gates");
 
         var deployPath = Path.Combine(ParentDir, "b-Code-Studio", "eng", "Deploy-Studio.ps1");
         True(File.Exists(deployPath), "deployment governance: deployment entry exists");
         var deploy = File.ReadAllText(deployPath);
-        Contains(deploy, "\"z-Package\"",
-            "deployment governance: deployment consumes the formal package root");
-        Contains(deploy, "C:\\OneHistory\\OneHistory-Push",
-            "deployment governance: deployment target remains OneHistory-Push");
-        Contains(deploy, "Join-Path $applicationDataRoot \"data\"",
-            "deployment governance: deployment backs up the current data/main.db location");
+        Contains(deploy, "z-Package-OneHistoryStudio",
+            "deployment governance: deployment consumes the named formal package root");
+        Contains(deploy, "AppShell\\Modules\\OneHistoryStudio",
+            "deployment governance: deployment updates the AppShell UI module slot");
+        Contains(deploy, "AppShell\\service\\Modules\\OneHistoryStudio",
+            "deployment governance: deployment updates the AppShell service module slot");
+        Contains(deploy, "did not modify startup settings",
+            "deployment governance: module deployment does not alter startup settings");
     }
 
     private static void AssertCurrentSourceAndDocumentation()
@@ -248,10 +259,12 @@ internal static class VersionProjectionSuite
 
         var officeRoot = Path.Combine(ParentDir, "b-Office");
         var currentRoot = Path.Combine(officeRoot, "current");
-        var packageRoot = Path.Combine(officeRoot, "OneHistoryStudio");
+        var packageRoot = Path.Combine(officeRoot, "package");
         var historyRoot = Path.Combine(officeRoot, "history");
         True(Directory.Exists(currentRoot) && Directory.Exists(packageRoot) && Directory.Exists(historyRoot),
-            "documentation follows the current/OneHistoryStudio/history contract");
+            "documentation follows the current/package/history contract");
+        True(!Directory.Exists(Path.Combine(officeRoot, "OneHistoryStudio")),
+            "documentation: the drifted OneHistoryStudio document directory is removed");
         True(!Directory.Exists(Path.Combine(officeRoot, "meta"))
              && !Directory.Exists(Path.Combine(officeRoot, "versions"))
              && !Directory.Exists(Path.Combine(officeRoot, "evidence")),
@@ -262,10 +275,10 @@ internal static class VersionProjectionSuite
         var packageDocuments = Directory.EnumerateFiles(packageRoot, "*.md")
             .Select(Path.GetFileName)
             .ToHashSet(StringComparer.Ordinal);
-        True(currentDocuments.SetEquals(["使用说明.md", "项目库与备份.md", "发布与升级.md"]),
-            "current contains the reviewed OHS-owned contracts");
-        True(packageDocuments.SetEquals(["命令手册.md", "模块开发手册.md", "MCP接入与安全.md"]),
-            "OneHistoryStudio contains the reviewed consumer contracts");
+        True(currentDocuments.SetEquals(["项目概览.md", "技术合同.md", "有效决策.md", "验证合同.md"]),
+            "current contains the four AIReady meta documents");
+        True(packageDocuments.SetEquals(["模块API.md"]),
+            "package contains only the OHS module API contract");
         var documentationCenter = Path.Combine(officeRoot, "文档中心.md");
         True(File.Exists(documentationCenter), "b-Office has a root documentation center");
         Equal(0, Directory.EnumerateFiles(officeRoot, "README.md", SearchOption.AllDirectories).Count(),
@@ -283,7 +296,7 @@ internal static class VersionProjectionSuite
         True(!officeNavigation.Contains("> 当前版本：", StringComparison.Ordinal),
             "documentation center has no hand-synchronized current version");
 
-        var moduleManual = File.ReadAllText(Path.Combine(packageRoot, "模块开发手册.md"));
+        var moduleManual = File.ReadAllText(Path.Combine(packageRoot, "模块API.md"));
         foreach (var forbidden in new[]
                  {
                      "计划为 4.0",
@@ -306,23 +319,24 @@ internal static class VersionProjectionSuite
             "version projection: local b-Publish build and history data is ignored");
 
         var gitAttributes = File.ReadAllLines(Path.Combine(ParentDir, ".gitattributes"));
-        True(gitAttributes.Any(line => line.StartsWith("z-Package/**/*.dll ", StringComparison.Ordinal)),
+        True(gitAttributes.Any(line => line.StartsWith("z-Package-OneHistoryStudio/**/*.dll ", StringComparison.Ordinal)),
             "version projection: formal package binaries use Git LFS");
         True(!gitAttributes.Any(line => line.StartsWith("b-Publish/**/*.dll ", StringComparison.Ordinal)),
             "version projection: ignored local publish area has no tracked LFS contract");
-        True(Directory.Exists(Path.Combine(ParentDir, "z-Package")),
-            "version projection: formal package root exists");
-        var formalPackageFiles = Directory.EnumerateFiles(
-                Path.Combine(ParentDir, "z-Package"), "*", SearchOption.AllDirectories)
-            .Select(Path.GetFileName)
-            .ToArray();
-        True(formalPackageFiles.All(name =>
-                name is not null
-                && !name.StartsWith("OneHistoryStudio.Service.", StringComparison.OrdinalIgnoreCase)
-                && !name.StartsWith("OneHistoryStudio.LegacyServiceHost.", StringComparison.OrdinalIgnoreCase)
-                && !name.StartsWith("LegacyServiceHost.", StringComparison.OrdinalIgnoreCase)
-                && !name.StartsWith("LegacyServiceProgram.", StringComparison.OrdinalIgnoreCase)),
-            "version projection: formal package contains no retired Service artifacts");
+        True(!Directory.Exists(Path.Combine(ParentDir, "z-Package")),
+            "version projection: unnamed legacy package root is removed");
+        var formalRoot = Path.Combine(ParentDir, "z-Package-OneHistoryStudio");
+        if (Directory.Exists(formalRoot))
+        {
+            var formalPackageFiles = Directory.EnumerateFiles(formalRoot, "*", SearchOption.AllDirectories)
+                .Select(path => Path.GetRelativePath(formalRoot, path).Replace('\\', '/'))
+                .ToHashSet(StringComparer.Ordinal);
+            True(formalPackageFiles.SetEquals([
+                    "OneHistoryStudio.dll", "OneHistoryStudio.xml", "module.manifest.json",
+                    "SHA256SUMS", "package/模块API.md",
+                ]),
+                "version projection: formal package is the minimal module snapshot");
+        }
 
         var start = new ProcessStartInfo("git")
         {

@@ -47,24 +47,21 @@ internal static class WiringSuite
             McpCommands.RegisterAll(registry, () => bus, () => gateway, settings, prompts);
 
             // 3) 应用专有指令域(OneHistoryStudio 的 ConfigureCommands 等价内容)
-            var confirm = new Func<string, bool>(_ => true);
-            var projects = new ProjectService(settings, confirm, paths.Root);
-            var history = new HistoryRecorder(paths.Root, log);
-            var branchHistory = new BranchHistoryService(projects);
-            var gitRules = new GitFileRuleService(projects);
-            var formatInventory = new FormatInventoryService(projects, log, paths.Root);
+            bus.Confirmation = new TestConfirmation();
+            var business = StudioBusinessCompositionFactory.Register(
+                registry,
+                bus,
+                settings,
+                log,
+                paths.Root);
             var tools = new ToolSyncService(
-                projects,
+                business.Projects,
                 paths.Root,
                 log,
                 () => modules.ModulesDirectory,
                 () => registry.All().Select(command => command.Name));
 
-            ProjectCommands.RegisterAll(registry, projects, history);
-            BranchHistoryCommands.RegisterAll(registry, branchHistory, history);
-            GitRuleCommands.RegisterAll(registry, gitRules, formatInventory, projects);
             ToolCommands.RegisterAll(registry, tools);
-            DebugCommands.RegisterAll(registry, log);
             // V2.4.4:不再调用 AppMcpPolicy.RegisterReadonlyCommands()——
             // 只读性已由各 CommandDescriptor.Readonly 自描述，无需按名字补登记。
 
@@ -138,5 +135,10 @@ internal static class WiringSuite
             if (Directory.Exists(paths.Root))
                 Directory.Delete(paths.Root, recursive: true);
         }
+    }
+
+    private sealed class TestConfirmation : IConfirmationService
+    {
+        public bool Confirm(string prompt) => true;
     }
 }
