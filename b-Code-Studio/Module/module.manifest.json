@@ -1,0 +1,9 @@
+{
+  "name": "OneHistoryStudio",
+  "version": "3.0.0-preview.1",
+  "description": "OneHistoryStudio V3 模块迁移骨架",
+  "artifact": "OneHistoryStudio.dll",
+  "docs": "OneHistoryStudio.xml",
+  "mcpExposure": "readonly",
+  "ui": true
+}

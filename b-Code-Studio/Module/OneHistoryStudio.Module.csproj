@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>OneHistoryStudio</AssemblyName>
+    <RootNamespace>OneHistoryStudio.Module</RootNamespace>
+    <Version>3.0.0-preview.1</Version>
+    <AssemblyVersion>3.0.0.0</AssemblyVersion>
+    <FileVersion>3.0.0.0</FileVersion>
+    <InformationalVersion>3.0.0-preview.1</InformationalVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <AppShellPackageRoot Condition="'$(AppShellPackageRoot)' == ''">C:\OneHistory\OneHistory-Projects\2026-023-AppShell\z-Package-AppShell</AppShellPackageRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="AppShell.Core">
+      <HintPath>$(AppShellPackageRoot)\host\AppShell.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

@@ -23,6 +23,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- V3 module candidate is a separate assembly; keep its WPF sources out of the legacy EXE glob. -->
+    <Compile Remove="Module\**" />
+    <EmbeddedResource Remove="Module\**" />
+    <None Remove="Module\**" />
+    <Page Remove="Module\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!--
       产品文档位于 020 根级 b-Office；Link 一律保持 docs\，随程序发布的 Help 目录结构
       (b-Publish\candidate\docs\*.md 候选、z-Package\docs\*.md 正式包) 是面向使用者的产品界面，
