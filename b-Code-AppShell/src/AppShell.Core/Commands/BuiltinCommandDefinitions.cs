@@ -8,10 +8,13 @@ public static class BuiltinCommandDefinitions
 {
     private static readonly IReadOnlyDictionary<string, Definition> Definitions = CreateDefinitions();
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static IReadOnlyList<string> Names { get; } = Definitions.Keys.ToArray();
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static bool Contains(string name) => Definitions.ContainsKey(name);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static CommandDescriptor Bind(
         string name,
         Func<CommandContext, Task<CommandResult>> handler,

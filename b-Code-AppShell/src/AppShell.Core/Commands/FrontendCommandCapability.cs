@@ -10,6 +10,7 @@ public sealed record CommandParameterCapability(
     int? Position,
     string[]? AllowedValues)
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static CommandParameterCapability From(ParameterSpec parameter) => new(
         parameter.Name,
         parameter.Description,
@@ -19,6 +20,7 @@ public sealed record CommandParameterCapability(
         parameter.Position,
         parameter.AllowedValues?.ToArray());
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public ParameterSpec ToParameter() => new()
     {
         Name = Name,
@@ -47,6 +49,7 @@ public sealed record FrontendCommandCapability(
     bool AllowMcpExecution,
     string Source)
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static FrontendCommandCapability From(
         CommandDescriptor descriptor,
         string source) => new(
@@ -62,6 +65,7 @@ public sealed record FrontendCommandCapability(
         descriptor.AllowMcpExecution,
         source);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public CommandDescriptor CreateProxy() => new()
     {
         Name = Name,

@@ -1,5 +1,6 @@
 namespace AppShell.Services.Web;
 
+/// <summary>Provides this AppShell public contract member.</summary>
 public sealed record DeviceAuthenticationResult(
     bool Success,
     string? DeviceId,
@@ -7,10 +8,12 @@ public sealed record DeviceAuthenticationResult(
     IReadOnlySet<string> Scopes,
     string? Failure = null)
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static DeviceAuthenticationResult Reject(string failure = "unauthorized")
         => new(false, null, null,
             new HashSet<string>(StringComparer.OrdinalIgnoreCase), failure);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static DeviceAuthenticationResult Accept(
         string deviceId,
         string subject,
@@ -19,11 +22,14 @@ public sealed record DeviceAuthenticationResult(
             new HashSet<string>(scopes, StringComparer.OrdinalIgnoreCase));
 }
 
+/// <summary>Provides this AppShell public contract member.</summary>
 public interface IDeviceAuthenticationProvider
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     DeviceAuthenticationResult Authenticate(string deviceId, string token, string? remoteAddress);
 }
 
+/// <summary>Provides this AppShell public contract member.</summary>
 public sealed record DevicePairingResult(
     bool Success,
     string? ServerId,
@@ -32,8 +38,10 @@ public sealed record DevicePairingResult(
     IReadOnlySet<string> Scopes,
     string? Failure = null);
 
+/// <summary>Provides this AppShell public contract member.</summary>
 public interface IDevicePairingProvider
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     DevicePairingResult Pair(
         string code,
         string deviceId,

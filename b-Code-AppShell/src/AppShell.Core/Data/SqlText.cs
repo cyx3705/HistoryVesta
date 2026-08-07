@@ -1,4 +1,4 @@
-﻿namespace AppShell.Core.Data;
+namespace AppShell.Core.Data;
 
 /// <summary>
 /// SQL 文本片段助手(V2.1.6 R1):单引号转义/引用/截断的唯一实现,
@@ -7,12 +7,16 @@
 /// </summary>
 public static class SqlText
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static string Escape(string value) => value.Replace("'", "''");
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static string Quote(string value) => $"'{Escape(value)}'";
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static string QuoteNullable(string? value) => value == null ? "NULL" : Quote(value);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static string Truncate(string value, int max)
         => value.Length <= max ? value : value[..max] + "…";
 }

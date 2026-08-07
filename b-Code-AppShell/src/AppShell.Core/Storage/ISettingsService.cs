@@ -5,11 +5,15 @@ namespace AppShell.Core.Storage;
 /// </summary>
 public interface ISettingsService
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     string? Get(string key);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     int GetInt(string key, int fallback);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     void Set(string key, string value);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     IReadOnlyList<KeyValuePair<string, string>> All();
 }

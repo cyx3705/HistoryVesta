@@ -3,13 +3,20 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace AppShell.Services.Web;
 
+/// <summary>Provides this AppShell public contract member.</summary>
 public enum ShellConnectionState
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     Disconnected,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Connecting,
+    /// <summary>Provides this AppShell public contract member.</summary>
     PairingRequired,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Ready,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Rejected,
+    /// <summary>Provides this AppShell public contract member.</summary>
     VersionMismatch,
 }
 
@@ -22,11 +29,14 @@ public sealed record ShellEndpointProfile(
     TimeSpan? ConnectTimeout = null,
     string? ServerId = null)
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     public TimeSpan EffectiveConnectTimeout => ConnectTimeout ?? TimeSpan.FromSeconds(5);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static string NormalizeFingerprint(string? value)
         => string.Concat((value ?? "").Where(Uri.IsHexDigit)).ToUpperInvariant();
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public bool ValidateCertificate(X509Certificate2? certificate)
     {
         var expected = NormalizeFingerprint(CertificateFingerprint);

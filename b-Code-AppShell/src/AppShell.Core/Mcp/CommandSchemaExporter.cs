@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -29,6 +29,7 @@ public sealed partial class CommandSchemaExporter
 {
     private readonly CommandRegistry _registry;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public CommandSchemaExporter(CommandRegistry registry) => _registry = registry;
 
     /// <summary>
@@ -45,6 +46,7 @@ public sealed partial class CommandSchemaExporter
     public static bool IsHardExcluded(string commandName)
         => McpExposurePolicy.HardExclusionReason(commandName) != null;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static string? HardExclusionReason(string commandName)
         => McpExposurePolicy.HardExclusionReason(commandName);
 

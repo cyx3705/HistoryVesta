@@ -10,8 +10,10 @@ public sealed class CommandRegistry
     private readonly Dictionary<string, string> _sources = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public event Action? Changed;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public void Register(CommandDescriptor descriptor, string source = "framework")
     {
         if (string.IsNullOrWhiteSpace(source))
@@ -43,6 +45,7 @@ public sealed class CommandRegistry
         return removed;
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public bool TryGet(string name, out CommandDescriptor descriptor)
     {
         lock (_gate)

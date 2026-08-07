@@ -29,23 +29,30 @@ public sealed class ShellServiceClient : IDisposable
     private ClientWebSocket? _events;
     private int _disposed;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public Func<string, JsonElement, object?>? DataDeserializer { get; set; }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public ShellConnectionState State { get; private set; } = ShellConnectionState.Disconnected;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public event Action<ShellConnectionState>? StateChanged;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public event EventHandler<ShellLogEntry>? LogReceived;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public event Action<long>? ModuleRevisionReceived;
 
     internal TimeSpan RemoteRequestTimeout => _profile.EffectiveConnectTimeout;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public ShellServiceClient(Uri baseUri, string name)
         : this(new ShellEndpointProfile(baseUri, Guid.NewGuid().ToString("N")), name)
     {
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public ShellServiceClient(ShellEndpointProfile profile, string name)
     {
         _profile = profile;
@@ -80,6 +87,7 @@ public sealed class ShellServiceClient : IDisposable
         return handler;
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public async Task<bool> WaitForReadyAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         SetState(ShellConnectionState.Connecting);
@@ -131,6 +139,7 @@ public sealed class ShellServiceClient : IDisposable
         return false;
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public async Task<CommandResult> ExecuteAsync(
         string text,
         string source,
@@ -180,6 +189,7 @@ public sealed class ShellServiceClient : IDisposable
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public async Task<DevicePairingResult> PairAsync(
         string code,
         string deviceName,
@@ -220,6 +230,7 @@ public sealed class ShellServiceClient : IDisposable
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public async Task<bool> ReconnectAsync(CancellationToken cancellationToken = default)
     {
         try { _events?.Abort(); } catch (WebSocketException) { }
@@ -228,6 +239,7 @@ public sealed class ShellServiceClient : IDisposable
             .ConfigureAwait(false);
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public async Task RunEventLoopAsync(
         CommandBus localBus,
         CancellationToken cancellationToken = default)
@@ -426,6 +438,7 @@ public sealed class ShellServiceClient : IDisposable
             .ConfigureAwait(false);
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)

@@ -1,4 +1,4 @@
-﻿using AppShell.Core.Commands;
+using AppShell.Core.Commands;
 
 namespace AppShell.Core.Mcp;
 
@@ -66,10 +66,12 @@ public static class McpExposurePolicy
     /// <summary>当前生效的只读指令全集(框架基线 + 派生登记),供管理页与自检使用。</summary>
     public static IReadOnlyCollection<string> ReadonlyCommandNames => ReadonlyCommands.Keys.ToArray();
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static bool IsReadonlyAllowed(string commandName)
         => ReadonlyCommands.ContainsKey(commandName)
            || string.Equals(ExposureOf(commandName), "readonly", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static string? HardExclusionReason(string commandName)
     {
         if (commandName.Equals("app.exit", StringComparison.OrdinalIgnoreCase))
@@ -83,6 +85,7 @@ public static class McpExposurePolicy
         return null;
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static string State(CommandDescriptor descriptor)
     {
         if (HardExclusionReason(descriptor.Name) != null)
@@ -94,6 +97,7 @@ public static class McpExposurePolicy
         return IsReadonlyAllowed(descriptor.Name) ? "readonly" : "standard";
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static bool IsVisible(CommandDescriptor descriptor, string policy)
         => HardExclusionReason(descriptor.Name) == null
            && !descriptor.IsDangerous

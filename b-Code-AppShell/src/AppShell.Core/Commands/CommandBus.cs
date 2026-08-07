@@ -16,18 +16,22 @@ public sealed class CommandBus
     /// <summary>回显类别前缀;控制台按此前缀识别指令行。</summary>
     public const string EchoCategoryPrefix = "cmd:";
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public const string ResultCategory = "cmd:result";
+    /// <summary>Provides this AppShell public contract member.</summary>
     public const string ProgressCategory = "cmd:progress";
 
     private readonly CommandRegistry _registry;
     private readonly IShellLog _log;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public CommandBus(CommandRegistry registry, IShellLog log)
     {
         _registry = registry;
         _log = log;
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public CommandRegistry Registry => _registry;
 
     /// <summary>
@@ -73,6 +77,7 @@ public sealed class CommandBus
     /// </summary>
     public Func<string, string, CancellationToken, Task<CommandResult>>? RemoteExecutor { get; set; }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public Func<string, bool>? ShouldUseRemote { get; set; }
 
     /// <summary>按命令文本和来源决定是否走远端；设置后优先于仅按来源的兼容委托。</summary>

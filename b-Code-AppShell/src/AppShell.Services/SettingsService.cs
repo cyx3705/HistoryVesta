@@ -15,6 +15,7 @@ public sealed class SettingsService : ISettingsService
     private readonly string _filePath;
     private Dictionary<string, string> _values = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public SettingsService(AppPaths paths)
     {
         _filePath = Path.Combine(paths.Root, "settings.json");
@@ -34,6 +35,7 @@ public sealed class SettingsService : ISettingsService
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public string? Get(string key)
     {
         lock (_gate)
@@ -42,6 +44,7 @@ public sealed class SettingsService : ISettingsService
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public int GetInt(string key, int fallback)
         => int.TryParse(
             Get(key), System.Globalization.NumberStyles.Integer,
@@ -49,6 +52,7 @@ public sealed class SettingsService : ISettingsService
             ? v
             : fallback;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public void Set(string key, string value)
     {
         lock (_gate)

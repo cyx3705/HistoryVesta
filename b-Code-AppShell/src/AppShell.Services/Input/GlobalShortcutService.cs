@@ -52,6 +52,7 @@ public sealed class GlobalShortcutService : IDisposable
     private readonly GlobalShortcutMatcher _matcher = new();
     private int _disposed;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public GlobalShortcutService(CommandBus bus, IShellLog log)
     {
         _bus = bus;
@@ -59,8 +60,10 @@ public sealed class GlobalShortcutService : IDisposable
         _hookProc = HookCallback;
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public bool IsEnabled { get; private set; }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public IReadOnlyList<GlobalShortcutRegistrationInfo> Registrations
     {
         get
@@ -70,6 +73,7 @@ public sealed class GlobalShortcutService : IDisposable
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public void Start()
     {
         ObjectDisposedException.ThrowIf(_disposed != 0, this);
@@ -91,6 +95,7 @@ public sealed class GlobalShortcutService : IDisposable
         _pump = Task.Run(PumpAsync);
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public void Stop()
     {
         if (!IsEnabled)
@@ -105,6 +110,7 @@ public sealed class GlobalShortcutService : IDisposable
         _hookThread = null;
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public IDisposable Register(GlobalShortcutDescriptor descriptor, string owner)
     {
         ArgumentNullException.ThrowIfNull(descriptor);
@@ -132,12 +138,14 @@ public sealed class GlobalShortcutService : IDisposable
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public IGlobalShortcutRegistrar CreateOwnerRegistrar(string owner)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(owner);
         return new OwnerRegistrar(this, owner);
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public void UnregisterOwner(string owner)
     {
         if (string.IsNullOrWhiteSpace(owner))
@@ -287,6 +295,7 @@ public sealed class GlobalShortcutService : IDisposable
 
     private static string Key(string owner, string id) => owner + "/" + id;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)

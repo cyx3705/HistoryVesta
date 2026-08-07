@@ -3,9 +3,13 @@ namespace AppShell.Core.Commands;
 /// <summary>参数类型(校验用,§5.2 参数校验)。</summary>
 public enum ParamType
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     String,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Int,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Double,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Bool,
 }
 
@@ -20,8 +24,10 @@ public sealed class ParameterSpec
     /// <summary>帮助文本里的一句话说明。</summary>
     public required string Description { get; init; }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public ParamType Type { get; init; } = ParamType.String;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public bool Required { get; init; }
 
     /// <summary>缺省值的文本表达(帮助显示 + 取值兜底);null 表示无默认。</summary>

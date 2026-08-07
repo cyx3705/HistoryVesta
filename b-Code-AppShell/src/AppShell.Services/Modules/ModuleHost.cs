@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
@@ -11,6 +11,7 @@ using AppShell.Core.Modules;
 
 namespace AppShell.Services.Modules;
 
+/// <summary>Provides this AppShell public contract member.</summary>
 public sealed record ModuleMeta(
     string ModuleName, string Description, string Author, string Version,
     bool Open, string AssemblyFile, int CommandCount, string Slot = "", bool Ui = false);
@@ -34,6 +35,7 @@ public sealed class ModuleHost : IDisposable
     private FileSystemWatcher? _watcher;
     private Timer? _debounce;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public ModuleHost(string modulesDir, IShellLog log)
     {
         _dir = modulesDir;
@@ -64,8 +66,10 @@ public sealed class ModuleHost : IDisposable
     /// <summary>后台宿主提供的全局快捷键注册器；前端 UI 宿主保持 null。</summary>
     public Input.GlobalShortcutService? GlobalShortcuts { get; set; }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public string ModulesDirectory => _dir;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public IReadOnlyList<ModuleMeta> Modules => _current.Modules;
 
     /// <summary>每次整体重载完成后触发(在重载线程上);MD-08 面板同步等旁路逻辑挂此处。</summary>
@@ -74,6 +78,7 @@ public sealed class ModuleHost : IDisposable
     /// <summary>接入指令注册表(ShellWindow 创建后调用,再 Start)。</summary>
     public void Attach(CommandRegistry registry) => _registry = registry;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public void Start()
     {
         Directory.CreateDirectory(_dir);
@@ -675,6 +680,7 @@ public sealed class ModuleHost : IDisposable
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public void Dispose()
     {
         _watcher?.Dispose();

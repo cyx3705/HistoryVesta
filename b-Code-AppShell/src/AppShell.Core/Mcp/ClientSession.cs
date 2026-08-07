@@ -3,8 +3,11 @@ namespace AppShell.Core.Mcp;
 /// <summary>接入命令总线的客户端种类。</summary>
 public enum ClientKind
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     Mcp,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Shell,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Web,
 }
 
@@ -16,17 +19,23 @@ public sealed record ClientSession(
     string ProtocolVersion,
     DateTimeOffset ConnectedAt)
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     public string? RemoteAddress { get; init; }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public string? DeviceId { get; init; }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public string? AuthSubject { get; init; }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public IReadOnlySet<string> Scopes { get; init; } =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public bool IsLoopback { get; init; }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static ClientSession Create(
         ClientKind kind,
         string name,

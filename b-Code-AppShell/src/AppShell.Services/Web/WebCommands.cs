@@ -6,6 +6,7 @@ namespace AppShell.Services.Web;
 /// <summary>正式 Web 接入点的配置命令。</summary>
 public static class WebCommands
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static void RegisterAll(
         CommandRegistry registry,
         WebGateway gateway,

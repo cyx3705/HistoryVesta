@@ -13,6 +13,7 @@ public sealed class CommandHistory
     private readonly string _filePath;
     private readonly int _capacity;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public CommandHistory(string filePath, int capacity = 500)
     {
         _filePath = filePath;

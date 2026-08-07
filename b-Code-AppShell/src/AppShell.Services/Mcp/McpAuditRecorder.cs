@@ -17,12 +17,14 @@ public sealed class McpAuditRecorder : IMcpAuditLog
     private readonly IShellLog _log;
     private readonly object _gate = new();
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public McpAuditRecorder(string dataDirectory, IShellLog log)
     {
         _path = Path.Combine(dataDirectory, "state", "mcp-history.jsonl");
         _log = log;
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public void RecordMcp(string client, string tool, string arguments, string result, long elapsedMs)
     {
         try

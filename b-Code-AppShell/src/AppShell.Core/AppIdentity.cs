@@ -26,6 +26,7 @@ public static class AppIdentity
     /// <summary>显式指定身份来源程序集（测试宿主或多程序集场景）。</summary>
     public static void Use(Assembly assembly) => _current = From(assembly);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static ApplicationIdentity From(Assembly assembly)
     {
         var product = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product?.Trim();

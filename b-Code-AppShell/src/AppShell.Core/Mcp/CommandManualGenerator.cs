@@ -1,9 +1,10 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text;
 using AppShell.Core.Commands;
 
 namespace AppShell.Core.Mcp;
 
+/// <summary>Provides this AppShell public contract member.</summary>
 public sealed record CommandManualPreview(
     string Path,
     int CommandCount,
@@ -14,6 +15,7 @@ public sealed record CommandManualPreview(
 /// <summary>从运行时注册表和 MCP 投影生成确定性命令手册。</summary>
 public static class CommandManualGenerator
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static string Render(
         CommandRegistry registry,
         CommandSchemaExporter exporter,
@@ -91,6 +93,7 @@ public static class CommandManualGenerator
         return builder.ToString().Replace("\r\n", "\n");
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static string Sha256(string markdown)
         => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(markdown)));
 

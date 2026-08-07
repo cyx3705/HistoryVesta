@@ -1,6 +1,10 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="/AppShell.Shell;component/Themes/ShellToolTips.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
     <!--
         UI-07 / UI-08:通用控件样式。全部为隐式样式(不带 x:Key),
         因此只命中未显式指定 Style 的控件 —— AvalonDock 自带模板里的按钮
@@ -993,28 +997,5 @@
     </Style>
 
     <!-- ================================================================ 提示 -->
-
-    <Style TargetType="ToolTip">
-        <Setter Property="Background" Value="{DynamicResource Shell.Brush.Surface}" />
-        <Setter Property="Foreground" Value="{DynamicResource Shell.Brush.TextPrimary}" />
-        <Setter Property="FontFamily" Value="{DynamicResource Shell.Font.Family}" />
-        <Setter Property="FontSize" Value="{DynamicResource Shell.Font.Small}" />
-        <Setter Property="HasDropShadow" Value="False" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ToolTip">
-                    <Border Margin="0,0,10,10"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{DynamicResource Shell.Brush.Hairline}"
-                            BorderThickness="1"
-                            CornerRadius="{DynamicResource Shell.Radius.Inner}"
-                            Effect="{DynamicResource Shell.Shadow.Flyout}"
-                            Padding="9,5">
-                        <ContentPresenter />
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
 
 </ResourceDictionary>

@@ -28,6 +28,7 @@ public sealed class ShellLog : IShellLog, IDisposable
     private string _writerDate = "";
     private int _writerSeq;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public ShellLog(AppPaths paths, int retainDays = 30)
     {
         _logsDir = paths.LogsDir;
@@ -43,8 +44,10 @@ public sealed class ShellLog : IShellLog, IDisposable
         _writerThread.Start();
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public event EventHandler<ShellLogEntry>? EntryAdded;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public void Log(ShellLogLevel level, string category, string message)
     {
         var entry = new ShellLogEntry(DateTime.Now, level, category, message);
@@ -65,6 +68,7 @@ public sealed class ShellLog : IShellLog, IDisposable
         EntryAdded?.Invoke(this, entry);
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public IReadOnlyList<ShellLogEntry> Snapshot()
     {
         lock (_gate)

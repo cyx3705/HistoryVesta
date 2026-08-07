@@ -3,11 +3,17 @@ namespace AppShell.Core.Logging;
 /// <summary>日志级别(C-03 六级)。</summary>
 public enum ShellLogLevel
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     Trace,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Debug,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Info,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Warn,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Error,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Fatal,
 }
 
@@ -24,6 +30,7 @@ public sealed record ShellLogEntry(
 /// </summary>
 public interface IShellLog
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     void Log(ShellLogLevel level, string category, string message);
 
     /// <summary>新纪录到达事件(控制台窗口 / 占位页订阅)。</summary>
@@ -33,14 +40,18 @@ public interface IShellLog
     IReadOnlyList<ShellLogEntry> Snapshot();
 }
 
+/// <summary>Provides this AppShell public contract member.</summary>
 public static class ShellLogExtensions
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static void Info(this IShellLog log, string category, string message)
         => log.Log(ShellLogLevel.Info, category, message);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static void Warn(this IShellLog log, string category, string message)
         => log.Log(ShellLogLevel.Warn, category, message);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static void Error(this IShellLog log, string category, string message)
         => log.Log(ShellLogLevel.Error, category, message);
 }

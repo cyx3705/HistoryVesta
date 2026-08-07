@@ -1,6 +1,6 @@
 # AppShell 消费变更摘要
 
-适用版本：AppShell 3.1.4（包含 3.0.3 冻结基线、3.1.1 命令收口、3.1.2 命令目录修复、3.1.3 浮窗几何收口和本轮控制台修复）。
+适用版本：AppShell 3.1.5（包含 3.0.3 冻结基线、3.1.1 命令收口、3.1.2 命令目录修复、3.1.3 浮窗几何收口和本轮控制台修复）。
 
 本文只记录会影响消费应用、模块作者和部署者的变化；源码施工、冻结审查、完整测试证据和发布操作不属于本文。
 
@@ -13,11 +13,11 @@
 
 ## 主要变化
 
-- 3.1.4 统一控制台与命令集的域概念。命令集移除独立来源筛选和来源列，只按实际命令域筛选；
+- 3.1.5 统一控制台与命令集的域概念。命令集移除独立来源筛选和来源列，只按实际命令域筛选；
   注册来源继续保留在 `CommandCatalogRow.Source/SourceDetail` 等结构化合同中。控制台原“来源”选择器改为
   已注册域选择器，两页都通过 `command.domains` 使用同一份运行期命令目录；未注册日志类别归入 `core`，
   不会产生控制台私有域。`log.source` 保留兼容命令名和参数名，但改按域过滤并拒绝不存在的域。
-- 3.1.4 的命令结果和进度在既有 `cmd:result` / `cmd:progress` 公开前缀后携带命令域；公开常量值不变。
+- 3.1.5 的命令结果和进度在既有 `cmd:result` / `cmd:progress` 公开前缀后携带命令域；公开常量值不变。
   控制台禁用水平滚动，无空格长串也会按当前停靠/浮动窗格宽度软换行，拖窄和拖宽即时重新排版；
   复制和导出仍是原始逻辑文本，不插入视觉换行。
 - 3.1.1 是命令管线与模块化收口版本。控制台顶部只保留级别、来源；关键字、layout 屏蔽、自动滚动、
@@ -26,7 +26,7 @@
   `RemoteWorkspaceService`、`ShellConfig.Workspace`、`ResourceView`、`StandardWindowIds.Resource` 和
   `res.*` 均不再提供。资源浏览/文件操作请由独立模块提供；演示宿主不再生成电机页，也不注册 `motor.*`。
 - 业务按钮统一进入 `CommandBus`：窗口状态使用 `app.window`，错误跳转使用 `log.focus`，命令示例复制使用
-  `command.copy-example`，面板文件/目录选择使用 `panel.select-file` / `panel.select-directory`。3.1.4 进一步把
+  `command.copy-example`，面板文件/目录选择使用 `panel.select-file` / `panel.select-directory`。3.1.5 进一步把
   文档浮窗最大化/还原收进 `win.float-state`，顶部回执、全局控制台快捷键和系统关闭隐藏也复用现有命令。
 - AppShell 的 `ModulesView` 是唯一模块管理页面。OHS 只保留 `StandardWindowIds.Modules` 的位置与消费配置，
   不复制模块管理 UI；3.1.1 不改变现有模块目录抽象或全局 z 级扫描范围。

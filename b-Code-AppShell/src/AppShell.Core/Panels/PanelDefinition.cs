@@ -49,8 +49,10 @@ public sealed class PanelControl
     /// <summary>number / slider:范围与步进(P-02)。</summary>
     public double? Min { get; set; }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public double? Max { get; set; }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public double? Step { get; set; }
 
     /// <summary>默认值(文本表达)。</summary>

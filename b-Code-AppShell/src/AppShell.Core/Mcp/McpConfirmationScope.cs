@@ -1,4 +1,4 @@
-﻿using AppShell.Core.Commands;
+using AppShell.Core.Commands;
 
 namespace AppShell.Core.Mcp;
 
@@ -12,6 +12,7 @@ public static class McpConfirmationScope
 {
     private static readonly AsyncLocal<bool> _preApproved = new();
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static bool PreApproved => _preApproved.Value;
 
     /// <summary>在预批准标记下执行网关发起的总线调用;结束后复位。</summary>
@@ -40,8 +41,10 @@ public sealed class GatewayAwareConfirmation : IConfirmationService
 {
     private readonly IConfirmationService? _inner;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public GatewayAwareConfirmation(IConfirmationService? inner) => _inner = inner;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public bool Confirm(string prompt)
         // 无内层服务时安全缺省拒绝,与总线"无确认通道即拒绝"一致
         => McpConfirmationScope.PreApproved || (_inner?.Confirm(prompt) ?? false);

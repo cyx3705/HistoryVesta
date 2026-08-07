@@ -5,6 +5,7 @@ public sealed class CommandSelectionState
 {
     private string? _currentCommandName;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public string? CurrentCommandName
     {
         get => _currentCommandName;
@@ -19,5 +20,6 @@ public sealed class CommandSelectionState
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public event EventHandler? Changed;
 }

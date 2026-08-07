@@ -849,7 +849,7 @@ try {
         }
     }
 
-    $smokeProject = "tests\PackageSmoke\PackageSmoke.csproj"
+    $smokeProject = "..\b-Code-Tests\PackageSmoke\PackageSmoke.csproj"
     $smokeConfig = Join-Path $StageRoot "PackageSmoke.NuGet.Config"
     $escapedPackagesDir = [Security.SecurityElement]::Escape($PackagesDir)
     $smokeConfigText = @"

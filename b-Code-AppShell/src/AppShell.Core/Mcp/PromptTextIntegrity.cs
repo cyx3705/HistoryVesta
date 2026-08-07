@@ -1,8 +1,9 @@
-﻿namespace AppShell.Core.Mcp;
+namespace AppShell.Core.Mcp;
 
 /// <summary>拒绝已在上游丢失、无法由 UTF-8 解码恢复的提示词文本。</summary>
 public static class PromptTextIntegrity
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static string ValidateDescription(string text)
     {
         text = text.Trim();
@@ -17,6 +18,7 @@ public static class PromptTextIntegrity
         return text;
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static bool LooksCorrupted(string text)
     {
         if (text.Contains('\uFFFD'))

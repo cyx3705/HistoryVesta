@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Net;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
@@ -21,18 +21,28 @@ namespace AppShell.Services.Mcp;
 /// 消费方显式装配网关后可调用 TryAutostart；mcp.autostart=false 可关闭自动监听，mcp.start 仍可手动恢复。
 /// 每次调用/拒绝均追加写入 state/mcp-history.jsonl(铁律 2 / MS-05)。
 /// </summary>
-public sealed class McpGateway : IDisposable
+public sealed partial class McpGateway : IDisposable
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static readonly IReadOnlyList<string> SupportedProtocols = ["2025-06-18", "2025-03-26"];
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public const string KeyPort = "mcp.port";
+    /// <summary>Provides this AppShell public contract member.</summary>
     public const string KeyPolicy = "mcp.policy";
+    /// <summary>Provides this AppShell public contract member.</summary>
     public const string KeyToken = "mcp.token";
+    /// <summary>Provides this AppShell public contract member.</summary>
     public const string KeyAutostart = "mcp.autostart";
+    /// <summary>Provides this AppShell public contract member.</summary>
     public const string KeyTimeout = "mcp.timeout";
+    /// <summary>Provides this AppShell public contract member.</summary>
     public const string KeyConfirm = "mcp.confirm";              // deny(默认) / host
+    /// <summary>Provides this AppShell public contract member.</summary>
     public const string KeyConfirmTimeout = "mcp.confirmtimeout"; // 秒,默认 60,夹取 10~600
+    /// <summary>Provides this AppShell public contract member.</summary>
     public const string KeyPortRetries = "mcp.portretries";
+    /// <summary>Provides this AppShell public contract member.</summary>
     public const string KeySessionLimit = "mcp.sessionlimit";
 
     private const int DefaultPortBase = 8737;
@@ -72,6 +82,7 @@ public sealed class McpGateway : IDisposable
     private long _callCount;
     private string _lastCall = "(无)";
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public McpGateway(
         Func<CommandBus?> busAccessor, ISettingsService settings, IShellLog log, IMcpAuditLog history,
         PromptGovernanceStore prompts, ApplicationIdentity identity,
@@ -96,6 +107,7 @@ public sealed class McpGateway : IDisposable
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public int ConfirmTimeout
         => int.TryParse(
             _settings.Get(KeyConfirmTimeout), System.Globalization.NumberStyles.Integer,
@@ -107,10 +119,13 @@ public sealed class McpGateway : IDisposable
     public bool AutostartEnabled
         => !bool.TryParse(_settings.Get(KeyAutostart), out var enabled) || enabled;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public bool IsRunning => _listener is { IsListening: true };
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public int Port { get; private set; }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public string Policy
     {
         get
@@ -122,8 +137,10 @@ public sealed class McpGateway : IDisposable
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public long CallCount => Interlocked.Read(ref _callCount);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public string LastCall => _lastCall;
 
     /// <summary>
@@ -188,6 +205,7 @@ public sealed class McpGateway : IDisposable
         return (success, success ? $"自启动: {message}" : $"自启动失败: {message}");
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public (bool Success, string Message) Start(int? port)
     {
         lock (_lifecycleLock)
@@ -246,6 +264,7 @@ public sealed class McpGateway : IDisposable
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public (bool Success, string Message) Stop()
     {
         lock (_lifecycleLock)
@@ -267,6 +286,7 @@ public sealed class McpGateway : IDisposable
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public void Dispose()
     {
         if (IsRunning)
@@ -895,168 +915,4 @@ public sealed class McpGateway : IDisposable
         }
     }
 
-    private static string? ReadBearer(HttpListenerRequest request)
-    {
-        const string prefix = "Bearer ";
-        var header = request.Headers["Authorization"];
-        return header?.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) == true
-            ? header[prefix.Length..].Trim()
-            : null;
-    }
-
-    private static bool FixedEquals(string left, string right)
-    {
-        var leftBytes = Encoding.UTF8.GetBytes(left);
-        var rightBytes = Encoding.UTF8.GetBytes(right);
-        try
-        {
-            return CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
-        }
-        finally
-        {
-            CryptographicOperations.ZeroMemory(leftBytes);
-            CryptographicOperations.ZeroMemory(rightBytes);
-        }
-    }
-
-    private static string NormalizeClientName(string? value, string fallback)
-    {
-        var normalized = NormalizeBoundedText(value, MaxClientNameLength);
-        return string.IsNullOrWhiteSpace(normalized) ? fallback : normalized;
-    }
-
-    private static string NormalizeProtocolVersion(string? value, out bool validLength)
-    {
-        validLength = value == null || value.Length <= MaxProtocolVersionLength;
-        return NormalizeBoundedText(value, MaxProtocolVersionLength);
-    }
-
-    private static string NormalizeBoundedText(string? value, int maxLength)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return "";
-        var normalized = new string(value.Where(character => !char.IsControl(character)).ToArray()).Trim();
-        if (normalized.Length <= maxLength)
-            return normalized;
-        var length = maxLength;
-        if (char.IsHighSurrogate(normalized[length - 1]))
-            length--;
-        return normalized[..length];
-    }
-
-    private string? BuildConfirmPrompt(
-        ClientSession session,
-        CommandBus bus,
-        string commandName,
-        JsonElement? arguments)
-    {
-        if (!bus.Registry.TryGet(commandName, out var descriptor) || descriptor.ConfirmPrompt == null)
-            return null;
-
-        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (arguments is { ValueKind: JsonValueKind.Object } obj)
-        {
-            foreach (var prop in obj.EnumerateObject())
-            {
-                values[prop.Name] = prop.Value.ValueKind switch
-                {
-                    JsonValueKind.String => prop.Value.GetString() ?? "",
-                    JsonValueKind.True => "true",
-                    JsonValueKind.False => "false",
-                    _ => prop.Value.GetRawText(),
-                };
-            }
-        }
-
-        try
-        {
-            var ctx = new CommandContext(descriptor, values, $"MCP:{session.Name}", null, CancellationToken.None);
-            return descriptor.ConfirmPrompt(ctx);
-        }
-        catch (Exception)
-        {
-            // 文案构建失败不影响中继:回落到通用提示,人工仍能裁决
-            return $"远程请求执行危险指令: {commandName}\n(参数: {(arguments?.GetRawText() ?? "{}")})";
-        }
-    }
-
-    private ClientSession ResolveSession(HttpListenerRequest request)
-    {
-        var id = request.Headers["Mcp-Session-Id"];
-        if (string.IsNullOrWhiteSpace(id))
-            id = $"connection:{request.RemoteEndPoint}";
-        if (id.Length > 128)
-            return ClientSession.Create(ClientKind.Mcp, "client");
-
-        var session = _sessions.GetOrAdd(
-            id,
-            static key => ClientSession.Create(ClientKind.Mcp, "client", id: key));
-        TrimSessions(session.Id);
-        return session;
-    }
-
-    private void TrimSessions(string keepSessionId)
-    {
-        var limit = Math.Clamp(
-            _settings.GetInt(KeySessionLimit, DefaultSessionLimit), 16, 65_536);
-        if (_sessions.Count <= limit)
-            return;
-        foreach (var key in _sessions.Keys
-                     .Where(key => !key.Equals(keepSessionId, StringComparison.Ordinal))
-                     .OrderBy(key => key, StringComparer.Ordinal)
-                     .Take(Math.Max(0, _sessions.Count - limit))
-                     .ToList())
-            _sessions.TryRemove(key, out _);
-    }
-
-    private static readonly JsonSerializerOptions DataJson = new()
-    {
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
-    };
-
-    // ---------------------------------------------------------------- JSON-RPC 编码
-
-    private static JsonObject ToolText(string text, bool isError) => new()
-    {
-        ["content"] = new JsonArray { new JsonObject { ["type"] = "text", ["text"] = text } },
-        ["isError"] = isError,
-    };
-
-    private static JsonObject RpcResult(JsonNode? id, JsonNode result) => new()
-    {
-        ["jsonrpc"] = "2.0",
-        ["id"] = id,
-        ["result"] = result,
-    };
-
-    private static JsonObject RpcError(JsonNode? id, int code, string message) => new()
-    {
-        ["jsonrpc"] = "2.0",
-        ["id"] = id,
-        ["error"] = new JsonObject { ["code"] = code, ["message"] = message },
-    };
-
-    private static async Task WriteJsonAsync(HttpListenerContext context, JsonObject payload, int status)
-    {
-        var bytes = Encoding.UTF8.GetBytes(payload.ToJsonString());
-        context.Response.StatusCode = status;
-        context.Response.ContentType = "application/json; charset=utf-8";
-        context.Response.ContentLength64 = bytes.Length;
-        await context.Response.OutputStream.WriteAsync(bytes).ConfigureAwait(false);
-        context.Response.Close();
-    }
-
-    private static void TryClose(HttpListenerContext context, int status)
-    {
-        try
-        {
-            context.Response.StatusCode = status;
-            context.Response.Close();
-        }
-        catch (Exception)
-        {
-            // 客户端已断开等,忽略
-        }
-    }
 }

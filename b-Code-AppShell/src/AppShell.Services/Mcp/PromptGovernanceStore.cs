@@ -4,6 +4,7 @@ using AppShell.Core.Mcp;
 
 namespace AppShell.Services.Mcp;
 
+/// <summary>Provides this AppShell public contract member.</summary>
 public sealed record PromptRevision(
     string Id,
     string Command,
@@ -16,6 +17,7 @@ public sealed record PromptRevision(
     bool Applied,
     string? RevertedFrom);
 
+/// <summary>Provides this AppShell public contract member.</summary>
 public sealed record PromptProposal(
     string Id,
     string Command,
@@ -32,6 +34,7 @@ public sealed record PromptProposal(
     string? ReviewNote,
     string? AppliedRevision);
 
+/// <summary>Provides this AppShell public contract member.</summary>
 public sealed record PromptCorrection(
     string Id,
     string Command,
@@ -43,6 +46,7 @@ public sealed record PromptCorrection(
     string Status,
     string? LinkedProposal);
 
+/// <summary>Provides this AppShell public contract member.</summary>
 public sealed record PromptIncident(
     string Id,
     string Command,
@@ -62,7 +66,9 @@ public sealed record PromptIncident(
 public sealed class PromptGovernanceStore
 {
     // 仅保留常量名供旧调用方/迁移测试识别；运行时不再创建这些表。
+    /// <summary>Provides this AppShell public contract member.</summary>
     public const string TableDescriptions = "mcp_descriptions";
+    /// <summary>Provides this AppShell public contract member.</summary>
     public const string TableProposals = "mcp_prompt_proposals";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -76,6 +82,7 @@ public sealed class PromptGovernanceStore
     private readonly object _writeGate = new();
     private State _state;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public PromptGovernanceStore(string dataDirectory, IShellLog log)
     {
         _path = Path.Combine(dataDirectory, "state", "prompt-governance.json");
@@ -83,6 +90,7 @@ public sealed class PromptGovernanceStore
         _state = Load();
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public IReadOnlyDictionary<string, string> AllEffectiveDescriptions()
     {
         lock (_writeGate)
@@ -93,18 +101,21 @@ public sealed class PromptGovernanceStore
                     StringComparer.OrdinalIgnoreCase);
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public PromptRevision? GetCurrentRevision(string command)
     {
         lock (_writeGate)
             return CurrentRevision(command);
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public PromptRevision? GetRevision(string id)
     {
         lock (_writeGate)
             return _state.Revisions.FirstOrDefault(item => item.Id == id);
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public IReadOnlyList<PromptRevision> GetRevisions(string command, int limit = 50)
     {
         lock (_writeGate)
@@ -116,6 +127,7 @@ public sealed class PromptGovernanceStore
                 .ToList();
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public PromptRevision ApplyDirect(
         string command, string? description, string source, string reason,
         string? revertedFrom = null, string? createdBy = null)
@@ -136,6 +148,7 @@ public sealed class PromptGovernanceStore
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public PromptProposal CreateProposal(
         string command, string oldText, string proposedText, string reason,
         string evidence, string sourceClient)
@@ -153,12 +166,14 @@ public sealed class PromptGovernanceStore
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public PromptProposal? GetProposal(string id)
     {
         lock (_writeGate)
             return FindProposal(id);
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public IReadOnlyList<PromptProposal> ListProposals(
         string? command = null, bool openOnly = false, int limit = 100)
     {
@@ -173,6 +188,7 @@ public sealed class PromptGovernanceStore
                 .ToList();
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public PromptProposal ApproveProposal(string id, string reviewer)
     {
         lock (_writeGate)
@@ -188,6 +204,7 @@ public sealed class PromptGovernanceStore
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public PromptProposal RejectProposal(string id, string reviewer, string reason)
     {
         lock (_writeGate)
@@ -208,6 +225,7 @@ public sealed class PromptGovernanceStore
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public PromptRevision ApplyProposal(string id, string reviewer)
     {
         lock (_writeGate)
@@ -238,6 +256,7 @@ public sealed class PromptGovernanceStore
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public PromptRevision RevertToRevision(string revisionId, string reviewer, string reason)
     {
         PromptRevision target;
@@ -247,6 +266,7 @@ public sealed class PromptGovernanceStore
         return ApplyDirect(target.Command, target.Description, "revert", reason, target.Id, reviewer);
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public PromptCorrection CreateCorrection(
         string command, string claim, string correction, string evidence, string sourceClient,
         string? linkedProposal = null)
@@ -262,12 +282,14 @@ public sealed class PromptGovernanceStore
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public PromptCorrection? GetCorrection(string id)
     {
         lock (_writeGate)
             return _state.Corrections.FirstOrDefault(item => item.Id == id);
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public IReadOnlyList<PromptCorrection> ListCorrections(string? command = null, int limit = 100)
     {
         lock (_writeGate)
@@ -280,6 +302,7 @@ public sealed class PromptGovernanceStore
                 .ToList();
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public PromptIncident CreateIncident(
         string command, string symptom, string expected, string actual, string evidence,
         string sourceClient, string? linkedCorrection = null)
@@ -295,6 +318,7 @@ public sealed class PromptGovernanceStore
         }
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public IReadOnlyList<PromptIncident> ListIncidents(string? command = null, int limit = 100)
     {
         lock (_writeGate)

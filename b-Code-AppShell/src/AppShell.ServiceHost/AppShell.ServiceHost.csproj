@@ -7,8 +7,6 @@
     <Title>OneHistory AppShell Service Host</Title>
     <Description>Headless WPF service host, lifecycle commands, and desktop confirmation for OneHistory AppShell.</Description>
     <PackageTags>onehistory;appshell;service;wpf</PackageTags>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\AppShell.Core\AppShell.Core.csproj" />

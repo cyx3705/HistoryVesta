@@ -6,6 +6,7 @@ namespace AppShell.Services;
 /// </summary>
 public sealed class AppPaths
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     public AppPaths(string appName, bool createBusinessDirectories = true)
         : this(
             appName,
@@ -60,9 +61,12 @@ public sealed class AppPaths
     /// <summary>JSON 控制面板目录。</summary>
     public string PanelsDir { get; }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static string GetDataDir(string root) => Path.Combine(root, "data");
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static string GetModulesDir(string root) => Path.Combine(root, "Modules");
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public static string GetPanelsDir(string root) => Path.Combine(root, "panels");
 }

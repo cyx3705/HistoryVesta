@@ -27,12 +27,12 @@ dotnet build .\AppShell.sln -c Release --no-restore
 
 ## 3.1.x 包
 
-3.0.3 是冻结基线；当前源码与候选版本为 3.1.3。桌面消费者引用 Shell，服务化消费者额外引用
-ServiceHost。正式消费仍以当前 Z 级快照声明的版本为准；3.1.3 候选验证使用：
+3.0.3 是冻结基线；当前源码与候选版本为 3.1.5。桌面消费者引用 Shell，服务化消费者额外引用
+ServiceHost。正式消费仍以当前 Z 级快照声明的版本为准；3.1.5 候选验证使用：
 
 ```xml
-<PackageReference Include="OneHistory.AppShell.Shell" Version="3.1.3" />
-<PackageReference Include="OneHistory.AppShell.ServiceHost" Version="3.1.3" />
+<PackageReference Include="OneHistory.AppShell.Shell" Version="3.1.5" />
+<PackageReference Include="OneHistory.AppShell.ServiceHost" Version="3.1.5" />
 ```
 
 审核候选覆盖写入仓库内 `b-Publish/current`；审核通过后先整体更新
@@ -40,10 +40,10 @@ ServiceHost。正式消费仍以当前 Z 级快照声明的版本为准；3.1.3 
 
 ```powershell
 # 可覆盖 current：构建、审计、隔离消费和演示发布
-.\eng\Publish-AppShell.ps1 -Version 3.1.3
+.\eng\Publish-AppShell.ps1 -Version 3.1.5
 
 # 替换 Z 当前快照，并生成不可覆盖的最小历史副本
-.\eng\Publish-AppShell.ps1 -Version 3.1.3 -Publish
+.\eng\Publish-AppShell.ps1 -Version 3.1.5 -Publish
 ```
 
 脚本不会执行 Git commit/tag/push，也不会推送 NuGet.org。包结构与许可边界见 `PACKAGE.md`。

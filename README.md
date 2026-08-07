@@ -1,9 +1,9 @@
-# AppShell 3.1.4
+# AppShell 3.1.5
 
 本仓库是 OneHistory AppShell 的独立源码、合同与发布资产真值。`3.0.3` 是 V3 冻结基线，
 冻结标签为 `v3.0.3`；版本线不再与 OneHistoryStudio 对齐，`0.7.x` 仅保留用于回滚。
 
-当前源码为 `3.1.4`：在 3.1.3 浮窗几何基线上统一控制台与命令集的域筛选，并让控制台长文本按当前窗格宽度自动换行且不产生水平滚动；AppShell 采用单 EXE 双进程运行模型，后台服务承载
+当前源码为 `3.1.5`：在 3.1.3 浮窗几何基线上统一控制台与命令集的域筛选，并让控制台长文本按当前窗格宽度自动换行且不产生水平滚动；AppShell 采用单 EXE 双进程运行模型，后台服务承载
 命令、模块、日志和全局快捷键，WPF 前端只负责窗口与 UI 模块。双 `/` 唤出并聚焦控制台；前端关闭默认隐藏而不停止后台。
 删除 AppShell
 内置资源/Workspace 与演示电机页，并保留 `ModulesView` 作为唯一模块管理页面。资源浏览未来由独立模块提供；
@@ -58,10 +58,10 @@ dotnet format .\AppShell.sln --verify-no-changes --no-restore
 
 ```powershell
 # 重建 b-Publish/current 下的可覆盖审核候选
-.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.1.4
+.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.1.5
 
 # 仅在审核通过、代码和消费文档均已提交且干净后执行
-.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.1.4 -Publish
+.\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 3.1.5 -Publish
 
 # 使用 b-Publish/history 中的历史包验证发布生成链，只更新 b-Publish/virtual
 .\b-Code-AppShell\eng\Publish-AppShell.ps1 -Version 0.7.2 -VirtualPublish

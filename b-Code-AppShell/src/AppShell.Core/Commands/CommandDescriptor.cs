@@ -15,6 +15,7 @@ public sealed class CommandDescriptor
     /// <summary>示例行(help 详情用),如 "win.dock name=console pos=bottom ratio=0.25"。</summary>
     public string? Example { get; init; }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public IReadOnlyList<ParameterSpec> Parameters { get; init; } = [];
 
     /// <summary>执行前需二次确认时,返回确认提示文本;null 表示无需确认(§5.2 拦截器)。</summary>

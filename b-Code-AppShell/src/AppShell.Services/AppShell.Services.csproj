@@ -10,7 +10,6 @@
     <Description>Settings, logging, file-backed state, module hosting, and MCP services for OneHistory AppShell.</Description>
     <PackageTags>onehistory;appshell;storage;modules;mcp</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

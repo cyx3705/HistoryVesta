@@ -13,12 +13,16 @@ public sealed class FileLayoutStore : ILayoutStore
 
     private readonly string _dir;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public FileLayoutStore(AppPaths paths) => _dir = paths.LayoutDir;
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public string? ReadCurrent() => ReadNamed(CurrentName);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public void WriteCurrent(string payload) => WriteNamed(CurrentName, payload);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public void DeleteCurrent()
     {
         var path = PathOf(CurrentName);
@@ -26,15 +30,18 @@ public sealed class FileLayoutStore : ILayoutStore
             File.Delete(path);
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public string? ReadNamed(string name)
     {
         var path = PathOf(name);
         return File.Exists(path) ? File.ReadAllText(path) : null;
     }
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public void WriteNamed(string name, string payload)
         => File.WriteAllText(PathOf(name), payload);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     public IReadOnlyList<string> ListNamed()
     {
         return Directory.EnumerateFiles(_dir, "*" + Extension)

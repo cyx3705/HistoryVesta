@@ -15,9 +15,12 @@ public interface ILayoutStore
     /// <summary>删除“当前布局”(损坏回退时清理,N-06)。</summary>
     void DeleteCurrent();
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     string? ReadNamed(string name);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     void WriteNamed(string name, string payload);
 
+    /// <summary>Provides this AppShell public contract member.</summary>
     IReadOnlyList<string> ListNamed();
 }

@@ -5,9 +5,13 @@ namespace AppShell.Core.Docking;
 /// </summary>
 public enum DockSide
 {
+    /// <summary>Provides this AppShell public contract member.</summary>
     Left = 0,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Right = 1,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Top = 2,
+    /// <summary>Provides this AppShell public contract member.</summary>
     Bottom = 3,
     /// <summary>并入目标标签组(win.dock pos=tab target=...)。</summary>
     Tab = 4,

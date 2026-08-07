@@ -10,8 +10,6 @@
     <Title>OneHistory AppShell WPF Shell</Title>
     <Description>WPF shell, docking UI, built-in views, and commands for OneHistory AppShell.</Description>
     <PackageTags>onehistory;appshell;wpf;avalondock;mcp</PackageTags>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

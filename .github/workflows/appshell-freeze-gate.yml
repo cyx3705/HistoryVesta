@@ -54,6 +54,10 @@ jobs:
         shell: pwsh
         run: .\b-Code-AppShell\eng\Assert-PublicApiBaseline.ps1
 
+      - name: Verify quality gate
+        shell: pwsh
+        run: .\b-Code-AppShell\eng\Test-QualityGate.ps1
+
       - name: Report test failures
         if: failure()
         shell: pwsh
