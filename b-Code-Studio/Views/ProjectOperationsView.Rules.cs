@@ -54,12 +54,10 @@ public partial class ProjectOperationsView
             CoverageText.Text =
                 $"格式覆盖 · {project}：覆盖率 {report.CoverageRate:P1}，未决 {report.UndecidedCount} 个" +
                 $"（{report.Formats.Count} 种格式 / {report.FileCount} 个文件）";
-            StatusText.Text = $"{project}: {_rules.Count} 行（扫描格式 + 已声明规则，已去重）";
         }
         else
         {
             CoverageText.Text = "格式台账加载失败，详见控制台";
-            StatusText.Text = !scan.Success ? ViewKit.ResultSummary(scan) : ViewKit.ResultSummary(list);
         }
         UpdateRuleActions();
     }
@@ -96,7 +94,6 @@ public partial class ProjectOperationsView
         if (existing != null)
         {
             RuleGrid.SelectedItem = existing;
-            StatusText.Text = $"规则已存在: {pattern}";
             return;
         }
         var draft = new RuleEditRow(pattern);
@@ -104,7 +101,6 @@ public partial class ProjectOperationsView
         _rules.Add(draft);
         RuleGrid.SelectedItem = draft;
         RuleGrid.ScrollIntoView(draft);
-        StatusText.Text = "新规则等待自动保存";
         UpdateRuleActions();
         ScheduleRuleAutoSave();
     }
@@ -124,10 +120,7 @@ public partial class ProjectOperationsView
             return true;
         var invalid = dirty.Where(row => !row.IsValid).Select(row => row.Pattern).ToList();
         if (invalid.Count > 0)
-        {
-            StatusText.Text = $"请先明确这些规则的 Git、LFS 与 LF 状态：{string.Join("、", invalid)}";
             return false;
-        }
 
         var changes = dirty.Select(row => new GitFileRuleChange(
             row.Pattern, row.Track!.Value, row.Lfs!.Value, row.Lf!.Value)).ToList();
@@ -143,27 +136,19 @@ public partial class ProjectOperationsView
         {
             var preview = await bus.ExecuteAsync(command + " apply=false", "UI");
             if (!preview.Success || !ModuleResultData.TryRead(preview.Data, out GitFileRuleBatchPreview? batch))
-            {
-                StatusText.Text = "规则自动保存预览失败，修改仍保留；详见控制台";
                 return false;
-            }
             if (!batch.Changed)
             {
                 foreach (var row in dirty)
                     row.AcceptChanges();
-                StatusText.Text = $"{dirty.Count} 条规则已与仓库一致";
                 return true;
             }
 
             var applied = await bus.ExecuteAsync(command + " apply=true", "UI");
             if (!applied.Success)
-            {
-                StatusText.Text = $"自动保存未完成，{dirty.Count} 条修改仍保留：{ViewKit.ResultSummary(applied)}";
                 return false;
-            }
             foreach (var row in dirty)
                 row.AcceptChanges();
-            StatusText.Text = $"已自动保存 {dirty.Count} 条规则";
             return true;
         }
         finally
@@ -188,11 +173,8 @@ public partial class ProjectOperationsView
             return;
         }
         if (!rule.IsDeclared)
-        {
-            StatusText.Text = "该格式由扫描发现，当前没有可删除的规则";
             return;
-        }
-        if (!await EnsureDirtyRulesHandledAsync("删除规则"))
+        if (!await EnsureDirtyRulesHandledAsync())
             return;
         var command = $"git.rule.remove name={CommandParser.QuoteArg(project)} " +
                       $"pattern={CommandParser.QuoteArg(rule.Pattern)}";
@@ -200,12 +182,8 @@ public partial class ProjectOperationsView
         if (!preview.Success
             || !ModuleResultData.TryRead(preview.Data, out GitFileRulePreview? singlePreview)
             || singlePreview is not { Changed: true })
-        {
-            StatusText.Text = preview.Success ? "规则不存在或无需删除" : "删除预览失败，详见控制台";
             return;
-        }
         var applied = await bus.ExecuteAsync(command + " apply=true", "UI");
-        StatusText.Text = applied.Success ? "托管规则已删除" : "规则删除失败，详见控制台";
         if (applied.Success)
             await LoadRulesAsync(project, refresh: true);
     }
@@ -215,7 +193,7 @@ public partial class ProjectOperationsView
     {
         if (CurrentProjectName() is not { Length: > 0 } project)
             return;
-        if (!await EnsureDirtyRulesHandledAsync("刷新规则"))
+        if (!await EnsureDirtyRulesHandledAsync())
             return;
         await LoadRulesAsync(project, refresh: true);
     }
@@ -234,7 +212,7 @@ public partial class ProjectOperationsView
                 $"git.rule.sync name={CommandParser.QuoteArg(project)} apply=false", "UI");
     }
 
-    private async Task<bool> EnsureDirtyRulesHandledAsync(string action)
+    private async Task<bool> EnsureDirtyRulesHandledAsync()
     {
         _ruleAutoSaveTimer.Stop();
         RuleGrid.CommitEdit(DataGridEditingUnit.Cell, true);
@@ -242,11 +220,7 @@ public partial class ProjectOperationsView
         var count = _rules.Count(row => row.CanEdit && row.IsDirty);
         if (count == 0)
             return true;
-        StatusText.Text = $"正在自动保存 {count} 条规则，完成后{action}…";
-        var saved = await SaveDirtyRulesAsync(_loadedRuleProject ?? CurrentProjectName());
-        if (!saved)
-            StatusText.Text += $"；已取消{action}";
-        return saved;
+        return await SaveDirtyRulesAsync(_loadedRuleProject ?? CurrentProjectName());
     }
 
     private void OnRuleRowChanged(object? sender, PropertyChangedEventArgs e)

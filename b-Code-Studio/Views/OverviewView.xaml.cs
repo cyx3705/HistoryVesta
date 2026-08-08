@@ -15,7 +15,6 @@ public partial class OverviewView : UserControl
     private List<WorktreeRow> _allRows = [];
     private bool _initialLoadDone;
     private bool _suppressSelection;
-    private string? _metaLoadWarning;
 
     public OverviewView(Func<CommandBus?> busAccessor, ProjectSelectionState selection)
     {
@@ -73,10 +72,7 @@ public partial class OverviewView : UserControl
             var projectsResult = await projectsTask;
             if (!projectsResult.Success ||
                 !ModuleResultData.TryRead(projectsResult.Data, out List<WorktreeInfo>? projects))
-            {
-                StatusText.Text = "项目加载失败，详见控制台";
                 return;
-            }
 
             var metasResult = await metasTask;
             List<MetaFolderInfo>? loadedMetas = null;
@@ -84,8 +80,6 @@ public partial class OverviewView : UserControl
                               ModuleResultData.TryRead(metasResult.Data, out loadedMetas) &&
                               loadedMetas != null;
             List<MetaFolderInfo> metas = metasLoaded ? loadedMetas! : [];
-            _metaLoadWarning = metasLoaded ? null : "元文件夹加载失败，可刷新重试";
-
             _allRows = OverviewMetaMerge.Merge(projects, metas);
             if (_selection.CurrentProjectName is { } current
                 && !_allRows.Any(row => row.BranchName.Equals(current, StringComparison.OrdinalIgnoreCase)))
@@ -108,10 +102,6 @@ public partial class OverviewView : UserControl
             : _allRows.Where(row => OverviewMetaMerge.MatchesKeyword(row, keyword)).ToList();
         WorktreeList.ItemsSource = rows;
         ApplySharedSelection();
-        var summary = keyword.Length == 0
-            ? $"共 {_allRows.Count} 个工作树；双击项目在资源管理器中打开"
-            : $"匹配 {rows.Count}/{_allRows.Count} 个工作树";
-        StatusText.Text = _metaLoadWarning == null ? summary : $"{summary}；{_metaLoadWarning}";
     }
 
     private void ApplySharedSelection()
@@ -191,7 +181,6 @@ public partial class OverviewView : UserControl
     {
         if (_busAccessor() is not { } bus)
             return;
-        var result = await bus.ExecuteAsync(OverviewMetaMerge.BuildOpenCommand(meta), "UI");
-        StatusText.Text = ViewKit.ResultSummary(result);
+        await bus.ExecuteAsync(OverviewMetaMerge.BuildOpenCommand(meta), "UI");
     }
 }

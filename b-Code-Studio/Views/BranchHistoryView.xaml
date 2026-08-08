@@ -4,13 +4,11 @@
              Background="{DynamicResource Shell.Brush.Surface}"
              Foreground="{DynamicResource Shell.Brush.TextPrimary}">
     <DockPanel>
-        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-            <TextBlock x:Name="BranchTitle" Text="在项目总览或项目操作中选择项目"
-                       FontWeight="SemiBold" FontSize="14" TextWrapping="Wrap" />
-            <TextBlock x:Name="BoundaryText" Margin="0,3,0,0"
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+            <TextBlock x:Name="BoundaryText" Text="在项目总览或项目操作中选择项目"
                        Foreground="{DynamicResource Shell.Brush.TextSecondary}"
                        TextWrapping="Wrap" />
-            <WrapPanel Margin="0,7,0,0">
+            <WrapPanel Margin="0,5,0,0">
                 <Button x:Name="RefreshButton" Content="刷新" Padding="10,3"
                         Click="OnRefreshClick" />
                 <Button x:Name="RemoteRefreshButton" Content="刷新远端" Padding="10,3"
@@ -19,10 +17,6 @@
                         Margin="6,0,0,0" IsEnabled="False" Click="OnLoadMoreClick" />
             </WrapPanel>
         </StackPanel>
-
-        <TextBlock DockPanel.Dock="Bottom" x:Name="StatusText" Margin="0,6,0,0"
-                   Foreground="{DynamicResource Shell.Brush.TextSecondary}"
-                   Text="尚未选择项目" TextWrapping="Wrap" />
 
         <ListView x:Name="HistoryList"
                   Background="{DynamicResource Shell.Brush.Surface}"

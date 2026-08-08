@@ -201,6 +201,8 @@ internal static class RepositoryTargetsSuite
             "bottom switcher toggles Git file rules and embedded branch history");
         Equal("True", bottomSegments[0].Attribute("IsChecked")?.Value,
             "bottom switcher defaults to the Git file rules page");
+        True(bottomSegments.All(segment => segment.Attribute("MinHeight")?.Value == "26"),
+            "bottom switcher stays a slim bar instead of reusing the 46px segment height");
         var historyPanel = project.Descendants().Single(element =>
             element.Attribute(x + "Name")?.Value == "HistoryPanel");
         Equal("ContentControl", historyPanel.Name.LocalName,
@@ -236,17 +238,21 @@ internal static class RepositoryTargetsSuite
              && !overviewSource.Contains("WorktreePath", StringComparison.Ordinal)
              && !overviewSource.Contains("OnOpenRootClick", StringComparison.Ordinal),
             "overview removes commit time, path and root-open entry");
-        foreach (var retained in new[] { "SearchBox", "RefreshButton", "StatusText", "WorktreeList" })
+        foreach (var retained in new[] { "SearchBox", "RefreshButton", "WorktreeList" })
         {
             True(overview.Descendants().Any(element =>
                     element.Attribute(x + "Name")?.Value == retained),
                 $"overview retains compact navigation control: {retained}");
         }
+        True(overviewMarkup.Contains("ItemContainerStyle", StringComparison.Ordinal),
+            "overview compresses row height with an item container style");
+        True(!overview.Descendants().Any(element => element.Attribute(x + "Name")?.Value == "StatusText"),
+            "overview drops the bottom status strip");
 
-        var groups = project.Descendants().Where(element => element.Name.LocalName == "GroupBox")
-            .ToDictionary(element => element.Attribute("Header")?.Value ?? string.Empty);
-        Equal(2, CountGridRows(groups["项目"]), "project group has two compact rows");
-        Equal(3, CountGridRows(groups["提交与推送"]), "commit and push group has three rows");
+        True(!named.Contains("StatusText"),
+            "project page drops the bottom status strip");
+        True(!project.Descendants().Any(element => element.Name.LocalName == "GroupBox"),
+            "project page drops the group-box frames for density");
         True(!project.ToString().Contains("基础分支", StringComparison.Ordinal)
              && !project.ToString().Contains("打开所选项目", StringComparison.Ordinal),
             "project page removes the base-branch label and duplicate open entry");
@@ -335,10 +341,6 @@ internal static class RepositoryTargetsSuite
             OverviewMetaMerge.BuildOpenCommand(parentRow.PrimaryMeta!),
             "meta click reuses the existing proj.metaopen command");
     }
-
-    private static int CountGridRows(XElement group)
-        => group.Descendants().First(element => element.Name.LocalName == "Grid.RowDefinitions")
-            .Elements().Count(element => element.Name.LocalName == "RowDefinition");
 
     private static async Task CreateChild(string path, string branch, string remote)
     {

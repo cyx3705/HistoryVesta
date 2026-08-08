@@ -3,8 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="{DynamicResource Shell.Brush.Surface}"
              Foreground="{DynamicResource Shell.Brush.TextPrimary}">
-    <DockPanel Margin="8">
-        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+    <DockPanel Margin="6">
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
             <Button x:Name="RefreshButton" DockPanel.Dock="Right" Content="刷新项目"
                     Padding="12,3" Margin="8,0,0,0" Click="OnRefreshClick" />
             <TextBlock Text="搜索:" VerticalAlignment="Center" Margin="0,0,6,0"
@@ -12,16 +12,18 @@
             <TextBox x:Name="SearchBox" VerticalContentAlignment="Center" TextChanged="OnSearchChanged" />
         </DockPanel>
 
-        <TextBlock DockPanel.Dock="Bottom" x:Name="StatusText"
-                   Foreground="{DynamicResource Shell.Brush.TextSecondary}"
-                   Margin="0,6,0,0" Text="双击项目在资源管理器中打开" TextWrapping="Wrap" />
-
         <ListView x:Name="WorktreeList"
                   Background="{DynamicResource Shell.Brush.Surface}"
                   Foreground="{DynamicResource Shell.Brush.TextPrimary}"
                   BorderBrush="{DynamicResource Shell.Brush.Hairline}"
                   SelectionChanged="OnProjectSelected"
                   MouseDoubleClick="OnRowDoubleClick">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="Padding" Value="6,1" />
+                    <Setter Property="MinHeight" Value="0" />
+                </Style>
+            </ListView.ItemContainerStyle>
             <ListView.View>
                 <GridView ColumnHeaderContainerStyle="{DynamicResource Shell.GridHeader}">
                     <GridViewColumn Header="#" Width="44" DisplayMemberBinding="{Binding Index}" />
@@ -34,12 +36,12 @@
                                             Tag="{Binding PrimaryMeta}"
                                             ToolTip="{Binding PrimaryMeta.FullPath}"
                                             IsEnabled="{Binding HasMeta}"
-                                            Padding="4,1" BorderThickness="0"
+                                            Padding="4,0" MinHeight="0" BorderThickness="0"
                                             Background="Transparent"
                                             Foreground="{DynamicResource Shell.Brush.TextPrimary}"
                                             Click="OnMetaFolderClick" />
                                     <Button Content="{Binding MoreMetaLabel}"
-                                            Margin="4,0,0,0" Padding="4,1"
+                                            Margin="4,0,0,0" Padding="4,0" MinHeight="0"
                                             BorderThickness="0" Background="Transparent"
                                             Foreground="{DynamicResource Shell.Brush.TextSecondary}"
                                             Click="OnMoreMetaClick">

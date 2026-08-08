@@ -69,87 +69,79 @@
             </Setter>
         </Style>
     </UserControl.Resources>
-    <DockPanel Margin="8">
-        <TextBlock DockPanel.Dock="Bottom" x:Name="StatusText"
-                   Foreground="{DynamicResource Shell.Brush.TextSecondary}"
-                   Margin="0,6,0,0" Text="选择项目后管理文件格式规则" TextWrapping="Wrap" />
+    <DockPanel Margin="6">
+        <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="新项目名称:" Margin="0,0,6,4"
+                       VerticalAlignment="Center" />
+            <TextBox Grid.Row="0" Grid.Column="1" x:Name="NewProjectNameBox" Margin="0,0,6,4"
+                     VerticalContentAlignment="Center" TextChanged="OnNewProjectNameChanged" />
+            <Button Grid.Row="0" Grid.Column="2" x:Name="CreateProjectButton" Content="新建"
+                    Padding="10,3" Margin="0,0,0,4" IsEnabled="False" Click="OnCreateClick" />
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="当前项目:"
+                       VerticalAlignment="Center" />
+            <ComboBox Grid.Row="1" Grid.Column="1" x:Name="CurrentProjectBox" IsEditable="True"
+                      Margin="0,0,6,0" SelectionChanged="OnProjectSelected" />
+            <Button Grid.Row="1" Grid.Column="2" x:Name="RefreshProjectsButton" Content="刷新"
+                    Padding="10,3" Click="OnRefreshProjectsClick" />
+        </Grid>
 
-        <GroupBox DockPanel.Dock="Top" Header="项目" Margin="0,0,0,8">
-            <Grid Margin="6">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="新项目名称:" Margin="0,0,6,6"
-                           VerticalAlignment="Center" />
-                <TextBox Grid.Row="0" Grid.Column="1" x:Name="NewProjectNameBox" Margin="0,0,6,6"
-                         VerticalContentAlignment="Center" TextChanged="OnNewProjectNameChanged" />
-                <Button Grid.Row="0" Grid.Column="2" x:Name="CreateProjectButton" Content="新建"
-                        Padding="10,3" Margin="0,0,0,6" IsEnabled="False" Click="OnCreateClick" />
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="当前项目:" Margin="0,0,6,0"
-                           VerticalAlignment="Center" />
-                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="CurrentProjectBox" IsEditable="True"
-                          Margin="0,0,6,0" SelectionChanged="OnProjectSelected" />
-                <Button Grid.Row="1" Grid.Column="2" x:Name="RefreshProjectsButton" Content="刷新"
-                        Padding="10,3" Click="OnRefreshProjectsClick" />
-            </Grid>
-        </GroupBox>
+        <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="3" x:Name="SelectedActionTitle"
+                       Text="当前未选择项目" FontWeight="SemiBold" Margin="0,0,0,4"
+                       TextWrapping="Wrap" />
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="提交描述:" Margin="0,0,6,4"
+                       VerticalAlignment="Center" />
+            <TextBox Grid.Row="1" Grid.Column="1" x:Name="SelectedCommitMessageBox"
+                     Margin="0,0,6,4" VerticalContentAlignment="Center"
+                     TextChanged="OnCommitMessageChanged" />
+            <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" Margin="0,0,0,4">
+                <Button x:Name="SelectedCommitButton" Content="提交" Padding="14,3"
+                        IsEnabled="False" Click="OnCommitSelectedClick" />
+                <Button x:Name="SelectedPushButton" Content="推送" Padding="14,3"
+                        Margin="6,0,0,0" IsEnabled="False" Click="OnPushSelectedClick" />
+            </StackPanel>
+            <UniformGrid Grid.Row="2" Grid.ColumnSpan="3" Columns="4">
+                <RadioButton x:Name="CurrentSubmodulesModeButton" GroupName="OperationMode"
+                             Content="当前&#10;仅子模块" Style="{StaticResource OperationSegment}"
+                             Click="OnOperationModeChanged" />
+                <RadioButton x:Name="CurrentBothModeButton" GroupName="OperationMode"
+                             Content="当前&#10;分支及子模块" Style="{StaticResource OperationSegment}"
+                             IsChecked="True" Click="OnOperationModeChanged" />
+                <RadioButton x:Name="AllSubmodulesModeButton" GroupName="OperationMode"
+                             Content="全部&#10;仅子模块" Style="{StaticResource OperationSegment}"
+                             Click="OnOperationModeChanged" />
+                <RadioButton x:Name="AllBothModeButton" GroupName="OperationMode"
+                             Content="全部&#10;分支及子模块" Style="{StaticResource OperationSegment}"
+                             Click="OnOperationModeChanged" />
+            </UniformGrid>
+        </Grid>
 
-        <GroupBox DockPanel.Dock="Top" Header="提交与推送" Margin="0,0,0,8">
-            <Grid Margin="6">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Row="0" Grid.ColumnSpan="3" x:Name="SelectedActionTitle"
-                           Text="当前未选择项目" FontWeight="SemiBold" Margin="0,0,0,6"
-                           TextWrapping="Wrap" />
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="提交描述:" Margin="0,0,6,6"
-                           VerticalAlignment="Center" />
-                <TextBox Grid.Row="1" Grid.Column="1" x:Name="SelectedCommitMessageBox"
-                         Margin="0,0,6,6" VerticalContentAlignment="Center"
-                         TextChanged="OnCommitMessageChanged" />
-                <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" Margin="0,0,0,6">
-                    <Button x:Name="SelectedCommitButton" Content="提交" Padding="14,3"
-                            IsEnabled="False" Click="OnCommitSelectedClick" />
-                    <Button x:Name="SelectedPushButton" Content="推送" Padding="14,3"
-                            Margin="6,0,0,0" IsEnabled="False" Click="OnPushSelectedClick" />
-                </StackPanel>
-                <UniformGrid Grid.Row="2" Grid.ColumnSpan="3" Columns="4">
-                    <RadioButton x:Name="CurrentSubmodulesModeButton" GroupName="OperationMode"
-                                 Content="当前&#10;仅子模块" Style="{StaticResource OperationSegment}"
-                                 Click="OnOperationModeChanged" />
-                    <RadioButton x:Name="CurrentBothModeButton" GroupName="OperationMode"
-                                 Content="当前&#10;分支及子模块" Style="{StaticResource OperationSegment}"
-                                 IsChecked="True" Click="OnOperationModeChanged" />
-                    <RadioButton x:Name="AllSubmodulesModeButton" GroupName="OperationMode"
-                                 Content="全部&#10;仅子模块" Style="{StaticResource OperationSegment}"
-                                 Click="OnOperationModeChanged" />
-                    <RadioButton x:Name="AllBothModeButton" GroupName="OperationMode"
-                                 Content="全部&#10;分支及子模块" Style="{StaticResource OperationSegment}"
-                                 Click="OnOperationModeChanged" />
-                </UniformGrid>
-            </Grid>
-        </GroupBox>
-
-        <UniformGrid DockPanel.Dock="Top" Columns="2" Margin="0,0,0,8">
+        <UniformGrid DockPanel.Dock="Top" Columns="2" Margin="0,0,0,6">
             <RadioButton x:Name="RulesPageButton" GroupName="BottomPage"
                          Content="Git 文件规则" Style="{StaticResource OperationSegment}"
-                         IsChecked="True" Checked="OnBottomPageChanged" />
+                         MinHeight="26" IsChecked="True" Checked="OnBottomPageChanged" />
             <RadioButton x:Name="HistoryPageButton" GroupName="BottomPage"
                          Content="分支历史" Style="{StaticResource OperationSegment}"
-                         Checked="OnBottomPageChanged" />
+                         MinHeight="26" Checked="OnBottomPageChanged" />
         </UniformGrid>
 
         <Grid>

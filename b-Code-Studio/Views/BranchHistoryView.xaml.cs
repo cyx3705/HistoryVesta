@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using HistoryVulcan.Core.Commands;
 using HistoryJanus.Git;
 
@@ -83,9 +84,7 @@ public partial class BranchHistoryView : UserControl
         var version = ++_loadVersion;
 
         SetBusy(true);
-        BranchTitle.Text = project;
         BoundaryText.Text = refreshRemote ? "正在刷新远端并读取历史..." : "正在读取分支历史...";
-        StatusText.Text = "加载中，进度见控制台";
         try
         {
             var command = $"proj.history name={CommandParser.QuoteArg(project)} " +
@@ -100,7 +99,6 @@ public partial class BranchHistoryView : UserControl
                 _report = null;
                 HistoryList.ItemsSource = null;
                 BoundaryText.Text = "历史读取失败";
-                StatusText.Text = ViewKit.ResultSummary(result);
                 return;
             }
 
@@ -122,16 +120,22 @@ public partial class BranchHistoryView : UserControl
             }
 
             _loadedOwnCommits = Math.Max(0, _report.Entries.Count - 1);
-            BranchTitle.Text = _report.Branch;
-            BoundaryText.Text = $"父分支：{_report.ParentDisplay}  |  分叉：{_report.ForkShortSha}  |  " +
-                                $"HEAD：{_report.HeadShortSha}\n{_report.RemoteDisplay}";
+            BoundaryText.Text = $"父分支：{_report.ParentDisplay}";
             HistoryList.ItemsSource = _report.Entries;
             LoadMoreButton.IsEnabled = _report.HasMore;
-            StatusText.Text = result.Message;
             if (scrollAnchor != null)
                 HistoryList.ScrollIntoView(scrollAnchor);
             else if (_report.Entries.Count > 0)
-                HistoryList.ScrollIntoView(_report.Entries[^1]);
+            {
+                // 虚拟化列表需等布局完成后滚动才可靠；版本号防止旧结果覆盖新选择
+                var last = _report.Entries[^1];
+                var scrollVersion = version;
+                _ = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+                {
+                    if (scrollVersion == _loadVersion && HistoryList.Items.Count > 0)
+                        HistoryList.ScrollIntoView(last);
+                }));
+            }
         }
         catch (OperationCanceledException)
         {
@@ -161,9 +165,7 @@ public partial class BranchHistoryView : UserControl
         _report = null;
         _loadedOwnCommits = 0;
         HistoryList.ItemsSource = null;
-        BranchTitle.Text = "在项目总览或项目操作中选择项目";
-        BoundaryText.Text = "";
-        StatusText.Text = status;
+        BoundaryText.Text = status;
         SetBusy(false);
         LoadMoreButton.IsEnabled = false;
     }
@@ -200,7 +202,6 @@ public partial class BranchHistoryView : UserControl
             return;
         var result = await bus.ExecuteAsync(
             $"proj.history.show name={CommandParser.QuoteArg(branch)} sha={entry.Sha}", "UI");
-        StatusText.Text = ViewKit.ResultSummary(result);
         if (!result.Success || !ModuleResultData.TryRead(result.Data, out CommitDetail? detail))
             return;
 
@@ -228,7 +229,6 @@ public partial class BranchHistoryView : UserControl
             return;
         var result = await bus.ExecuteAsync(
             $"proj.history.diff name={CommandParser.QuoteArg(branch)} sha={entry.Sha}", "UI");
-        StatusText.Text = ViewKit.ResultSummary(result);
         if (!result.Success || !ModuleResultData.TryRead(result.Data, out BranchDiffReport? report))
             return;
         var header = $"目标：{report.TargetSha}\n当前：{report.HeadSha}\n" +
@@ -241,7 +241,6 @@ public partial class BranchHistoryView : UserControl
         if (HistoryList.SelectedItem is not BranchHistoryEntry entry)
             return;
         Clipboard.SetText(entry.Sha);
-        StatusText.Text = $"已复制 {entry.Sha}";
     }
 
     private async void OnRollbackClick(object sender, RoutedEventArgs e)
@@ -257,7 +256,6 @@ public partial class BranchHistoryView : UserControl
         var command = $"proj.rollback name={CommandParser.QuoteArg(branch)} sha={entry.Sha} " +
                       $"msg={CommandParser.QuoteArg(dialog.CommitMessage)}";
         var result = await bus.ExecuteAsync(command, "UI");
-        StatusText.Text = ViewKit.ResultSummary(result);
         if (result.Success)
             await LoadSelectionAsync(resetLimit: true);
     }
@@ -269,7 +267,6 @@ public partial class BranchHistoryView : UserControl
             return;
         var result = await bus.ExecuteAsync(
             $"proj.reset name={CommandParser.QuoteArg(branch)} sha={entry.Sha}", "UI");
-        StatusText.Text = ViewKit.ResultSummary(result);
         if (result.Success)
             await LoadSelectionAsync(resetLimit: true);
     }

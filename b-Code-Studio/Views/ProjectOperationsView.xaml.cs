@@ -56,10 +56,7 @@ public partial class ProjectOperationsView : UserControl
         {
             var result = await bus.ExecuteAsync("proj.list", "UI");
             if (!result.Success || !ModuleResultData.TryRead(result.Data, out List<WorktreeInfo>? projects))
-            {
-                StatusText.Text = "项目加载失败，详见控制台";
                 return;
-            }
             var names = projects.Select(project => project.BranchName).ToList();
             _suppressProjectSelection = true;
             CurrentProjectBox.ItemsSource = names;
@@ -87,7 +84,7 @@ public partial class ProjectOperationsView : UserControl
         var requested = CurrentProjectName();
         if (_loadedRuleProject is { Length: > 0 } loaded
             && !requested.Equals(loaded, StringComparison.OrdinalIgnoreCase)
-            && !await EnsureDirtyRulesHandledAsync("切换项目"))
+            && !await EnsureDirtyRulesHandledAsync())
         {
             RestoreProjectSelection(loaded);
             return;
@@ -120,7 +117,7 @@ public partial class ProjectOperationsView : UserControl
 
         if (_loadedRuleProject is { Length: > 0 } loaded
             && !string.Equals(selected, loaded, StringComparison.OrdinalIgnoreCase)
-            && !await EnsureDirtyRulesHandledAsync("切换项目"))
+            && !await EnsureDirtyRulesHandledAsync())
         {
             RestoreProjectSelection(loaded);
             return;
@@ -169,7 +166,7 @@ public partial class ProjectOperationsView : UserControl
 
     private async void OnRefreshProjectsClick(object sender, System.Windows.RoutedEventArgs e)
     {
-        if (await EnsureDirtyRulesHandledAsync("刷新项目列表"))
+        if (await EnsureDirtyRulesHandledAsync())
             await RefreshProjectsAsync();
     }
 
@@ -182,7 +179,6 @@ public partial class ProjectOperationsView : UserControl
         var command = $"proj.create name={CommandParser.QuoteArg(name)} " +
                       $"base={CommandParser.QuoteArg(baseProject)}";
         var result = await bus.ExecuteAsync(command, "UI");
-        StatusText.Text = result.Success ? "项目已创建" : "项目创建失败，详见控制台";
         if (result.Success)
         {
             NewProjectNameBox.Clear();
@@ -202,9 +198,8 @@ public partial class ProjectOperationsView : UserControl
         SetProjectOperationRunning(true);
         try
         {
-            var result = await bus.ExecuteAsync(ProjectOperationCommandBuilder.BuildCommit(
+            await bus.ExecuteAsync(ProjectOperationCommandBuilder.BuildCommit(
                 mode, project, message), "UI");
-            StatusText.Text = ViewKit.ResultSummary(result);
         }
         finally
         {
@@ -223,9 +218,8 @@ public partial class ProjectOperationsView : UserControl
         SetProjectOperationRunning(true);
         try
         {
-            var result = await bus.ExecuteAsync(ProjectOperationCommandBuilder.BuildPush(
+            await bus.ExecuteAsync(ProjectOperationCommandBuilder.BuildPush(
                 mode, project), "UI");
-            StatusText.Text = ViewKit.ResultSummary(result);
         }
         finally
         {
