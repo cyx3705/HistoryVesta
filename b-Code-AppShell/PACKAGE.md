@@ -13,11 +13,13 @@ WPF shell and docking UI, local services, module hosting, and an MCP gateway.
 ## Install
 
 ```xml
-<PackageReference Include="OneHistory.AppShell.Shell" Version="3.1.7" />
-<PackageReference Include="OneHistory.AppShell.ServiceHost" Version="3.1.7" />
+<PackageReference Include="OneHistory.AppShell.Shell" Version="3.1.9" />
+<PackageReference Include="OneHistory.AppShell.ServiceHost" Version="3.1.9" />
 ```
 
-AppShell 3.1.x targets .NET 8. The Shell and ServiceHost packages require Windows and WPF. Packages in this
+The references above describe the 3.1.9 source candidate contract; no 3.1.9 package has been published yet.
+Stable consumers remain on 3.1.7, and 3.1.8 is not a supported consumer version. AppShell 3.1.x targets .NET 8.
+The Shell and ServiceHost packages require Windows and WPF. Packages in this
 repository-local feed are for OneHistory-owned projects; no public distribution license is granted
 by the package itself.
 

@@ -159,6 +159,7 @@ AppShell.Services.Mcp.PromptRevision.Source.get -> string!
 AppShell.Services.Mcp.PromptRevision.Source.init -> void
 AppShell.Services.Modules.ModuleHost
 AppShell.Services.Modules.ModuleHost.Attach(AppShell.Core.Commands.CommandRegistry! registry) -> void
+AppShell.Services.Modules.ModuleHost.Attach(AppShell.Core.Commands.CommandRegistry! registry, AppShell.Core.Commands.CommandBus! bus, AppShell.Core.Storage.ISettingsService! settings, string! dataDirectory) -> void
 AppShell.Services.Modules.ModuleHost.ChangeDirectory(string! newDir) -> void
 AppShell.Services.Modules.ModuleHost.Dispose() -> void
 AppShell.Services.Modules.ModuleHost.EnableCommands.get -> bool

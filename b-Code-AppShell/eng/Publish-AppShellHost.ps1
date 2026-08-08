@@ -17,7 +17,6 @@ $documentRoot = Join-Path $repoRoot 'b-Office\package'
 $releaseRoot = Join-Path $componentRoot 'eng\release'
 $documentManifestPath = Join-Path $releaseRoot 'consumer-docs.json'
 $reuseTemplatePath = Join-Path $releaseRoot 'AppShell.reuse.template.md'
-
 $versionOutput = & dotnet msbuild $project -nologo -getProperty:AppShellVersion -getProperty:FileVersion
 if ($LASTEXITCODE -ne 0) {
     throw 'Unable to evaluate AppShell version source'
@@ -117,6 +116,7 @@ function Copy-DirectoryContent {
 New-Item -ItemType Directory -Force -Path $publishRoot | Out-Null
 $temporary = Join-Path $publishRoot ('.current-next-' + [Guid]::NewGuid().ToString('N'))
 $candidateBackup = Join-Path $publishRoot ('.current-previous-' + [Guid]::NewGuid().ToString('N'))
+$buildOutputRoot = Join-Path $publishRoot ('.build-' + [Guid]::NewGuid().ToString('N'))
 try {
     $temporaryHost = Join-Path $temporary 'host'
     $temporaryDocs = Join-Path $temporary 'docs'
@@ -124,7 +124,8 @@ try {
 
     Invoke-Dotnet @(
         'publish', $project, '-c', 'Release', '--no-restore',
-        '--self-contained', 'false', '-r', 'win-x64', '-o', $temporaryHost)
+        '--self-contained', 'false', '-r', 'win-x64', '-o', $temporaryHost,
+        ('-p:BaseOutputPath=' + (Join-Path $buildOutputRoot '')))
     Assert-HostDirectory $temporaryHost
 
     foreach ($documentName in $documentNames) {
@@ -258,7 +259,7 @@ Run `host/AppShell.exe`. Historical releases are stored under `b-Publish/history
     }
 }
 finally {
-    foreach ($path in @($temporary, $candidateBackup)) {
+    foreach ($path in @($temporary, $candidateBackup, $buildOutputRoot)) {
         if (Test-Path -LiteralPath $path) {
             Remove-Item -LiteralPath $path -Recurse -Force -ErrorAction SilentlyContinue
         }

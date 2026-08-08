@@ -8,6 +8,7 @@ using AppShell.Core.Commands;
 using AppShell.Core.Input;
 using AppShell.Core.Logging;
 using AppShell.Core.Modules;
+using AppShell.Core.Storage;
 
 namespace AppShell.Services.Modules;
 
@@ -31,6 +32,9 @@ public sealed class ModuleHost : IDisposable
     private readonly object _reloadLock = new();
     private string _dir;
     private CommandRegistry? _registry;
+    private CommandBus? _bus;
+    private ISettingsService? _settings;
+    private string? _dataDirectory;
     private Snapshot _current = Snapshot.Empty;
     private FileSystemWatcher? _watcher;
     private Timer? _debounce;
@@ -77,6 +81,27 @@ public sealed class ModuleHost : IDisposable
 
     /// <summary>接入指令注册表(ShellWindow 创建后调用,再 Start)。</summary>
     public void Attach(CommandRegistry registry) => _registry = registry;
+
+    /// <summary>接入模块业务运行所需的完整宿主上下文。</summary>
+    public void Attach(
+        CommandRegistry registry,
+        CommandBus bus,
+        ISettingsService settings,
+        string dataDirectory)
+    {
+        ArgumentNullException.ThrowIfNull(registry);
+        ArgumentNullException.ThrowIfNull(bus);
+        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
+
+        if (!ReferenceEquals(bus.Registry, registry))
+            throw new ArgumentException("模块宿主的 CommandBus 必须使用同一个 CommandRegistry。", nameof(bus));
+
+        _registry = registry;
+        _bus = bus;
+        _settings = settings;
+        _dataDirectory = Path.GetFullPath(dataDirectory);
+    }
 
     /// <summary>Provides this AppShell public contract member.</summary>
     public void Start()
@@ -162,25 +187,33 @@ public sealed class ModuleHost : IDisposable
             var ui = UiContext;
             if (ui == null)
             {
-                foreach (var context in next.Contexts)
-                    context.Unload();
-                return; // 应用退出中
-            }
-
-            ui.Send(_ =>
-            {
-                DestroyUi(_current);
+                // ServiceHost has no WPF synchronization context. It still owns
+                // the command snapshot, so commit it directly on the service thread.
                 SwapRegistrations(_current, next);
-                CreateUi(next);
-            }, null);
+                var old = _current;
+                _current = next;
+                foreach (var alc in old.Contexts)
+                    alc.Unload();
+                _log.Info("module",
+                    $"模块装载完成(无 UI): {next.Modules.Count} 个模块/{next.RegisteredNames.Count} 条指令");
+            }
+            else
+            {
+                ui.Send(_ =>
+                {
+                    DestroyUi(_current);
+                    SwapRegistrations(_current, next);
+                    CreateUi(next);
+                }, null);
 
-            var old = _current;
-            _current = next;
-            foreach (var alc in old.Contexts)
-                alc.Unload();
+                var old = _current;
+                _current = next;
+                foreach (var alc in old.Contexts)
+                    alc.Unload();
 
-            _log.Info("module",
-                $"模块装载完成: {next.Modules.Count} 个模块,{next.RegisteredNames.Count} 条指令");
+                _log.Info("module",
+                    $"模块装载完成: {next.Modules.Count} 个模块,{next.RegisteredNames.Count} 条指令");
+            }
         }
 
         ReloadCompleted?.Invoke();
@@ -196,18 +229,37 @@ public sealed class ModuleHost : IDisposable
             return;
         }
 
-        // 模块只能占用自己的一级域。先从当前注册表排除旧模块，再用真实命令
+        // 模块只能占用自己的一级域。先移除旧模块和同名前端代理，再用真实命令
         // 元数据推导宿主保留域，避免维护一份会随功能漂移的名称名单。
+        var pendingNames = next.PendingCommands
+            .Select(item => item.Descriptor.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var name in old.RegisteredNames)
+            _registry.Unregister(name);
+
+        // ShellServiceClient 会把前端模块命令投影成 frontend:* 代理。代理不是宿主保留命令，
+        // 重载时必须让新模块实现接管同名命令，否则 module.list 与 command.list 会数量不一致。
+        foreach (var command in _registry.All()
+                     .Where(command =>
+                         _registry.GetSource(command.Name)
+                             .StartsWith("frontend:", StringComparison.OrdinalIgnoreCase)
+                         && pendingNames.Contains(command.Name)))
+        {
+            _registry.Unregister(command.Name);
+        }
+
         var reservedCommandNames = _registry.All()
-            .Where(command => !_registry.GetSource(command.Name)
-                .StartsWith("module:", StringComparison.OrdinalIgnoreCase))
+            .Where(command =>
+            {
+                var source = _registry.GetSource(command.Name);
+                return !source.StartsWith("module:", StringComparison.OrdinalIgnoreCase)
+                       && !source.StartsWith("frontend:", StringComparison.OrdinalIgnoreCase);
+            })
             .Select(command => command.Name);
         var blockedDomains = FindModuleDomainConflicts(
             reservedCommandNames,
             next.PendingCommands.Select(item => item.Descriptor.Name));
-
-        foreach (var name in old.RegisteredNames)
-            _registry.Unregister(name);
 
         foreach (var (descriptor, moduleName) in next.PendingCommands)
         {
@@ -376,6 +428,7 @@ public sealed class ModuleHost : IDisposable
         }
 
         var docs = XmlDocs.TryLoad(dllPath, _log);
+        var contextAttached = false;
 
         foreach (var infoType in infoTypes)
         {
@@ -395,6 +448,12 @@ public sealed class ModuleHost : IDisposable
 
             var open = GetProp(info, "Open") is true;
             var moduleName = GetProp(info, "ModuleName") as string ?? asm.GetName().Name ?? fileName;
+            if (!contextAttached)
+            {
+                AttachModuleContexts(snap, types, moduleName);
+                contextAttached = true;
+            }
+
             snap.Metas.Add((moduleName,
                 GetProp(info, "Description") as string ?? "",
                 GetProp(info, "Author") as string ?? "",
@@ -423,6 +482,42 @@ public sealed class ModuleHost : IDisposable
         }
     }
 
+    private void AttachModuleContexts(
+        Snapshot snap,
+        IReadOnlyList<Type> types,
+        string owner)
+    {
+        var contextTypes = types.Where(type =>
+            type.IsPublic && !type.IsAbstract
+            && typeof(IModuleContextAware).IsAssignableFrom(type));
+
+        foreach (var contextType in contextTypes)
+        {
+            if (_bus == null || _settings == null || string.IsNullOrWhiteSpace(_dataDirectory))
+            {
+                _log.Warn("module",
+                    $"模块 {owner} 请求宿主业务上下文，但当前装配点只提供了命令注册表；已跳过 {contextType.FullName}");
+                continue;
+            }
+
+            try
+            {
+                var module = (IModuleContextAware)snap.GetInstance(contextType);
+                module.Attach(new ModuleContext(
+                    snap,
+                    owner,
+                    _bus,
+                    _settings,
+                    _log,
+                    _dataDirectory));
+            }
+            catch (Exception ex)
+            {
+                _log.Warn("module", $"注入模块上下文失败 ({contextType.FullName}): {ex.Message}");
+            }
+        }
+    }
+
     /// <summary>把一个业务类的公共方法收集为待注册指令(MD-03/04)。</summary>
     private void CollectType(Snapshot snap, string moduleName, Type type, XmlDocs? docs)
     {
@@ -430,7 +525,7 @@ public sealed class ModuleHost : IDisposable
         foreach (var m in type.GetMethods(
                      BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
         {
-            if (m.IsSpecialName || m.IsGenericMethodDefinition)
+            if (m.IsSpecialName || m.IsGenericMethodDefinition || IsModuleLifecycleMethod(type, m))
                 continue;
 
             var commandName = $"{moduleName}.{m.Name}";
@@ -447,6 +542,28 @@ public sealed class ModuleHost : IDisposable
     }
 
     private static readonly IReadOnlyDictionary<string, string> EmptyDocs = new Dictionary<string, string>();
+
+    private static bool IsModuleLifecycleMethod(Type type, MethodInfo method)
+    {
+        Type[] lifecycleContracts =
+        [
+            typeof(IModuleContextAware),
+            typeof(IGlobalShortcutModule),
+            typeof(IUiModule),
+        ];
+
+        foreach (var contract in lifecycleContracts)
+        {
+            if (!contract.IsAssignableFrom(type))
+                continue;
+
+            var map = type.GetInterfaceMap(contract);
+            if (map.TargetMethods.Contains(method))
+                return true;
+        }
+
+        return false;
+    }
 
     private static bool ReadUiFlag(string directory)
     {
@@ -691,13 +808,31 @@ public sealed class ModuleHost : IDisposable
         {
             try
             {
-                ui.Send(_ => DestroyUi(_current), null);
+                ui.Send(_ =>
+                {
+                    DestroyUi(_current);
+                    UnregisterCommands(_current);
+                }, null);
             }
             catch (Exception ex)
             {
                 _log.Warn("module", $"退出时销毁 UI 模块失败: {ex.Message}");
             }
         }
+        else
+        {
+            UnregisterCommands(_current);
+        }
+    }
+
+    private void UnregisterCommands(Snapshot snapshot)
+    {
+        if (_registry == null)
+            return;
+
+        foreach (var name in snapshot.RegisteredNames)
+            _registry.Unregister(name);
+        snapshot.RegisteredNames.Clear();
     }
 
     private static void DisposeShortcutRegistrations(Snapshot snapshot)
@@ -749,6 +884,42 @@ public sealed class ModuleHost : IDisposable
             foreach (var (name, desc, author, version, open, file, slot, ui) in Metas)
                 Modules.Add(new ModuleMeta(name, desc, author, version, open, file,
                     _commandCounts.GetValueOrDefault(name), slot, ui));
+        }
+    }
+
+    private sealed class ModuleContext(
+        Snapshot snapshot,
+        string owner,
+        CommandBus bus,
+        ISettingsService settings,
+        IShellLog log,
+        string dataDirectory) : IModuleContext
+    {
+        public CommandBus Bus { get; } = bus;
+
+        public ISettingsService Settings { get; } = settings;
+
+        public IShellLog Log { get; } = log;
+
+        public string DataDirectory { get; } = dataDirectory;
+
+        public void RegisterCommands(Action<CommandRegistry> configure)
+        {
+            ArgumentNullException.ThrowIfNull(configure);
+            var staging = new CommandRegistry();
+            configure(staging);
+
+            foreach (var descriptor in staging.All())
+            {
+                if (snapshot.PendingCommands.Any(item =>
+                        item.Descriptor.Name.Equals(descriptor.Name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException(
+                        $"模块 {owner} 重复暂存指令: {descriptor.Name}");
+                }
+
+                snapshot.PendingCommands.Add((descriptor, owner));
+            }
         }
     }
 

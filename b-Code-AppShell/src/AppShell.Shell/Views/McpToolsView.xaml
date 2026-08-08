@@ -3,11 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="Transparent">
 
-    <!--
-        UI-07:筛选区由 10 列固定 Grid 改为可换行的 WrapPanel ——
-        窄宽度下不再把搜索框挤没,中央区拖窄也可用。
-    -->
-
     <UserControl.Resources>
         <!-- 视图是独立 BAML:StaticResource 必须在自己的作用域里找得到 -->
         <ResourceDictionary>
@@ -20,18 +15,11 @@
     <DockPanel Margin="10">
         <!--
             3.1 修订:顶部原本是 10 列 Grid + 一排复选框共两层控件,
-            现在合成一个「切分圆角矩形」—— 搜索 / 两个筛选 / 三个开关 / 动作 四段,
+            现在合成一个「切分圆角矩形」—— 两个筛选 / 三个开关 / 动作 三段,
             段间用发丝线切分,窄宽度下整条自动换行。
         -->
         <Border DockPanel.Dock="Top" Style="{StaticResource Shell.Segment.Bar}">
             <WrapPanel Orientation="Horizontal">
-                <TextBlock Text="搜索" Style="{StaticResource Shell.Segment.Label}" />
-                <TextBox x:Name="SearchBox" Width="180"
-                         Style="{StaticResource Shell.Segment.TextBox}"
-                         TextChanged="OnFilterChanged" />
-
-                <Border Style="{StaticResource Shell.Segment.Divider}" />
-
                 <TextBlock Text="域" Style="{StaticResource Shell.Segment.Label}" />
                 <ComboBox x:Name="DomainFilterBox" Width="130"
                           Style="{StaticResource Shell.Segment.ComboBox}"

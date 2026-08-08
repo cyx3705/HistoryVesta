@@ -1,14 +1,14 @@
 # AppShell API 与指令手册
 
-> 适用版本：AppShell 3.1.7（3.0.3 为冻结基线；3.1.1 为功能收口基线）
+> 适用版本：AppShell 3.1.9 候选（当前稳定消费版本 3.1.7；3.1.8 不受支持）
 
-本手册给出稳定公开 API 的常用入口和 3.1.7 框架基础命令。正式宿主运行入口为
+本手册给出 3.1.9 候选公开 API 的常用入口和框架基础命令。正式宿主运行入口为
 `host/AppShell.exe`，程序集 XML 文档位于同一 `host/` 目录；兼容框架包的完整签名位于
 `lib/<TFM>/AppShell.*.xml`。源码仓中的四份 `PublicAPI.Shipped.txt` 是冻结门禁，不随运行宿主发布。
 最终命令集合以应用运行时的 `command.list`、`command.show` 和 `command.manual` 为准。
 
-当前 3.1.7 正式部署只生成宿主快照，不生成 NuGet 包。以下包表和最小宿主代码用于仍走单独批准兼容包源的
-嵌入式消费方，不代表 `z-Package-AppShell` 提供 3.1.7 feed。
+当前正式部署的稳定版本仍是 3.1.7。3.1.9 尚未发布，3.1.8 不作为稳定支持版本。以下包表和最小宿主代码
+用于评审 3.1.9 候选合同，不代表 `z-Package-AppShell` 已提供 3.1.9 feed。
 
 模块命令、消费方业务命令以及按面板、MCP、Web 能力启用的命令不会在每个宿主中同时出现。
 
@@ -95,6 +95,15 @@ Shell 核心、窗口和业务命令；仍保留中央命令集与 `command.*`�
 | `CommandResult` | `Ok`、`Fail`、`Success`、`Message`、`Data` | 统一执行结果 |
 | `CommandSchemaExporter` | `ExportTools`、`Find`、`BuildCommandText` | 从最终注册表生成 MCP schema 和反向命令文本 |
 | `CommandManualGenerator` | `Render`、`Sha256` | 从运行时注册表生成命令手册 |
+
+模块宿主的 3.1.9 增量公开面如下：
+
+| API | 常用成员 | 说明 |
+|---|---|---|
+| `IModuleContext` | `Bus`、`Log`、`Settings`、`DataDirectory`、`RegisterCommands` | 模块取得宿主权威服务和宿主数据根目录；模块自行在根目录下选择专属子目录 |
+| `IModuleContextAware` | `Attach(IModuleContext)` | 模块声明需要宿主上下文；由 `ModuleHost` 在装载阶段调用 |
+| `ModuleHost` | `Attach(registry, bus, settings, dataDirectory)` | 为模块生命周期接入完整宿主上下文 |
+| `ShellConfig` | `ModuleDirectory` | 可选的部署模块目录；未设置时沿用应用数据目录 |
 
 注册命令时至少提供名称、摘要和 handler；公开给用户或 MCP 的命令还应提供参数说明与示例。
 
@@ -197,10 +206,15 @@ registry.Register(new CommandDescriptor
 - 控制台与命令集都通过 `command.domains` 读取同一份运行期已注册域集合。普通日志类别的第一个 `:` 或 `.`
   前缀只有命中已注册域时才用于过滤，否则归入 `core`，不会产生控制台私有域。命令结果/进度类别在
   `CommandBus.ResultCategory` / `ProgressCategory` 兼容前缀后附加命令域。长文本按当前窗格宽度软换行，复制和导出保留原始逻辑文本。
+- 3.1.9 承接的控制台候选能力在 `win.max name=console` 聚焦态时，于输入框上方弹出当前命令、参数名或允许值候选；
+  候选始终来自运行期 `CommandRegistry`。`Shift+W` 上移、`Shift+S` 下移，`Tab` 仅把选中候选写入当前 token，
+  `Enter` 才执行命令，`Shift+Tab` 不参与候选逻辑。普通布局首次非空输入通过 `win.show name=mcp` 显示中央命令集；
+  命令集没有独立搜索框，控制台文本实时过滤命令名、说明和示例，`Shift+W/S` 选择列表结果，`Tab` 把命令名写回
+  控制台但不执行。该能力是 Shell 内部输入辅助，不新增命令或公开 API。
 
 ## 5. 基础命令目录
 
-以下是 3.1.7 框架命令快照。宿主只注册已启用能力对应的组；运行时 `command.list` 是最终权威目录。
+以下是 3.1.9 候选框架命令快照。宿主只注册已启用能力对应的组；运行时 `command.list` 是最终权威目录。
 
 ### 5.1 基础、应用与日志
 
@@ -257,6 +271,8 @@ registry.Register(new CommandDescriptor
 
 仅在 `ShellConfig.EnableModules=true` 时注册。AppShell 独立可执行宿主显式启用此项并显示唯一的“模块管理”页；
 普通包消费方仍按最小能力原则选择是否启用。消费方不得复制 `ModuleHost` 或 `ModulesView`，只声明停靠位置和业务模块。
+3.1.9 起模块管理页只读取 `module.list`，用单一“刷新模块”按钮执行 `module.reload` 后重新取清单；模块指令
+详情统一在命令集页面查看，模块页不再读取 `command.list` 或显示第二个指令表。
 
 | 命令 | 用途 / 关键参数 |
 |---|---|

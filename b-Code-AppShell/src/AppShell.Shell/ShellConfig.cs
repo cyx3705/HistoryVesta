@@ -52,6 +52,12 @@ public sealed class ShellConfig
     /// </summary>
     public bool EnableUiModules { get; set; }
 
+    /// <summary>
+    /// Optional module directory for a packaged host. When omitted, modules remain
+    /// under the application's standard AppData directory.
+    /// </summary>
+    public string? ModuleDirectory { get; set; }
+
     /// <summary>双击工具窗口标题条时切换窗口最大化。</summary>
     public bool EnableMaximizeOnDoubleClick { get; set; } = true;
 

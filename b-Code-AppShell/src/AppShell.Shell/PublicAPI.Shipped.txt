@@ -218,6 +218,8 @@ AppShell.Shell.ShellConfig.McpAuditLog.get -> AppShell.Core.Mcp.IMcpAuditLog?
 AppShell.Shell.ShellConfig.McpAuditLog.set -> void
 AppShell.Shell.ShellConfig.McpRemoteConfirm.get -> System.Func<string!, string!, int, bool?>?
 AppShell.Shell.ShellConfig.McpRemoteConfirm.set -> void
+AppShell.Shell.ShellConfig.ModuleDirectory.get -> string?
+AppShell.Shell.ShellConfig.ModuleDirectory.set -> void
 AppShell.Shell.ShellConfig.Panels.get -> System.Collections.Generic.List<AppShell.Core.Panels.PanelDefinition!>!
 AppShell.Shell.ShellConfig.ShellConfig() -> void
 AppShell.Shell.ShellConfig.ToolMenuActions.get -> System.Collections.Generic.List<AppShell.Shell.ShellMenuAction!>!

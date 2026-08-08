@@ -13,8 +13,7 @@
 
     <DockPanel Margin="8">
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
-            <Button x:Name="RefreshButton" Content="刷新" Click="OnRefreshClick" />
-            <Button Content="重载全部模块" Margin="8,0,0,0" Click="OnReloadClick" />
+            <Button x:Name="RefreshButton" Content="刷新模块" Click="OnReloadClick" />
             <Button Content="打开模块目录" Margin="8,0,0,0" Click="OnOpenDirClick" />
             <Separator x:Name="ToolRegistrySeparator" Margin="10,0" Visibility="Collapsed" />
             <!-- 派生应用注册对应 tool.* 能力后才显示这些可选入口。 -->
@@ -33,13 +32,7 @@
                    Text="模块 DLL(+可选 XML 注释与 &lt;模块名&gt;.panel.json 面板)放入目录即自动装载" />
 
         <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="5*" />
-                <RowDefinition Height="8" />
-                <RowDefinition Height="3*" MinHeight="90" />
-            </Grid.RowDefinitions>
-
-            <ListView x:Name="ModuleList" Grid.Row="0" SelectionChanged="OnModuleSelected">
+            <ListView x:Name="ModuleList" SelectionChanged="OnModuleSelectionChanged">
                 <ListView.View>
                     <GridView ColumnHeaderContainerStyle="{StaticResource Shell.GridHeader}">
                         <GridViewColumn Header="模块" Width="160"
@@ -57,25 +50,6 @@
                     </GridView>
                 </ListView.View>
             </ListView>
-
-            <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" Background="Transparent" />
-
-            <DockPanel Grid.Row="2">
-                <TextBlock DockPanel.Dock="Top" x:Name="CommandsTitle" Foreground="{DynamicResource Shell.Brush.TextSecondary}"
-                           Text="(选中模块查看其注册的指令)" Margin="0,4,0,4" />
-                <ListView x:Name="CommandList" MouseDoubleClick="OnCommandDoubleClick">
-                    <ListView.View>
-                        <GridView ColumnHeaderContainerStyle="{StaticResource Shell.GridHeader}">
-                            <GridViewColumn Header="指令" Width="220"
-                                            DisplayMemberBinding="{Binding Name}" />
-                            <GridViewColumn Header="说明" Width="420"
-                                            DisplayMemberBinding="{Binding Summary}" />
-                            <GridViewColumn Header="示例(双击查看帮助)" Width="300"
-                                            DisplayMemberBinding="{Binding Example}" />
-                        </GridView>
-                    </ListView.View>
-                </ListView>
-            </DockPanel>
         </Grid>
     </DockPanel>
 </UserControl>

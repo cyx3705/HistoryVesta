@@ -14,6 +14,7 @@ public partial class McpToolsView : UserControl
     private readonly CommandSelectionState _selection;
     private List<CommandCatalogRow> _allRows = [];
     private IReadOnlyList<string> _domains = [];
+    private string _consoleQuery = "";
     private bool _initialLoadDone;
     private bool _registryRefreshPending;
     private CommandRegistry? _observedRegistry;
@@ -137,12 +138,41 @@ public partial class McpToolsView : UserControl
             : "全部";
     }
 
+    /// <summary>由控制台输入驱动命令集检索，不持有第二个文本输入状态。</summary>
+    internal void SetConsoleQuery(string query)
+    {
+        _consoleQuery = query ?? "";
+        ApplyFilter();
+    }
+
+    /// <summary>在当前可见结果中循环选择，选择继续通过共享状态驱动指令详情。</summary>
+    internal bool MoveConsoleSelection(int direction)
+    {
+        var count = ToolList.Items.Count;
+        if (count == 0)
+            return false;
+
+        var index = ToolList.SelectedIndex;
+        if (index < 0)
+            index = direction < 0 ? 0 : -1;
+        index = (index + direction) % count;
+        if (index < 0)
+            index += count;
+
+        ToolList.SelectedIndex = index;
+        ToolList.ScrollIntoView(ToolList.SelectedItem);
+        return true;
+    }
+
+    internal string? SelectedCommandName
+        => (ToolList.SelectedItem as CommandCatalogRow)?.CommandName;
+
     private void ApplyFilter()
     {
         if (!_initialLoadDone)
             return;
         IEnumerable<CommandCatalogRow> rows = _allRows;
-        var keyword = SearchBox.Text.Trim();
+        var keyword = _consoleQuery.Trim();
         if (keyword.Length > 0)
         {
             rows = rows.Where(row =>
@@ -171,11 +201,17 @@ public partial class McpToolsView : UserControl
         if (IncidentOnlyCheck.IsChecked == true)
             rows = rows.Where(row => row.IncidentCount > 0);
 
+        var selectedName = (ToolList.SelectedItem as CommandCatalogRow)?.CommandName
+                           ?? _selection.CurrentCommandName;
         var list = rows.ToList();
         ToolList.ItemsSource = list;
-        ToolList.SelectedItem = _selection.CurrentCommandName is { } selected
-            ? list.FirstOrDefault(row => row.CommandName.Equals(selected, StringComparison.OrdinalIgnoreCase))
-            : null;
+        var selected = selectedName == null
+            ? null
+            : list.FirstOrDefault(row => row.CommandName.Equals(selectedName, StringComparison.OrdinalIgnoreCase));
+        if (selected == null && keyword.Length > 0)
+            selected = list.FirstOrDefault();
+        ToolList.SelectedItem = selected;
+        _selection.CurrentCommandName = selected?.CommandName;
 
         var hardExcluded = _allRows.Count(row => row.McpState == "hidden");
         var readonlyCount = _allRows.Count(row => row.McpState == "readonly");

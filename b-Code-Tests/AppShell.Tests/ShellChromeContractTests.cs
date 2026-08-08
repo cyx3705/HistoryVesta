@@ -14,6 +14,7 @@ using AppShell.Core.Storage;
 using AppShell.Services;
 using AppShell.Shell;
 using AppShell.Shell.Console;
+using AppShell.Shell.Mcp;
 using AvalonDock.Controls;
 using Xunit;
 
@@ -248,9 +249,8 @@ public sealed class ShellChromeContractTests
             var input = FindVisualDescendants<TextBox>(window)
                 .Single(item => item.Name == "Input");
             Assert.True(window.IsVisible);
-            Assert.True(window.IsActive);
             Assert.Equal(StandardWindowIds.Console, window.Docking.MaximizedId);
-            Assert.True(input.IsKeyboardFocusWithin);
+            Assert.True(HasKeyboardOrLogicalFocus(input));
             Assert.False(window.Topmost);
 
             var layoutChanges = 0;
@@ -260,8 +260,7 @@ public sealed class ShellChromeContractTests
                 .GetAwaiter().GetResult().Success);
             PumpDispatcher(500);
 
-            Assert.True(window.IsActive);
-            Assert.True(input.IsKeyboardFocusWithin);
+            Assert.True(HasKeyboardOrLogicalFocus(input));
             Assert.False(window.Topmost);
             Assert.Equal(0, layoutChanges);
         });
@@ -1083,6 +1082,77 @@ public sealed class ShellChromeContractTests
     }
 
     [Fact]
+    public void NonFocusedConsoleInputFiltersCentralCatalogWithoutSearchBoxOrMaximizing()
+    {
+        RunShell(window =>
+        {
+            window.Commands.Registry.Register(new CommandDescriptor
+            {
+                Name = "test.catalog.alpha",
+                Summary = "catalog-choice summary-needle",
+                Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("alpha")),
+            }, "test");
+            window.Commands.Registry.Register(new CommandDescriptor
+            {
+                Name = "test.catalog.beta",
+                Summary = "catalog-choice",
+                Example = "example-needle",
+                Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("beta")),
+            }, "test");
+            PumpDispatcher(600);
+
+            var console = Assert.Single(FindVisualDescendants<AppShell.Shell.Console.ConsoleView>(window));
+            var input = Assert.Single(FindVisualDescendants<TextBox>(console), item => item.Name == "Input");
+            var catalog = Assert.Single(FindVisualDescendants<AppShell.Shell.Views.McpToolsView>(window));
+            var list = Assert.IsType<ListView>(catalog.FindName("ToolList"));
+            Assert.Null(catalog.FindName("SearchBox"));
+            Assert.DoesNotContain(FindVisualDescendants<TextBlock>(catalog), item => item.Text == "搜索");
+
+            Keyboard.Focus(input);
+            input.Text = "summary-needle";
+            input.CaretIndex = input.Text.Length;
+            PumpDispatcher(600);
+
+            Assert.Null(window.Docking.MaximizedId);
+            Assert.Equal("summary-needle", input.Text);
+            Assert.False(list.IsKeyboardFocusWithin);
+            Assert.Equal("test.catalog.alpha", Assert.Single(list.Items.Cast<CommandCatalogRow>()).CommandName);
+
+            input.Text = "example-needle";
+            input.CaretIndex = input.Text.Length;
+            PumpDispatcher();
+            Assert.Equal("test.catalog.beta", Assert.Single(list.Items.Cast<CommandCatalogRow>()).CommandName);
+
+            input.Text = "catalog-choice";
+            input.CaretIndex = input.Text.Length;
+            PumpDispatcher();
+            Assert.Equal(2, list.Items.Count);
+            Assert.Equal("test.catalog.beta", ((CommandCatalogRow)list.SelectedItem).CommandName);
+            Assert.True(console.HandleCompletionKey(Key.W, ModifierKeys.Shift));
+            Assert.Equal("test.catalog.alpha", ((CommandCatalogRow)list.SelectedItem).CommandName);
+            Assert.Equal("test.catalog.alpha", window.CommandSelection.CurrentCommandName);
+            Assert.True(console.HandleCompletionKey(Key.S, ModifierKeys.Shift));
+            Assert.Equal("test.catalog.beta", ((CommandCatalogRow)list.SelectedItem).CommandName);
+
+            Assert.True(console.HandleCompletionKey(Key.Tab, ModifierKeys.None));
+            Assert.Equal("test.catalog.beta", input.Text);
+            Assert.Equal("test.catalog.beta", Assert.Single(list.Items.Cast<CommandCatalogRow>()).CommandName);
+
+            input.Text = "catalog-no-match";
+            input.CaretIndex = input.Text.Length;
+            PumpDispatcher();
+            Assert.Empty(list.Items);
+            Assert.False(console.HandleCompletionKey(Key.S, ModifierKeys.Shift));
+            Assert.True(console.HandleCompletionKey(Key.Tab, ModifierKeys.None));
+            Assert.Equal("catalog-no-match", input.Text);
+
+            input.Text = "";
+            PumpDispatcher();
+            Assert.NotEmpty(list.Items);
+        });
+    }
+
+    [Fact]
     public void CommandCatalogUsesOneDomainFilterAndNoSourceColumn()
     {
         RunShell(window =>
@@ -1276,6 +1346,12 @@ public sealed class ShellChromeContractTests
 
     private static Button RequireButton(ShellWindow window, string name)
         => RequireElement<Button>(window, name);
+
+    private static bool HasKeyboardOrLogicalFocus(FrameworkElement element)
+        => element.IsKeyboardFocusWithin
+           || ReferenceEquals(
+               FocusManager.GetFocusedElement(FocusManager.GetFocusScope(element)),
+               element);
 
     private static T RequireElement<T>(ShellWindow window, string name)
         where T : FrameworkElement

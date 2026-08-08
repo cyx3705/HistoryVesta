@@ -35,8 +35,8 @@ if ($violations.Count -ne 0) {
     Write-Host 'Public API freeze gate failed:' -ForegroundColor Red
     $violations | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
     Write-Host ''
-    Write-Host 'AppShell 3.0.x is frozen and must not add public APIs. Open and review a new version line instead.'
+    Write-Host 'Public API changes must be reviewed into a versioned Shipped baseline; Unshipped must be empty at release readiness.'
     exit 1
 }
 
-Write-Host "Public API freeze gate passed: $($projects.Count) package baselines are unchanged."
+Write-Host "Public API baseline gate passed: $($projects.Count) package Unshipped files are empty."

@@ -88,11 +88,85 @@
                          SelectionBrush="{DynamicResource Shell.Brush.Accent}"
                          CaretBrush="{DynamicResource Shell.Brush.TextPrimary}"
                          VerticalContentAlignment="Center"
-                         PreviewKeyDown="OnInputKeyDown" TextChanged="OnInputTextChanged" />
+                         PreviewKeyDown="OnInputKeyDown" TextChanged="OnInputTextChanged"
+                         SelectionChanged="OnInputSelectionChanged"
+                         LostKeyboardFocus="OnInputLostKeyboardFocus"
+                         SizeChanged="OnInputSizeChanged" />
             </DockPanel>
         </Border>
 
         <!-- 输出区:虚拟化列表(C-05 / N-03) -->
+        <Popup x:Name="CompletionPopup"
+               PlacementTarget="{Binding ElementName=Input}"
+               Placement="Top"
+               VerticalOffset="-6"
+               AllowsTransparency="True"
+               Focusable="False"
+               StaysOpen="True"
+               PopupAnimation="Fade">
+            <Border x:Name="CompletionBorder"
+                    Width="360"
+                    MaxHeight="240"
+                    Background="{DynamicResource Shell.Brush.Surface}"
+                    BorderBrush="{DynamicResource Shell.Brush.Border}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource Shell.Radius.Inner}"
+                    Padding="4">
+                <ListBox x:Name="CompletionList"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Foreground="{DynamicResource Shell.Brush.TextPrimary}"
+                         IsHitTestVisible="False"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="6,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding DisplayText}"
+                                           FontFamily="{DynamicResource Shell.Font.MonoFamily}"
+                                           FontSize="{DynamicResource Shell.Font.Body}"
+                                           Foreground="{DynamicResource Shell.Brush.TextPrimary}" />
+                                <TextBlock Grid.Column="1"
+                                           Margin="12,0,0,0"
+                                           Text="{Binding Description}"
+                                           TextTrimming="CharacterEllipsis"
+                                           FontSize="{DynamicResource Shell.Font.Small}"
+                                           Foreground="{DynamicResource Shell.Brush.TextSecondary}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="CompletionItemBorder"
+                                                Background="Transparent"
+                                                CornerRadius="{DynamicResource Shell.Radius.Inner}">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="CompletionItemBorder"
+                                                        Property="Background"
+                                                        Value="{DynamicResource Shell.Brush.AccentSoft}" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+            </Border>
+        </Popup>
+
         <ListBox x:Name="Output"
                  Margin="0,6,0,0"
                  Background="Transparent"

@@ -81,8 +81,9 @@ public partial class App : Application
         {
             AppName = identity.Name,
             AppVersion = identity.Version,
-            EnableModules = false,
+            EnableModules = true,
             EnableUiModules = true,
+            ModuleDirectory = ResolvePackagedModuleDirectory(paths.ModulesDir),
             EnableRemoteManagementViews = true,
             CloseBehavior = ShellCloseBehavior.Hide,
             // AppShell 独立宿主是模块生命周期的最终所有者；OHS 等产品只声明
@@ -177,7 +178,8 @@ public partial class App : Application
         var registry = new CommandRegistry();
         var bus = new CommandBus(registry, log);
         var shortcuts = new GlobalShortcutService(bus, log);
-        var moduleDirectory = settings.Get("module.dir") ?? paths.ModulesDir;
+        var moduleDirectory = ResolvePackagedModuleDirectory(
+            settings.Get("module.dir") ?? paths.ModulesDir);
         var modules = new ModuleHost(moduleDirectory, log)
         {
             EnableCommands = true,
@@ -192,7 +194,7 @@ public partial class App : Application
         modules.ReloadCompleted += () =>
             web.PublishModuleRevision(Interlocked.Increment(ref moduleRevision));
 
-        modules.Attach(registry);
+        modules.Attach(registry, bus, settings, servicePaths.Root);
         RegisterServiceModuleCommands(registry, modules, settings);
 
         // Two physical presses on the slash key are intentionally non-suppressing.
@@ -271,6 +273,12 @@ public partial class App : Application
                 return CommandResult.Ok($"模块目录已切换并重载: {path}");
             },
         }, "framework:service");
+    }
+
+    private static string ResolvePackagedModuleDirectory(string fallback)
+    {
+        var packaged = Path.Combine(AppContext.BaseDirectory, "Modules");
+        return Directory.Exists(packaged) ? packaged : fallback;
     }
 
     protected override void OnExit(ExitEventArgs e)

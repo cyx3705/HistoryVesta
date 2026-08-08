@@ -29,6 +29,17 @@ public sealed class ModuleCatalogSnapshot
 
     public IReadOnlyList<ModuleCommandInfo> Commands { get; }
 
+    internal static ModuleCatalogSnapshot FromModules(IReadOnlyList<ModuleMeta> modules)
+    {
+        ArgumentNullException.ThrowIfNull(modules);
+        var copy = modules.ToList();
+        var names = new HashSet<string>(copy.Select(module => module.ModuleName), StringComparer.OrdinalIgnoreCase);
+        if (names.Count != copy.Count || copy.Any(module => string.IsNullOrWhiteSpace(module.ModuleName)))
+            throw new InvalidOperationException("模块目录包含空名称或重复名称");
+        return new ModuleCatalogSnapshot(copy, [], new Dictionary<string, IReadOnlyList<ModuleCommandInfo>>(
+            StringComparer.OrdinalIgnoreCase));
+    }
+
     public IReadOnlyList<ModuleCommandInfo> CommandsFor(string moduleName)
         => _commandsByModule.GetValueOrDefault(moduleName) ?? [];
 
@@ -105,6 +116,32 @@ public sealed record ModuleCatalogLoadResult(
 
 public static class ModuleCatalogReader
 {
+    /// <summary>
+    /// 只读取模块清单供模块管理页使用。模块页不依赖 command.list，避免命令目录修订期间
+    /// 因计数短暂不一致而隐藏已经成功装载的模块。
+    /// </summary>
+    internal static async Task<ModuleCatalogLoadResult> LoadModulesAsync(
+        CommandBus bus,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bus);
+
+        var moduleResult = await bus.ExecuteAsync("module.list", "UI", cancellationToken);
+        if (!moduleResult.Success)
+            return new(false, $"模块清单加载失败: {FirstLine(moduleResult.Message)}", null);
+        if (!CommandResultData.TryRead<IReadOnlyList<ModuleMeta>>(moduleResult.Data, out var modules))
+            return new(false, "模块清单返回了无法识别的数据", null);
+
+        try
+        {
+            return new(true, moduleResult.Message, ModuleCatalogSnapshot.FromModules(modules));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new(false, ex.Message, null);
+        }
+    }
+
     public static async Task<ModuleCatalogLoadResult> LoadAsync(
         CommandBus bus,
         CancellationToken cancellationToken = default)

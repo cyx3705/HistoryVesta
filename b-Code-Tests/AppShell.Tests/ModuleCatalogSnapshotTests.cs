@@ -4,6 +4,7 @@ using AppShell.Services.Modules;
 using AppShell.Shell.Mcp;
 using AppShell.Shell.Views;
 using System.Text.Json;
+using System.Xml.Linq;
 using Xunit;
 
 namespace AppShell.Tests;
@@ -80,6 +81,66 @@ public sealed class ModuleCatalogSnapshotTests
 
         Assert.True(result.Success, result.Message);
         Assert.Equal("calc.add", Assert.Single(result.Snapshot!.CommandsFor("Math")).Name);
+    }
+
+    [Fact]
+    public async Task ModulesViewReaderDoesNotRequireCommandCatalogConsistency()
+    {
+        var calls = new List<string>();
+        var modules = new List<ModuleMeta> { Module("OneHistoryStudio", 31) };
+        var bus = new CommandBus(new CommandRegistry(), new TestLog())
+        {
+            RemoteExecutor = (text, _, _) =>
+            {
+                calls.Add(text);
+                return Task.FromResult(text == "module.list"
+                    ? CommandResult.Ok("modules", JsonSerializer.SerializeToElement(modules))
+                    : CommandResult.Fail("command catalog is intentionally unavailable"));
+            },
+        };
+
+        var result = await ModuleCatalogReader.LoadModulesAsync(bus);
+
+        Assert.True(result.Success, result.Message);
+        Assert.Equal(["module.list"], calls);
+        Assert.Equal("OneHistoryStudio", Assert.Single(result.Snapshot!.Modules).ModuleName);
+        Assert.Empty(result.Snapshot.Commands);
+    }
+
+    [Fact]
+    public void ModulesViewUsesOneRefreshActionAndNoCommandDetailPane()
+    {
+        var path = Path.Combine(
+            RepositoryRoot(),
+            "b-Code-AppShell",
+            "src",
+            "AppShell.Shell",
+            "Views",
+            "ModulesView.xaml");
+        var document = XDocument.Load(path);
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+        var elements = document.Descendants().ToList();
+        var buttons = elements.Where(element => element.Name == presentation + "Button").ToList();
+
+        Assert.Single(buttons, button => (string?)button.Attribute("Click") == "OnReloadClick");
+        Assert.Contains(buttons, button => (string?)button.Attribute("Content") == "刷新模块");
+        Assert.DoesNotContain(buttons, button => (string?)button.Attribute("Click") == "OnRefreshClick");
+        Assert.DoesNotContain(elements, element => (string?)element.Attribute(x + "Name") == "CommandList");
+        Assert.DoesNotContain(elements, element => (string?)element.Attribute(x + "Name") == "CommandsTitle");
+    }
+
+    private static string RepositoryRoot()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+        while (current != null)
+        {
+            if (File.Exists(Path.Combine(current.FullName, "project.manifest.json")))
+                return current.FullName;
+            current = current.Parent;
+        }
+
+        throw new DirectoryNotFoundException("未找到 AppShell 仓库根目录");
     }
 
     private static ModuleMeta Module(string name, int commandCount)

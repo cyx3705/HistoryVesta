@@ -6,15 +6,13 @@ using AppShell.Core.Commands;
 namespace AppShell.Shell.Views;
 
 /// <summary>
-/// 模块管理页(V2.1.1):已装载模块清单 + 选中模块的注册指令明细。
+/// 模块管理页(V2.1.1):已装载模块清单。
 /// 数据经 module.list 消费(Data = ModuleMeta 列表);动作按钮全部经总线
-/// (module.reload / module.open);指令明细为注册表只读展示,双击行发 help。
+/// (module.reload / module.open)。命令详情统一由命令集页面提供。
 /// </summary>
 public partial class ModulesView : UserControl
 {
     private readonly Func<CommandBus?> _busAccessor;
-    private ModuleCatalogSnapshot? _snapshot;
-
     private bool _initialLoadDone;
 
     public ModulesView(Func<CommandBus?> busAccessor)
@@ -37,21 +35,26 @@ public partial class ModulesView : UserControl
 
     public sealed record CommandRow(string Name, string Summary, string Example);
 
-    private async void OnRefreshClick(object sender, System.Windows.RoutedEventArgs e)
-        => await RefreshAsync();
-
     private async void OnReloadClick(object sender, System.Windows.RoutedEventArgs e)
     {
         var bus = _busAccessor();
         if (bus == null)
             return;
-        var result = await bus.ExecuteAsync("module.reload", "UI");
-        if (!result.Success)
+        RefreshButton.IsEnabled = false;
+        try
         {
-            ClearSnapshot("模块重载失败: " + FirstLine(result.Message));
-            return;
+            var result = await bus.ExecuteAsync("module.reload", "UI");
+            if (!result.Success)
+            {
+                ClearModules("模块重载失败: " + FirstLine(result.Message));
+                return;
+            }
+            await RefreshAsync();
         }
-        await RefreshAsync();
+        finally
+        {
+            RefreshButton.IsEnabled = true;
+        }
     }
 
     private void OnOpenDirClick(object sender, System.Windows.RoutedEventArgs e)
@@ -92,20 +95,18 @@ public partial class ModulesView : UserControl
         var bus = _busAccessor();
         if (bus == null)
         {
-            ClearSnapshot("命令总线尚未就绪");
+            ClearModules("命令总线尚未就绪");
             return;
         }
 
         UpdateToolRegistryActions(bus.Registry);
         RefreshButton.IsEnabled = false;
-        var selectedModule = (ModuleList.SelectedItem as ModuleRow)?.ModuleName;
-        ClearSnapshot("正在加载模块与命令目录...");
+        ClearModules("正在加载模块目录...");
         try
         {
-            var result = await ModuleCatalogReader.LoadAsync(bus);
+            var result = await ModuleCatalogReader.LoadModulesAsync(bus);
             if (result.Success && result.Snapshot is { } snapshot)
             {
-                _snapshot = snapshot;
                 var rows = snapshot.Modules.Select(m => new ModuleRow(
                         m.ModuleName, m.Version, m.Open ? "全暴露" : "精准暴露",
                         m.CommandCount, m.AssemblyFile, m.Description))
@@ -113,14 +114,11 @@ public partial class ModulesView : UserControl
                 ModuleList.ItemsSource = rows;
                 StatusText.Text = rows.Count == 0
                     ? "当前无已装载模块;把模块 DLL 放入 Modules 目录即自动装载(约 1s)"
-                    : $"已装载 {rows.Count} 个模块,共 {snapshot.Commands.Count} 条模块指令";
-                if (selectedModule != null)
-                    ModuleList.SelectedItem = rows.FirstOrDefault(row =>
-                        row.ModuleName.Equals(selectedModule, StringComparison.OrdinalIgnoreCase));
+                    : $"已装载 {rows.Count} 个模块,共 {snapshot.Modules.Sum(module => module.CommandCount)} 条模块指令";
             }
             else
             {
-                ClearSnapshot(result.Message);
+                ClearModules(result.Message);
             }
         }
         finally
@@ -143,38 +141,12 @@ public partial class ModulesView : UserControl
             : System.Windows.Visibility.Collapsed;
     }
 
-    private void OnModuleSelected(object sender, SelectionChangedEventArgs e)
+    private void OnModuleSelectionChanged(object sender, SelectionChangedEventArgs e)
+        => ToolRemoveButton.IsEnabled = ModuleList.SelectedItem is ModuleRow;
+
+    private void ClearModules(string status)
     {
-        if (ModuleList.SelectedItem is not ModuleRow row)
-        {
-            CommandList.ItemsSource = null;
-            CommandsTitle.Text = "(选中模块查看其注册的指令)";
-            ToolRemoveButton.IsEnabled = false;
-            return;
-        }
-
-        ToolRemoveButton.IsEnabled = true;
-
-        var commands = _snapshot?.CommandsFor(row.ModuleName)
-            .Select(command => new CommandRow(command.Name, command.Summary, command.Example))
-            .ToList() ?? [];
-
-        CommandList.ItemsSource = commands;
-        CommandsTitle.Text = $"{row.ModuleName} 注册的指令({commands.Count} 条):";
-    }
-
-    private void OnCommandDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-    {
-        if (CommandList.SelectedItem is CommandRow row)
-            _ = _busAccessor()?.ExecuteAsync($"help {row.Name}", "UI");
-    }
-
-    private void ClearSnapshot(string status)
-    {
-        _snapshot = null;
         ModuleList.ItemsSource = null;
-        CommandList.ItemsSource = null;
-        CommandsTitle.Text = "(选中模块查看其注册的指令)";
         ToolRemoveButton.IsEnabled = false;
         StatusText.Text = status;
     }

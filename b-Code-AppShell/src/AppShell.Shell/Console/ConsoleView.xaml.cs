@@ -28,6 +28,7 @@ public partial class ConsoleView : UserControl
     private readonly IShellLog _log;
     private readonly CommandBus _bus;
     private readonly CommandHistory _history;
+    private readonly CommandCompletionEngine _completionEngine;
     private readonly int _bufferLimit;
 
     private readonly ConcurrentQueue<ShellLogEntry> _incoming = new();
@@ -52,9 +53,16 @@ public partial class ConsoleView : UserControl
     // 输入区状态
     private int _historyIndex = -1;
     private string _draft = "";
-    private List<string>? _completions;
+    private ConsoleCompletionResult _completionResult = ConsoleCompletionResult.Empty;
     private int _completionIndex;
     private bool _suppressTextChanged;
+    private Func<bool>? _completionFocusPredicate;
+    private Action? _showCommandCatalog;
+    private Action<string>? _setCommandCatalogQuery;
+    private Func<int, bool>? _moveCommandCatalogSelection;
+    private Func<string?>? _getSelectedCommandName;
+    private bool _completionFocusEnabled = true;
+    private bool _catalogShownForInput;
 
     public ConsoleView(IShellLog log, CommandBus bus, CommandHistory history, int bufferLimit = 50_000)
     {
@@ -63,6 +71,7 @@ public partial class ConsoleView : UserControl
         _log = log;
         _bus = bus;
         _history = history;
+        _completionEngine = new CommandCompletionEngine(bus.Registry);
         _bufferLimit = Math.Max(1000, bufferLimit);
 
         LevelFilter.ItemsSource = new[] { "全部", "Trace", "Debug", "Info", "Warn", "Error", "Fatal" };
@@ -70,6 +79,8 @@ public partial class ConsoleView : UserControl
         DomainFilter.ItemsSource = new[] { "全部" };
         DomainFilter.SelectedIndex = 0;
 
+        CompletionList.ItemsSource = Array.Empty<ConsoleCompletionCandidate>();
+        CompletionPopup.IsOpen = false;
         Output.ItemsSource = _visible;
 
         // 已有历史补读 + 增量订阅
@@ -98,7 +109,11 @@ public partial class ConsoleView : UserControl
             ObserveRegistry();
             await RefreshDomainsAsync();
         };
-        Unloaded += (_, _) => StopObservingRegistry();
+        Unloaded += (_, _) =>
+        {
+            HideCompletions();
+            StopObservingRegistry();
+        };
     }
 
     /// <summary>当前控制台显示级别(log.level,L-04;文件始终全量)。</summary>
@@ -124,6 +139,43 @@ public partial class ConsoleView : UserControl
     internal string KeywordFilterValue => _keyword;
     internal bool MuteLayoutEnabled => _muteLayout;
     internal bool AutoScrollEnabled => _autoScroll;
+
+    /// <summary>由 ShellWindow 注入聚焦判定和非聚焦命令集切换；保持为内部接线，不进入公开 API。</summary>
+    internal void ConfigureCompletionRouting(
+        Func<bool> completionFocusPredicate,
+        Action showCommandCatalog,
+        Action<string>? setCommandCatalogQuery = null,
+        Func<int, bool>? moveCommandCatalogSelection = null,
+        Func<string?>? getSelectedCommandName = null)
+    {
+        _completionFocusPredicate = completionFocusPredicate;
+        _showCommandCatalog = showCommandCatalog;
+        _setCommandCatalogQuery = setCommandCatalogQuery;
+        _moveCommandCatalogSelection = moveCommandCatalogSelection;
+        _getSelectedCommandName = getSelectedCommandName;
+        RefreshCompletionFocus();
+    }
+
+    /// <summary>停靠布局改变后刷新候选模式；非聚焦时不显示候选 Popup。</summary>
+    internal void RefreshCompletionFocus()
+    {
+        var enabled = _completionFocusPredicate?.Invoke() ?? true;
+        if (enabled != _completionFocusEnabled)
+        {
+            _completionFocusEnabled = enabled;
+            _catalogShownForInput = false;
+        }
+
+        if (!enabled)
+        {
+            HideCompletions();
+            SyncCommandCatalog(showCatalog: true);
+        }
+        else if (Input.IsKeyboardFocusWithin && !string.IsNullOrWhiteSpace(Input.Text))
+            RefreshCompletions();
+        else
+            _setCommandCatalogQuery?.Invoke("");
+    }
 
     internal bool TrySetSource(string source, out IReadOnlyList<string> availableDomains)
     {
@@ -248,6 +300,7 @@ public partial class ConsoleView : UserControl
             Input.Focusable = true;
             Keyboard.Focus(Input);
             Input.CaretIndex = Input.Text.Length;
+            RefreshCompletions();
         }));
     }
 
@@ -385,7 +438,10 @@ public partial class ConsoleView : UserControl
             await Task.Delay(200);
             _registryRefreshPending = false;
             if (IsLoaded)
+            {
                 await RefreshDomainsAsync();
+                RefreshCompletions();
+            }
         });
     }
 
@@ -441,6 +497,12 @@ public partial class ConsoleView : UserControl
 
     private void OnInputKeyDown(object sender, KeyEventArgs e)
     {
+        if (HandleCompletionKey(e.Key, Keyboard.Modifiers))
+        {
+            e.Handled = true;
+            return;
+        }
+
         switch (e.Key)
         {
             case Key.Enter:
@@ -458,14 +520,10 @@ public partial class ConsoleView : UserControl
                 e.Handled = true;
                 break;
 
-            case Key.Tab:
-                CycleCompletion();
-                e.Handled = true;
-                break;
-
             case Key.Escape:
                 SetInputText("");
                 _historyIndex = -1;
+                HideCompletions();
                 e.Handled = true;
                 break;
         }
@@ -480,6 +538,7 @@ public partial class ConsoleView : UserControl
         _historyIndex = -1;
         _draft = "";
         SetInputText("");
+        HideCompletions();
         _ = ExecuteAndFlushAsync(text, "手动");
     }
 
@@ -528,57 +587,25 @@ public partial class ConsoleView : UserControl
         SetInputText(items[_historyIndex]);
     }
 
-    /// <summary>C-13:Tab 补全指令名(输入首词)与参数名(后续词),重复 Tab 轮换候选。</summary>
-    private void CycleCompletion()
-    {
-        if (_completions == null)
-        {
-            _completions = BuildCompletions(Input.Text);
-            _completionIndex = 0;
-        }
-        else
-        {
-            _completionIndex = (_completionIndex + 1) % Math.Max(1, _completions.Count);
-        }
-
-        if (_completions.Count == 0)
-            return;
-
-        _suppressTextChanged = true;
-        Input.Text = _completions[_completionIndex];
-        Input.CaretIndex = Input.Text.Length;
-        _suppressTextChanged = false;
-    }
-
-    private List<string> BuildCompletions(string text)
-    {
-        var lastSpace = text.LastIndexOf(' ');
-        if (lastSpace < 0)
-        {
-            // 指令名补全
-            return _bus.Registry.All()
-                .Where(c => c.Name.StartsWith(text, StringComparison.OrdinalIgnoreCase))
-                .Select(c => c.Name)
-                .ToList();
-        }
-
-        // 参数名补全:head = "win.dock ",tail = 正在输入的参数前缀
-        var head = text[..(lastSpace + 1)];
-        var tail = text[(lastSpace + 1)..];
-        var cmdName = text[..text.IndexOf(' ')];
-        if (tail.Contains('=') || !_bus.Registry.TryGet(cmdName, out var descriptor))
-            return [];
-
-        return descriptor.Parameters
-            .Where(p => p.Name.StartsWith(tail, StringComparison.OrdinalIgnoreCase))
-            .Select(p => head + p.Name + "=")
-            .ToList();
-    }
-
     private void OnInputTextChanged(object sender, TextChangedEventArgs e)
     {
         if (!_suppressTextChanged)
-            _completions = null; // 用户改动输入后重算补全候选
+            RefreshCompletions(redirectNonFocused: true);
+    }
+
+    private void OnInputSelectionChanged(object sender, RoutedEventArgs e)
+    {
+        if (!_suppressTextChanged)
+            RefreshCompletions();
+    }
+
+    private void OnInputLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        => HideCompletions();
+
+    private void OnInputSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (CompletionPopup.IsOpen)
+            CompletionBorder.Width = Math.Clamp(Input.ActualWidth, 1, 720);
     }
 
     private void SetInputText(string text)
@@ -587,7 +614,166 @@ public partial class ConsoleView : UserControl
         Input.Text = text;
         Input.CaretIndex = text.Length;
         _suppressTextChanged = false;
-        _completions = null;
+        if (string.IsNullOrWhiteSpace(text))
+            _catalogShownForInput = false;
+        HideCompletions();
+        RefreshCompletions(redirectNonFocused: true);
+    }
+
+    private void RefreshCompletions()
+        => RefreshCompletions(redirectNonFocused: false);
+
+    private void RefreshCompletions(bool redirectNonFocused)
+    {
+        if (!IsLoaded)
+            return;
+
+        if (string.IsNullOrWhiteSpace(Input.Text))
+        {
+            _catalogShownForInput = false;
+            _setCommandCatalogQuery?.Invoke("");
+            HideCompletions();
+            return;
+        }
+
+        if (!(_completionFocusPredicate?.Invoke() ?? _completionFocusEnabled))
+        {
+            HideCompletions();
+            SyncCommandCatalog(redirectNonFocused && Input.IsKeyboardFocusWithin);
+            return;
+        }
+
+        if (!Input.IsKeyboardFocusWithin)
+        {
+            HideCompletions();
+            return;
+        }
+
+        _catalogShownForInput = false;
+        _setCommandCatalogQuery?.Invoke("");
+
+        _completionResult = _completionEngine.Complete(Input.Text, Input.CaretIndex);
+        _completionIndex = 0;
+        CompletionList.ItemsSource = _completionResult.Candidates;
+        CompletionList.SelectedIndex = _completionResult.HasCandidates ? 0 : -1;
+        CompletionBorder.Width = Math.Clamp(Input.ActualWidth, 1, 720);
+        CompletionPopup.IsOpen = _completionResult.HasCandidates;
+    }
+
+    private void SyncCommandCatalog(bool showCatalog)
+    {
+        var query = Input.Text;
+        _setCommandCatalogQuery?.Invoke(query);
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            _catalogShownForInput = false;
+            return;
+        }
+
+        if (!showCatalog || _catalogShownForInput)
+            return;
+
+        _catalogShownForInput = true;
+        try
+        {
+            _showCommandCatalog?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            _log.Error("console", $"切换命令集失败: {ex.GetType().Name}");
+        }
+    }
+
+    private void CycleCompletion(int direction)
+    {
+        if (!_completionResult.HasCandidates)
+            return;
+
+        var count = _completionResult.Candidates.Count;
+        _completionIndex = (_completionIndex + direction) % count;
+        if (_completionIndex < 0)
+            _completionIndex += count;
+        CompletionList.SelectedIndex = _completionIndex;
+        CompletionList.ScrollIntoView(CompletionList.SelectedItem);
+    }
+
+    private void CommitCompletion()
+    {
+        if (!_completionResult.HasCandidates)
+            return;
+
+        var candidate = _completionResult.Candidates[_completionIndex];
+        var text = Input.Text.Remove(_completionResult.ReplaceStart, _completionResult.ReplaceLength)
+            .Insert(_completionResult.ReplaceStart, candidate.InsertText);
+        var caret = _completionResult.ReplaceStart + candidate.InsertText.Length;
+        _suppressTextChanged = true;
+        Input.Text = text;
+        Input.CaretIndex = caret;
+        _suppressTextChanged = false;
+        HideCompletions();
+    }
+
+    private void HideCompletions()
+    {
+        _completionResult = ConsoleCompletionResult.Empty;
+        _completionIndex = 0;
+        if (CompletionPopup != null)
+            CompletionPopup.IsOpen = false;
+        if (CompletionList != null)
+        {
+            CompletionList.ItemsSource = Array.Empty<ConsoleCompletionCandidate>();
+            CompletionList.SelectedIndex = -1;
+        }
+    }
+
+    internal bool HandleCompletionKey(Key key, ModifierKeys modifiers)
+    {
+        if (_completionResult.HasCandidates && modifiers == ModifierKeys.Shift)
+        {
+            if (key == Key.W)
+            {
+                CycleCompletion(-1);
+                return true;
+            }
+
+            if (key == Key.S)
+            {
+                CycleCompletion(+1);
+                return true;
+            }
+        }
+
+        var catalogMode = !(_completionFocusPredicate?.Invoke() ?? _completionFocusEnabled)
+                          && !string.IsNullOrWhiteSpace(Input.Text);
+        if (!_completionResult.HasCandidates && catalogMode && modifiers == ModifierKeys.Shift)
+        {
+            if (key == Key.W)
+                return _moveCommandCatalogSelection?.Invoke(-1) == true;
+            if (key == Key.S)
+                return _moveCommandCatalogSelection?.Invoke(+1) == true;
+        }
+
+        if (key != Key.Tab)
+            return false;
+
+        // Shift+Tab is deliberately left to WPF's normal reverse focus traversal.
+        if (modifiers != ModifierKeys.None)
+            return false;
+
+        if (_completionResult.HasCandidates)
+        {
+            CommitCompletion();
+            return true;
+        }
+
+        if (catalogMode && _getSelectedCommandName?.Invoke() is { } commandName)
+        {
+            SetInputText(commandName);
+            return true;
+        }
+
+        // Preserve the existing no-op Tab behavior while the input remains focused.
+        return true;
     }
 
     private void OnInputPasting(object sender, DataObjectPastingEventArgs e)
@@ -600,6 +786,7 @@ public partial class ConsoleView : UserControl
             return;
 
         e.CancelCommand();
+        HideCompletions();
         var lines = text.Split('\n')
             .Select(l => l.TrimEnd('\r'))
             .Where(l => !CommandParser.IsBlankOrComment(l))

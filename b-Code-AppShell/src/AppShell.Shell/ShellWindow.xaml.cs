@@ -48,6 +48,7 @@ public partial class ShellWindow : Window
     // 未传则自建。由构造函数赋值——工具窗口内容工厂在 DockingHost 构建默认布局时即被调用,
     // 派生应用那时拿不到 window,故联动实例必须由派生侧创建并传入。
     private readonly CommandSelectionState _commandSelection;
+    private readonly Views.McpToolsView _commandCatalog;
 
     // UI-03:折叠后的菜单挂在顶栏菜单按钮上(挂上去才能继承窗体资源与样式)
     private readonly ContextMenu _menu = new();
@@ -135,6 +136,7 @@ public partial class ShellWindow : Window
             Path.Combine(dataDirectory, "history.txt"),
             settings.GetInt(ConsoleView.KeyHistory, 500));
         _console = new ConsoleView(log, _bus, _history, settings.GetInt(ConsoleView.KeyBuffer, 50_000));
+        _commandCatalog = new Views.McpToolsView(() => _bus, _commandSelection);
 
         // 控制台窗口内容由 Shell 接管(§4.4 标准窗口;描述符位置仍由派生应用决定)
         TakeOverDescriptor(StandardWindowIds.Console, "控制台", DockSide.Bottom, 0.25, () => _console);
@@ -146,7 +148,7 @@ public partial class ShellWindow : Window
         // 一律保留其布局,框架只注入内容——因此派生侧既有布局不变。
         // 本地命令目录是 Shell 核心能力，不以启动 MCP 网络服务为前提。
         TakeOverDescriptor(StandardWindowIds.Mcp, "命令集", DockSide.Center, 1,
-            () => new Views.McpToolsView(() => _bus, _commandSelection), forcePlacement: true);
+            () => _commandCatalog, forcePlacement: true);
         // 指令详情窗口:命令集选中项的详情(参数/来源/MCP 映射/提示词状态),与命令集共享选中状态
         TakeOverDescriptor(StandardWindowIds.CommandDetail, "指令详情", DockSide.Right, 0.32,
             () => new Views.CommandDetailView(() => _bus, _commandSelection));
@@ -166,6 +168,18 @@ public partial class ShellWindow : Window
         _docking.CommandGenerated += (_, e) =>
             Dispatcher.BeginInvoke(() => ShowToast($"[{e.Source}] {e.CommandText}", success: true));
         _docking.Initialize();
+        _console.ConfigureCompletionRouting(
+            () => string.Equals(
+                _docking.MaximizedId,
+                StandardWindowIds.Console,
+                StringComparison.OrdinalIgnoreCase),
+            () =>
+            {
+                _ = ShowCommandCatalogForCompletionAsync();
+            },
+            query => _commandCatalog.SetConsoleQuery(query),
+            direction => _commandCatalog.MoveConsoleSelection(direction),
+            () => _commandCatalog.SelectedCommandName);
         _topBar = new ShellTopBarCoordinator(
             this,
             DockManager,
@@ -260,7 +274,7 @@ public partial class ShellWindow : Window
         if (config.EnableModules || config.EnableUiModules)
         {
             _modules = new Services.Modules.ModuleHost(
-                Services.AppPaths.GetModulesDir(dataDirectory), log)
+                config.ModuleDirectory ?? Services.AppPaths.GetModulesDir(dataDirectory), log)
             {
                 // 此刻在 UI 线程,注册表换血据此编组(替代原先的 Application.Current.Dispatcher)
                 UiContext = SynchronizationContext.Current,
@@ -309,7 +323,7 @@ public partial class ShellWindow : Window
         config.ConfigureCommands?.Invoke(registry);
 
         // 模块宿主在全部指令注册完成后接入并首次装载(此刻仍在 UI 线程)
-        _modules?.Attach(registry);
+        _modules?.Attach(registry, _bus, settings, dataDirectory);
         _modules?.Start();
 
         // 指令与模块全部就绪后再启动网关，保证首次 tools/list 即为完整注册表。
@@ -377,7 +391,7 @@ public partial class ShellWindow : Window
     /// <summary>
     /// UI-02 / UI-09.1:非客户区接管必须推迟到窗体句柄就绪 —— 派生应用常在对象
     /// 初始化器里(即构造函数返回之后)设置 WindowStyle,构造期判定会误判成标准窗体。
-    /// 用事件而非 override:protected 成员属于公开面,3.1 不新增公开 API。
+    /// 用事件而非 override，避免仅为内部窗体时序扩大公开面。
     /// </summary>
     private void OnShellSourceInitialized(object? sender, EventArgs e)
     {
@@ -509,6 +523,22 @@ public partial class ShellWindow : Window
         }
         _docking.Show(StandardWindowIds.Console);
         _console.FocusInput();
+    }
+
+    private async Task ShowCommandCatalogForCompletionAsync()
+    {
+        try
+        {
+            var result = await _bus.ExecuteAsync(
+                $"win.show name={StandardWindowIds.Mcp}",
+                "UI");
+            if (!result.Success)
+                _log.Error("console", $"切换命令集失败: {result.Message}");
+        }
+        catch (Exception ex)
+        {
+            _log.Error("console", $"切换命令集异常: {ex.GetType().Name}");
+        }
     }
 
     private void OnDockDoubleClick(object sender, MouseButtonEventArgs e)
@@ -763,6 +793,7 @@ public partial class ShellWindow : Window
 
         ApplyPaneStyles(chromeless: focused);
         ScheduleChromeReserve();
+        _console.RefreshCompletionFocus();
         _topBar.Refresh();
     }
 

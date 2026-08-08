@@ -387,6 +387,14 @@ AppShell.Core.Mcp.McpToolInfo.ToolName.init -> void
 AppShell.Core.Mcp.PromptTextIntegrity
 AppShell.Core.Modules.IDeferredStartupWork
 AppShell.Core.Modules.IDeferredStartupWork.ExecuteAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+AppShell.Core.Modules.IModuleContext
+AppShell.Core.Modules.IModuleContext.Bus.get -> AppShell.Core.Commands.CommandBus!
+AppShell.Core.Modules.IModuleContext.DataDirectory.get -> string!
+AppShell.Core.Modules.IModuleContext.Log.get -> AppShell.Core.Logging.IShellLog!
+AppShell.Core.Modules.IModuleContext.RegisterCommands(System.Action<AppShell.Core.Commands.CommandRegistry!>! configure) -> void
+AppShell.Core.Modules.IModuleContext.Settings.get -> AppShell.Core.Storage.ISettingsService!
+AppShell.Core.Modules.IModuleContextAware
+AppShell.Core.Modules.IModuleContextAware.Attach(AppShell.Core.Modules.IModuleContext! context) -> void
 AppShell.Core.Modules.IShellUiAware
 AppShell.Core.Modules.IShellUiAware.ShellUi.set -> void
 AppShell.Core.Modules.IShellUiRegistrar
