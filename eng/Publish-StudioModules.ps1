@@ -15,8 +15,8 @@ $transactionId = [Guid]::NewGuid().ToString('N')
 $stamp = [DateTimeOffset]::UtcNow.ToString('yyyyMMdd-HHmmss')
 
 # ActiveDock 已迁至 2026-021-HistoryMercury 并改名 MercuryDock，由该项目的 eng\Publish-MercuryModules.ps1 发布。
+# GitHubConnection 已整体并入 2026-020-HistoryJanus（github 页面与 github.* 命令），由该项目的 eng\Publish-Janus.ps1 发布。
 $modules = @(
-    [ordered]@{ Name = 'GitHubConnection'; Project = 'b-Code-GitHubConnection\\GitHubConnection.csproj'; Release = 'b-Code-GitHubConnection\\bin\\Release\\net8.0-windows'; ZDirectory = 'z-GitHubConnection' },
     [ordered]@{ Name = 'StudioTools'; Project = 'b-Code-StudioTools\\StudioTools.csproj'; Release = 'b-Code-StudioTools\\bin\\Release\\net8.0-windows'; ZDirectory = 'z-StudioTools' }
 )
 

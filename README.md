@@ -1,13 +1,14 @@
 # Studio Tools Modules
 
-This repository contains two HistoryVulcan modules. Each `z-*` directory is a formal module snapshot discovered by HistoryVulcan; its `module.manifest.json` is the module identity and its artifact paths are release-relative.
+This repository contains one HistoryVulcan module. Each `z-*` directory is a formal module snapshot discovered by HistoryVulcan; its `module.manifest.json` is the module identity and its artifact paths are release-relative.
 
 | Module | Source | Formal Z snapshot | Domain | UI |
 | --- | --- | --- | --- | --- |
-| GitHubConnection 1.0.2 | `b-Code-GitHubConnection` | `z-GitHubConnection` | `GitHubConnection` | yes |
 | StudioTools 1.2.1 | `b-Code-StudioTools` | `z-StudioTools` | `StudioTools` | no |
 
 ActiveDock has moved to `2026-021-HistoryMercury` and been renamed MercuryDock 3.0.0 (source `b-Code-MercuryDock`, snapshot `z-MercuryDock`, command prefix `dock` unchanged).
+
+GitHubConnection has merged into `2026-020-HistoryJanus` 3.4.0 (page `github` tabbed with `projops`; commands `github.status` / `github.accounts` / `github.test` unchanged). Its source, `z-GitHubConnection` snapshot and publish wiring are removed here; clean up any legacy `GitHubConnection.dll` in host module slots before restart to avoid duplicate pages.
 
 All modules reference the formal `../2026-023-HistoryVulcan/z-HistoryVulcan/host/HistoryVulcan.Core.dll` contract and do not copy host assemblies into a module snapshot.
 
