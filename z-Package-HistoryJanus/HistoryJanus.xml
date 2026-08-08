@@ -27,7 +27,7 @@
             logflood 用于承压回归；sleep 是 --exec 自动化脚本的等待原语。
             </summary>
         </member>
-        <member name="M:HistoryJanus.DebugCommands.BuildLogFlood(AppShell.Core.Logging.IShellLog)">
+        <member name="M:HistoryJanus.DebugCommands.BuildLogFlood(HistoryVulcan.Core.Logging.IShellLog)">
             <summary>
             debug.logflood：按指定速率注入日志以执行承压验证。
             异步长任务示范:后台线程产出、经 Progress 上报进度、全程不阻塞 UI(§5.2)。
@@ -341,114 +341,6 @@
             lfsThresholdBytes 取 proj.rejectmb(默认 100MB):最大单件超阈即建议 LFS。
             </summary>
         </member>
-        <member name="T:HistoryJanus.Git.ToolCommands">
-            <summary>
-            tool.* 工具发现、同步与溯源指令域。
-            tool.scan 是只读盘点；sync / remove / list 管理模块槽与溯源。
-            </summary>
-        </member>
-        <member name="T:HistoryJanus.Git.ToolManifest">
-            <summary>
-            工具项目 z 级元文件夹中 module.manifest.json 的解析结果。
-            路径字段均已解析为绝对路径并通过 worktree 内界校验。
-            </summary>
-        </member>
-        <member name="P:HistoryJanus.Git.ToolManifest.McpExposure">
-            <summary>standard / readonly / hidden。</summary>
-        </member>
-        <member name="P:HistoryJanus.Git.ToolManifest.SourceProject">
-            <summary>来源项目(分支名)。</summary>
-        </member>
-        <member name="T:HistoryJanus.Git.ToolManifestEntry">
-            <summary>一份清单文件的装载结果：成功携 Manifest，失败携错误说明且不中断其他项。</summary>
-        </member>
-        <member name="M:HistoryJanus.Git.ToolManifestEntry.#ctor(HistoryJanus.Git.ToolManifest,System.String,System.String,System.String)">
-            <summary>一份清单文件的装载结果：成功携 Manifest，失败携错误说明且不中断其他项。</summary>
-        </member>
-        <member name="T:HistoryJanus.Git.ToolManifestLoader">
-            <summary>module.manifest.json 装载与校验。</summary>
-        </member>
-        <member name="F:HistoryJanus.Git.ToolManifestLoader.PermanentBuiltinDomains">
-            <summary>
-            尚未装配注册表时仍需保留的根命令。带点号的内置域必须来自运行时注册表，
-            不再在清单解析器中复制一份域名单。
-            </summary>
-        </member>
-        <member name="M:HistoryJanus.Git.ToolManifestLoader.FindUnreservedBuiltinDomains(System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.String})">
-            <summary>
-            启动期自检：返回注册表已有、但保留清单尚未覆盖的一级指令域。
-            调用方应在模块装载前传入内置注册表快照；根命令不构成点号域，故不参与比较。
-            </summary>
-        </member>
-        <member name="M:HistoryJanus.Git.ToolManifestLoader.Load(System.String,System.String,System.String,System.Collections.Generic.IEnumerable{System.String},System.Func{System.String,System.Boolean})">
-            <param name="isInstalled">
-            判定同名工具是否已在模块槽内。已安装时本次是"自我更新"而非抢占，动态指令域检查必须跳过：
-            模块加载后自己占着同名指令域，否则清单名与自身指令域同名的工具将永远无法更新自己。
-            永久内置域(help/history/cls)任何情况下都不放行。
-            </param>
-        </member>
-        <member name="M:HistoryJanus.Git.ToolManifestLoader.Resolve(System.String,System.String,System.String@)">
-            <summary>相对路径转为 worktree 内绝对路径；越界或带盘符时拒绝。返回错误文本或 null。</summary>
-        </member>
-        <member name="M:HistoryJanus.Git.ToolManifestLoader.NamePattern">
-            <remarks>
-            Pattern:<br/>
-            <code>^[A-Za-z_][A-Za-z0-9_-]{0,63}$</code><br/>
-            Explanation:<br/>
-            <code>
-            ○ Match if at the beginning of the string.<br/>
-            ○ Match a character in the set [A-Z_a-z].<br/>
-            ○ Match a character in the set [-0-9A-Z_a-z] atomically at most 63 times.<br/>
-            ○ Match if at the end of the string or if before an ending newline.<br/>
-            </code>
-            </remarks>
-        </member>
-        <member name="T:HistoryJanus.Git.ToolScanRow">
-            <summary>tool.scan 的一行结果(Data 载荷,MCP 可读)。</summary>
-        </member>
-        <member name="M:HistoryJanus.Git.ToolScanRow.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)">
-            <summary>tool.scan 的一行结果(Data 载荷,MCP 可读)。</summary>
-        </member>
-        <member name="T:HistoryJanus.Git.ToolSyncService">
-            <summary>
-            项目库工具发现、同步与溯源业务层：
-            提供清单发现、部署状态判定、同步、移除与模块槽写入。
-            工具溯源写入 state/tool-registry.json，模块槽仍是部署产物真值。
-            </summary>
-        </member>
-        <member name="M:HistoryJanus.Git.ToolSyncService.GetExposure(System.String)">
-            <summary>模块名 → 清单声明的 mcpExposure(来自溯源表);根平铺等无记录 → null(=standard)。</summary>
-        </member>
-        <member name="M:HistoryJanus.Git.ToolSyncService.ScanAsync">
-            <summary>
-            沿 worktree 清单发现全部 module.manifest.json，
-            逐项校验并标注部署状态；单项错误不中断整次扫描。
-            </summary>
-        </member>
-        <member name="M:HistoryJanus.Git.ToolSyncService.IsInstalled(System.String)">
-            <summary>同名工具是否已在模块槽内。已安装即视为自我更新，放行其自身占用的指令域。</summary>
-        </member>
-        <member name="M:HistoryJanus.Git.ToolSyncService.DeployStateOf(HistoryJanus.Git.ToolManifest)">
-            <summary>按产物 SHA-256 与 tool_registry 对比判定部署状态。</summary>
-        </member>
-        <member name="M:HistoryJanus.Git.ToolSyncService.SyncAsync(System.String,System.Boolean,System.IProgress{System.String})">
-            <summary>
-            tool.sync:把清单产物复制入模块槽 Modules\&lt;name&gt;\ 并落溯源;热重载自动接手。
-            all=true 只处理“未同步/已过期”项；这是显式动作，不自动装载其他项。
-            </summary>
-        </member>
-        <member name="M:HistoryJanus.Git.ToolSyncService.Remove(System.String)">
-            <summary>tool.remove：删除槽并注销溯源；面板副本在下次重载时回收。</summary>
-        </member>
-        <member name="M:HistoryJanus.Git.ToolSyncService.ListRegistered">
-            <summary>tool.list:溯源清单 + 槽在位状态(与 module.list 的运行时视角互补)。</summary>
-        </member>
-        <member name="T:HistoryJanus.Git.ToolRegistryRow">
-            <summary>tool.list 的一行(溯源视角)。</summary>
-        </member>
-        <member name="M:HistoryJanus.Git.ToolRegistryRow.#ctor(System.String,System.String,System.String,System.String,System.String,System.String)">
-            <summary>tool.list 的一行(溯源视角)。</summary>
-        </member>
         <member name="T:HistoryJanus.Views.BranchHistoryView">
             <summary>跟随共享项目选择的分支提交历史窗口。</summary>
             <summary>
@@ -560,47 +452,6 @@
         </member>
         <member name="T:BaseVariable.ModuleInfoBase">
             <summary>Compatibility contract recognized by AppShell ModuleHost.</summary>
-        </member>
-        <member name="T:System.Text.RegularExpressions.Generated.NamePattern_0">
-            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the NamePattern method.</summary>
-        </member>
-        <member name="F:System.Text.RegularExpressions.Generated.NamePattern_0.Instance">
-            <summary>Cached, thread-safe singleton instance.</summary>
-        </member>
-        <member name="M:System.Text.RegularExpressions.Generated.NamePattern_0.#ctor">
-            <summary>Initializes the instance.</summary>
-        </member>
-        <member name="T:System.Text.RegularExpressions.Generated.NamePattern_0.RunnerFactory">
-            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
-        </member>
-        <member name="M:System.Text.RegularExpressions.Generated.NamePattern_0.RunnerFactory.CreateInstance">
-            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
-        </member>
-        <member name="T:System.Text.RegularExpressions.Generated.NamePattern_0.RunnerFactory.Runner">
-            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
-        </member>
-        <member name="M:System.Text.RegularExpressions.Generated.NamePattern_0.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
-            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
-            <param name="inputSpan">The text being scanned by the regular expression.</param>
-        </member>
-        <member name="M:System.Text.RegularExpressions.Generated.NamePattern_0.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
-            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
-            <param name="inputSpan">The text being scanned by the regular expression.</param>
-            <returns>true if a possible match was found; false if no more matches are possible.</returns>
-        </member>
-        <member name="M:System.Text.RegularExpressions.Generated.NamePattern_0.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
-            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
-            <param name="inputSpan">The text being scanned by the regular expression.</param>
-            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
-        </member>
-        <member name="T:System.Text.RegularExpressions.Generated.Utilities">
-            <summary>Helper methods used by generated <see cref="T:System.Text.RegularExpressions.Regex"/>-derived implementations.</summary>
-        </member>
-        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_defaultTimeout">
-            <summary>Default timeout value set in <see cref="T:System.AppContext"/>, or <see cref="F:System.Text.RegularExpressions.Regex.InfiniteMatchTimeout"/> if none was set.</summary>
-        </member>
-        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_hasTimeout">
-            <summary>Whether <see cref="F:System.Text.RegularExpressions.Generated.Utilities.s_defaultTimeout"/> is non-infinite.</summary>
         </member>
     </members>
 </doc>
