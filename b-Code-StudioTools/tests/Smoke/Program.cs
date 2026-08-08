@@ -13,13 +13,13 @@ var moduleInfos = assembly.GetTypes()
 
 Equal(3, moduleInfos.Count, "聚合程序集必须包含三个逻辑模块入口");
 SequenceEqual(
-    new[] { "ProjectPulse", "ToolKit", "ToolRelay" },
+    new[] { "StudioTools", "StudioTools", "StudioTools" },
     moduleInfos.Select(info => info.ModuleName).ToArray(),
-    "逻辑模块名必须保持兼容");
-True(moduleInfos.All(info => info.Version == "1.2.0"), "逻辑模块版本必须统一为 1.2.0");
+    "三个分支必须统一归属 StudioTools 域");
+True(moduleInfos.All(info => info.Version == "1.2.1"), "逻辑模块版本必须统一为 1.2.1");
 
 var commandCounts = moduleInfos.ToDictionary(
-    info => info.ModuleName,
+    info => (string)info.GetType().GetProperty("CommandPrefix")!.GetValue(info)!,
     info => info.MainClassType!.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
         .Count(method => !method.IsSpecialName),
     StringComparer.OrdinalIgnoreCase);
@@ -31,7 +31,7 @@ Equal(3, commandCounts["ToolRelay"], "ToolRelay 指令数");
 Equal(
     0,
     assembly.GetTypes().Count(type => type.IsPublic && !type.IsAbstract
-        && typeof(AppShell.Core.Modules.IUiModule).IsAssignableFrom(type)),
+        && typeof(HistoryVulcan.Core.Modules.IUiModule).IsAssignableFrom(type)),
     "聚合程序集不得再注册 UI 生命周期");
 
 var kit = new Kit();

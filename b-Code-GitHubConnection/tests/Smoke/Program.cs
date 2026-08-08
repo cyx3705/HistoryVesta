@@ -1,8 +1,8 @@
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
-using AppShell.Core.Docking;
-using AppShell.Core.Modules;
+using HistoryVulcan.Core.Docking;
+using HistoryVulcan.Core.Modules;
 using GitHubConnection;
 
 var root = FindProjectRoot();
@@ -169,8 +169,10 @@ static async Task TestRemoteRollbackAsync(string temp)
 static void TestModuleContract()
 {
     var info = new ModuleInfo();
-    Equal("github", info.ModuleName, "module command domain");
-    Equal("1.0.1", info.Version, "module version");
+    Equal("GitHubConnection", info.ModuleName, "module command domain");
+    Equal("github", info.GetType().GetProperty("CommandPrefix")?.GetValue(info),
+        "legacy command prefix");
+    Equal("1.0.2", info.Version, "module version");
     Equal(typeof(GitHubCommands), info.MainClassType, "precise command class");
     False(info.Open, "module precise exposure");
 
@@ -231,16 +233,18 @@ static void TestFormalPackage(string root)
         Path.Combine(z, "module.manifest.json")));
     var rootElement = manifest.RootElement;
     Equal("GitHubConnection", rootElement.GetProperty("name").GetString(), "manifest name");
-    Equal("1.0.1", rootElement.GetProperty("version").GetString(), "manifest version");
-    Equal("z-GitHubConnection/GitHubConnection.dll",
+    Equal("1.0.2", rootElement.GetProperty("version").GetString(), "manifest version");
+    Equal(1, rootElement.GetProperty("schemaVersion").GetInt32(), "manifest schema");
+    Equal("HistoryVulcan.Module", rootElement.GetProperty("type").GetString(), "manifest type");
+    Equal("GitHubConnection.dll",
         rootElement.GetProperty("artifact").GetString(), "manifest artifact");
-    Equal("z-GitHubConnection/GitHubConnection.xml",
+    Equal("GitHubConnection.xml",
         rootElement.GetProperty("docs").GetString(), "manifest docs");
     Equal("readonly", rootElement.GetProperty("mcpExposure").GetString(), "manifest MCP exposure");
     True(rootElement.GetProperty("ui").GetBoolean(), "manifest UI flag");
 
     var assembly = AssemblyName.GetAssemblyName(Path.Combine(z, "GitHubConnection.dll"));
-    Equal(new Version(1, 0, 1, 0), assembly.Version, "formal assembly version");
+    Equal(new Version(1, 0, 2, 0), assembly.Version, "formal assembly version");
 }
 
 static string FindProjectRoot()

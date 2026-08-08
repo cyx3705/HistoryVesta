@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
-using AppShell.Core.Modules;
+using HistoryVulcan.Core.Modules;
 
 namespace ActiveDock;
 

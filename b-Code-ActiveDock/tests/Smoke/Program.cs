@@ -1,7 +1,7 @@
-﻿using System.IO;
+using System.IO;
 using System.Reflection;
 using ActiveDock;
-using AppShell.Core.Modules;
+using HistoryVulcan.Core.Modules;
 using BaseVariable;
 
 var assembly = typeof(ActiveDockCommands).Assembly;
@@ -14,8 +14,10 @@ var moduleInfos = assembly.GetTypes()
     .ToList();
 
 Equal(1, moduleInfos.Count, "独立程序集必须只有一个模块入口");
-Equal("dock", moduleInfos[0].ModuleName, "命令域必须沿用 dock");
-Equal("2.3.2", moduleInfos[0].Version, "模块版本");
+Equal("ActiveDock", moduleInfos[0].ModuleName, "模块域必须使用稳定模块名");
+Equal("dock", moduleInfos[0].GetType().GetProperty("CommandPrefix")?.GetValue(moduleInfos[0]),
+    "旧命令前缀必须保持兼容");
+Equal("2.3.3", moduleInfos[0].Version, "模块版本");
 Equal(typeof(ActiveDockCommands), moduleInfos[0].MainClassType, "命令入口类型");
 
 Equal(
@@ -184,7 +186,7 @@ file sealed class RecordingRegistrar : IShellUiRegistrar
 
     public void Invoke(Action action) => action();
 
-    public IDisposable RegisterToolWindow(AppShell.Core.Docking.ToolWindowDescriptor descriptor, string owner)
+    public IDisposable RegisterToolWindow(HistoryVulcan.Core.Docking.ToolWindowDescriptor descriptor, string owner)
     {
         Registered.Add(descriptor.Id);
         return new Handle(() => Disposed++);

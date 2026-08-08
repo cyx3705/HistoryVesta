@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
-using AppShell.Core.Docking;
+using HistoryVulcan.Core.Docking;
 
 namespace ActiveDock;
 

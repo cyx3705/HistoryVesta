@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using HistoryVulcan.Core.Modules;
 
 namespace ToolRelay;
 
@@ -11,6 +12,7 @@ public sealed class RelayCommands
     /// <summary>实时列出 OHS 当前 MCP 策略下可见的工具</summary>
     /// <param name="filter">按工具名或描述包含匹配，空字符串不过滤</param>
     /// <param name="modulesOnly">true 只返回模块工具，false 返回全部可见工具</param>
+    [ModuleCommand(Readonly = true, CommandClass = "relay")]
     public async Task<object> List(string filter = "", bool modulesOnly = true)
     {
         using var client = OhsmcpClient.FromSettings();
@@ -37,6 +39,7 @@ public sealed class RelayCommands
 
     /// <summary>实时查看一个当前可见 MCP 工具的描述和 JSON Schema</summary>
     /// <param name="name">MCP 工具名，例如 ProjectPulse_Summary</param>
+    [ModuleCommand(Readonly = true, CommandClass = "relay")]
     public async Task<object> Describe(string name)
     {
         name = RequireToolName(name);
@@ -49,6 +52,7 @@ public sealed class RelayCommands
     /// <summary>通过 OHS 最新 MCP 工具目录调用一个工具，不依赖 Codex 当前任务的旧快照</summary>
     /// <param name="name">MCP 工具名，例如 ProjectPulse_Summary</param>
     /// <param name="argumentsJson">JSON 对象字符串，默认空对象，最大 64 KiB</param>
+    [ModuleCommand(CommandClass = "relay")]
     public async Task<object> Call(string name, string argumentsJson = "{}")
     {
         name = RequireToolName(name);

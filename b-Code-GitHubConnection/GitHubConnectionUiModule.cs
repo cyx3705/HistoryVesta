@@ -1,5 +1,5 @@
-using AppShell.Core.Docking;
-using AppShell.Core.Modules;
+using HistoryVulcan.Core.Docking;
+using HistoryVulcan.Core.Modules;
 
 namespace GitHubConnection;
 

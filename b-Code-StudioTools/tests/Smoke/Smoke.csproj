@@ -8,5 +8,9 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\StudioTools.csproj" />
+    <Reference Include="HistoryVulcan.Core">
+      <HintPath>$(MSBuildThisFileDirectory)..\..\..\..\2026-023-HistoryVulcan\z-HistoryVulcan\host\HistoryVulcan.Core.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
 </Project>

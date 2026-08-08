@@ -1,9 +1,11 @@
 ﻿{
+  "schemaVersion": 1,
+  "type": "HistoryVulcan.Module",
   "name": "GitHubConnection",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "服务器本机 GitHub、GCM、SSH 和 origin 连接治理",
-  "artifact": "z-GitHubConnection/GitHubConnection.dll",
-  "docs": "z-GitHubConnection/GitHubConnection.xml",
+  "artifact": "GitHubConnection.dll",
+  "docs": "GitHubConnection.xml",
   "mcpExposure": "readonly",
   "ui": true
 }

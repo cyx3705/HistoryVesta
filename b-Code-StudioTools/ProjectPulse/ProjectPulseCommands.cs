@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Text.Json;
+using HistoryVulcan.Core.Modules;
 
 namespace ProjectPulse;
 
@@ -14,6 +15,7 @@ public sealed class ProjectPulseCommands
     /// <param name="name">已登记工作树名称，例如 2026-020-HistoryJanus</param>
     /// <param name="includeGenerated">是否包含 bin、obj、.vs、node_modules 等生成目录</param>
     /// <param name="top">最多返回多少项格式和一级目录统计，范围 1~50</param>
+    [ModuleCommand(Readonly = true, CommandClass = "project-pulse")]
     public object Summary(string name, bool includeGenerated = false, int top = 10)
     {
         RequireRange(top, 1, 50, nameof(top));
@@ -62,6 +64,7 @@ public sealed class ProjectPulseCommands
     /// <param name="days">回看天数，范围 1~3650</param>
     /// <param name="limit">最多返回文件数，范围 1~200</param>
     /// <param name="includeGenerated">是否包含 bin、obj、.vs、node_modules 等生成目录</param>
+    [ModuleCommand(Readonly = true, CommandClass = "project-pulse")]
     public object Recent(string name, int days = 7, int limit = 30, bool includeGenerated = false)
     {
         RequireRange(days, 1, 3650, nameof(days));
@@ -94,6 +97,7 @@ public sealed class ProjectPulseCommands
     /// <param name="limit">最多返回文件数，范围 1~200</param>
     /// <param name="minMb">最小体积 MB，范围 0~1048576</param>
     /// <param name="includeGenerated">是否包含 bin、obj、.vs、node_modules 等生成目录</param>
+    [ModuleCommand(Readonly = true, CommandClass = "project-pulse")]
     public object Largest(string name, int limit = 20, double minMb = 1, bool includeGenerated = false)
     {
         RequireRange(limit, 1, 200, nameof(limit));

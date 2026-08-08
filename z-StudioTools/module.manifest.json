@@ -1,9 +1,11 @@
 {
+  "schemaVersion": 1,
+  "type": "HistoryVulcan.Module",
   "name": "StudioTools",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Studio 基础工具合集：工作树巡检、文本工具和 MCP 动态转发",
-  "artifact": "b-Code-StudioTools/bin/Release/net8.0-windows/StudioTools.dll",
-  "docs": "b-Code-StudioTools/bin/Release/net8.0-windows/StudioTools.xml",
+  "artifact": "StudioTools.dll",
+  "docs": "StudioTools.xml",
   "mcpExposure": "standard",
   "ui": false
 }

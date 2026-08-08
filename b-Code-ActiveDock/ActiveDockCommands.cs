@@ -1,15 +1,16 @@
-using AppShell.Core.Modules;
+using HistoryVulcan.Core.Modules;
 
 namespace ActiveDock;
 
 public sealed class ActiveDockCommands
 {
     /// <summary>返回 OHS 项目入口的当前注册状态。</summary>
-    [ModuleCommand(Readonly = true)]
+    [ModuleCommand(Readonly = true, CommandClass = "explorer")]
     public ExplorerEntryStatus explorer()
         => new(ExplorerNamespaceRegistration.IsRegistered(), DockShortcutFolder.Path);
 
     /// <summary>把当前工作树注册到资源管理器左侧。</summary>
+    [ModuleCommand(CommandClass = "explorer")]
     public string explorerRegister()
     {
         DockShortcutFolder.Synchronize(ActiveDockState.Projects);
@@ -17,26 +18,31 @@ public sealed class ActiveDockCommands
     }
 
     /// <summary>移除 ActiveDock 注册的资源管理器入口。</summary>
+    [ModuleCommand(CommandClass = "explorer")]
     public string explorerRemove()
         => ExplorerNamespaceRegistration.RemoveRegistration().Message;
 
     /// <summary>列出活动项目。</summary>
-    [ModuleCommand(Readonly = true)]
+    [ModuleCommand(Readonly = true, CommandClass = "projects")]
     public IReadOnlyList<DockProject> list() => ActiveDockState.Projects;
 
     /// <summary>置顶活动项目。</summary>
+    [ModuleCommand(CommandClass = "projects")]
     public string pin(string name)
         => ActiveDockState.Pin(name, pinned: true) ? $"已置顶 {name}" : $"未找到项目 {name}";
 
     /// <summary>取消置顶活动项目。</summary>
+    [ModuleCommand(CommandClass = "projects")]
     public string unpin(string name)
         => ActiveDockState.Pin(name, pinned: false) ? $"已取消置顶 {name}" : $"未找到项目 {name}";
 
     /// <summary>重新扫描活动项目。</summary>
+    [ModuleCommand(CommandClass = "projects")]
     public async Task<IReadOnlyList<DockProject>> refresh()
         => await ActiveDockState.RefreshAsync().ConfigureAwait(false);
 
     /// <summary>持久化隐藏活动坞。</summary>
+    [ModuleCommand(CommandClass = "visibility")]
     public string hide()
     {
         ActiveDockState.SetHidden(true);
@@ -44,6 +50,7 @@ public sealed class ActiveDockCommands
     }
 
     /// <summary>显示活动坞。</summary>
+    [ModuleCommand(CommandClass = "visibility")]
     public string show()
     {
         ActiveDockState.SetHidden(false);
@@ -51,11 +58,12 @@ public sealed class ActiveDockCommands
     }
 
     /// <summary>打开 OHS 主界面；已在运行则唤到前台。</summary>
+    [ModuleCommand(CommandClass = "app")]
     public string open()
         => OhsLauncher.Open() ? "已唤起正在运行的 OHS 主界面" : "已启动 OHS 主界面";
 
     /// <summary>列出使用记录与当前权重。</summary>
-    [ModuleCommand(Readonly = true)]
+    [ModuleCommand(Readonly = true, CommandClass = "usage")]
     public IReadOnlyList<DockUsageRow> usage()
         => ActiveDockState.Projects
             .Select(item => new DockUsageRow(
@@ -68,6 +76,7 @@ public sealed class ActiveDockCommands
             .ToList();
 
     /// <summary>清除使用记录；不给 name 表示全部清除。</summary>
+    [ModuleCommand(CommandClass = "usage")]
     public string forget(string? name = null)
     {
         ActiveDockState.Forget(name);
@@ -75,6 +84,7 @@ public sealed class ActiveDockCommands
     }
 
     /// <summary>手动排除某个项目，不再收录进活动坞。</summary>
+    [ModuleCommand(CommandClass = "projects")]
     public string exclude(string name)
     {
         ActiveDockState.Exclude(name, excluded: true);
@@ -82,6 +92,7 @@ public sealed class ActiveDockCommands
     }
 
     /// <summary>恢复收录某个被排除的项目。</summary>
+    [ModuleCommand(CommandClass = "projects")]
     public string include(string name)
     {
         ActiveDockState.Exclude(name, excluded: false);
@@ -89,6 +100,7 @@ public sealed class ActiveDockCommands
     }
 
     /// <summary>查看或设置收录策略：最低条数、最高条数与半衰期(天)。</summary>
+    [ModuleCommand(CommandClass = "policy")]
     public string policy(int? min = null, int? max = null, double? halflife = null)
     {
         if (min != null || max != null || halflife != null)
