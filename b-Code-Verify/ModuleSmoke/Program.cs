@@ -62,7 +62,7 @@ if (host.Modules.Count != 1)
 
 var meta = host.Modules[0];
 if (!meta.ModuleName.Equals("HistoryJanus", StringComparison.Ordinal)
-    || !meta.Version.Equals("3.3.2", StringComparison.Ordinal)
+    || !meta.Version.Equals("3.4.0", StringComparison.Ordinal)
     || !meta.Ui
     || meta.CommandCount < 29)
 {
@@ -95,6 +95,9 @@ var businessCommands = new[]
     "proj.forcepush",
     "git.rule.list",
     "git.rule.batch-set",
+    "github.status",
+    "github.accounts",
+    "github.test",
 };
 foreach (var commandName in businessCommands)
 {
@@ -105,14 +108,14 @@ foreach (var commandName in businessCommands)
     }
 }
 var result = await bus.ExecuteAsync("HistoryJanus.Status", "ModuleSmoke");
-if (!result.Success || !result.Message.Contains("3.3.2", StringComparison.Ordinal))
+if (!result.Success || !result.Message.Contains("3.4.0", StringComparison.Ordinal))
     throw new InvalidOperationException($"module command failed: {result.Message}");
 
 var projectList = await bus.ExecuteAsync("proj.list", "ModuleSmoke");
 if (!projectList.Success)
     throw new InvalidOperationException($"real project command failed: {projectList.Message}");
 
-var expectedWindows = new[] { "overview", "projops" };
+var expectedWindows = new[] { "overview", "projops", "github" };
 var actualWindows = shellUi.Descriptors.Select(item => item.Id).ToArray();
 if (!expectedWindows.SequenceEqual(actualWindows, StringComparer.Ordinal))
 {
@@ -123,6 +126,9 @@ if (!expectedWindows.SequenceEqual(actualWindows, StringComparer.Ordinal))
 var windowsById = shellUi.Descriptors.ToDictionary(item => item.Id, StringComparer.Ordinal);
 AssertPlacement(windowsById["overview"], DockSide.Left, 0.20);
 AssertPlacement(windowsById["projops"], DockSide.Right, 0.28);
+AssertPlacement(windowsById["github"], DockSide.Right, 0.28);
+if (!windowsById["github"].Title.Equals("github", StringComparison.Ordinal))
+    throw new InvalidOperationException("github window keeps the short lowercase title");
 
 if (shellUi.Descriptors.Any(item => item.Title.Equals("HistoryJanus", StringComparison.Ordinal)))
     throw new InvalidOperationException("placeholder main window is still registered");
@@ -132,6 +138,7 @@ var expectedPageTypes = new[]
 {
     "OverviewView",
     "ProjectOperationsView",
+    "GitHubConnectionView",
 };
 if (!expectedPageTypes.SequenceEqual(pageTypes, StringComparer.Ordinal))
     throw new InvalidOperationException($"unexpected page types: [{string.Join(", ", pageTypes)}]");
@@ -200,14 +207,31 @@ static IReadOnlyList<string> ConstructPages(
                 var page = descriptor.ContentFactory?.Invoke()
                            ?? throw new InvalidOperationException(
                                $"window {descriptor.Id} has no content factory");
-                var accessor = page.GetType()
-                    .GetField("_busAccessor", BindingFlags.Instance | BindingFlags.NonPublic)
-                    ?.GetValue(page) as Func<CommandBus?>
-                    ?? throw new InvalidOperationException(
-                        $"window {descriptor.Id} does not retain the host bus accessor");
-                if (!ReferenceEquals(accessor(), expectedBus))
-                    throw new InvalidOperationException(
-                        $"window {descriptor.Id} is not connected to the host command bus");
+                var pageType = page.GetType();
+                var busField = pageType.GetField("_busAccessor",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                if (busField != null)
+                {
+                    var accessor = busField.GetValue(page) as Func<CommandBus?>
+                                   ?? throw new InvalidOperationException(
+                                       $"window {descriptor.Id} does not retain the host bus accessor");
+                    if (!ReferenceEquals(accessor(), expectedBus))
+                        throw new InvalidOperationException(
+                            $"window {descriptor.Id} is not connected to the host command bus");
+                }
+                else
+                {
+                    // github 页面直连业务服务(写操作仅限 UI),验证其服务访问器已接线;
+                    // 本宿主不引用模块程序集,经 Delegate 反射调用以避免类型耦合
+                    var serviceField = pageType.GetField("_serviceAccessor",
+                        BindingFlags.Instance | BindingFlags.NonPublic)
+                        ?? throw new InvalidOperationException(
+                            $"window {descriptor.Id} retains no host accessor");
+                    if (serviceField.GetValue(page) is not Delegate serviceAccessor
+                        || serviceAccessor.DynamicInvoke() == null)
+                        throw new InvalidOperationException(
+                            $"window {descriptor.Id} is not connected to the github service");
+                }
                 if (page is Control control)
                 {
                     control.Resources["Shell.Brush.TextPrimary"] = Brushes.Black;

@@ -29,7 +29,7 @@ internal static class TestArchitectureSuite
                 $"{Path.GetRelativePath(RepoRoot, path)} ({lines})");
         }
 
-        VerifyGitHubModuleBoundary(separator);
+        VerifyGitHubMerge(separator);
         VerifyV3HostBoundary();
         VerifyMergedOverviewBoundary(separator);
         VerifyEmbeddedHistoryBoundary(separator);
@@ -68,7 +68,7 @@ internal static class TestArchitectureSuite
         string[] expected =
         [
             "VersionProjection", "TestArchitecture", "GitRules", "BranchHistory",
-            "SubmoduleSafety", "RepositoryTargets", "ProjectOperations",
+            "SubmoduleSafety", "RepositoryTargets", "ProjectOperations", "GitHub",
         ];
         True(registered.SequenceEqual(expected),
             "test runner registers the reviewed functional suite order");
@@ -124,37 +124,31 @@ internal static class TestArchitectureSuite
             "module boundary: legacy service tree is absent");
     }
 
-    private static void VerifyGitHubModuleBoundary(char separator)
+    private static void VerifyGitHubMerge(char separator)
     {
-        True(!File.Exists(Path.Combine(VerifyRoot, "Smoke", "Suites", "GitHubAccountSuite.cs")),
-            "GitHub-specific Smoke moved to its owning module");
+        True(File.Exists(Path.Combine(VerifyRoot, "Smoke", "Suites", "GitHubSuite.cs")),
+            "merged github: functional Smoke suite exists");
 
-        string[] removedFiles =
+        string[] mergedFiles =
         [
-            "Git/GitHubAccountModels.cs",
-            "Git/GitHubAccountService.cs",
-            "Git/GitHubAccountCommands.cs",
-            "Git/GitHubRedactor.cs",
-            "Git/ToolProcessRunner.cs",
-            "Views/GitHubAccountView.xaml",
-            "Views/GitHubAccountView.xaml.cs",
+            "GitHub/GitHubConnectionModels.cs",
+            "GitHub/GitHubConnectionService.cs",
+            "GitHub/GitHubRedactor.cs",
+            "GitHub/ToolProcessRunner.cs",
+            "GitHub/GitHubCommands.cs",
+            "Views/GitHubConnectionView.xaml",
+            "Views/GitHubConnectionView.xaml.cs",
         ];
-        foreach (var relativePath in removedFiles)
-            True(!File.Exists(Path.Combine(RepoRoot, relativePath.Replace('/', separator))),
-                $"GitHub-specific host source is removed: {relativePath}");
+        foreach (var relativePath in mergedFiles)
+            True(File.Exists(Path.Combine(RepoRoot, relativePath.Replace('/', separator))),
+                $"merged github: source is present: {relativePath}");
 
-        string[] prohibitedIdentifiers =
+        // 独立模块时代的外壳与旧路径解析不得复活；设置统一走 proj.barerepo
+        string[] removedIdentifiers =
         [
-            "GitHubAccount",
-            "GitHubRedactor",
-            "github.account",
-            "github.status",
-            "github.accounts",
-            "github.test",
-            "github.login",
-            "github.logout",
-            "github.identity",
-            "github.remote",
+            "RepositoryPathResolver",
+            "\"github.account\"",
+            "GitHubRuntime",
         ];
         var productionFiles = Directory.EnumerateFiles(RepoRoot, "*", SearchOption.AllDirectories)
             .Where(path => new[] { ".cs", ".xaml", ".csproj" }
@@ -164,11 +158,29 @@ internal static class TestArchitectureSuite
         foreach (var path in productionFiles)
         {
             var source = File.ReadAllText(path);
-            foreach (var identifier in prohibitedIdentifiers)
-                True(!source.Contains(identifier, StringComparison.OrdinalIgnoreCase),
-                    $"Janus host does not contain GitHub module identifier {identifier}: " +
+            foreach (var identifier in removedIdentifiers)
+                True(!source.Contains(identifier, StringComparison.Ordinal),
+                    $"merged github: standalone shell stays removed: {identifier} in " +
                     Path.GetRelativePath(RepoRoot, path));
         }
+
+        var commands = File.ReadAllText(Path.Combine(RepoRoot, "GitHub", "GitHubCommands.cs"));
+        foreach (var retained in new[] { "\"github.status\"", "\"github.accounts\"", "\"github.test\"" })
+        {
+            Contains(commands, retained,
+                $"merged github: readonly command stays registered: {retained}");
+        }
+        True(!commands.Contains("github.login", StringComparison.Ordinal)
+             && !commands.Contains("github.logout", StringComparison.Ordinal)
+             && !commands.Contains("github.identity", StringComparison.Ordinal)
+             && !commands.Contains("github.remote", StringComparison.Ordinal),
+            "merged github: mutations stay UI-only and never enter the command bus");
+
+        var composition = File.ReadAllText(Path.Combine(RepoRoot, "StudioBusinessComposition.cs"));
+        Contains(composition, "GitHubCommands.RegisterAll",
+            "merged github: commands register through the module composition");
+        Contains(composition, "projects.BareRepo",
+            "merged github: repository path shares the proj.barerepo setting");
     }
 
     private static void VerifyMergedOverviewBoundary(char separator)
@@ -197,8 +209,8 @@ internal static class TestArchitectureSuite
         var windowIds = Regex.Matches(module, @"Id = ""(?<id>[a-z]+)""", RegexOptions.CultureInvariant)
             .Select(match => match.Groups["id"].Value)
             .ToArray();
-        True(windowIds.SequenceEqual(new[] { "overview", "projops" }),
-            "page consolidation: module registers exactly overview and projops");
+        True(windowIds.SequenceEqual(new[] { "overview", "projops", "github" }),
+            "page consolidation: module registers exactly overview, projops and github");
 
         var commands = File.ReadAllText(Path.Combine(RepoRoot, "Git", "ProjectCommands.cs"));
         foreach (var retained in new[] { "\"proj.tree\"", "\"proj.metalist\"", "\"proj.metaopen\"" })
@@ -255,6 +267,7 @@ internal static class TestArchitectureSuite
         var primaryViews = new[]
         {
             "OverviewView.xaml", "BranchHistoryView.xaml", "ProjectOperationsView.xaml",
+            "GitHubConnectionView.xaml",
         };
         foreach (var name in primaryViews)
         {
@@ -268,6 +281,7 @@ internal static class TestArchitectureSuite
         foreach (var name in new[]
                  {
                      "OverviewView.xaml", "BranchHistoryView.xaml", "ProjectOperationsView.xaml",
+                     "GitHubConnectionView.xaml",
                  })
         {
             var source = File.ReadAllText(Path.Combine(viewsRoot, name));

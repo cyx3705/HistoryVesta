@@ -2,6 +2,7 @@ using System.IO;
 using HistoryVulcan.Core.Commands;
 using HistoryVulcan.Core.Docking;
 using HistoryVulcan.Core.Modules;
+using HistoryJanus.GitHub;
 using HistoryJanus.Views;
 
 namespace HistoryJanus.Module;
@@ -46,7 +47,8 @@ public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleCont
 
         Func<CommandBus?> busAccessor = () => _context?.Bus;
         Func<string, bool> isProtected = branch => _business?.Projects.IsProtected(branch) == true;
-        foreach (var descriptor in CreateDescriptors(busAccessor, _selection, isProtected))
+        Func<GitHubConnectionService?> gitHubAccessor = () => _business?.GitHub;
+        foreach (var descriptor in CreateDescriptors(busAccessor, _selection, isProtected, gitHubAccessor))
             _registrations.Add(_shellUi.RegisterToolWindow(descriptor, "HistoryJanus"));
     }
 
@@ -60,11 +62,13 @@ public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleCont
     public static IReadOnlyList<ToolWindowDescriptor> CreateDescriptors(
         Func<CommandBus?> busAccessor,
         ProjectSelectionState selection,
-        Func<string, bool> isProtected)
+        Func<string, bool> isProtected,
+        Func<GitHubConnectionService?> gitHubAccessor)
     {
         ArgumentNullException.ThrowIfNull(busAccessor);
         ArgumentNullException.ThrowIfNull(selection);
         ArgumentNullException.ThrowIfNull(isProtected);
+        ArgumentNullException.ThrowIfNull(gitHubAccessor);
 
         return
         [
@@ -89,6 +93,16 @@ public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleCont
                     busAccessor,
                     selection,
                     isProtected),
+            },
+            new ToolWindowDescriptor
+            {
+                Id = "github",
+                Title = "github",
+                DefaultSide = DockSide.Right,
+                DefaultRatio = 0.28,
+                IsSingleton = true,
+                // 与项目操作同侧,宿主自动并入右侧标签组。
+                ContentFactory = () => new GitHubConnectionView(gitHubAccessor),
             },
         ];
     }

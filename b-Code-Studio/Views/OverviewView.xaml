@@ -19,9 +19,43 @@
                   SelectionChanged="OnProjectSelected"
                   MouseDoubleClick="OnRowDoubleClick">
             <ListView.ItemContainerStyle>
+                <!-- 本地模板复刻宿主 Shell.Item.Base 行为：选中 AccentSoft、悬停 SurfaceHover。
+                     不用 BasedOn StaticResource 的原因：模块页在无宿主资源的环境(模块冒烟)也要可构造。 -->
                 <Style TargetType="ListViewItem">
                     <Setter Property="Padding" Value="6,1" />
                     <Setter Property="MinHeight" Value="0" />
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="Foreground" Value="{DynamicResource Shell.Brush.TextPrimary}" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListViewItem">
+                                <Border x:Name="Bd"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        Padding="{TemplateBinding Padding}"
+                                        SnapsToDevicePixels="True">
+                                    <GridViewRowPresenter
+                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="Background"
+                                                Value="{DynamicResource Shell.Brush.SurfaceHover}" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Bd" Property="Background"
+                                                Value="{DynamicResource Shell.Brush.AccentSoft}" />
+                                        <Setter Property="Foreground"
+                                                Value="{DynamicResource Shell.Brush.TextPrimary}" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
                 </Style>
             </ListView.ItemContainerStyle>
             <ListView.View>

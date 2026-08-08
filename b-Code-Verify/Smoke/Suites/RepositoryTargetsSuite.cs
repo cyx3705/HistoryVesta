@@ -247,8 +247,28 @@ internal static class RepositoryTargetsSuite
         }
         True(overviewMarkup.Contains("ItemContainerStyle", StringComparison.Ordinal),
             "overview compresses row height with an item container style");
+        True(overviewMarkup.Contains("GridViewRowPresenter", StringComparison.Ordinal)
+             && overviewMarkup.Contains("Shell.Brush.AccentSoft", StringComparison.Ordinal)
+             && overviewMarkup.Contains("Shell.Brush.SurfaceHover", StringComparison.Ordinal),
+            "overview row template paints selection with the host AccentSoft token");
         True(!overview.Descendants().Any(element => element.Attribute(x + "Name")?.Value == "StatusText"),
             "overview drops the bottom status strip");
+
+        var githubPath = Path.Combine(RepoRoot, "Views", "GitHubConnectionView.xaml");
+        var github = XDocument.Load(githubPath);
+        var githubMarkup = github.ToString();
+        var githubTabs = github.Descendants()
+            .Where(element => element.Name.LocalName == "TabItem")
+            .Select(element => element.Attribute("Header")?.Value)
+            .ToArray();
+        True(githubTabs.SequenceEqual(["凭据与 SSH", "提交身份", "仓库远端", "诊断"]),
+            "github page keeps the four governance tabs");
+        Equal(3, github.Descendants().Count(element => element.Name.LocalName == "DataGrid"),
+            "github page keeps accounts, keys and diagnostics grids");
+        True(githubMarkup.Contains("Shell.Brush.AccentSoft", StringComparison.Ordinal),
+            "github grid rows paint selection with the host AccentSoft token");
+        True(!github.Descendants().Any(element => element.Attribute(x + "Name")?.Value == "StatusText"),
+            "github page drops the bottom status strip like the other pages");
 
         True(!named.Contains("StatusText"),
             "project page drops the bottom status strip");

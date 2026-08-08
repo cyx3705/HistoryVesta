@@ -13,15 +13,17 @@ namespace HistoryJanus.Contracts;
 /// </summary>
 public sealed class CommandCatalogContractTests
 {
-    // 组合根注册的 30 条业务命令；第 31 条 HistoryJanus.Status 由模块宿主从
-    // [ModuleCommand] 投影，不在组合根内（QA-001 的 31 = 30 + Status）。
-    private const int ExpectedCommandCount = 30;
+    // 组合根注册的 33 条业务命令；第 34 条 HistoryJanus.Status 由模块宿主从
+    // [ModuleCommand] 投影，不在组合根内（QA-001 的 34 = 33 + Status）。
+    // 3.4.0 并入 github.status/accounts/test 三条只读命令。
+    private const int ExpectedCommandCount = 33;
 
     private static readonly string[] ReadOnlyCommands =
     [
         "proj.list", "proj.tree", "proj.scan", "proj.config", "proj.metalist",
         "proj.history", "proj.history.show", "proj.history.diff",
         "git.rule.scan", "git.rule.review", "git.rule.list",
+        "github.status", "github.accounts", "github.test",
     ];
 
     private static readonly string[] ConfirmedCommands =

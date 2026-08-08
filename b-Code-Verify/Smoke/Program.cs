@@ -21,6 +21,7 @@ var suites = new (string Name, Func<string[], Task> Run)[]
     ("SubmoduleSafety", SubmoduleSafetySuite.RunAsync),
     ("RepositoryTargets", RepositoryTargetsSuite.RunAsync),
     ("ProjectOperations", ProjectOperationsSuite.RunAsync),
+    ("GitHub", GitHubSuite.RunAsync),
 };
 
 var selected = ReadSuiteName(args);

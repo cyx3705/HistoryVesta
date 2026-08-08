@@ -2,6 +2,7 @@ using HistoryVulcan.Core.Commands;
 using HistoryVulcan.Core.Logging;
 using HistoryVulcan.Core.Storage;
 using HistoryJanus.Git;
+using HistoryJanus.GitHub;
 
 namespace HistoryJanus;
 
@@ -16,13 +17,15 @@ public sealed class StudioBusinessComposition
         HistoryRecorder history,
         GitFileRuleService gitRules,
         BranchHistoryService branchHistory,
-        FormatInventoryService formatInventory)
+        FormatInventoryService formatInventory,
+        GitHubConnectionService gitHub)
     {
         Projects = projects;
         History = history;
         GitRules = gitRules;
         BranchHistory = branchHistory;
         FormatInventory = formatInventory;
+        GitHub = gitHub;
     }
 
     public ProjectService Projects { get; }
@@ -34,6 +37,8 @@ public sealed class StudioBusinessComposition
     public BranchHistoryService BranchHistory { get; }
 
     public FormatInventoryService FormatInventory { get; }
+
+    public GitHubConnectionService GitHub { get; }
 }
 
 /// <summary>
@@ -67,10 +72,13 @@ public static class StudioBusinessCompositionFactory
         var gitRules = new GitFileRuleService(projects);
         var branchHistory = new BranchHistoryService(projects);
         var formatInventory = new FormatInventoryService(projects, log, dataDirectory);
+        // GitHub 事实读取与项目库共用同一 proj.barerepo 配置源，现读现生效
+        var gitHub = new GitHubConnectionService(() => projects.BareRepo);
 
         ProjectCommands.RegisterAll(registry, projects, history, commandSource);
         BranchHistoryCommands.RegisterAll(registry, branchHistory, history, commandSource);
         GitRuleCommands.RegisterAll(registry, gitRules, formatInventory, projects, commandSource);
+        GitHubCommands.RegisterAll(registry, gitHub, commandSource);
         DebugCommands.RegisterAll(registry, log, commandSource);
 
         return new StudioBusinessComposition(
@@ -78,6 +86,7 @@ public static class StudioBusinessCompositionFactory
             history,
             gitRules,
             branchHistory,
-            formatInventory);
+            formatInventory,
+            gitHub);
     }
 }
