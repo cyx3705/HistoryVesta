@@ -1084,6 +1084,12 @@
         <member name="P:HistoryVulcan.Core.Modules.ModuleCommandAttribute.CommandClass">
             <summary>命令在当前模块域内的功能类；未声明时归入 core。</summary>
         </member>
+        <member name="T:HistoryVulcan.Core.Modules.IActivatableToolContent">
+            <summary>Optional content contract used when a tool window is shown and should receive input focus.</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.Modules.IActivatableToolContent.ActivateContent">
+            <summary>Activates the content's primary interaction target.</summary>
+        </member>
         <member name="T:HistoryVulcan.Core.Modules.IDeferredStartupWork">
             <summary>网关就绪后执行的非关键启动工作；失败不得阻断宿主。</summary>
         </member>
