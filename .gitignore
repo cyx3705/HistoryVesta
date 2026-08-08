@@ -27,3 +27,4 @@
 # 构建产物不入库
 bin/
 obj/
+b-Publish/

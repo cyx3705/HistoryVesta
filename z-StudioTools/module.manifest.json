@@ -3,7 +3,7 @@
   "type": "HistoryVulcan.Module",
   "name": "StudioTools",
   "version": "1.2.1",
-  "description": "Studio 基础工具合集：工作树巡检、文本工具和 MCP 动态转发",
+  "description": "StudioTools utility module.",
   "artifact": "StudioTools.dll",
   "docs": "StudioTools.xml",
   "mcpExposure": "standard",
