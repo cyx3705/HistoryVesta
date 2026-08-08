@@ -73,8 +73,8 @@ public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleCont
             {
                 Id = "overview",
                 Title = "项目总览",
-                DefaultSide = DockSide.Center,
-                DefaultRatio = 0.55,
+                DefaultSide = DockSide.Left,
+                DefaultRatio = 0.20,
                 IsSingleton = true,
                 ContentFactory = () => new OverviewView(busAccessor, selection),
             },
@@ -82,8 +82,7 @@ public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleCont
             {
                 Id = "tree",
                 Title = "继承树",
-                DefaultSide = DockSide.Tab,
-                DefaultTabTarget = "overview",
+                DefaultSide = DockSide.Center,
                 DefaultRatio = 0.55,
                 IsSingleton = true,
                 ContentFactory = () => new BranchTreeView(busAccessor, selection),
@@ -92,8 +91,7 @@ public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleCont
             {
                 Id = "meta",
                 Title = "Meta文件",
-                DefaultSide = DockSide.Tab,
-                DefaultTabTarget = "overview",
+                DefaultSide = DockSide.Center,
                 DefaultRatio = 0.55,
                 IsSingleton = true,
                 ContentFactory = () => new MetaView(busAccessor),
@@ -111,8 +109,8 @@ public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleCont
             {
                 Id = "history",
                 Title = "分支历史",
-                DefaultSide = DockSide.Left,
-                DefaultRatio = 0.26,
+                DefaultSide = DockSide.Center,
+                DefaultRatio = 0.55,
                 IsSingleton = true,
                 ContentFactory = () => new BranchHistoryView(busAccessor, selection, isProtected),
             },

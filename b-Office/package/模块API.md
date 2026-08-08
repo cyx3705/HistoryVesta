@@ -6,9 +6,9 @@
 
 - 正式快照：`z-Package-HistoryJanus`。
 - 模块名：`HistoryJanus`。
-- 版本：`3.1.0`。
+- 版本：`3.1.1`。
 - 入口：`HistoryJanus.dll`。
-- 宿主基线：AppShell `3.1.9` current-host 快照，从 `2026-023-AppShell/z-Package-AppShell` 消费；该快照的 `sourceDirty` 仍由 AppShell manifest 如实标记。
+- 宿主基线：AppShell `3.1.9` current-host 快照，从 `2026-023-HistoryVulcan/z-Package-AppShell` 消费；该快照的 `sourceDirty` 仍由 AppShell manifest 如实标记。
 - 主题：页面使用 AppShell `Shell.Brush.*` 动态资源，跟随宿主深色/浅色切换，不在模块内维护第二套主题。
 - 命令来源：`module:HistoryJanus`。
 - UI：启用。

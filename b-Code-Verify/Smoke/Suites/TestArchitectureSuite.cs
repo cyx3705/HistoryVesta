@@ -213,13 +213,17 @@ internal static class TestArchitectureSuite
 
         var projectOperations = File.ReadAllText(Path.Combine(viewsRoot, "ProjectOperationsView.xaml"));
         foreach (var token in new[]
-                 {
-                     "Shell.Brush.SurfaceAlt", "Shell.Brush.ControlBorder",
-                     "Shell.Brush.AccentSoft", "Shell.Brush.Accent", "Shell.Brush.Hairline",
-                 })
+                  {
+                      "Shell.Brush.SurfaceAlt", "Shell.Brush.ControlBorder",
+                      "Shell.Brush.SurfaceHover", "Shell.Brush.AccentSoft", "Shell.Brush.Accent",
+                      "Shell.Brush.TextDisabled", "Shell.Brush.Hairline",
+                  })
         {
             Contains(projectOperations, token,
                 $"theme governance: project operations uses {token}");
         }
+        Contains(projectOperations,
+            "Foreground=\"{TemplateBinding Foreground}\"",
+            "theme governance: operation segment text inherits the host foreground");
     }
 }

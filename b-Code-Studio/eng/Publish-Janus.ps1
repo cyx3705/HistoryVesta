@@ -22,7 +22,7 @@ $ApiDocumentCandidates = @(Get-ChildItem -LiteralPath (Join-Path $RepoRoot 'b-Of
 if ($ApiDocumentCandidates.Count -ne 1) { throw 'b-Office/package must contain exactly one API Markdown document' }
 $ApiDocumentSource = $ApiDocumentCandidates[0].FullName
 $ApiDocumentName = $ApiDocumentCandidates[0].Name
-$AppShellPackageRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\2026-023-AppShell\z-Package-AppShell'))
+$AppShellPackageRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\2026-023-HistoryVulcan\z-Package-AppShell'))
 
 function Invoke-Dotnet {
     param([string[]]$Arguments)

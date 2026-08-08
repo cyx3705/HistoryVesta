@@ -1,6 +1,6 @@
 {
   "name": "HistoryJanus",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "HistoryJanus 项目与 Git 治理模块",
   "artifact": "HistoryJanus.dll",
   "docs": "HistoryJanus.xml",

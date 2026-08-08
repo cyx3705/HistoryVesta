@@ -30,6 +30,7 @@
         <Style x:Key="OperationSegment" TargetType="RadioButton">
             <Setter Property="MinHeight" Value="46" />
             <Setter Property="Margin" Value="0,0,1,0" />
+            <Setter Property="Foreground" Value="{DynamicResource Shell.Brush.TextPrimary}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
@@ -37,7 +38,8 @@
                                 BorderBrush="{DynamicResource Shell.Brush.ControlBorder}"
                                 BorderThickness="1"
                                 Background="{DynamicResource Shell.Brush.SurfaceAlt}" Padding="5,4">
-                            <TextBlock Text="{TemplateBinding Content}" TextAlignment="Center"
+                            <TextBlock Text="{TemplateBinding Content}"
+                                       Foreground="{TemplateBinding Foreground}" TextAlignment="Center"
                                        TextWrapping="Wrap" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -48,8 +50,18 @@
                                         Value="{DynamicResource Shell.Brush.Accent}" />
                                 <Setter Property="FontWeight" Value="SemiBold" />
                             </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                    <Condition Property="IsChecked" Value="False" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="SegmentBorder" Property="Background"
+                                        Value="{DynamicResource Shell.Brush.SurfaceHover}" />
+                            </MultiTrigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="SegmentBorder" Property="Opacity" Value="0.55" />
+                                <Setter Property="Foreground"
+                                        Value="{DynamicResource Shell.Brush.TextDisabled}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

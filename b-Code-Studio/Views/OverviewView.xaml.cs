@@ -23,7 +23,7 @@ public partial class OverviewView : UserControl
         Unloaded += OnUnloaded;
     }
 
-    public sealed record WorktreeRow(int Index, string BranchName, string LastCommitTime, string WorktreePath);
+    public sealed record WorktreeRow(int Index, string BranchName);
 
     private async void OnLoaded(object sender, System.Windows.RoutedEventArgs e)
     {
@@ -61,7 +61,7 @@ public partial class OverviewView : UserControl
             }
 
             _allRows = list.Select((item, index) => new WorktreeRow(
-                index + 1, item.BranchName, item.LastCommitTime, item.WorktreePath)).ToList();
+                index + 1, item.BranchName)).ToList();
             if (_selection.CurrentProjectName is { } current
                 && !_allRows.Any(row => row.BranchName.Equals(current, StringComparison.OrdinalIgnoreCase)))
             {
@@ -121,8 +121,5 @@ public partial class OverviewView : UserControl
             _ = _busAccessor()?.ExecuteAsync(
                 $"proj.open name={CommandParser.QuoteArg(row.BranchName)}", "UI");
     }
-
-    private void OnOpenRootClick(object sender, System.Windows.RoutedEventArgs e)
-        => _ = _busAccessor()?.ExecuteAsync("proj.open", "UI");
 
 }

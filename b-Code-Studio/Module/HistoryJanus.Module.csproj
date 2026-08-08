@@ -10,7 +10,7 @@
     <RootNamespace>HistoryJanus.Module</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1573;CS1591</NoWarn>
-    <AppShellPackageRoot Condition="'$(AppShellPackageRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..\2026-023-AppShell\z-Package-AppShell</AppShellPackageRoot>
+    <AppShellPackageRoot Condition="'$(AppShellPackageRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..\2026-023-HistoryVulcan\z-Package-AppShell</AppShellPackageRoot>
     <AppShellHostRoot Condition="'$(AppShellHostRoot)' == ''">$(AppShellPackageRoot)\host</AppShellHostRoot>
   </PropertyGroup>
 

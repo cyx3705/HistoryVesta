@@ -7,8 +7,6 @@
         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
             <Button x:Name="RefreshButton" DockPanel.Dock="Right" Content="刷新项目"
                     Padding="12,3" Margin="8,0,0,0" Click="OnRefreshClick" />
-            <Button DockPanel.Dock="Right" Content="打开根目录"
-                    Padding="12,3" Margin="8,0,0,0" Click="OnOpenRootClick" />
             <TextBlock Text="搜索:" VerticalAlignment="Center" Margin="0,0,6,0"
                        Foreground="{DynamicResource Shell.Brush.TextSecondary}" />
             <TextBox x:Name="SearchBox" VerticalContentAlignment="Center" TextChanged="OnSearchChanged" />
@@ -28,8 +26,6 @@
                 <GridView ColumnHeaderContainerStyle="{DynamicResource Shell.GridHeader}">
                     <GridViewColumn Header="#" Width="44" DisplayMemberBinding="{Binding Index}" />
                     <GridViewColumn Header="分支 / 项目" Width="260" DisplayMemberBinding="{Binding BranchName}" />
-                    <GridViewColumn Header="最后提交" Width="170" DisplayMemberBinding="{Binding LastCommitTime}" />
-                    <GridViewColumn Header="路径" Width="480" DisplayMemberBinding="{Binding WorktreePath}" />
                 </GridView>
             </ListView.View>
         </ListView>

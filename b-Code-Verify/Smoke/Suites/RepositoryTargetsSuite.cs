@@ -189,6 +189,24 @@ internal static class RepositoryTargetsSuite
              && !overview.ToString().Contains("PushAll", StringComparison.Ordinal)
              && !overview.ToString().Contains("Submodule", StringComparison.OrdinalIgnoreCase),
             "overview contains no git write controls");
+        var overviewColumns = overview.Descendants()
+            .Where(element => element.Name.LocalName == "GridViewColumn")
+            .ToArray();
+        Equal(2, overviewColumns.Length, "overview is a compact two-column navigator");
+        True(overviewColumns.Select(column => column.Attribute("Header")?.Value)
+                .SequenceEqual(["#", "分支 / 项目"]),
+            "overview columns are number then branch/project");
+        var overviewSource = overview.ToString();
+        True(!overviewSource.Contains("LastCommitTime", StringComparison.Ordinal)
+             && !overviewSource.Contains("WorktreePath", StringComparison.Ordinal)
+             && !overviewSource.Contains("OnOpenRootClick", StringComparison.Ordinal),
+            "overview removes commit time, path and root-open entry");
+        foreach (var retained in new[] { "SearchBox", "RefreshButton", "StatusText", "WorktreeList" })
+        {
+            True(overview.Descendants().Any(element =>
+                    element.Attribute(x + "Name")?.Value == retained),
+                $"overview retains compact navigation control: {retained}");
+        }
 
         var groups = project.Descendants().Where(element => element.Name.LocalName == "GroupBox")
             .ToDictionary(element => element.Attribute("Header")?.Value ?? string.Empty);

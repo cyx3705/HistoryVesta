@@ -49,9 +49,8 @@
             <ListView.View>
                 <GridView ColumnHeaderContainerStyle="{DynamicResource Shell.GridHeader}">
                     <GridViewColumn Header="节点" Width="58" DisplayMemberBinding="{Binding Marker}" />
+                    <GridViewColumn Header="提交说明" Width="360" DisplayMemberBinding="{Binding Subject}" />
                     <GridViewColumn Header="时间" Width="138" DisplayMemberBinding="{Binding TimeDisplay}" />
-                    <GridViewColumn Header="SHA" Width="82" DisplayMemberBinding="{Binding ShortSha}" />
-                    <GridViewColumn Header="提交说明" Width="280" DisplayMemberBinding="{Binding Subject}" />
                     <GridViewColumn Header="作者" Width="100" DisplayMemberBinding="{Binding Author}" />
                     <GridViewColumn Header="origin" Width="76" DisplayMemberBinding="{Binding RemoteDisplay}" />
                 </GridView>

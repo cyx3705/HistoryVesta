@@ -1,6 +1,7 @@
 ﻿using AppShell.Core;
 using AppShell.Core.Mcp;
 using AppShell.Core.Commands;
+using System.Xml.Linq;
 using HistoryJanus.Git;
 using static HistoryJanus.Smoke.SmokeKit;
 
@@ -15,6 +16,7 @@ internal static class BranchHistorySuite
 
     public static async Task RunAsync(string[] args)
     {
+        VerifyHistoryLayout();
         var root = TemporaryDirectory("branch-history");
         var seed = Path.Combine(root, "seed");
         var bare = Path.Combine(root, "projects.git");
@@ -174,6 +176,26 @@ internal static class BranchHistorySuite
             if (Directory.Exists(root))
                 DeleteTree(root);
         }
+    }
+
+    private static void VerifyHistoryLayout()
+    {
+        var document = XDocument.Load(Path.Combine(
+            RepoRoot, "Views", "BranchHistoryView.xaml"));
+        var columns = document.Descendants()
+            .Where(element => element.Name.LocalName == "GridViewColumn")
+            .ToArray();
+        var headers = columns.Select(column => column.Attribute("Header")?.Value).ToArray();
+        True(headers.SequenceEqual(["节点", "提交说明", "时间", "作者", "origin"]),
+            "history columns omit SHA and place time after subject");
+        Equal("360", columns[1].Attribute("Width")?.Value,
+            "history subject column uses the expanded width");
+        Equal("138", columns[2].Attribute("Width")?.Value,
+            "history time column keeps its width");
+        var source = document.ToString();
+        True(!source.Contains("ShortSha", StringComparison.Ordinal)
+             && source.Contains("OnCopyShaClick", StringComparison.Ordinal),
+            "history hides the SHA column but retains the copy action");
     }
 
     /// <summary>读取 GitResult 的首行 SHA。</summary>

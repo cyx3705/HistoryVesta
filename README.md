@@ -38,6 +38,6 @@ dotnet run --project .\b-Code-Verify\ModuleSmoke\ModuleSmoke.csproj -c Debug -- 
 
 - 当前事实以源码、测试、`b-Office/current`、`b-Office/package` 和最新 z 级正式快照为准。
 - 默认不列举、搜索或读取 `b-Office/history`；只有用户明确追溯版本时才读取指定文件。
-- AppShell 合同只从平级 `2026-023-AppShell/z-Package-AppShell` 消费，不复制其源码或文档。
+- AppShell 合同只从平级 `2026-023-HistoryVulcan/z-Package-AppShell` 消费，不复制其源码或文档。
 - 不提交 `bin`、`obj`、`.vs` 或 `b-Publish`；z 级正式快照进入 Git。
 - 不新建独立 `AGENTS.md`；本节与文档中心共同承担仓库 AI 边界。

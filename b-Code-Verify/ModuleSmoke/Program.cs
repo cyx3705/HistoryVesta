@@ -62,7 +62,7 @@ if (host.Modules.Count != 1)
 
 var meta = host.Modules[0];
 if (!meta.ModuleName.Equals("HistoryJanus", StringComparison.Ordinal)
-    || !meta.Version.Equals("3.1.0", StringComparison.Ordinal)
+    || !meta.Version.Equals("3.1.1", StringComparison.Ordinal)
     || !meta.Ui
     || meta.CommandCount < 29)
 {
@@ -100,7 +100,7 @@ foreach (var commandName in businessCommands)
     }
 }
 var result = await bus.ExecuteAsync("HistoryJanus.Status", "ModuleSmoke");
-if (!result.Success || !result.Message.Contains("3.1.0", StringComparison.Ordinal))
+if (!result.Success || !result.Message.Contains("3.1.1", StringComparison.Ordinal))
     throw new InvalidOperationException($"module command failed: {result.Message}");
 
 var projectList = await bus.ExecuteAsync("proj.list", "ModuleSmoke");
@@ -114,6 +114,13 @@ if (!expectedWindows.SequenceEqual(actualWindows, StringComparer.Ordinal))
     throw new InvalidOperationException(
         $"unexpected module windows: [{string.Join(", ", actualWindows)}]");
 }
+
+var windowsById = shellUi.Descriptors.ToDictionary(item => item.Id, StringComparer.Ordinal);
+AssertPlacement(windowsById["overview"], DockSide.Left, 0.20);
+AssertPlacement(windowsById["tree"], DockSide.Center, 0.55);
+AssertPlacement(windowsById["meta"], DockSide.Center, 0.55);
+AssertPlacement(windowsById["projops"], DockSide.Right, 0.28);
+AssertPlacement(windowsById["history"], DockSide.Center, 0.55);
 
 if (shellUi.Descriptors.Any(item => item.Title.Equals("HistoryJanus", StringComparison.Ordinal)))
     throw new InvalidOperationException("placeholder main window is still registered");
@@ -213,6 +220,7 @@ static IReadOnlyList<string> ConstructPages(
                         throw new InvalidOperationException(
                             $"window {descriptor.Id} did not resolve dynamic text theme resources");
                     }
+                    VerifyOperationSegmentTheme(control);
                 }
                 return page.GetType().Name;
             }).ToList();
@@ -229,6 +237,82 @@ static IReadOnlyList<string> ConstructPages(
     if (failure != null)
         throw new InvalidOperationException("page construction failed", failure);
     return pageTypes ?? throw new InvalidOperationException("page construction produced no result");
+}
+
+static void AssertPlacement(ToolWindowDescriptor descriptor, DockSide side, double ratio)
+{
+    if (descriptor.DefaultSide != side || Math.Abs(descriptor.DefaultRatio - ratio) > 0.0001)
+    {
+        throw new InvalidOperationException(
+            $"unexpected placement for {descriptor.Id}: {descriptor.DefaultSide} {descriptor.DefaultRatio}");
+    }
+}
+
+static void VerifyOperationSegmentTheme(Control page)
+{
+    if (page.GetType().Name != "ProjectOperationsView" || page is not FrameworkElement scope)
+        return;
+
+    var names = new[]
+    {
+        "CurrentSubmodulesModeButton", "CurrentBothModeButton",
+        "AllSubmodulesModeButton", "AllBothModeButton",
+    };
+    var buttons = names.Select(name => scope.FindName(name) as RadioButton
+        ?? throw new InvalidOperationException($"operation segment is missing: {name}")).ToArray();
+
+    SetTheme(page.Resources, Brushes.Black, Brushes.White, Brushes.LightYellow,
+        Brushes.LightGray, Brushes.Gray);
+    AssertSegmentTheme(buttons, Brushes.Black, Brushes.White, Brushes.LightYellow);
+
+    SetTheme(page.Resources, Brushes.White, Brushes.Black, Brushes.DarkOliveGreen,
+        Brushes.DimGray, Brushes.Gray);
+    AssertSegmentTheme(buttons, Brushes.White, Brushes.Black, Brushes.DarkOliveGreen);
+
+    var disabled = buttons[0];
+    disabled.IsEnabled = false;
+    if (disabled.Foreground != Brushes.Gray)
+        throw new InvalidOperationException("disabled operation segment did not use TextDisabled");
+}
+
+static void SetTheme(
+    ResourceDictionary resources,
+    Brush text,
+    Brush surface,
+    Brush accentSoft,
+    Brush surfaceHover,
+    Brush disabled)
+{
+    resources["Shell.Brush.TextPrimary"] = text;
+    resources["Shell.Brush.TextDisabled"] = disabled;
+    resources["Shell.Brush.SurfaceAlt"] = surface;
+    resources["Shell.Brush.SurfaceHover"] = surfaceHover;
+    resources["Shell.Brush.AccentSoft"] = accentSoft;
+    resources["Shell.Brush.Accent"] = Brushes.Goldenrod;
+    resources["Shell.Brush.ControlBorder"] = Brushes.Gray;
+}
+
+static void AssertSegmentTheme(
+    IEnumerable<RadioButton> buttons,
+    Brush expectedText,
+    Brush expectedSurface,
+    Brush expectedSelectedSurface)
+{
+    foreach (var button in buttons)
+    {
+        button.IsEnabled = true;
+        button.ApplyTemplate();
+        var border = button.Template.FindName("SegmentBorder", button) as Border
+                     ?? throw new InvalidOperationException("operation segment template border is missing");
+        var expectedBackground = button.IsChecked == true
+            ? expectedSelectedSurface
+            : expectedSurface;
+        if (button.Foreground != expectedText || border.Background != expectedBackground)
+        {
+            throw new InvalidOperationException(
+                $"operation segment theme mismatch: {button.Name} checked={button.IsChecked}");
+        }
+    }
 }
 
 sealed class ImmediateSynchronizationContext : SynchronizationContext
