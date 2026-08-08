@@ -133,33 +133,33 @@ internal static class RepositoryTargetsSuite
             Equal(RepositoryTarget.Parent,
                 ProjectCommands.ResolveRepositoryTarget("parent", true), "target overrides true");
 
-            Equal("proj.commit name=Demo msg=说明 target=submodules",
+            Equal("janus.proj.commit name=Demo msg=说明 target=submodules",
                 ProjectOperationCommandBuilder.BuildCommit(
                     ProjectOperationMode.CurrentSubmodules, "Demo", "说明"), "current child command");
-            Equal("proj.commit name=Demo msg=说明 target=both",
+            Equal("janus.proj.commit name=Demo msg=说明 target=both",
                 ProjectOperationCommandBuilder.BuildCommit(
                     ProjectOperationMode.CurrentBoth, "Demo", "说明"), "current both command");
-            Equal("proj.commitall msg=说明 target=submodules",
+            Equal("janus.proj.commitall msg=说明 target=submodules",
                 ProjectOperationCommandBuilder.BuildCommit(
                     ProjectOperationMode.AllSubmodules, null, "说明"), "all child command");
-            Equal("proj.pushall target=both",
+            Equal("janus.proj.pushall target=both",
                 ProjectOperationCommandBuilder.BuildPush(ProjectOperationMode.AllBoth, null), "all both push command");
 
             var registry = new CommandRegistry();
             ProjectCommands.RegisterAll(registry, service, null!);
-            foreach (var commandName in new[] { "proj.commit", "proj.push", "proj.commitall", "proj.pushall" })
+            foreach (var commandName in new[] { "janus.proj.commit", "janus.proj.push", "janus.proj.commitall", "janus.proj.pushall" })
             {
                 True(registry.TryGet(commandName, out var descriptor), $"{commandName} registered");
                 var target = descriptor.Parameters.Single(parameter => parameter.Name == "target");
                 True(target.Default == null && target.AllowedValues is ["parent", "submodules", "both"],
                     $"{commandName} target enum schema");
             }
-            True(registry.TryGet("proj.metalist", out var metaListDescriptor) && metaListDescriptor.Readonly,
-                "proj.metalist stays a readonly module command");
-            True(registry.TryGet("proj.metaopen", out var metaOpenDescriptor)
+            True(registry.TryGet("janus.meta.list", out var metaListDescriptor) && metaListDescriptor.Readonly,
+                "janus.meta.list stays a readonly module command");
+            True(registry.TryGet("janus.meta.open", out var metaOpenDescriptor)
                  && metaOpenDescriptor.Parameters.Any(parameter => parameter.Name == "name")
                  && metaOpenDescriptor.Parameters.Any(parameter => parameter.Name == "meta"),
-                "proj.metaopen keeps its name/meta parameters");
+                "janus.meta.open keeps its name/meta parameters");
 
             await VerifyOverviewMetaMerge(service, parent, noChild);
             VerifyXamlLayout();
@@ -267,6 +267,14 @@ internal static class RepositoryTargetsSuite
             "github page keeps accounts, keys and diagnostics grids");
         True(githubMarkup.Contains("Shell.Brush.AccentSoft", StringComparison.Ordinal),
             "github grid rows paint selection with the host AccentSoft token");
+        True(!githubMarkup.Contains("TargetType=\"Button\"", StringComparison.Ordinal),
+            "github page does not override the host implicit Button style");
+        True(github.Descendants().Where(element => element.Name.LocalName == "DataGrid")
+                .All(grid => grid.Attribute("Background")?.Value?
+                    .Contains("Shell.Brush.Surface", StringComparison.Ordinal) == true
+                    && grid.Attribute("AlternatingRowBackground")?.Value?
+                        .Contains("Shell.Brush.SurfaceAlt", StringComparison.Ordinal) == true),
+            "github DataGrids declare Surface and SurfaceAlt backgrounds");
         True(!github.Descendants().Any(element => element.Attribute(x + "Name")?.Value == "StatusText"),
             "github page drops the bottom status strip like the other pages");
 
@@ -356,9 +364,9 @@ internal static class RepositoryTargetsSuite
         True(!OverviewMetaMerge.MatchesKeyword(noChildRow, "beta"),
             "search does not match rows missing the keyword");
 
-        Equal($"proj.metaopen name={parentBranch} meta=z-alpha",
+        Equal($"janus.meta.open name={parentBranch} meta=z-alpha",
             OverviewMetaMerge.BuildOpenCommand(parentRow.PrimaryMeta!),
-            "meta click reuses the existing proj.metaopen command");
+            "meta click reuses the existing janus.meta.open command");
     }
 
     private static async Task CreateChild(string path, string branch, string remote)

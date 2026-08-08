@@ -33,7 +33,7 @@ var dataDirectory = Path.Combine(Path.GetTempPath(), "HistoryJanus-ModuleSmoke",
 var shellUi = new RecordingShellUiRegistrar();
 registry.Register(new CommandDescriptor
 {
-    Name = "HistoryJanus.Status",
+    Name = "janus.status",
     Summary = "frontend proxy placeholder",
     Readonly = true,
     Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("proxy")),
@@ -62,7 +62,7 @@ if (host.Modules.Count != 1)
 
 var meta = host.Modules[0];
 if (!meta.ModuleName.Equals("HistoryJanus", StringComparison.Ordinal)
-    || !meta.Version.Equals("3.4.0", StringComparison.Ordinal)
+    || !meta.Version.Equals("3.5.0", StringComparison.Ordinal)
     || !meta.Ui
     || meta.CommandCount < 29)
 {
@@ -70,34 +70,34 @@ if (!meta.ModuleName.Equals("HistoryJanus", StringComparison.Ordinal)
         $"unexpected module metadata: {meta.ModuleName} {meta.Version} ui={meta.Ui} commands={meta.CommandCount}");
 }
 
-if (!registry.TryGet("HistoryJanus.Status", out var descriptor)
+if (!registry.TryGet("janus.status", out var descriptor)
     || !descriptor.Readonly
-    || !registry.GetSource("HistoryJanus.Status")
+    || !registry.GetSource("janus.status")
         .Equals("module:HistoryJanus", StringComparison.Ordinal))
 {
     throw new InvalidOperationException(
-        $"module command contract is not projected correctly: exists={registry.TryGet("HistoryJanus.Status", out _)} "
-        + $"source={registry.GetSource("HistoryJanus.Status")} "
+        $"module command contract is not projected correctly: exists={registry.TryGet("janus.status", out _)} "
+        + $"source={registry.GetSource("janus.status")} "
         + string.Join("; ", log.Snapshot().Where(entry => entry.Category == "module").Select(entry => entry.Message)));
 }
 
 var businessCommands = new[]
 {
-    "proj.list",
-    "proj.tree",
-    "proj.metalist",
-    "proj.metaopen",
-    "proj.commit",
-    "proj.push",
-    "proj.history",
-    "proj.rollback",
-    "proj.reset",
-    "proj.forcepush",
-    "git.rule.list",
-    "git.rule.batch-set",
-    "github.status",
-    "github.accounts",
-    "github.test",
+    "janus.proj.list",
+    "janus.proj.tree",
+    "janus.meta.list",
+    "janus.meta.open",
+    "janus.proj.commit",
+    "janus.proj.push",
+    "janus.history.list",
+    "janus.history.rollback",
+    "janus.history.reset",
+    "janus.history.forcepush",
+    "janus.gitrule.list",
+    "janus.gitrule.batchset",
+    "janus.github.status",
+    "janus.github.accounts",
+    "janus.github.test",
 };
 foreach (var commandName in businessCommands)
 {
@@ -107,11 +107,11 @@ foreach (var commandName in businessCommands)
         throw new InvalidOperationException($"business command is not module-owned: {commandName}");
     }
 }
-var result = await bus.ExecuteAsync("HistoryJanus.Status", "ModuleSmoke");
-if (!result.Success || !result.Message.Contains("3.4.0", StringComparison.Ordinal))
+var result = await bus.ExecuteAsync("janus.status", "ModuleSmoke");
+if (!result.Success || !result.Message.Contains("3.5.0", StringComparison.Ordinal))
     throw new InvalidOperationException($"module command failed: {result.Message}");
 
-var projectList = await bus.ExecuteAsync("proj.list", "ModuleSmoke");
+var projectList = await bus.ExecuteAsync("janus.proj.list", "ModuleSmoke");
 if (!projectList.Success)
     throw new InvalidOperationException($"real project command failed: {projectList.Message}");
 
@@ -156,7 +156,7 @@ var emptyModuleDirectory = Path.Combine(dataDirectory, "empty-modules");
 Directory.CreateDirectory(emptyModuleDirectory);
 host.ChangeDirectory(emptyModuleDirectory);
 if (businessCommands.Any(commandName => registry.TryGet(commandName, out _))
-    || registry.TryGet("HistoryJanus.Status", out _))
+    || registry.TryGet("janus.status", out _))
 {
     throw new InvalidOperationException("module unload left owned commands in the host registry");
 }
@@ -175,14 +175,14 @@ using (var serviceHost = new ModuleHost(moduleDirectory, log)
     serviceHost.Attach(serviceRegistry, serviceBus, settings, dataDirectory);
     serviceHost.Start();
     if (serviceReloads != 1
-        || !serviceRegistry.TryGet("proj.list", out _)
-        || !serviceRegistry.TryGet("git.rule.list", out _))
+        || !serviceRegistry.TryGet("janus.proj.list", out _)
+        || !serviceRegistry.TryGet("janus.gitrule.list", out _))
     {
         throw new InvalidOperationException(
             "headless service host did not publish the module business commands");
     }
 }
-if (serviceRegistry.TryGet("proj.list", out _))
+if (serviceRegistry.TryGet("janus.proj.list", out _))
     throw new InvalidOperationException("disposing the headless host left module commands registered");
 
 Console.WriteLine(

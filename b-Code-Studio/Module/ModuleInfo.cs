@@ -5,6 +5,8 @@ namespace HistoryJanus.Module;
 public sealed class ModuleInfo : ModuleInfoBase
 {
     public override string ModuleName => "HistoryJanus";
+    // 指令域短拼：宿主按 CommandPrefix 投影 [ModuleCommand]，产出 janus.status
+    public string CommandPrefix => "janus";
     public override string Description => "HistoryJanus 项目与 Git 治理模块";
     public override string Author => "OneHistory";
     public override string Version =>

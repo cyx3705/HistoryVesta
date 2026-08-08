@@ -30,8 +30,8 @@ public partial class ProjectOperationsView
 
         var quotedProject = CommandParser.QuoteArg(project);
         var scanTask = bus.ExecuteAsync(
-            $"git.rule.scan name={quotedProject} refresh={Bool(refresh)}", "UI");
-        var listTask = bus.ExecuteAsync($"git.rule.list name={quotedProject}", "UI");
+            $"janus.gitrule.scan name={quotedProject} refresh={Bool(refresh)}", "UI");
+        var listTask = bus.ExecuteAsync($"janus.gitrule.list name={quotedProject}", "UI");
         await Task.WhenAll(scanTask, listTask);
 
         if (generation != _ruleLoadGeneration
@@ -128,7 +128,7 @@ public partial class ProjectOperationsView
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         });
-        var command = $"git.rule.batch-set name={CommandParser.QuoteArg(project)} " +
+        var command = $"janus.gitrule.batchset name={CommandParser.QuoteArg(project)} " +
                       $"changes={CommandParser.QuoteArg(json)}";
 
         SetRuleOperationRunning(true);
@@ -176,7 +176,7 @@ public partial class ProjectOperationsView
             return;
         if (!await EnsureDirtyRulesHandledAsync())
             return;
-        var command = $"git.rule.remove name={CommandParser.QuoteArg(project)} " +
+        var command = $"janus.gitrule.remove name={CommandParser.QuoteArg(project)} " +
                       $"pattern={CommandParser.QuoteArg(rule.Pattern)}";
         var preview = await bus.ExecuteAsync(command + " apply=false", "UI");
         if (!preview.Success
@@ -201,7 +201,7 @@ public partial class ProjectOperationsView
     private void OnReviewRulesClick(object sender, System.Windows.RoutedEventArgs e)
     {
         if (CurrentProjectName() is { Length: > 0 } project)
-            _ = _busAccessor()?.ExecuteAsync($"git.rule.review name={CommandParser.QuoteArg(project)}", "UI");
+            _ = _busAccessor()?.ExecuteAsync($"janus.gitrule.review name={CommandParser.QuoteArg(project)}", "UI");
     }
 
     /// <summary>基线同步只发预览:写入需在控制台显式 apply=true(人在环上)。</summary>
@@ -209,7 +209,7 @@ public partial class ProjectOperationsView
     {
         if (CurrentProjectName() is { Length: > 0 } project)
             _ = _busAccessor()?.ExecuteAsync(
-                $"git.rule.sync name={CommandParser.QuoteArg(project)} apply=false", "UI");
+                $"janus.gitrule.sync name={CommandParser.QuoteArg(project)} apply=false", "UI");
     }
 
     private async Task<bool> EnsureDirtyRulesHandledAsync()

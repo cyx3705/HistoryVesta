@@ -51,7 +51,7 @@ public partial class ProjectOperationsView : UserControl
     {
         if (_busAccessor() is not { } bus)
             return;
-        var result = await bus.ExecuteAsync("proj.list", "UI");
+        var result = await bus.ExecuteAsync("janus.proj.list", "UI");
         if (!result.Success || !ModuleResultData.TryRead(result.Data, out List<WorktreeInfo>? projects))
             return;
         _projectNames = projects.Select(project => project.BranchName).ToList();
@@ -118,7 +118,7 @@ public partial class ProjectOperationsView : UserControl
             || NewProjectName() is not { Length: > 0 } name
             || CurrentProjectName() is not { Length: > 0 } baseProject)
             return;
-        var command = $"proj.create name={CommandParser.QuoteArg(name)} " +
+        var command = $"janus.proj.create name={CommandParser.QuoteArg(name)} " +
                       $"base={CommandParser.QuoteArg(baseProject)}";
         var result = await bus.ExecuteAsync(command, "UI");
         if (result.Success)

@@ -20,15 +20,15 @@ public static class DebugCommands
     }
 
     /// <summary>
-    /// debug.logflood：按指定速率注入日志以执行承压验证。
+    /// janus.debug.logflood：按指定速率注入日志以执行承压验证。
     /// 异步长任务示范:后台线程产出、经 Progress 上报进度、全程不阻塞 UI(§5.2)。
     /// </summary>
     private static CommandDescriptor BuildLogFlood(IShellLog log) => new()
     {
-        Name = "debug.logflood",
+        Name = "janus.debug.logflood",
         CommandClass = "debug",
         Summary = "日志承压测试:按指定速率注入日志",
-        Example = "debug.logflood rate=1000 seconds=30",
+        Example = "janus.debug.logflood rate=1000 seconds=30",
         Parameters =
         [
             new ParameterSpec
@@ -93,13 +93,13 @@ public static class DebugCommands
         },
     };
 
-    /// <summary>debug.sleep:异步等待(自动化脚本用,如 --exec 序列中等待模块热重载生效)。</summary>
+    /// <summary>janus.debug.sleep:异步等待(自动化脚本用,如 --exec 序列中等待模块热重载生效)。</summary>
     private static CommandDescriptor BuildSleep() => new()
     {
-        Name = "debug.sleep",
+        Name = "janus.debug.sleep",
         CommandClass = "debug",
         Summary = "等待指定秒数(自动化脚本用;异步等待,不阻塞 UI)",
-        Example = "debug.sleep seconds=5",
+        Example = "janus.debug.sleep seconds=5",
         Parameters =
         [
             new ParameterSpec

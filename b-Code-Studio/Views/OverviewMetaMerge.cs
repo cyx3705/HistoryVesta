@@ -35,8 +35,8 @@ public static class OverviewMetaMerge
                meta.MetaName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
                meta.FullPath.Contains(keyword, StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>点击 Meta 名执行既有的 proj.metaopen 命令,不改变项目选择。</summary>
+    /// <summary>点击 Meta 名执行既有的 janus.meta.open 命令,不改变项目选择。</summary>
     public static string BuildOpenCommand(MetaFolderInfo meta)
-        => $"proj.metaopen name={CommandParser.QuoteArg(meta.ProjectName)} " +
+        => $"janus.meta.open name={CommandParser.QuoteArg(meta.ProjectName)} " +
            $"meta={CommandParser.QuoteArg(meta.MetaName)}";
 }

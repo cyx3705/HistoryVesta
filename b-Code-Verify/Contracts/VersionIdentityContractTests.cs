@@ -47,7 +47,7 @@ public sealed class VersionIdentityContractTests
     [Fact]
     public void StatusReportsTheProjectedVersion()
     {
-        var status = new HistoryJanusCommands().Status();
+        var status = new HistoryJanusCommands().status();
 
         Assert.Contains(InformationalVersion, status);
         Assert.StartsWith("HistoryJanus ", status);

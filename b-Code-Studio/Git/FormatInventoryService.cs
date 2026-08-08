@@ -170,7 +170,7 @@ public sealed class FormatInventoryService
         foreach (var row in gapFormats.Take(30))
             text.Append($"\n  {row.Format,-16} 未决 {row.UndecidedCount,6}  (共 {row.FileCount} 个 / {row.ProjectCount} 个项目)");
         if (gapFormats.Count > 30)
-            text.Append($"\n  ... 另有 {gapFormats.Count - 30} 种格式,完整台账见 git.rule.scan");
+            text.Append($"\n  ... 另有 {gapFormats.Count - 30} 种格式,完整台账见 janus.gitrule.scan");
         foreach (var row in gapDirectories.Take(15))
             text.Append($"\n  [目录] {row.Project}/{row.Directory}  {row.FileCount} 个无扩展名文件");
         if (gapDirectories.Count > 15)
@@ -193,7 +193,7 @@ public sealed class FormatInventoryService
                         string.Join(" ", unknown.Take(12).Select(u => $"{u.Format}({u.UndecidedCount})")));
         }
 
-        text.Append("\n应用: git.rule.set 逐条采纳;目录候选用 git.rule.set pattern=<目录>/ track=false");
+        text.Append("\n应用: janus.gitrule.set 逐条采纳;目录候选用 janus.gitrule.set pattern=<目录>/ track=false");
         return (true, text.ToString(), review);
     }
 
@@ -434,7 +434,7 @@ public sealed class FormatInventoryService
                 text.Append($"\n  {d.Project}/{d.Directory}  {d.FileCount} 个");
         }
 
-        text.Append("\ngit.rule.review 合并查看未决与建议;deep=true 加 LFS 指针核验");
+        text.Append("\njanus.gitrule.review 合并查看未决与建议;deep=true 加 LFS 指针核验");
         return text.ToString();
     }
 

@@ -65,8 +65,8 @@ public partial class OverviewView : UserControl
         RefreshButton.IsEnabled = false;
         try
         {
-            var projectsTask = bus.ExecuteAsync("proj.list", "UI");
-            var metasTask = bus.ExecuteAsync("proj.metalist", "UI");
+            var projectsTask = bus.ExecuteAsync("janus.proj.list", "UI");
+            var metasTask = bus.ExecuteAsync("janus.meta.list", "UI");
             await Task.WhenAll(projectsTask, metasTask);
 
             var projectsResult = await projectsTask;
@@ -135,7 +135,7 @@ public partial class OverviewView : UserControl
     {
         if (WorktreeList.SelectedItem is WorktreeRow row)
             _ = _busAccessor()?.ExecuteAsync(
-                $"proj.open name={CommandParser.QuoteArg(row.BranchName)}", "UI");
+                $"janus.proj.open name={CommandParser.QuoteArg(row.BranchName)}", "UI");
     }
 
     private async void OnMetaFolderClick(object sender, System.Windows.RoutedEventArgs e)

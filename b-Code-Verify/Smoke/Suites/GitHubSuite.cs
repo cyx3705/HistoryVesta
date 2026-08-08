@@ -148,23 +148,23 @@ internal static class GitHubSuite
 
         var registry = new CommandRegistry();
         GitHubCommands.RegisterAll(registry, service, "module:HistoryJanus");
-        foreach (var name in new[] { "github.status", "github.accounts", "github.test" })
+        foreach (var name in new[] { "janus.github.status", "janus.github.accounts", "janus.github.test" })
         {
             True(registry.TryGet(name, out var descriptor) && descriptor.Readonly,
                 $"{name} stays a readonly module command");
             Equal("module:HistoryJanus", registry.GetSource(name),
                 $"{name} registers under the Janus module source");
         }
-        var test = registry.All().Single(d => d.Name == "github.test");
+        var test = registry.All().Single(d => d.Name == "janus.github.test");
         True(test.Parameters.Any(p => p.Name == "transport"
                 && p.AllowedValues is ["auto", "ssh", "https"]),
-            "github.test keeps the transport enum schema");
+            "janus.github.test keeps the transport enum schema");
 
         var bus = new CommandBus(registry, new MemoryLog());
-        var accounts = await bus.ExecuteAsync("github.accounts", "Smoke");
-        True(accounts.Success, "github.accounts executes through the bus");
-        var invalid = await bus.ExecuteAsync("github.test transport=bogus", "Smoke");
-        True(!invalid.Success, "github.test rejects an unknown transport");
+        var accounts = await bus.ExecuteAsync("janus.github.accounts", "Smoke");
+        True(accounts.Success, "janus.github.accounts executes through the bus");
+        var invalid = await bus.ExecuteAsync("janus.github.test transport=bogus", "Smoke");
+        True(!invalid.Success, "janus.github.test rejects an unknown transport");
     }
 
     private static IReadOnlyList<string> StripRepository(IReadOnlyList<string> arguments)

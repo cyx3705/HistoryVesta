@@ -1,6 +1,6 @@
 ﻿<Project>
   <PropertyGroup>
-    <HistoryJanusVersion>3.4.0</HistoryJanusVersion>
+    <HistoryJanusVersion>3.5.0</HistoryJanusVersion>
     <VersionPrefix>$(HistoryJanusVersion)</VersionPrefix>
     <Version>$(HistoryJanusVersion)</Version>
     <AssemblyVersion>$(HistoryJanusVersion).0</AssemblyVersion>

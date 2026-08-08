@@ -8,10 +8,6 @@
             <Setter Property="Foreground" Value="{DynamicResource Shell.Brush.TextSecondary}" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
-        <Style TargetType="Button">
-            <Setter Property="MinHeight" Value="28" />
-            <Setter Property="Padding" Value="10,3" />
-        </Style>
         <Style TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="{DynamicResource Shell.Brush.SurfaceAlt}" />
             <Setter Property="Foreground" Value="{DynamicResource Shell.Brush.TextSecondary}" />
@@ -88,14 +84,30 @@
                         <Button Content="注销所选" Margin="8,0,0,0" Click="OnLogoutClick" />
                     </WrapPanel>
                     <DataGrid x:Name="AccountsGrid" Grid.Row="1" Margin="0,6,0,8"
-                              AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column">
+                              Background="{DynamicResource Shell.Brush.Surface}"
+                              Foreground="{DynamicResource Shell.Brush.TextPrimary}"
+                              BorderBrush="{DynamicResource Shell.Brush.Hairline}"
+                              RowBackground="{DynamicResource Shell.Brush.Surface}"
+                              AlternatingRowBackground="{DynamicResource Shell.Brush.SurfaceAlt}"
+                              HorizontalGridLinesBrush="{DynamicResource Shell.Brush.Hairline}"
+                              AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                              SelectionMode="Single" SelectionUnit="FullRow"
+                              HeadersVisibility="Column" GridLinesVisibility="Horizontal">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="GCM 账号" Binding="{Binding Account}" Width="*" />
                         </DataGrid.Columns>
                     </DataGrid>
                     <TextBlock Grid.Row="2" Text="SSH 公钥" FontWeight="SemiBold" />
                     <DataGrid x:Name="KeysGrid" Grid.Row="3" Margin="0,6,0,0"
-                              AutoGenerateColumns="False" IsReadOnly="True">
+                              Background="{DynamicResource Shell.Brush.Surface}"
+                              Foreground="{DynamicResource Shell.Brush.TextPrimary}"
+                              BorderBrush="{DynamicResource Shell.Brush.Hairline}"
+                              RowBackground="{DynamicResource Shell.Brush.Surface}"
+                              AlternatingRowBackground="{DynamicResource Shell.Brush.SurfaceAlt}"
+                              HorizontalGridLinesBrush="{DynamicResource Shell.Brush.Hairline}"
+                              AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                              SelectionMode="Single" SelectionUnit="FullRow"
+                              HeadersVisibility="Column" GridLinesVisibility="Horizontal">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="文件" Binding="{Binding FileName}" Width="2*" />
                             <DataGridTextColumn Header="算法" Binding="{Binding Algorithm}" Width="*" />
@@ -164,7 +176,15 @@
 
             <TabItem Header="诊断">
                 <DataGrid x:Name="DiagnosticsGrid" Margin="8"
-                          AutoGenerateColumns="False" IsReadOnly="True">
+                          Background="{DynamicResource Shell.Brush.Surface}"
+                          Foreground="{DynamicResource Shell.Brush.TextPrimary}"
+                          BorderBrush="{DynamicResource Shell.Brush.Hairline}"
+                          RowBackground="{DynamicResource Shell.Brush.Surface}"
+                          AlternatingRowBackground="{DynamicResource Shell.Brush.SurfaceAlt}"
+                          HorizontalGridLinesBrush="{DynamicResource Shell.Brush.Hairline}"
+                          AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                          SelectionMode="Single" SelectionUnit="FullRow"
+                          HeadersVisibility="Column" GridLinesVisibility="Horizontal">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="步骤" Binding="{Binding Step}" Width="*" />
                         <DataGridTextColumn Header="状态" Binding="{Binding State}" Width="*" />

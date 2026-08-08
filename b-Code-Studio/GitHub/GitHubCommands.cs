@@ -20,11 +20,11 @@ public static class GitHubCommands
 
     private static CommandDescriptor BuildStatus(GitHubConnectionService service) => new()
     {
-        Name = "github.status",
+        Name = "janus.github.status",
         CommandClass = "connection",
         Summary = "查看服务器 Git、GCM、提交身份、origin 和 SSH 状态",
         Readonly = true,
-        Example = "github.status",
+        Example = "janus.github.status",
         Handler = async _ =>
         {
             var overview = await service.GetOverviewAsync();
@@ -37,11 +37,11 @@ public static class GitHubCommands
 
     private static CommandDescriptor BuildAccounts(GitHubConnectionService service) => new()
     {
-        Name = "github.accounts",
+        Name = "janus.github.accounts",
         CommandClass = "account",
         Summary = "列出服务器 GCM 中已知的 GitHub HTTPS 凭据账号",
         Readonly = true,
-        Example = "github.accounts",
+        Example = "janus.github.accounts",
         Handler = async _ =>
         {
             var accounts = await service.GetAccountsAsync();
@@ -51,11 +51,11 @@ public static class GitHubCommands
 
     private static CommandDescriptor BuildTest(GitHubConnectionService service) => new()
     {
-        Name = "github.test",
+        Name = "janus.github.test",
         CommandClass = "connection",
         Summary = "只读检测服务器 GitHub SSH 或 HTTPS 连接，不执行 push",
         Readonly = true,
-        Example = "github.test transport=auto timeout=15",
+        Example = "janus.github.test transport=auto timeout=15",
         Parameters =
         [
             new ParameterSpec

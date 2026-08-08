@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text;
 using HistoryVulcan.Core.Storage;
 
@@ -71,7 +71,7 @@ public sealed partial class ProjectService
     /// <summary>
     /// 分支描述提供者，由装配点连接 HistoryRecorder.AllNotes：
     /// 继承树在展示前用它覆盖节点描述——缓存里存的是构建时的提交信息,
-    /// 覆盖在读取时进行,proj.note 后无需重扫即可见。
+    /// 覆盖在读取时进行,janus.proj.note 后无需重扫即可见。
     /// </summary>
     public Func<IReadOnlyDictionary<string, string>>? NotesProvider
     {

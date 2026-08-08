@@ -388,7 +388,7 @@ public sealed class BranchHistoryService
         if (!reset.Success)
             return FailMutation(name, ctx.TargetSha, $"硬重置失败:\n{reset.Output}", ctx.BeforeSha);
         return new BranchMutationReport(true, true, name, ctx.TargetSha, ctx.BeforeSha, ctx.TargetSha,
-            $"本地分支已硬重置到 {Short(ctx.TargetSha)}；远端未修改。如需改写远端，请单独执行 proj.forcepush name={name}");
+            $"本地分支已硬重置到 {Short(ctx.TargetSha)}；远端未修改。如需改写远端，请单独执行 janus.history.forcepush name={name}");
     }
 
     public async Task<BranchMutationReport> ForcePushAsync(

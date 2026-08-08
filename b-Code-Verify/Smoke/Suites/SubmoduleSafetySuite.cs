@@ -207,17 +207,17 @@ internal static class SubmoduleSafetySuite
 
             var registry = new CommandRegistry();
             ProjectCommands.RegisterAll(registry, service, null!);
-            foreach (var commandName in new[] { "proj.commit", "proj.push", "proj.commitall", "proj.pushall" })
+            foreach (var commandName in new[] { "janus.proj.commit", "janus.proj.push", "janus.proj.commitall", "janus.proj.pushall" })
             {
                 True(registry.TryGet(commandName, out var descriptor), $"{commandName} registered");
                 var parameter = descriptor.Parameters.Single(item => item.Name == "submodules");
                 Equal(ParamType.Bool, parameter.Type, $"{commandName} submodules is bool");
                 Equal("false", parameter.Default, $"{commandName} compatibility default");
             }
-            True(registry.TryGet("proj.commit", out var commitCommand)
-                 && commitCommand.Parameters.Any(item => item.Name == "submsg"), "proj.commit submsg schema");
-            True(registry.TryGet("proj.commitall", out var commitAllCommand)
-                 && commitAllCommand.Parameters.Any(item => item.Name == "submsg"), "proj.commitall submsg schema");
+            True(registry.TryGet("janus.proj.commit", out var commitCommand)
+                 && commitCommand.Parameters.Any(item => item.Name == "submsg"), "janus.proj.commit submsg schema");
+            True(registry.TryGet("janus.proj.commitall", out var commitAllCommand)
+                 && commitAllCommand.Parameters.Any(item => item.Name == "submsg"), "janus.proj.commitall submsg schema");
 
         }
         finally

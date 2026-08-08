@@ -158,17 +158,17 @@ internal static class BranchHistorySuite
             BranchHistoryCommands.RegisterAll(registry, service, null!);
             var commands = registry.All().ToDictionary(command => command.Name, StringComparer.OrdinalIgnoreCase);
             True(commands.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals([
-                "proj.history", "proj.history.show", "proj.history.diff",
-                "proj.rollback", "proj.reset", "proj.forcepush",
+                "janus.history.list", "janus.history.show", "janus.history.diff",
+                "janus.history.rollback", "janus.history.reset", "janus.history.forcepush",
             ]), "V2.3 command catalog complete");
             // V2.4.4:只读性由描述符自描述,不再查名字白名单。判据升级为「真值 + 解释结果」。
-            True(new[] { "proj.history", "proj.history.show", "proj.history.diff" }
+            True(new[] { "janus.history.list", "janus.history.show", "janus.history.diff" }
                     .All(name => commands[name].Readonly
                                  && McpExposurePolicy.State(commands[name]) == "readonly"),
                 "history reads are readonly MCP tools");
-            True(commands["proj.rollback"].ConfirmPrompt != null &&
-                 commands["proj.reset"].ConfirmPrompt != null &&
-                 commands["proj.forcepush"].ConfirmPrompt != null, "history writes are dangerous commands");
+            True(commands["janus.history.rollback"].ConfirmPrompt != null &&
+                 commands["janus.history.reset"].ConfirmPrompt != null &&
+                 commands["janus.history.forcepush"].ConfirmPrompt != null, "history writes are dangerous commands");
 
         }
         finally

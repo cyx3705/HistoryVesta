@@ -247,8 +247,9 @@ internal static class VersionProjectionSuite
         var packageDocuments = Directory.EnumerateFiles(packageRoot, "*.md")
             .Select(Path.GetFileName)
             .ToHashSet(StringComparer.Ordinal);
-        True(currentDocuments.SetEquals(["项目概览.md", "技术合同.md", "有效决策.md", "验证合同.md"]),
-            "current contains the four AIReady meta documents");
+        True(currentDocuments.SetEquals(
+                ["项目概览.md", "技术合同.md", "有效决策.md", "验证合同.md", "指令优化规范.md"]),
+            "current contains the AIReady meta documents plus the command naming guide");
         True(packageDocuments.SetEquals(["模块API.md"]),
             "package contains only the Janus module API contract");
         var documentationCenter = Path.Combine(officeRoot, "文档中心.md");

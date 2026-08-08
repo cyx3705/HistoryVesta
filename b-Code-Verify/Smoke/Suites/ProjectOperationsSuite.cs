@@ -39,7 +39,7 @@ internal static class ProjectOperationsSuite
         var registry = new CommandRegistry();
         registry.Register(new CommandDescriptor
         {
-            Name = "git.rule.batch-set",
+            Name = "janus.gitrule.batchset",
             Summary = "automatic save fixture",
             Parameters =
             [

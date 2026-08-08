@@ -13,24 +13,24 @@ namespace HistoryJanus.Contracts;
 /// </summary>
 public sealed class CommandCatalogContractTests
 {
-    // 组合根注册的 33 条业务命令；第 34 条 HistoryJanus.Status 由模块宿主从
+    // 组合根注册的 33 条业务命令；第 34 条 janus.status 由模块宿主从
     // [ModuleCommand] 投影，不在组合根内（QA-001 的 34 = 33 + Status）。
-    // 3.4.0 并入 github.status/accounts/test 三条只读命令。
+    // 3.5.0 全部指令改为 janus.<类>.<方法> 三段式全小写命名。
     private const int ExpectedCommandCount = 33;
 
     private static readonly string[] ReadOnlyCommands =
     [
-        "proj.list", "proj.tree", "proj.scan", "proj.config", "proj.metalist",
-        "proj.history", "proj.history.show", "proj.history.diff",
-        "git.rule.scan", "git.rule.review", "git.rule.list",
-        "github.status", "github.accounts", "github.test",
+        "janus.proj.list", "janus.proj.tree", "janus.proj.scan", "janus.proj.config", "janus.meta.list",
+        "janus.history.list", "janus.history.show", "janus.history.diff",
+        "janus.gitrule.scan", "janus.gitrule.review", "janus.gitrule.list",
+        "janus.github.status", "janus.github.accounts", "janus.github.test",
     ];
 
     private static readonly string[] ConfirmedCommands =
     [
-        "proj.delete", "proj.commitall", "proj.pushall", "proj.repair",
-        "proj.rollback", "proj.reset", "proj.forcepush",
-        "git.rule.sync", "git.rule.set", "git.rule.batch-set", "git.rule.remove",
+        "janus.proj.delete", "janus.proj.commitall", "janus.proj.pushall", "janus.proj.repair",
+        "janus.history.rollback", "janus.history.reset", "janus.history.forcepush",
+        "janus.gitrule.sync", "janus.gitrule.set", "janus.gitrule.batchset", "janus.gitrule.remove",
     ];
 
     [Fact]

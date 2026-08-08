@@ -24,10 +24,10 @@ public static class GitRuleCommands
 
     private static CommandDescriptor BuildSync(GitFileRuleService service, ProjectService projects) => new()
     {
-        Name = "git.rule.sync",
+        Name = "janus.gitrule.sync",
         CommandClass = "git-rules",
         Summary = "把模板项目的规则基线刷入各项目的 baseline 块(不动项目自身 managed 块与手写内容)",
-        Example = "git.rule.sync apply=false",
+        Example = "janus.gitrule.sync apply=false",
         Parameters =
         [
             StringParam("name", "目标项目;省略则同步全部项目(模板自身除外)", position: 0),
@@ -51,11 +51,11 @@ public static class GitRuleCommands
 
     private static CommandDescriptor BuildScan(FormatInventoryService inventory) => new()
     {
-        Name = "git.rule.scan",
+        Name = "janus.gitrule.scan",
         CommandClass = "git-rules",
         Summary = "扫描项目库全部文件格式,输出台账与覆盖率(省略 name 扫全库)",
         Readonly = true,
-        Example = "git.rule.scan depth=normal",
+        Example = "janus.gitrule.scan depth=normal",
         Parameters =
         [
             StringParam("name", "项目名;省略则扫描全库", position: 0),
@@ -74,11 +74,11 @@ public static class GitRuleCommands
     private static CommandDescriptor BuildReview(
         FormatInventoryService inventory, ProjectService projects) => new()
         {
-            Name = "git.rule.review",
+            Name = "janus.gitrule.review",
             CommandClass = "git-rules",
             Summary = "一次扫描合并查看未决格式、目录候选、规则建议与需人工判断的未知格式",
             Readonly = true,
-            Example = "git.rule.review",
+            Example = "janus.gitrule.review",
             Parameters = [StringParam("name", "项目名;省略则针对全库", position: 0)],
             Handler = async ctx =>
             {
@@ -92,11 +92,11 @@ public static class GitRuleCommands
 
     private static CommandDescriptor BuildList(GitFileRuleService service) => new()
     {
-        Name = "git.rule.list",
+        Name = "janus.gitrule.list",
         CommandClass = "git-rules",
         Summary = "列出项目根文件格式的纳入 Git、LFS、LF 规则和实际索引状态",
         Readonly = true,
-        Example = "git.rule.list name=0000-000-Template",
+        Example = "janus.gitrule.list name=0000-000-Template",
         Parameters = [ProjectName()],
         Handler = async ctx =>
         {
@@ -116,10 +116,10 @@ public static class GitRuleCommands
 
     private static CommandDescriptor BuildSet(GitFileRuleService service) => new()
     {
-        Name = "git.rule.set",
+        Name = "janus.gitrule.set",
         CommandClass = "git-rules",
         Summary = "预览或确认后设置文件格式的纳入 Git、LFS、LF 状态并同步索引",
-        Example = "git.rule.set name=demo pattern=*.xlsx track=true lfs=true lf=false apply=false",
+        Example = "janus.gitrule.set name=demo pattern=*.xlsx track=true lfs=true lf=false apply=false",
         Parameters =
         [
             ProjectName(),
@@ -140,10 +140,10 @@ public static class GitRuleCommands
 
     private static CommandDescriptor BuildBatchSet(GitFileRuleService service) => new()
     {
-        Name = "git.rule.batch-set",
+        Name = "janus.gitrule.batchset",
         CommandClass = "git-rules",
         Summary = "一次预览、确认并保存多条 Git/LFS/LF 文件规则",
-        Example = "git.rule.batch-set name=demo changes=\"[{\\\"pattern\\\":\\\"*.xlsx\\\",\\\"track\\\":true,\\\"lfs\\\":true,\\\"lf\\\":false}]\" apply=false",
+        Example = "janus.gitrule.batchset name=demo changes=\"[{\\\"pattern\\\":\\\"*.xlsx\\\",\\\"track\\\":true,\\\"lfs\\\":true,\\\"lf\\\":false}]\" apply=false",
         Parameters =
         [
             ProjectName(),
@@ -178,10 +178,10 @@ public static class GitRuleCommands
 
     private static CommandDescriptor BuildRemove(GitFileRuleService service) => new()
     {
-        Name = "git.rule.remove",
+        Name = "janus.gitrule.remove",
         CommandClass = "git-rules",
         Summary = "预览或确认后移除托管文件格式规则；不删除本地文件",
-        Example = "git.rule.remove name=demo pattern=*.xlsx apply=false",
+        Example = "janus.gitrule.remove name=demo pattern=*.xlsx apply=false",
         Parameters =
         [
             ProjectName(),

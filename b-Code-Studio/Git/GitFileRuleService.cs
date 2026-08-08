@@ -72,7 +72,7 @@ public sealed partial class GitFileRuleService
     private const string ManagedEnd = "# HistoryJanus managed end";
 
     /// <summary>
-    /// 基线块由 git.rule.sync 从模板整块重刷，属于机器所有内容。
+    /// 基线块由 janus.gitrule.sync 从模板整块重刷，属于机器所有内容。
     /// 与 managed 块(本项目特例)分离,基线更新不伤项目自身决定;两者都在块外内容之外。
     /// </summary>
     private const string BaselineBegin = "# HistoryJanus baseline begin";
@@ -107,7 +107,7 @@ public sealed partial class GitFileRuleService
         var ignoreBaseline = ManagedLines(templateDocs.Ignore);
         var attrBaseline = ManagedLines(templateDocs.Attributes);
         if (ignoreBaseline.Count == 0 && attrBaseline.Count == 0)
-            return (false, $"模板 {templateName} 的托管块为空,先用 git.rule.set 在模板上建立基线");
+            return (false, $"模板 {templateName} 的托管块为空,先用 janus.gitrule.set 在模板上建立基线");
 
         List<WorktreeInfo> targets;
         if (!string.IsNullOrWhiteSpace(project))

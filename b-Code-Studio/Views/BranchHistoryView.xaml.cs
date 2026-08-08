@@ -87,7 +87,7 @@ public partial class BranchHistoryView : UserControl
         BoundaryText.Text = refreshRemote ? "正在刷新远端并读取历史..." : "正在读取分支历史...";
         try
         {
-            var command = $"proj.history name={CommandParser.QuoteArg(project)} " +
+            var command = $"janus.history.list name={CommandParser.QuoteArg(project)} " +
                           $"limit={PageSize} skip={skip}" +
                           (refreshRemote ? " remote=true" : "");
             var result = await bus.ExecuteAsync(command, "UI", cancellation);
@@ -201,7 +201,7 @@ public partial class BranchHistoryView : UserControl
         if (!TrySelection(out var branch, out var entry) || _busAccessor() is not { } bus)
             return;
         var result = await bus.ExecuteAsync(
-            $"proj.history.show name={CommandParser.QuoteArg(branch)} sha={entry.Sha}", "UI");
+            $"janus.history.show name={CommandParser.QuoteArg(branch)} sha={entry.Sha}", "UI");
         if (!result.Success || !ModuleResultData.TryRead(result.Data, out CommitDetail? detail))
             return;
 
@@ -228,7 +228,7 @@ public partial class BranchHistoryView : UserControl
         if (!TrySelection(out var branch, out var entry) || _busAccessor() is not { } bus)
             return;
         var result = await bus.ExecuteAsync(
-            $"proj.history.diff name={CommandParser.QuoteArg(branch)} sha={entry.Sha}", "UI");
+            $"janus.history.diff name={CommandParser.QuoteArg(branch)} sha={entry.Sha}", "UI");
         if (!result.Success || !ModuleResultData.TryRead(result.Data, out BranchDiffReport? report))
             return;
         var header = $"目标：{report.TargetSha}\n当前：{report.HeadSha}\n" +
@@ -253,7 +253,7 @@ public partial class BranchHistoryView : UserControl
         };
         if (dialog.ShowDialog() != true)
             return;
-        var command = $"proj.rollback name={CommandParser.QuoteArg(branch)} sha={entry.Sha} " +
+        var command = $"janus.history.rollback name={CommandParser.QuoteArg(branch)} sha={entry.Sha} " +
                       $"msg={CommandParser.QuoteArg(dialog.CommitMessage)}";
         var result = await bus.ExecuteAsync(command, "UI");
         if (result.Success)
@@ -266,7 +266,7 @@ public partial class BranchHistoryView : UserControl
             _busAccessor() is not { } bus)
             return;
         var result = await bus.ExecuteAsync(
-            $"proj.reset name={CommandParser.QuoteArg(branch)} sha={entry.Sha}", "UI");
+            $"janus.history.reset name={CommandParser.QuoteArg(branch)} sha={entry.Sha}", "UI");
         if (result.Success)
             await LoadSelectionAsync(resetLimit: true);
     }

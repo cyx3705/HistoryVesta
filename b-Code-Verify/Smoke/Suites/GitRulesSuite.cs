@@ -205,32 +205,32 @@ internal static class GitRulesSuite
             GitRuleCommands.RegisterAll(registry, service, inventory, projects);
             var commandNames = registry.All().Select(command => command.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             True(commandNames.SetEquals([
-                    "git.rule.list", "git.rule.set", "git.rule.batch-set", "git.rule.remove", "git.rule.scan",
-                    "git.rule.review", "git.rule.sync",
+                    "janus.gitrule.list", "janus.gitrule.set", "janus.gitrule.batchset", "janus.gitrule.remove", "janus.gitrule.scan",
+                    "janus.gitrule.review", "janus.gitrule.sync",
                 ]),
                 "command catalog contains the V2.9 combined review command and no split legacy commands");
-            True(!commandNames.Contains("git.rule.gaps") && !commandNames.Contains("git.rule.suggest"),
+            True(!commandNames.Contains("janus.gitrule.gaps") && !commandNames.Contains("janus.gitrule.suggest"),
                 "split gap and suggestion commands are no longer registered");
             True(!commandNames.Any(name => name.StartsWith("attr.", StringComparison.OrdinalIgnoreCase)),
                 "old attr commands absent");
             // V2.4.4:只读性由描述符自描述,不再查名字白名单。判据升级为「真值 + 解释结果」。
-            True(registry.TryGet("git.rule.list", out var ruleList) && ruleList.Readonly
+            True(registry.TryGet("janus.gitrule.list", out var ruleList) && ruleList.Readonly
                  && McpExposurePolicy.State(ruleList) == "readonly",
-                "git.rule.list is readonly MCP projection");
-            True(registry.TryGet("git.rule.review", out var ruleReview) && ruleReview.Readonly
+                "janus.gitrule.list is readonly MCP projection");
+            True(registry.TryGet("janus.gitrule.review", out var ruleReview) && ruleReview.Readonly
                  && McpExposurePolicy.State(ruleReview) == "readonly",
-                "git.rule.review is readonly across UI, Web and MCP projections");
-            True(registry.TryGet("git.rule.set", out var ruleSet) && !ruleSet.Readonly
+                "janus.gitrule.review is readonly across UI, Web and MCP projections");
+            True(registry.TryGet("janus.gitrule.set", out var ruleSet) && !ruleSet.Readonly
                  && McpExposurePolicy.State(ruleSet) != "readonly",
-                "git.rule.set requires standard MCP policy");
-            True(registry.TryGet("git.rule.batch-set", out var batchSet) && !batchSet.Readonly
+                "janus.gitrule.set requires standard MCP policy");
+            True(registry.TryGet("janus.gitrule.batchset", out var batchSet) && !batchSet.Readonly
                  && McpExposurePolicy.State(batchSet) != "readonly",
-                "git.rule.batch-set requires standard MCP policy");
+                "janus.gitrule.batchset requires standard MCP policy");
             var commandLog = new MemoryLog();
             var commandBus = new CommandBus(registry, commandLog);
             var executed = false;
             commandBus.Executed += (_, source, result) => executed = source == "UI" && result.Success;
-            var listCommand = await commandBus.ExecuteAsync("git.rule.list name=main", "UI");
+            var listCommand = await commandBus.ExecuteAsync("janus.gitrule.list name=main", "UI");
             True(listCommand.Success && executed,
                 $"automatic rule load completes through CommandBus lifecycle; success={listCommand.Success}, " +
                 $"executed={executed}, message={listCommand.Message}");
@@ -241,7 +241,7 @@ internal static class GitRulesSuite
                 new GitFileRuleChange("*.batchc", true, true, false),
             });
             var batchCommand = await commandBus.ExecuteAsync(
-                $"git.rule.batch-set name=main changes={CommandParser.QuoteArg(commandChanges)} apply=false", "UI");
+                $"janus.gitrule.batchset name=main changes={CommandParser.QuoteArg(commandChanges)} apply=false", "UI");
             True(batchCommand.Success && batchCommand.Data is GitFileRuleBatchPreview { Items.Count: 2 },
                 "batch JSON executes through CommandBus and returns typed preview");
 
@@ -252,13 +252,13 @@ internal static class GitRulesSuite
             for (var index = 0; index < 50; index++)
                 await File.WriteAllTextAsync(Path.Combine(directoryCandidate, $"item-{index:00}"), "generated\n");
 
-            var scanCommand = await commandBus.ExecuteAsync("git.rule.scan name=main refresh=true", "UI");
+            var scanCommand = await commandBus.ExecuteAsync("janus.gitrule.scan name=main refresh=true", "UI");
             True(scanCommand.Success && scanCommand.Data is InventoryReport
             {
                 ProjectCount: 1,
                 Formats.Count: > 0,
             }, "format inventory executes through CommandBus and returns structured data");
-            var reviewCommand = await commandBus.ExecuteAsync("git.rule.review name=main", "UI");
+            var reviewCommand = await commandBus.ExecuteAsync("janus.gitrule.review name=main", "UI");
             True(reviewCommand.Success && reviewCommand.Data is GitRuleReviewReport
             {
                 Gaps.Directories.Count: > 0,
@@ -274,10 +274,10 @@ internal static class GitRulesSuite
                     is { Gaps.Formats.Count: > 0 },
                 "the combined review contract survives JSON projection");
 
-            var cachedReview = await commandBus.ExecuteAsync("git.rule.review name=main", "UI");
+            var cachedReview = await commandBus.ExecuteAsync("janus.gitrule.review name=main", "UI");
             True(cachedReview.Data is GitRuleReviewReport { Gaps.CachedProjects: 1 },
                 "repeated review reuses the project inventory cache");
-            var missingReview = await commandBus.ExecuteAsync("git.rule.review name=missing-project", "UI");
+            var missingReview = await commandBus.ExecuteAsync("janus.gitrule.review name=missing-project", "UI");
             True(!missingReview.Success, "review reports a controlled failure when no scan target exists");
 
             True((await service.SetAsync("main", "*.md", true, false, true, apply: true)).Success,
@@ -288,7 +288,7 @@ internal static class GitRulesSuite
                 "apply suggested temporary-file decision");
             True((await service.SetAsync("main", "generated-review/", false, false, false, apply: true)).Success,
                 "apply directory decision for zero-gap regression");
-            var resolvedReview = await commandBus.ExecuteAsync("git.rule.review name=main", "UI");
+            var resolvedReview = await commandBus.ExecuteAsync("janus.gitrule.review name=main", "UI");
             True(resolvedReview.Success && resolvedReview.Data is GitRuleReviewReport resolved
                  && resolved.Gaps.UndecidedCount == 0
                  && resolved.Gaps.Formats.Count == 0

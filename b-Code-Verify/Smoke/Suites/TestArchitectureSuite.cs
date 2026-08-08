@@ -165,15 +165,15 @@ internal static class TestArchitectureSuite
         }
 
         var commands = File.ReadAllText(Path.Combine(RepoRoot, "GitHub", "GitHubCommands.cs"));
-        foreach (var retained in new[] { "\"github.status\"", "\"github.accounts\"", "\"github.test\"" })
+        foreach (var retained in new[] { "\"janus.github.status\"", "\"janus.github.accounts\"", "\"janus.github.test\"" })
         {
             Contains(commands, retained,
                 $"merged github: readonly command stays registered: {retained}");
         }
-        True(!commands.Contains("github.login", StringComparison.Ordinal)
-             && !commands.Contains("github.logout", StringComparison.Ordinal)
-             && !commands.Contains("github.identity", StringComparison.Ordinal)
-             && !commands.Contains("github.remote", StringComparison.Ordinal),
+        True(!commands.Contains("janus.github.login", StringComparison.Ordinal)
+             && !commands.Contains("janus.github.logout", StringComparison.Ordinal)
+             && !commands.Contains("janus.github.identity", StringComparison.Ordinal)
+             && !commands.Contains("janus.github.remote", StringComparison.Ordinal),
             "merged github: mutations stay UI-only and never enter the command bus");
 
         var composition = File.ReadAllText(Path.Combine(RepoRoot, "StudioBusinessComposition.cs"));
@@ -213,7 +213,7 @@ internal static class TestArchitectureSuite
             "page consolidation: module registers exactly overview, projops and github");
 
         var commands = File.ReadAllText(Path.Combine(RepoRoot, "Git", "ProjectCommands.cs"));
-        foreach (var retained in new[] { "\"proj.tree\"", "\"proj.metalist\"", "\"proj.metaopen\"" })
+        foreach (var retained in new[] { "\"janus.proj.tree\"", "\"janus.meta.list\"", "\"janus.meta.open\"" })
         {
             Contains(commands, retained,
                 $"merged overview: background command stays registered: {retained}");
@@ -239,8 +239,8 @@ internal static class TestArchitectureSuite
         var commands = File.ReadAllText(Path.Combine(RepoRoot, "Git", "BranchHistoryCommands.cs"));
         foreach (var retained in new[]
                  {
-                     "\"proj.history\"", "\"proj.history.show\"", "\"proj.history.diff\"",
-                     "\"proj.rollback\"", "\"proj.reset\"", "\"proj.forcepush\"",
+                     "\"janus.history.list\"", "\"janus.history.show\"", "\"janus.history.diff\"",
+                     "\"janus.history.rollback\"", "\"janus.history.reset\"", "\"janus.history.forcepush\"",
                  })
         {
             Contains(commands, retained,

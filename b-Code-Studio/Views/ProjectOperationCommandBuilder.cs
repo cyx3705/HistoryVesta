@@ -23,10 +23,10 @@ public static class ProjectOperationCommandBuilder
         {
             if (string.IsNullOrWhiteSpace(project))
                 throw new ArgumentException("当前模式必须选择项目", nameof(project));
-            return $"proj.commit name={CommandParser.QuoteArg(project.Trim())} " +
+            return $"janus.proj.commit name={CommandParser.QuoteArg(project.Trim())} " +
                    $"msg={CommandParser.QuoteArg(message.Trim())} target={target}";
         }
-        return $"proj.commitall msg={CommandParser.QuoteArg(message.Trim())} target={target}";
+        return $"janus.proj.commitall msg={CommandParser.QuoteArg(message.Trim())} target={target}";
     }
 
     public static string BuildPush(ProjectOperationMode mode, string? project)
@@ -36,9 +36,9 @@ public static class ProjectOperationCommandBuilder
         {
             if (string.IsNullOrWhiteSpace(project))
                 throw new ArgumentException("当前模式必须选择项目", nameof(project));
-            return $"proj.push name={CommandParser.QuoteArg(project.Trim())} target={target}";
+            return $"janus.proj.push name={CommandParser.QuoteArg(project.Trim())} target={target}";
         }
-        return $"proj.pushall target={target}";
+        return $"janus.proj.pushall target={target}";
     }
 
     private static string Target(ProjectOperationMode mode)
