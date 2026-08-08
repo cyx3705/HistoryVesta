@@ -9,5 +9,7 @@ HistoryVulcan.Core.Commands.FrontendCommandCapability.CommandClass.get -> string
 HistoryVulcan.Core.Commands.FrontendCommandCapability.CommandClass.init -> void
 HistoryVulcan.Core.Commands.FrontendCommandCapability.Domain.get -> string?
 HistoryVulcan.Core.Commands.FrontendCommandCapability.Domain.init -> void
+HistoryVulcan.Core.Modules.IActivatableToolContent
+HistoryVulcan.Core.Modules.IActivatableToolContent.ActivateContent() -> void
 HistoryVulcan.Core.Modules.ModuleCommandAttribute.CommandClass.get -> string?
 HistoryVulcan.Core.Modules.ModuleCommandAttribute.CommandClass.init -> void

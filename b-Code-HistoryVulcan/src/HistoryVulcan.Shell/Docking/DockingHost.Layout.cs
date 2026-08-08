@@ -504,6 +504,9 @@ public sealed partial class DockingHost
         return content;
     }
 
+    internal object? FindContent(string id)
+        => _contents.GetValueOrDefault(id);
+
     private void BuildMaximizedLayout(string id)
     {
         _centerDocuments.Clear();

@@ -15,7 +15,14 @@ namespace HistoryVulcan.Services.Modules;
 /// <summary>Provides this HistoryVulcan public contract member.</summary>
 public sealed record ModuleMeta(
     string ModuleName, string Description, string Author, string Version,
-    bool Open, string AssemblyFile, int CommandCount, string Slot = "", bool Ui = false);
+    bool Open, string AssemblyFile, int CommandCount, string Slot = "", bool Ui = false)
+{
+    /// <summary>Absolute Z package path when the module came from manifest discovery.</summary>
+    public string? SourcePath { get; init; }
+
+    /// <summary>Absolute manifest path when the module came from manifest discovery.</summary>
+    public string? ManifestPath { get; init; }
+}
 
 /// <summary>
 /// 模块宿主(MD-01~07):进程内移植自 b-Code-MyAPI-Lite 的 ModuleHost/Invoker 机制(D3)。
@@ -31,6 +38,9 @@ public sealed class ModuleHost : IDisposable
     private readonly IShellLog _log;
     private readonly object _reloadLock = new();
     private string _dir;
+    private IModuleDiscoverySource? _discoverySource;
+    private IReadOnlyList<ModuleDiscoveryDiagnostic> _discoveryDiagnostics = [];
+    private IReadOnlyList<ModuleDiscoveryEntry>? _confirmedSources;
     private CommandRegistry? _registry;
     private CommandBus? _bus;
     private ISettingsService? _settings;
@@ -43,6 +53,15 @@ public sealed class ModuleHost : IDisposable
     public ModuleHost(string modulesDir, IShellLog log)
     {
         _dir = modulesDir;
+        _log = log;
+    }
+
+    /// <summary>Creates a module host backed by explicit Z-level manifest discovery.</summary>
+    public ModuleHost(IModuleDiscoverySource discoverySource, IShellLog log)
+    {
+        ArgumentNullException.ThrowIfNull(discoverySource);
+        _discoverySource = discoverySource;
+        _dir = "";
         _log = log;
     }
 
@@ -64,6 +83,11 @@ public sealed class ModuleHost : IDisposable
     /// <summary>Whether this host owns filesystem change detection for the module directory.</summary>
     public bool EnableFileWatching { get; set; } = true;
 
+    /// <summary>
+    /// When true, discovery-backed hosts remain empty until a backend-confirmed manifest set is supplied.
+    /// </summary>
+    public bool RequireConfirmedSources { get; set; }
+
     /// <summary>模块内嵌界面的宿主注册器;无窗服务进程保持 null。</summary>
     public IShellUiRegistrar? ShellUi { get; set; }
 
@@ -72,6 +96,12 @@ public sealed class ModuleHost : IDisposable
 
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
     public string ModulesDirectory => _dir;
+
+    /// <summary>Configured Z-level discovery roots; empty for the legacy directory host.</summary>
+    public IReadOnlyList<string> DiscoveryRoots => _discoverySource?.Roots ?? [];
+
+    /// <summary>Diagnostics from the most recent discovery scan.</summary>
+    public IReadOnlyList<ModuleDiscoveryDiagnostic> DiscoveryDiagnostics => _discoveryDiagnostics;
 
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
     public IReadOnlyList<ModuleMeta> Modules => _current.Modules;
@@ -106,9 +136,10 @@ public sealed class ModuleHost : IDisposable
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
     public void Start()
     {
-        Directory.CreateDirectory(_dir);
+        if (_discoverySource == null)
+            Directory.CreateDirectory(_dir);
         Reload();
-        if (EnableFileWatching)
+        if (_discoverySource == null && EnableFileWatching)
         {
             StartWatcher();
             _log.Info("module", $"正在监听模块目录: {_dir}");
@@ -126,6 +157,48 @@ public sealed class ModuleHost : IDisposable
         if (EnableFileWatching)
             StartWatcher();
         _log.Info("module", $"模块目录已切换: {_dir}");
+    }
+
+    /// <summary>Replaces the configured Z discovery roots and immediately reloads modules.</summary>
+    public void ChangeDiscoveryRoots(IEnumerable<string> roots)
+    {
+        _watcher?.Dispose();
+        _watcher = null;
+        _confirmedSources = null;
+        _discoverySource = new ZModuleDiscoverySource(roots);
+        Reload();
+        _log.Info("module", $"模块发现根已切换: {string.Join(";", _discoverySource.Roots)}");
+    }
+
+    /// <summary>
+    /// Reloads UI modules from a backend-confirmed manifest set without performing an independent scan.
+    /// </summary>
+    public void ReloadConfirmedSources(IEnumerable<string> manifestPaths)
+    {
+        ArgumentNullException.ThrowIfNull(manifestPaths);
+        var manifests = manifestPaths
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Select(Path.GetFullPath)
+            .ToList();
+        if (manifests.Count == 0)
+        {
+            _confirmedSources = [];
+            _discoveryDiagnostics = [];
+            Reload();
+            return;
+        }
+        var roots = manifests
+            .Select(path => Directory.GetParent(
+                Directory.GetParent(Directory.GetParent(path)!.FullName)!.FullName)!.FullName)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var snapshot = new ZModuleDiscoverySource(roots).Discover();
+        var requested = manifests.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        _confirmedSources = snapshot.Modules
+            .Where(module => requested.Contains(module.ManifestPath))
+            .ToList();
+        _discoveryDiagnostics = snapshot.Diagnostics;
+        Reload();
     }
 
     private void StartWatcher()
@@ -292,6 +365,24 @@ public sealed class ModuleHost : IDisposable
     private Snapshot Build()
     {
         var snap = new Snapshot();
+        if (_discoverySource != null)
+        {
+            if (RequireConfirmedSources && _confirmedSources == null)
+                return snap;
+            var discovery = _confirmedSources == null
+                ? _discoverySource.Discover()
+                : new ModuleDiscoverySnapshot(
+                    _discoverySource.Roots,
+                    _confirmedSources,
+                    _discoveryDiagnostics);
+            _discoveryDiagnostics = discovery.Diagnostics;
+            foreach (var diagnostic in discovery.Diagnostics)
+                _log.Warn("module.discovery", $"[{diagnostic.Code}] {diagnostic.Path}: {diagnostic.Message}");
+            foreach (var module in discovery.Modules)
+                LoadDiscoveredModule(snap, module);
+            return snap;
+        }
+
         if (!Directory.Exists(_dir))
             return snap;
 
@@ -313,6 +404,32 @@ public sealed class ModuleHost : IDisposable
         }
 
         return snap;
+    }
+
+    private void LoadDiscoveredModule(Snapshot snap, ModuleDiscoveryEntry module)
+    {
+        var alc = new ModuleLoadContext(module.PackagePath);
+        snap.Contexts.Add(alc);
+        try
+        {
+            var assembly = LoadAssembly(alc, module.ArtifactPath);
+            ScanAssembly(
+                snap,
+                assembly,
+                module.ArtifactPath,
+                module.PackagePath,
+                module.Ui,
+                module);
+        }
+        catch (Exception ex)
+        {
+            _discoveryDiagnostics =
+            [
+                .. _discoveryDiagnostics,
+                new ModuleDiscoveryDiagnostic(module.ManifestPath, "load-failed", ex.Message),
+            ];
+            _log.Warn("module.discovery", $"跳过 {module.Name}: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -342,7 +459,7 @@ public sealed class ModuleHost : IDisposable
             try
             {
                 var asm = LoadAssembly(alc, dll);
-                ScanAssembly(snap, asm, dll, slot, uiEnabled);
+                ScanAssembly(snap, asm, dll, slot, uiEnabled, null);
             }
             catch (Exception ex)
             {
@@ -365,7 +482,13 @@ public sealed class ModuleHost : IDisposable
         }
     }
 
-    private void ScanAssembly(Snapshot snap, Assembly asm, string dllPath, string slot, bool uiEnabled)
+    private void ScanAssembly(
+        Snapshot snap,
+        Assembly asm,
+        string dllPath,
+        string slot,
+        bool uiEnabled,
+        ModuleDiscoveryEntry? discovered)
     {
         var fileName = Path.GetFileName(dllPath);
 
@@ -384,9 +507,45 @@ public sealed class ModuleHost : IDisposable
         if (infoTypes.Count == 0)
             return;
 
+        if (discovered != null)
+        {
+            var identityMatches = infoTypes.Any(infoType =>
+            {
+                try
+                {
+                    var info = Activator.CreateInstance(infoType)!;
+                    return string.Equals(
+                               GetProp(info, "ModuleName") as string,
+                               discovered.Name,
+                               StringComparison.OrdinalIgnoreCase)
+                           && string.Equals(
+                               GetProp(info, "Version") as string,
+                               discovered.Version,
+                               StringComparison.OrdinalIgnoreCase);
+                }
+                catch
+                {
+                    return false;
+                }
+            });
+            if (!identityMatches)
+            {
+                var message = $"manifest 身份 {discovered.Name} {discovered.Version} 与程序集声明不一致。";
+                _discoveryDiagnostics =
+                [
+                    .. _discoveryDiagnostics,
+                    new ModuleDiscoveryDiagnostic(discovered.ManifestPath, "identity-mismatch", message),
+                ];
+                _log.Warn("module.discovery", message);
+                return;
+            }
+        }
+
+        var discoveredOwner = discovered?.Name;
+
         if (GlobalShortcuts != null && OperatingSystem.IsWindows())
         {
-            var owner = slot.Length > 0 ? slot : Path.GetFileNameWithoutExtension(dllPath);
+            var owner = discoveredOwner ?? (slot.Length > 0 ? slot : Path.GetFileNameWithoutExtension(dllPath));
             foreach (var shortcutType in types.Where(type =>
                          type.IsPublic && !type.IsAbstract
                          && typeof(IGlobalShortcutModule).IsAssignableFrom(type)))
@@ -407,7 +566,7 @@ public sealed class ModuleHost : IDisposable
 
         if (uiEnabled && EnableUiModules)
         {
-            var owner = slot.Length > 0 ? slot : Path.GetFileNameWithoutExtension(dllPath);
+            var owner = discoveredOwner ?? (slot.Length > 0 ? slot : Path.GetFileNameWithoutExtension(dllPath));
             foreach (var uiType in types.Where(type =>
                          type.IsPublic && !type.IsAbstract && typeof(IUiModule).IsAssignableFrom(type)))
             {
@@ -445,7 +604,14 @@ public sealed class ModuleHost : IDisposable
                 continue;
 
             var open = GetProp(info, "Open") is true;
-            var moduleName = GetProp(info, "ModuleName") as string ?? asm.GetName().Name ?? fileName;
+            var declaredName = GetProp(info, "ModuleName") as string ?? asm.GetName().Name ?? fileName;
+            var declaredVersion = GetProp(info, "Version") as string ?? "";
+            if (discovered != null
+                && (!declaredName.Equals(discovered.Name, StringComparison.OrdinalIgnoreCase)
+                    || !declaredVersion.Equals(discovered.Version, StringComparison.OrdinalIgnoreCase)))
+                continue;
+            var moduleName = discovered?.Name ?? declaredName;
+            var commandPrefix = GetProp(info, "CommandPrefix") as string ?? moduleName;
             if (!contextAttached)
             {
                 AttachModuleContexts(snap, types, moduleName);
@@ -455,8 +621,9 @@ public sealed class ModuleHost : IDisposable
             snap.Metas.Add((moduleName,
                 GetProp(info, "Description") as string ?? "",
                 GetProp(info, "Author") as string ?? "",
-                GetProp(info, "Version") as string ?? "",
-                open, fileName, slot, uiEnabled));
+                discovered?.Version ?? declaredVersion,
+                open, fileName, slot, uiEnabled,
+                discovered?.PackagePath, discovered?.ManifestPath));
 
             if (!EnableCommands)
             {
@@ -467,11 +634,11 @@ public sealed class ModuleHost : IDisposable
                 foreach (var t in types.Where(t =>
                              t.IsClass && t.IsPublic && !t.IsAbstract
                              && !t.IsGenericTypeDefinition && !IsModuleInfo(t)))
-                    CollectType(snap, moduleName, t, docs);
+                    CollectType(snap, moduleName, commandPrefix, t, docs);
             }
             else if (GetProp(info, "MainClassType") is Type main)
             {
-                CollectType(snap, moduleName, main, docs);
+                CollectType(snap, moduleName, commandPrefix, main, docs);
             }
 
             _log.Info("module",
@@ -517,7 +684,12 @@ public sealed class ModuleHost : IDisposable
     }
 
     /// <summary>把一个业务类的公共方法收集为待注册指令(MD-03/04)。</summary>
-    private void CollectType(Snapshot snap, string moduleName, Type type, XmlDocs? docs)
+    private void CollectType(
+        Snapshot snap,
+        string moduleName,
+        string commandPrefix,
+        Type type,
+        XmlDocs? docs)
     {
         var ns = type.Namespace ?? "Global";
         foreach (var m in type.GetMethods(
@@ -526,7 +698,7 @@ public sealed class ModuleHost : IDisposable
             if (m.IsSpecialName || m.IsGenericMethodDefinition || IsModuleLifecycleMethod(type, m))
                 continue;
 
-            var commandName = $"{moduleName}.{m.Name}";
+            var commandName = $"{commandPrefix}.{m.Name}";
             if (snap.PendingCommands.Any(p =>
                     p.Descriptor.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase)))
             {
@@ -866,7 +1038,9 @@ public sealed class ModuleHost : IDisposable
         public List<IDisposable> ShortcutRegistrations { get; } = new();
 
         /// <summary>模块元信息(module.list);CommandCount 在注册完成后定稿。</summary>
-        public List<(string Name, string Desc, string Author, string Version, bool Open, string File, string Slot, bool Ui)> Metas { get; } = new();
+        public List<(string Name, string Desc, string Author, string Version, bool Open, string File,
+            string Slot, bool Ui, string? SourcePath, string? ManifestPath)> Metas
+        { get; } = new();
 
         public List<ModuleMeta> Modules { get; } = new();
 
@@ -881,9 +1055,24 @@ public sealed class ModuleHost : IDisposable
         public void FinalizeMetas()
         {
             Modules.Clear();
-            foreach (var (name, desc, author, version, open, file, slot, ui) in Metas)
-                Modules.Add(new ModuleMeta(name, desc, author, version, open, file,
-                    _commandCounts.GetValueOrDefault(name), slot, ui));
+            foreach (var group in Metas.GroupBy(meta => meta.Name, StringComparer.OrdinalIgnoreCase))
+            {
+                var first = group.First();
+                Modules.Add(new ModuleMeta(
+                    first.Name,
+                    string.Join("; ", group.Select(meta => meta.Desc).Where(value => value.Length > 0)),
+                    first.Author,
+                    first.Version,
+                    group.Any(meta => meta.Open),
+                    first.File,
+                    _commandCounts.GetValueOrDefault(first.Name),
+                    first.Slot,
+                    group.Any(meta => meta.Ui))
+                {
+                    SourcePath = first.SourcePath,
+                    ManifestPath = first.ManifestPath,
+                });
+            }
         }
     }
 

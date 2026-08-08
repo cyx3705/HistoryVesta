@@ -98,13 +98,13 @@ public sealed class CommandBus
         // 1. 回显
         var trimmed = text.Trim();
         var displayText = RedactSensitiveArguments(trimmed);
-        var domain = DomainOfCommandText(trimmed);
+        var taxonomy = TaxonomyOfCommandText(trimmed);
         _log.Log(ShellLogLevel.Info, EchoCategoryPrefix + source, displayText);
 
         CommandResult result;
         try
         {
-            result = await ExecuteCoreAsync(trimmed, source, domain, cancellation).ConfigureAwait(false);
+            result = await ExecuteCoreAsync(trimmed, source, taxonomy, cancellation).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
@@ -126,7 +126,7 @@ public sealed class CommandBus
         // 2. 结果回显(错误红色高亮由控制台按级别渲染,C-02)
         _log.Log(
             result.Success ? ShellLogLevel.Info : ShellLogLevel.Error,
-            $"{ResultCategory}:{domain}",
+            $"{ResultCategory}:{taxonomy.Domain}:{taxonomy.CommandClass}",
             (result.Success ? "✓ " : "✗ ") + result.Message);
 
         Executed?.Invoke(displayText, source, result);
@@ -276,7 +276,7 @@ public sealed class CommandBus
     private async Task<CommandResult> ExecuteCoreAsync(
         string text,
         string source,
-        string domain,
+        (string Domain, string CommandClass) taxonomy,
         CancellationToken cancellation)
     {
         var remote = RemoteExecutor;
@@ -325,7 +325,10 @@ public sealed class CommandBus
             return CommandResult.Fail($"{bindError}\n{FormatUsage(descriptor)}");
 
         var progress = new Progress<string>(line =>
-            _log.Log(ShellLogLevel.Info, $"{ProgressCategory}:{domain}", line));
+            _log.Log(
+                ShellLogLevel.Info,
+                $"{ProgressCategory}:{taxonomy.Domain}:{taxonomy.CommandClass}",
+                line));
         var context = new CommandContext(descriptor, values, source, progress, cancellation);
 
         // 拦截:二次确认(§5.2;T-08/R-06 危险操作在“手输指令路径”的统一闸口)
@@ -377,7 +380,7 @@ public sealed class CommandBus
         }
     }
 
-    private string DomainOfCommandText(string text)
+    private (string Domain, string CommandClass) TaxonomyOfCommandText(string text)
     {
         string name;
         try
@@ -391,9 +394,9 @@ public sealed class CommandBus
         }
 
         if (_registry.TryGet(name, out _))
-            return _registry.GetDomain(name);
+            return (_registry.GetDomain(name), _registry.GetCommandClass(name));
         var dot = name.IndexOf('.');
-        return dot > 0 ? name[..dot] : "core";
+        return (dot > 0 ? name[..dot] : "core", "core");
     }
 
     private CommandResult RedactCommandResult(string commandText, CommandResult result)

@@ -8,6 +8,7 @@ using HistoryVulcan.Core.Commands;
 using HistoryVulcan.Core.Docking;
 using HistoryVulcan.Core.Logging;
 using HistoryVulcan.Core.Input;
+using HistoryVulcan.Core.Storage;
 using HistoryVulcan.ServiceHost;
 using HistoryVulcan.Services;
 using HistoryVulcan.Services.Input;
@@ -81,14 +82,15 @@ public partial class App : Application
         {
             AppName = identity.Name,
             AppVersion = identity.Version,
-            EnableModules = true,
+            EnableModules = false,
             EnableUiModules = true,
-            ModuleDirectory = ResolvePackagedModuleDirectory(paths.ModulesDir),
+            RequireConfirmedModuleSources = true,
             EnableRemoteManagementViews = true,
             CloseBehavior = ShellCloseBehavior.Hide,
             // HistoryVulcan 独立宿主是模块生命周期的最终所有者；Janus 等产品只声明
             // 自己的业务窗口与模块，不再包装第二套 ModuleHost/ModulesView。
         };
+        config.ModuleDiscoveryRoots.AddRange(ResolveModuleDiscoveryRoots(settings));
 
         // 默认布局保留控制台底部停靠位置；业务页面由模块提供。
         config.ToolWindows.Add(new ToolWindowDescriptor
@@ -126,15 +128,14 @@ public partial class App : Application
             service.LogReceived += (_, entry) => window.AddTransientLog(entry);
             service.ModuleRevisionReceived += revision =>
             {
-                var modules = window.Modules;
-                if (modules != null)
-                    _ = Task.Run(modules.Reload);
+                _ = ReloadUiModulesFromServiceAsync(service, window.Modules, log);
             };
             window.Commands.RemoteExecutor = service.ExecuteAsync;
             window.Commands.ShouldUseRemoteCommand = (text, source) =>
                 !text.TrimStart().StartsWith("app.frontend.", StringComparison.OrdinalIgnoreCase)
                 && !source.Equals("Service:Relay", StringComparison.OrdinalIgnoreCase);
             _ = service.RunEventLoopAsync(window.Commands);
+            _ = ReloadUiModulesFromServiceAsync(service, window.Modules, log);
         }
         window.Show();
 
@@ -178,9 +179,8 @@ public partial class App : Application
         var registry = new CommandRegistry();
         var bus = new CommandBus(registry, log);
         var shortcuts = new GlobalShortcutService(bus, log);
-        var moduleDirectory = ResolvePackagedModuleDirectory(
-            settings.Get("module.dir") ?? paths.ModulesDir);
-        var modules = new ModuleHost(moduleDirectory, log)
+        var modules = new ModuleHost(
+            new ZModuleDiscoverySource(ResolveModuleDiscoveryRoots(settings)), log)
         {
             EnableCommands = true,
             EnableUiModules = false,
@@ -205,7 +205,7 @@ public partial class App : Application
                 new GlobalShortcutStroke(0xBF),
             ],
             "app.frontend.focus-console"),
-            "framework");
+            "CommandSurface");
         return new ServiceComposition
         {
             ServiceName = identity.Name + ".Backend",
@@ -237,7 +237,7 @@ public partial class App : Application
             Handler = CommandDescriptor.Sync(_ =>
                 CommandResult.Ok(
                     host.Modules.Count == 0
-                        ? $"当前无已加载模块。模块目录: {host.ModulesDirectory}"
+                        ? "当前无已加载模块。请检查 module.roots 与发现诊断。"
                         : string.Join('\n', host.Modules.Select(module =>
                             $"{module.ModuleName} {module.Version} ({module.CommandCount} 条指令)")),
                     host.Modules)),
@@ -258,33 +258,87 @@ public partial class App : Application
 
         registry.Register(new CommandDescriptor
         {
-            Name = "module.dir",
+            Name = "module.roots",
             Domain = "HistoryVulcan",
             CommandClass = "module",
-            Summary = "查看或切换后台模块目录",
+            Summary = "查看或设置后台 Z 模块发现根",
             Parameters = [new ParameterSpec
             {
-                Name = "path",
-                Description = "模块目录绝对路径;省略时查看当前值",
+                Name = "paths",
+                Description = "分号分隔的绝对根；auto 恢复自动识别；省略时查询",
                 Position = 0,
             }],
             Handler = async ctx =>
             {
-                var path = ctx.GetString("path");
-                if (string.IsNullOrWhiteSpace(path))
-                    return CommandResult.Ok($"当前模块目录: {host.ModulesDirectory}");
-                path = Path.GetFullPath(path.Trim());
-                settings.Set("module.dir", path);
-                await Task.Run(() => host.ChangeDirectory(path)).ConfigureAwait(false);
-                return CommandResult.Ok($"模块目录已切换并重载: {path}");
+                var paths = ctx.GetString("paths");
+                if (string.IsNullOrWhiteSpace(paths))
+                    return CommandResult.Ok($"当前模块发现根: {string.Join(";", host.DiscoveryRoots)}");
+                if (!paths.Equals("auto", StringComparison.OrdinalIgnoreCase)
+                    && paths.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .Any(path => !Path.IsPathFullyQualified(path)))
+                    return CommandResult.Fail("module.roots 只接受分号分隔的绝对路径或 auto。");
+                settings.Set("module.roots", paths.Equals("auto", StringComparison.OrdinalIgnoreCase)
+                    ? "auto"
+                    : paths);
+                var roots = ResolveModuleDiscoveryRoots(settings);
+                await Task.Run(() => host.ChangeDiscoveryRoots(roots)).ConfigureAwait(false);
+                return CommandResult.Ok($"模块发现根已切换并重载: {string.Join(";", roots)}");
             },
         }, "framework:service");
     }
 
-    private static string ResolvePackagedModuleDirectory(string fallback)
+    private static IReadOnlyList<string> ResolveModuleDiscoveryRoots(ISettingsService settings)
     {
-        var packaged = Path.Combine(AppContext.BaseDirectory, "Modules");
-        return Directory.Exists(packaged) ? packaged : fallback;
+        var configured = settings.Get("module.roots");
+        if (!string.IsNullOrWhiteSpace(configured)
+            && !configured.Equals("auto", StringComparison.OrdinalIgnoreCase))
+        {
+            var roots = configured.Split(
+                    ';',
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(Path.IsPathFullyQualified)
+                .Select(Path.GetFullPath)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (roots.Count > 0)
+                return roots;
+        }
+
+        var root = ZModuleDiscoverySource.FindAutomaticRoot(AppContext.BaseDirectory)
+                   ?? ZModuleDiscoverySource.FindAutomaticRoot(Environment.CurrentDirectory)
+                   ?? throw new InvalidOperationException("未能向上找到 HistoryVesta.git 模块发现根。");
+        return [root];
+    }
+
+    private static async Task ReloadUiModulesFromServiceAsync(
+        ShellServiceClient service,
+        ModuleHost? host,
+        IShellLog log)
+    {
+        if (host == null)
+            return;
+        var result = await service.ExecuteAsync("module.list", "UI", CancellationToken.None)
+            .ConfigureAwait(false);
+        IReadOnlyList<ModuleMeta>? modules = result.Data switch
+        {
+            IReadOnlyList<ModuleMeta> typed => typed,
+            JsonElement element => JsonSerializer.Deserialize<List<ModuleMeta>>(
+                element.GetRawText(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }),
+            _ => null,
+        };
+        if (!result.Success || modules == null)
+        {
+            log.Warn("module", "无法取得后台确认的模块来源，前端 UI 模块保持原快照");
+            return;
+        }
+
+        var manifests = modules
+            .Select(module => module.ManifestPath)
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Cast<string>()
+            .ToList();
+        await Task.Run(() => host.ReloadConfirmedSources(manifests)).ConfigureAwait(false);
     }
 
     protected override void OnExit(ExitEventArgs e)

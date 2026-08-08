@@ -1,6 +1,6 @@
 # HistoryVulcan 模块与 MCP 接入
 
-> 适用版本：HistoryVulcan 3.2.1 源码候选（当前正式 Z 快照仍为 3.2.0），3.1.8 不受支持
+> 适用版本：HistoryVulcan 3.2.2 源码候选；3.1.8 不受支持
 > 边界：本文只描述框架能力。项目库、外部账号、工具同步等消费产品业务不属于 HistoryVulcan。
 > 常用公开方法和基础命令见 [HistoryVulcan API 与指令手册](HistoryVulcan_API与指令手册.md)。
 
@@ -17,11 +17,13 @@
 
 ## 模块宿主
 
-`ShellConfig.EnableModules` 默认为 `false`。消费方明确需要模块命令扫描和热重载时设置为 `true`；只需要
-加载声明了 `ui=true` 的模块界面时可单独设置 `EnableUiModules=true`。模块目录默认是
-`%AppData%/<应用名>/Modules`：根目录 DLL 走
-兼容装载；每个一级子目录是独立模块槽并拥有可回收的 `AssemblyLoadContext`。依赖优先从本槽解析，宿主
-不会把更深目录当作新模块槽。
+`ShellConfig.EnableModules` 默认为 `false`。正式独立宿主开启后台 Z 发现和命令生命周期；消费方只加载声明了
+`ui=true` 的 UI 部分时可单独设置 `EnableUiModules=true`。正式发现根自动向上定位 `HistoryVesta.git`，
+每个根只枚举 `<project>/z-*`，不读取或监听 `%AppData%/<应用名>/Modules`。每个 Z 目录必须含显式
+`module.manifest.json`，且 `schemaVersion=1`、`type=HistoryVulcan.Module`；`artifact`、`docs`、`deps`
+是相对 manifest 所在 Z 目录且必须存在。模块名是生命周期 owner 和唯一命令域，文件夹名只用于定位候选。
+`module.roots` 可查询或设置分号分隔的绝对根，`paths=auto` 恢复自动识别；`module.reload` 负责重扫、卸载旧快照、
+装载有效入口并发布修订。错误 manifest、越界、缺入口、重名和身份/版本不符会跳过并写诊断。
 
 模块以 `BaseVariable.ModuleInfoBase` 派生类型描述名称、版本、启用状态与方法暴露。公共、非泛型、非属性
 访问器方法映射为 `<模块名>.<方法名>`；相邻 XML 文件为 Help、命令目录和 MCP schema 提供摘要。命令重名
@@ -124,7 +126,8 @@ WebSocket 支持分片文本消息，总消息上限 1 MiB。
 2. UI、Help、Web、MCP 与命令手册都从最终 `CommandRegistry` 投影，不复制名单。
 3. 危险操作必须由宿主确认；`--yes`、HTTP 参数或 MCP 参数都不能绕过远程确认。
 4. token、密码、私钥和连接串不得写入命令结果、日志或审计文件。
-5. 3.2.0 是当前正式稳定快照；3.1.9 是旧名 AppShell 的最后快照；3.1.8 不作为稳定支持版本。全局 z 级模块扫描仍不在本版本范围。
+5. 3.2.2 的正式模块只来自显式 Z manifest；发布侧先生成候选和完整 SHA-256，再原子部署到各项目 Z 目录，运行期不重复计算校验和。
+   3.1.9 是旧名 AppShell 的最后快照；3.1.8 不作为稳定支持版本。
    双进程服务历史设计不随消费包发布。
 
 ## 最小验收

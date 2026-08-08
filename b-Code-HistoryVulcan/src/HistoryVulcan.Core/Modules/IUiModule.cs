@@ -28,6 +28,13 @@ public sealed class ModuleCommandAttribute : Attribute
     public string? CommandClass { get; init; }
 }
 
+/// <summary>Optional content contract used when a tool window is shown and should receive input focus.</summary>
+public interface IActivatableToolContent
+{
+    /// <summary>Activates the content's primary interaction target.</summary>
+    void ActivateContent();
+}
+
 /// <summary>网关就绪后执行的非关键启动工作；失败不得阻断宿主。</summary>
 public interface IDeferredStartupWork
 {

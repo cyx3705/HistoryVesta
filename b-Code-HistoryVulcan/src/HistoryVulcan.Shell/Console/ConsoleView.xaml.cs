@@ -20,7 +20,7 @@ namespace HistoryVulcan.Shell.Console;
 /// 承压设计(N-03):日志事件先进并发队列,UI 以 100ms 批量合并刷新;
 /// 列表虚拟化 + 环形缓冲上限(C-05)。
 /// </summary>
-public partial class ConsoleView : UserControl
+public partial class ConsoleView : UserControl, Core.Modules.IActivatableToolContent
 {
     public const string KeyHistory = "console.history";
     public const string KeyBuffer = "console.buffer";
@@ -38,7 +38,9 @@ public partial class ConsoleView : UserControl
     private readonly DispatcherTimer _flushTimer;
     private ScrollViewer? _scroll;
     private string _domain = "全部";
+    private string _commandClass = "全部";
     private IReadOnlyList<string> _domains = ["全部"];
+    private IReadOnlyList<string> _classes = ["全部"];
     private IReadOnlySet<string> _registeredDomains = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "core",
@@ -89,6 +91,9 @@ public partial class ConsoleView : UserControl
         LevelFilter.SelectedIndex = 0;
         DomainFilter.ItemsSource = new[] { "全部" };
         DomainFilter.SelectedIndex = 0;
+        ClassFilter.ItemsSource = new[] { "全部" };
+        ClassFilter.SelectedIndex = 0;
+        ClassFilter.IsEnabled = false;
 
         CompletionList.ItemsSource = Array.Empty<ConsoleCompletionCandidate>();
         CompletionPopup.IsOpen = false;
@@ -148,9 +153,13 @@ public partial class ConsoleView : UserControl
     }
 
     internal string SourceFilterValue => _domain;
+    internal string ClassFilterValue => _commandClass;
     internal string KeywordFilterValue => _keyword;
     internal bool MuteLayoutEnabled => _muteLayout;
     internal bool AutoScrollEnabled => _autoScroll;
+
+    /// <inheritdoc />
+    public void ActivateContent() => FocusInput();
 
     /// <summary>由 ShellWindow 注入聚焦判定和非聚焦命令集切换；保持为内部接线，不进入公开 API。</summary>
     internal void ConfigureCompletionRouting(
@@ -186,29 +195,25 @@ public partial class ConsoleView : UserControl
     internal bool TrySetSource(string source, out IReadOnlyList<string> availableDomains)
     {
         FlushIncoming();
-        var requested = string.IsNullOrWhiteSpace(source) ? "全部" : source;
-        availableDomains = _domains;
-        var selected = availableDomains.FirstOrDefault(value =>
-            value.Equals(requested, StringComparison.OrdinalIgnoreCase));
-        if (selected == null)
+        if (!_catalogSession.TrySetDomain(source, out availableDomains))
             return false;
-
-        _domain = selected;
-        _suppressFilterEvents = true;
-        try
-        {
-            DomainFilter.SelectedItem = _domain;
-        }
-        finally
-        {
-            _suppressFilterEvents = false;
-        }
+        ApplyTaxonomySnapshot();
         RebuildVisible();
         return true;
     }
 
     internal void SetSource(string source)
         => _ = TrySetSource(source, out _);
+
+    internal bool TrySetClass(string commandClass, out IReadOnlyList<string> availableClasses)
+    {
+        FlushIncoming();
+        if (!_catalogSession.TrySetCommandClass(commandClass, out availableClasses))
+            return false;
+        ApplyTaxonomySnapshot();
+        RebuildVisible();
+        return true;
+    }
 
     internal void SetKeyword(string keyword)
     {
@@ -376,6 +381,10 @@ public partial class ConsoleView : UserControl
 
         if (_domain != "全部" && !EffectiveDomainOf(row).Equals(_domain, StringComparison.OrdinalIgnoreCase))
             return false;
+        if (_commandClass != "全部" && !row.CommandClassKey.Equals(
+                _commandClass,
+                StringComparison.OrdinalIgnoreCase))
+            return false;
 
         var keyword = _keyword;
         if (keyword.Length > 0
@@ -418,9 +427,16 @@ public partial class ConsoleView : UserControl
         _ = _bus.ExecuteAsync($"log.source source={CommandParser.QuoteArg(source)}", "UI");
     }
 
+    private void OnClassChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded || _suppressFilterEvents || ClassFilter.SelectedItem is not string commandClass)
+            return;
+        _ = _bus.ExecuteAsync($"log.class class={CommandParser.QuoteArg(commandClass)}", "UI");
+    }
+
     private void OnCatalogChanged(object? sender, CommandCatalogChangedEventArgs e)
     {
-        if (e.Kind is CommandCatalogChangeKind.Filter or CommandCatalogChangeKind.Selection)
+        if (e.Kind == CommandCatalogChangeKind.Selection)
             return;
         Dispatcher.BeginInvoke(async () =>
         {
@@ -429,7 +445,7 @@ public partial class ConsoleView : UserControl
             if (e.Kind == CommandCatalogChangeKind.Invalidated)
                 await RefreshDomainsAsync();
             else
-                ApplyDomainSnapshot();
+                ApplyTaxonomySnapshot();
             RefreshCompletions();
         });
     }
@@ -439,10 +455,10 @@ public partial class ConsoleView : UserControl
         if (!await _catalogSession.RefreshAsync())
             return;
 
-        ApplyDomainSnapshot();
+        ApplyTaxonomySnapshot();
     }
 
-    private void ApplyDomainSnapshot()
+    private void ApplyTaxonomySnapshot()
     {
         var registered = _catalogSession.Domains
             .Where(value => !string.IsNullOrWhiteSpace(value))
@@ -451,22 +467,28 @@ public partial class ConsoleView : UserControl
             .ToList();
         _registeredDomains = registered.ToHashSet(StringComparer.OrdinalIgnoreCase);
         _domains = ["全部", .. registered];
-        var selected = _domains.FirstOrDefault(value => value.Equals(_domain, StringComparison.OrdinalIgnoreCase))
-                       ?? "全部";
-        var changed = !_domain.Equals(selected, StringComparison.Ordinal);
-        _domain = selected;
+        var filter = _catalogSession.CurrentFilter;
+        var previousDomain = _domain;
+        var previousClass = _commandClass;
+        _domain = filter.Domain;
+        _classes = ["全部", .. _catalogSession.Classes];
+        _commandClass = filter.CommandClass;
         _suppressFilterEvents = true;
         try
         {
             DomainFilter.ItemsSource = _domains;
-            DomainFilter.SelectedItem = selected;
+            DomainFilter.SelectedItem = _domain;
+            ClassFilter.ItemsSource = _classes;
+            ClassFilter.SelectedItem = _commandClass;
+            ClassFilter.IsEnabled = _domain != "全部";
         }
         finally
         {
             _suppressFilterEvents = false;
         }
 
-        if (changed)
+        if (!previousDomain.Equals(_domain, StringComparison.Ordinal)
+            || !previousClass.Equals(_commandClass, StringComparison.Ordinal))
             RebuildVisible();
     }
 

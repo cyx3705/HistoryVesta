@@ -121,13 +121,13 @@ public sealed class CoreFreezeContractTests
             TimeSpan.FromSeconds(2)));
 
         Assert.Contains(log.Entries, entry =>
-            entry.Category == "cmd:progress:alpha" && entry.Message == "alpha-step");
+            entry.Category == "cmd:progress:alpha:alpha" && entry.Message == "alpha-step");
         Assert.Contains(log.Entries, entry =>
-            entry.Category == "cmd:progress:beta" && entry.Message == "beta-step");
+            entry.Category == "cmd:progress:beta:beta" && entry.Message == "beta-step");
         Assert.Contains(log.Entries, entry =>
-            entry.Category == "cmd:result:alpha" && entry.Message.Contains("alpha-done", StringComparison.Ordinal));
+            entry.Category == "cmd:result:alpha:alpha" && entry.Message.Contains("alpha-done", StringComparison.Ordinal));
         Assert.Contains(log.Entries, entry =>
-            entry.Category == "cmd:result:beta" && entry.Message.Contains("beta-done", StringComparison.Ordinal));
+            entry.Category == "cmd:result:beta:beta" && entry.Message.Contains("beta-done", StringComparison.Ordinal));
         Assert.Equal("cmd:result", CommandBus.ResultCategory);
         Assert.Equal("cmd:progress", CommandBus.ProgressCategory);
     }
@@ -148,8 +148,8 @@ public sealed class CoreFreezeContractTests
         Assert.True((await bus.ExecuteAsync("ping", "Test")).Success);
         Assert.False((await bus.ExecuteAsync("missing.run", "Test")).Success);
 
-        Assert.Contains(log.Entries, entry => entry.Category == "cmd:result:core");
-        Assert.Contains(log.Entries, entry => entry.Category == "cmd:result:missing");
+        Assert.Contains(log.Entries, entry => entry.Category == "cmd:result:core:core");
+        Assert.Contains(log.Entries, entry => entry.Category == "cmd:result:missing:core");
         Assert.Equal(2, log.Entries.Count(entry => entry.Category == "cmd:Test"));
     }
 

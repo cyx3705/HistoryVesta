@@ -46,6 +46,10 @@
                 <ComboBox x:Name="DomainFilter" Width="112"
                           Style="{StaticResource Shell.Segment.ComboBox}"
                           SelectionChanged="OnSourceChanged" />
+                <TextBlock Text="类" Style="{StaticResource Shell.Segment.Label}" />
+                <ComboBox x:Name="ClassFilter" Width="96"
+                          Style="{StaticResource Shell.Segment.ComboBox}"
+                          SelectionChanged="OnClassChanged" />
 
                 <Border Visibility="Collapsed" Style="{StaticResource Shell.Segment.Divider}" />
 

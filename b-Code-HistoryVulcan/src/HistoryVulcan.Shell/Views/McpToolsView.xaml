@@ -26,7 +26,7 @@
                 <TextBlock Text="类" Style="{StaticResource Shell.Segment.Label}" />
                 <ComboBox x:Name="ClassFilterBox" Width="110"
                           Style="{StaticResource Shell.Segment.ComboBox}"
-                          SelectionChanged="OnFilterChanged" />
+                          SelectionChanged="OnClassFilterChanged" />
                 <TextBlock Text="MCP" Style="{StaticResource Shell.Segment.Label}" />
                 <ComboBox x:Name="McpFilterBox" Width="120" SelectedIndex="0"
                           Style="{StaticResource Shell.Segment.ComboBox}"

@@ -12,7 +12,8 @@ using HistoryVulcan.Core.Commands;
 using HistoryVulcan.Core.Docking;
 using HistoryVulcan.Core.Logging;
 using HistoryVulcan.Core.Storage;
-using HistoryVulcan.Shell.Console;
+using HistoryVulcan.Core.Modules;
+using HistoryVulcan.Shell.CommandSurface;
 using HistoryVulcan.Shell.Docking;
 using HistoryVulcan.Shell.Themes;
 using AvalonDock.Controls;
@@ -34,8 +35,7 @@ public partial class ShellWindow : Window
     private readonly DockingHost _docking;
     private readonly string _dataDirectory;
     private readonly CommandBus _bus;
-    private readonly CommandHistory _history;
-    private readonly ConsoleView _console;
+    private readonly CommandSurfaceFeature _commandSurface;
     private readonly Panels.PanelManager _panels;
 
     // 0.4.4 反哺能力:由 Shell 自行装配,派生应用经下方只读属性取用
@@ -47,10 +47,6 @@ public partial class ShellWindow : Window
     // 命令集页与指令详情页的选中联动(0.4.4 上抛):优先用派生应用经 ShellConfig 传入的实例,
     // 未传则自建。由构造函数赋值——工具窗口内容工厂在 DockingHost 构建默认布局时即被调用,
     // 派生应用那时拿不到 window,故联动实例必须由派生侧创建并传入。
-    private readonly CommandSelectionState _commandSelection;
-    private readonly Views.CommandCatalogSession _commandCatalogSession;
-    private readonly Views.McpToolsView _commandCatalog;
-
     // UI-03:折叠后的菜单挂在顶栏菜单按钮上(挂上去才能继承窗体资源与样式)
     private readonly ContextMenu _menu = new();
 
@@ -95,7 +91,6 @@ public partial class ShellWindow : Window
         _config = config;
         _log = log;
         _dataDirectory = dataDirectory;
-        _commandSelection = config.CommandSelection ?? new CommandSelectionState();
         _settings = settings;
         Title = $"{config.AppName} v{config.AppVersion}";
 
@@ -133,38 +128,22 @@ public partial class ShellWindow : Window
             UiContext = SynchronizationContext.Current,
             Confirmation = new MessageBoxConfirmation(this),
         };
-        _history = new CommandHistory(
-            Path.Combine(dataDirectory, "history.txt"),
-            settings.GetInt(ConsoleView.KeyHistory, 500));
-        _commandCatalogSession = new Views.CommandCatalogSession(_bus, _commandSelection);
-        _console = new ConsoleView(
-            log,
+        _commandSurface = new CommandSurfaceFeature(
             _bus,
-            _history,
-            _commandCatalogSession,
-            settings.GetInt(ConsoleView.KeyBuffer, 50_000));
-        _commandCatalog = new Views.McpToolsView(
-            () => _bus,
-            _commandSelection,
-            _commandCatalogSession);
-
-        // 控制台窗口内容由 Shell 接管(§4.4 标准窗口;描述符位置仍由派生应用决定)
-        TakeOverDescriptor(StandardWindowIds.Console, "控制台", DockSide.Bottom, 0.25, () => _console);
-
-        // 0.4.4:反哺能力自带的管理窗口。窗口内容工厂只依赖总线与选中状态(指令实际执行在 command.list/
-        // mcp.status/module.list),故可在此(DockingHost 构建前)接管;网关/模块宿主的创建与指令注册
-        // 仍在 BuiltinCommands 之后完成。条件与指令注册一致。
-        // 用 TakeOverDescriptor:派生应用若在 config.ToolWindows 声明了同 Id 窗口的停靠位/标签目标,
-        // 一律保留其布局,框架只注入内容——因此派生侧既有布局不变。
-        // 本地命令目录是 Shell 核心能力，不以启动 MCP 网络服务为前提。
-        TakeOverDescriptor(StandardWindowIds.Mcp, "命令集", DockSide.Center, 1,
-            () => _commandCatalog, forcePlacement: true);
-        // 指令详情窗口:命令集选中项的详情(参数/来源/MCP 映射/提示词状态),与命令集共享选中状态
-        TakeOverDescriptor(StandardWindowIds.CommandDetail, "指令详情", DockSide.Right, 0.32,
-            () => new Views.CommandDetailView(
-                () => _bus,
-                _commandSelection,
-                _commandCatalogSession));
+            log,
+            settings,
+            dataDirectory,
+            config.CommandSelection);
+        foreach (var window in _commandSurface.Windows)
+        {
+            TakeOverDescriptor(
+                window.Id,
+                window.Title,
+                window.Side,
+                window.Ratio,
+                window.ContentFactory,
+                window.ForcePlacement);
+        }
 
         if (config.EnableModules || config.EnableRemoteManagementViews)
         {
@@ -181,7 +160,7 @@ public partial class ShellWindow : Window
         _docking.CommandGenerated += (_, e) =>
             Dispatcher.BeginInvoke(() => ShowToast($"[{e.Source}] {e.CommandText}", success: true));
         _docking.Initialize();
-        _console.ConfigureCompletionRouting(
+        _commandSurface.ConfigureRouting(
             () => string.Equals(
                 _docking.MaximizedId,
                 StandardWindowIds.Console,
@@ -240,8 +219,8 @@ public partial class ShellWindow : Window
         {
             Window = this,
             Docking = _docking,
-            Console = _console,
-            History = _history,
+            Console = _commandSurface.Console,
+            History = _commandSurface.History,
             Settings = settings,
             Log = log,
             Bus = _bus,
@@ -285,20 +264,25 @@ public partial class ShellWindow : Window
         //      ConfigureCommands 里看到 module.*/mcp.* 已存在,并按需登记只读白名单。
         if (config.EnableModules || config.EnableUiModules)
         {
-            _modules = new Services.Modules.ModuleHost(
-                config.ModuleDirectory ?? Services.AppPaths.GetModulesDir(dataDirectory), log)
-            {
-                // 此刻在 UI 线程,注册表换血据此编组(替代原先的 Application.Current.Dispatcher)
-                UiContext = SynchronizationContext.Current,
-                ShellUi = _shellUi,
-                EnableCommands = config.EnableModules,
-                EnableUiModules = config.EnableModules || config.EnableUiModules,
-                EnableFileWatching = config.EnableModules || !config.EnableRemoteManagementViews,
-            };
+            _modules = config.ModuleDiscoveryRoots.Count > 0
+                ? new Services.Modules.ModuleHost(
+                    new Services.Modules.ZModuleDiscoverySource(config.ModuleDiscoveryRoots), log)
+                : new Services.Modules.ModuleHost(
+                    config.ModuleDirectory ?? Services.AppPaths.GetModulesDir(dataDirectory), log);
+            _modules.EnableCommands = config.EnableModules;
+            _modules.EnableUiModules = config.EnableModules || config.EnableUiModules;
+            _modules.EnableFileWatching = config.ModuleDiscoveryRoots.Count == 0
+                                          && (config.EnableModules || !config.EnableRemoteManagementViews);
+            _modules.RequireConfirmedSources = config.RequireConfirmedModuleSources;
+            _modules.UiContext = SynchronizationContext.Current;
+            _modules.ShellUi = _shellUi;
 
             // MD-08:窗口成型前先做一次文件级面板同步,上一会话遗留的模块旁面板本次即成窗口
-            Services.Modules.ModulePanelSync.SyncFiles(
-                _modules.ModulesDirectory, Services.AppPaths.GetPanelsDir(dataDirectory), log);
+            if (config.ModuleDiscoveryRoots.Count == 0)
+            {
+                Services.Modules.ModulePanelSync.SyncFiles(
+                    _modules.ModulesDirectory, Services.AppPaths.GetPanelsDir(dataDirectory), log);
+            }
 
             // 全限定:本类的 Modules / Mcp 只读属性会遮蔽同名命名空间
             if (config.EnableModules)
@@ -454,7 +438,7 @@ public partial class ShellWindow : Window
             return;
         }
 
-        _console.AddTransientEntry(entry);
+        _commandSurface.AddTransientEntry(entry);
         if (entry.Level < ShellLogLevel.Error)
             return;
         Interlocked.Increment(ref _errorCount);
@@ -474,7 +458,7 @@ public partial class ShellWindow : Window
     /// 命令集选中状态(0.4.4):框架的命令集窗口写入,派生应用的指令详情窗口读取。
     /// 派生应用应把自己的详情视图接到本实例,避免各建一个导致联动失效。
     /// </summary>
-    public CommandSelectionState CommandSelection => _commandSelection;
+    public CommandSelectionState CommandSelection => _commandSurface.Selection;
 
     /// <summary>关于对话框文本(app.about)。</summary>
     public string AboutText =>
@@ -526,15 +510,21 @@ public partial class ShellWindow : Window
     private void FocusConsole(bool resetFilters = false, bool preserveMaximizedLayout = false)
     {
         if (resetFilters)
-            _console.ResetFilters();
+            _commandSurface.ResetFilters();
         if (preserveMaximizedLayout && _docking.MaximizedId != null)
         {
             if (_docking.MaximizedId.Equals(StandardWindowIds.Console, StringComparison.OrdinalIgnoreCase))
-                _console.FocusInput();
+                ActivateToolContent(StandardWindowIds.Console);
             return;
         }
         _docking.Show(StandardWindowIds.Console);
-        _console.FocusInput();
+        ActivateToolContent(StandardWindowIds.Console);
+    }
+
+    internal void ActivateToolContent(string id)
+    {
+        if (_docking.FindContent(id) is IActivatableToolContent activatable)
+            activatable.ActivateContent();
     }
 
     private async Task ShowCommandCatalogForCompletionAsync()
@@ -628,7 +618,6 @@ public partial class ShellWindow : Window
 
         _closing = true;
         _chromeUpkeep.Stop();
-        _history.Save();
         SaveWindowBounds();
         _docking.SaveCurrentLayout();
 
@@ -637,7 +626,7 @@ public partial class ShellWindow : Window
         // 派生应用不再需要(也不应该)重复 Dispose 这两件。
         _mcp?.Dispose();
         _modules?.Dispose();
-        _commandCatalogSession.Dispose();
+        _commandSurface.Dispose();
     }
 
     private void OnShellClosed(object? sender, EventArgs e)
@@ -703,7 +692,7 @@ public partial class ShellWindow : Window
                 Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
                 {
                     WindowForegroundActivator.Activate(this);
-                    _console.FocusInput();
+                    ActivateToolContent(StandardWindowIds.Console);
                 });
                 return CommandResult.Ok("控制台已聚焦");
             }),
@@ -814,7 +803,7 @@ public partial class ShellWindow : Window
 
         ApplyPaneStyles(chromeless: focused);
         ScheduleChromeReserve();
-        _console.RefreshCompletionFocus();
+        _commandSurface.RefreshFocusState();
         _topBar.Refresh();
     }
 

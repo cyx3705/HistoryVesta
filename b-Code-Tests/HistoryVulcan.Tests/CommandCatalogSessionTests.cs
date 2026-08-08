@@ -85,6 +85,50 @@ public sealed class CommandCatalogSessionTests
     }
 
     [Fact]
+    public async Task DomainAndClassFormAStrictSharedHierarchy()
+    {
+        var registry = new CommandRegistry();
+        registry.Register(Command("app.show", "Show frontend"));
+        registry.Register(new CommandDescriptor
+        {
+            Name = "app.theme",
+            Domain = "app",
+            CommandClass = "theme",
+            Summary = "Theme frontend",
+            Handler = CommandDescriptor.Sync(_ => CommandResult.Ok()),
+        });
+        registry.Register(new CommandDescriptor
+        {
+            Name = "module.reload",
+            Domain = "module",
+            CommandClass = "lifecycle",
+            Summary = "Reload modules",
+            Handler = CommandDescriptor.Sync(_ => CommandResult.Ok()),
+        });
+        using var session = new CommandCatalogSession(
+            new CommandBus(registry, new NullLog()),
+            new CommandSelectionState());
+
+        Assert.True(await session.RefreshAsync());
+        Assert.Empty(session.Classes);
+        Assert.False(session.TrySetCommandClass("theme", out var allDomainClasses));
+        Assert.Equal(["全部"], allDomainClasses);
+
+        Assert.True(session.TrySetDomain("app", out _));
+        Assert.Equal(["app", "theme"], session.Classes);
+        Assert.True(session.TrySetCommandClass("theme", out _));
+        Assert.Single(session.VisibleRows);
+        Assert.Equal("app.theme", session.VisibleRows[0].CommandName);
+
+        Assert.True(session.TrySetDomain("module", out _));
+        Assert.Equal("全部", session.CurrentFilter.CommandClass);
+        Assert.Equal(["lifecycle"], session.Classes);
+        Assert.True(session.TrySetDomain("全部", out _));
+        Assert.Equal("全部", session.CurrentFilter.CommandClass);
+        Assert.Empty(session.Classes);
+    }
+
+    [Fact]
     public async Task CommandListFiltersByExplicitDomainAndClass()
     {
         var registry = new CommandRegistry();

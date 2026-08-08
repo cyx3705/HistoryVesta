@@ -1,8 +1,8 @@
 # HistoryVulcan API 与指令手册
 
-> 适用版本：HistoryVulcan 3.2.1 源码候选（当前正式 Z 快照仍为 3.2.0；3.1.8 不受支持）
+> 适用版本：HistoryVulcan 3.2.2 源码候选（正式宿主以 `z-HistoryVulcan/host` 为准；3.1.8 不受支持）
 
-本手册给出 3.2.1 候选公开 API 的常用入口和框架基础命令。正式宿主运行入口为
+本手册给出 3.2.2 候选公开 API 的常用入口和框架基础命令。正式宿主运行入口为
 `host/HistoryVulcan.exe`，程序集 XML 文档位于同一 `host/` 目录；兼容框架包的完整签名位于
 `lib/<TFM>/HistoryVulcan.*.xml`。源码仓中的四份 `PublicAPI.Shipped.txt` 是冻结门禁，不随运行宿主发布。
 最终命令集合以应用运行时的 `command.list`、`command.show` 和 `command.manual` 为准。
@@ -259,7 +259,8 @@ HistoryVulcan 自身只有一个域 `HistoryVulcan`，内置命令分类如下�
 | `app.opendata` | 打开应用数据目录 |
 | `app.window [state=normal|minimized|maximized|toggle]` | 查询或设置主窗口状态 |
 | `log.level [level=trace|debug|info|warn|error|fatal]` | 无参数时查看当前控制台日志级别；带参数时修改显示级别 |
-| `log.source [source=<已注册域>|全部]` | 查询或设置控制台域过滤；命令名和参数名为兼容入口，候选由 `command.domains` 运行期生成，不存在的域会被拒绝并返回可用域 |
+| `log.source [source=<已注册域>|全部]` | 查询或设置控制台域过滤；域变化会让类收敛到该域的有效类 |
+| `log.class [class=<当前域的类>|全部]` | 查询或设置当前域的命令类；域为“全部”时类固定为“全部” |
 | `log.keyword [text=...]` | 查询或设置关键字过滤 |
 | `log.mute [layout=true|false]` | 查询或设置 layout 来源屏蔽 |
 | `log.autoscroll [enabled=true|false]` | 查询或设置自动滚动（默认开启） |
@@ -303,7 +304,7 @@ HistoryVulcan 自身只有一个域 `HistoryVulcan`，内置命令分类如下�
 |---|---|
 | `module.list` | 列出模块、版本、槽和命令数 |
 | `module.reload` | 重新发现并装载模块 |
-| `module.dir [path]` | 查看或切换模块目录 |
+| `module.roots [paths=<绝对根1;绝对根2>|auto]` | 查询/设置 Z 模块发现根；`auto` 恢复向上识别 `HistoryVesta.git` |
 | `module.open` | 在资源管理器中打开模块目录 |
 
 模块公开方法另外注册为 `<模块名>.<方法名>`，不属于固定基础命令。

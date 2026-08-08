@@ -60,36 +60,6 @@ public partial class ModulesView : UserControl
     private void OnOpenDirClick(object sender, System.Windows.RoutedEventArgs e)
         => _ = _busAccessor()?.ExecuteAsync("module.open", "UI");
 
-    // ---------------------------------------------------------------- 可选工具注册表入口
-
-    private void OnToolScanClick(object sender, System.Windows.RoutedEventArgs e)
-        => _ = _busAccessor()?.ExecuteAsync("tool.scan", "UI");
-
-    private async void OnToolSyncClick(object sender, System.Windows.RoutedEventArgs e)
-    {
-        if (_busAccessor() is not { } bus)
-            return;
-        ToolSyncButton.IsEnabled = false;
-        try
-        {
-            await bus.ExecuteAsync("tool.sync all=true", "UI");
-            await RefreshAsync();
-        }
-        finally
-        {
-            ToolSyncButton.IsEnabled = true;
-        }
-    }
-
-    /// <summary>移除所选模块(tool.remove 自带确认闸口;非同步来源的模块不在溯源中会被指令拒绝)。</summary>
-    private async void OnToolRemoveClick(object sender, System.Windows.RoutedEventArgs e)
-    {
-        if (_busAccessor() is not { } bus || ModuleList.SelectedItem is not ModuleRow row)
-            return;
-        await bus.ExecuteAsync($"tool.remove name={CommandParser.QuoteArg(row.ModuleName)}", "UI");
-        await RefreshAsync();
-    }
-
     private async Task RefreshAsync()
     {
         var bus = _busAccessor();
@@ -99,9 +69,8 @@ public partial class ModulesView : UserControl
             return;
         }
 
-        UpdateToolRegistryActions(bus.Registry);
         RefreshButton.IsEnabled = false;
-        ClearModules("正在加载模块目录...");
+        ClearModules("正在扫描 Z 模块...");
         try
         {
             var result = await ModuleCatalogReader.LoadModulesAsync(bus);
@@ -113,7 +82,7 @@ public partial class ModulesView : UserControl
                     .ToList();
                 ModuleList.ItemsSource = rows;
                 StatusText.Text = rows.Count == 0
-                    ? "当前无已装载模块;把模块 DLL 放入 Modules 目录即自动装载(约 1s)"
+                    ? "当前无已装载模块；请检查 module.roots 与 Z manifest 诊断"
                     : $"已装载 {rows.Count} 个模块,共 {snapshot.Modules.Sum(module => module.CommandCount)} 条模块指令";
             }
             else
@@ -127,27 +96,9 @@ public partial class ModulesView : UserControl
         }
     }
 
-    private void UpdateToolRegistryActions(CommandRegistry registry)
-    {
-        var hasScan = registry.TryGet("tool.scan", out _);
-        var hasSync = registry.TryGet("tool.sync", out _);
-        var hasRemove = registry.TryGet("tool.remove", out _);
-
-        ToolScanButton.Visibility = hasScan ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
-        ToolSyncButton.Visibility = hasSync ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
-        ToolRemoveButton.Visibility = hasRemove ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
-        ToolRegistrySeparator.Visibility = hasScan || hasSync || hasRemove
-            ? System.Windows.Visibility.Visible
-            : System.Windows.Visibility.Collapsed;
-    }
-
-    private void OnModuleSelectionChanged(object sender, SelectionChangedEventArgs e)
-        => ToolRemoveButton.IsEnabled = ModuleList.SelectedItem is ModuleRow;
-
     private void ClearModules(string status)
     {
         ModuleList.ItemsSource = null;
-        ToolRemoveButton.IsEnabled = false;
         StatusText.Text = status;
     }
 

@@ -8,10 +8,7 @@ internal sealed record CommandCatalogFilter(
     string Query = "",
     string Domain = "全部",
     string CommandClass = "全部",
-    int McpFilter = 0,
-    bool CustomizedOnly = false,
-    bool PendingOnly = false,
-    bool IncidentOnly = false);
+    int McpFilter = 0);
 
 internal enum CommandCatalogChangeKind
 {
@@ -71,6 +68,19 @@ internal sealed class CommandCatalogSession : IDisposable
         get { lock (_gate) return _domains.ToList(); }
     }
 
+    public IReadOnlyList<string> Classes
+    {
+        get
+        {
+            lock (_gate)
+            {
+                if (_filter.Domain == "全部")
+                    return [];
+                return ClassesForDomainLocked(_filter.Domain);
+            }
+        }
+    }
+
     public string? SelectedCommandName => _selection.CurrentCommandName;
 
     public CommandCatalogFilter CurrentFilter
@@ -123,12 +133,57 @@ internal sealed class CommandCatalogSession : IDisposable
     {
         lock (_gate)
         {
+            filter = NormalizeFilterLocked(filter);
             if (_filter == filter)
                 return;
             _filter = filter;
             ApplyFilterLocked();
         }
         RaiseChanged(CommandCatalogChangeKind.Filter);
+    }
+
+    public bool TrySetDomain(string domain, out IReadOnlyList<string> availableDomains)
+    {
+        lock (_gate)
+        {
+            availableDomains = ["全部", .. _domains];
+            var requested = string.IsNullOrWhiteSpace(domain) ? "全部" : domain;
+            var selected = availableDomains.FirstOrDefault(value =>
+                value.Equals(requested, StringComparison.OrdinalIgnoreCase));
+            if (selected == null)
+                return false;
+
+            var next = NormalizeFilterLocked(_filter with { Domain = selected });
+            if (_filter == next)
+                return true;
+            _filter = next;
+            ApplyFilterLocked();
+        }
+        RaiseChanged(CommandCatalogChangeKind.Filter);
+        return true;
+    }
+
+    public bool TrySetCommandClass(string commandClass, out IReadOnlyList<string> availableClasses)
+    {
+        lock (_gate)
+        {
+            availableClasses = _filter.Domain == "全部"
+                ? ["全部"]
+                : ["全部", .. ClassesForDomainLocked(_filter.Domain)];
+            var requested = string.IsNullOrWhiteSpace(commandClass) ? "全部" : commandClass;
+            var selected = availableClasses.FirstOrDefault(value =>
+                value.Equals(requested, StringComparison.OrdinalIgnoreCase));
+            if (selected == null)
+                return false;
+
+            var next = _filter with { CommandClass = selected };
+            if (_filter == next)
+                return true;
+            _filter = next;
+            ApplyFilterLocked();
+        }
+        RaiseChanged(CommandCatalogChangeKind.Filter);
+        return true;
     }
 
     public void SetConsoleQuery(string query)
@@ -190,7 +245,7 @@ internal sealed class CommandCatalogSession : IDisposable
         IReadOnlyList<CommandCompletionDefinition> definitions;
         lock (_gate)
         {
-            definitions = _allRows.Select(row =>
+            definitions = RowsInCurrentTaxonomyLocked().Select(row =>
             {
                 if (_details.TryGetValue(row.CommandName, out var detail))
                     return Definition(detail);
@@ -296,6 +351,7 @@ internal sealed class CommandCatalogSession : IDisposable
 
     private void ApplyFilterLocked()
     {
+        _filter = NormalizeFilterLocked(_filter);
         IEnumerable<CommandCatalogRow> rows = _allRows;
         var keyword = _filter.Query.Trim();
         if (keyword.Length > 0)
@@ -323,13 +379,6 @@ internal sealed class CommandCatalogSession : IDisposable
             _ => rows,
         };
 
-        if (_filter.CustomizedOnly)
-            rows = rows.Where(row => row.Customized);
-        if (_filter.PendingOnly)
-            rows = rows.Where(row => row.OpenProposals > 0);
-        if (_filter.IncidentOnly)
-            rows = rows.Where(row => row.IncidentCount > 0);
-
         _visibleRows = rows.ToList();
         var selected = _selection.CurrentCommandName == null
             ? null
@@ -339,6 +388,43 @@ internal sealed class CommandCatalogSession : IDisposable
         if (selected == null && keyword.Length > 0)
             selected = _visibleRows.FirstOrDefault();
         _selection.CurrentCommandName = selected?.CommandName;
+    }
+
+    private CommandCatalogFilter NormalizeFilterLocked(CommandCatalogFilter filter)
+    {
+        var domain = filter.Domain;
+        if (string.IsNullOrWhiteSpace(domain)
+            || domain == "全部"
+            || !_domains.Contains(domain, StringComparer.OrdinalIgnoreCase))
+        {
+            return filter with { Domain = "全部", CommandClass = "全部" };
+        }
+
+        domain = _domains.First(value => value.Equals(domain, StringComparison.OrdinalIgnoreCase));
+        var classes = ClassesForDomainLocked(domain);
+        var commandClass = classes.FirstOrDefault(value =>
+            value.Equals(filter.CommandClass, StringComparison.OrdinalIgnoreCase)) ?? "全部";
+        return filter with { Domain = domain, CommandClass = commandClass };
+    }
+
+    private IReadOnlyList<string> ClassesForDomainLocked(string domain)
+        => _allRows
+            .Where(row => row.Domain.Equals(domain, StringComparison.OrdinalIgnoreCase))
+            .Select(row => string.IsNullOrWhiteSpace(row.CommandClass) ? "core" : row.CommandClass)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(value => value, StringComparer.Ordinal)
+            .ToList();
+
+    private IEnumerable<CommandCatalogRow> RowsInCurrentTaxonomyLocked()
+    {
+        IEnumerable<CommandCatalogRow> rows = _allRows;
+        if (_filter.Domain != "全部")
+            rows = rows.Where(row => row.Domain.Equals(_filter.Domain, StringComparison.OrdinalIgnoreCase));
+        if (_filter.CommandClass != "全部")
+            rows = rows.Where(row => row.CommandClass.Equals(
+                _filter.CommandClass,
+                StringComparison.OrdinalIgnoreCase));
+        return rows;
     }
 
     private void OnRegistryChanged()

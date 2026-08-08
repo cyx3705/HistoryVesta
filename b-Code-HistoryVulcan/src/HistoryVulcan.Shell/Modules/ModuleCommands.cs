@@ -7,10 +7,14 @@ using HistoryVulcan.Core.Storage;
 
 namespace HistoryVulcan.Shell.Modules;
 
-/// <summary>module.* 管理指令(MD-05):list / reload / dir / open。</summary>
+/// <summary>module.* 管理指令(MD-05):list / reload / roots / open。</summary>
 public static class ModuleCommands
 {
+    /// <summary>Legacy settings key retained for binary compatibility; standalone hosts ignore it.</summary>
     public const string KeyModuleDir = "module.dir";
+
+    /// <summary>Settings key containing automatic or explicit Z discovery roots.</summary>
+    public const string KeyModuleRoots = "module.roots";
 
     public static void RegisterAll(
         CommandRegistry registry, ModuleHost host, ISettingsService settings, string source = "app")
@@ -27,10 +31,10 @@ public static class ModuleCommands
             {
                 var modules = host.Modules;
                 if (modules.Count == 0)
-                    return CommandResult.Ok($"当前无已加载模块。把模块 DLL 放入 {host.ModulesDirectory} 即自动装载");
+                    return CommandResult.Ok("当前无已加载模块。请检查 Z manifest 与 module.roots 诊断。");
 
                 var sb = new StringBuilder();
-                sb.Append($"已加载 {modules.Count} 个模块(目录 {host.ModulesDirectory}):");
+                sb.Append($"已加载 {modules.Count} 个模块:");
                 foreach (var m in modules)
                 {
                     sb.Append($"\n  {m.ModuleName} {m.Version}  [{(m.Open ? "全暴露" : "精准暴露")}]" +
@@ -61,31 +65,31 @@ public static class ModuleCommands
 
         registry.Register(new CommandDescriptor
         {
-            Name = "module.dir",
+            Name = "module.roots",
             Domain = "HistoryVulcan",
             CommandClass = "module",
-            Summary = "查看/切换模块目录(切换后立即重载并持久化)",
-            Example = "module.dir path=D:\\MyModules",
+            Summary = "查看或设置 Z 模块发现根",
+            Example = "module.roots paths=auto",
             Parameters =
             [
                 new ParameterSpec
                 {
-                    Name = "path",
-                    Description = "新模块目录(绝对路径);省略则只显示当前目录",
+                    Name = "paths",
+                    Description = "分号分隔的绝对根；auto 恢复自动识别；省略时查询",
                     Position = 0,
                 },
             ],
             Handler = async ctx =>
             {
-                var path = ctx.GetString("path");
-                if (string.IsNullOrWhiteSpace(path))
-                    return CommandResult.Ok($"当前模块目录: {host.ModulesDirectory}");
-
-                path = Path.GetFullPath(path.Trim());
-                settings.Set(KeyModuleDir, path);
-                await Task.Run(() => host.ChangeDirectory(path));
-                return CommandResult.Ok(
-                    $"模块目录已切换并重载: {path}({host.Modules.Count} 个模块)");
+                var paths = ctx.GetString("paths");
+                if (string.IsNullOrWhiteSpace(paths))
+                    return CommandResult.Ok($"当前模块发现根: {string.Join(";", host.DiscoveryRoots)}");
+                var roots = ResolveRoots(paths);
+                settings.Set(KeyModuleRoots, paths.Equals("auto", StringComparison.OrdinalIgnoreCase)
+                    ? "auto"
+                    : string.Join(';', roots));
+                await Task.Run(() => host.ChangeDiscoveryRoots(roots));
+                return CommandResult.Ok($"模块发现根已切换并重载: {string.Join(";", roots)}");
             },
         }, source);
 
@@ -98,13 +102,35 @@ public static class ModuleCommands
             Example = "module.open",
             Handler = CommandDescriptor.Sync(_ =>
             {
-                Directory.CreateDirectory(host.ModulesDirectory);
-                Process.Start(new ProcessStartInfo("explorer.exe", $"\"{host.ModulesDirectory}\"")
+                var root = host.DiscoveryRoots.FirstOrDefault();
+                if (root == null)
+                    return CommandResult.Fail("当前没有可打开的模块发现根");
+                Process.Start(new ProcessStartInfo("explorer.exe", $"\"{root}\"")
                 {
                     UseShellExecute = true,
                 });
-                return CommandResult.Ok($"已打开模块目录: {host.ModulesDirectory}");
+                return CommandResult.Ok($"已打开模块发现根: {root}");
             }),
         }, source);
+    }
+
+    private static IReadOnlyList<string> ResolveRoots(string paths)
+    {
+        if (paths.Equals("auto", StringComparison.OrdinalIgnoreCase))
+        {
+            var root = ZModuleDiscoverySource.FindAutomaticRoot(AppContext.BaseDirectory)
+                       ?? ZModuleDiscoverySource.FindAutomaticRoot(Environment.CurrentDirectory)
+                       ?? throw new InvalidOperationException("未能向上找到 HistoryVesta.git。");
+            return [root];
+        }
+
+        var values = paths.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (values.Length == 0 || values.Any(path => !Path.IsPathFullyQualified(path)))
+            throw new ArgumentException("module.roots 只接受分号分隔的绝对路径或 auto。");
+        var roots = values
+            .Select(Path.GetFullPath)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        return roots;
     }
 }

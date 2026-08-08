@@ -15,6 +15,7 @@ public partial class McpToolsView : UserControl
     private CommandCatalogSession? _catalogSession;
     private bool _initialLoadDone;
     private bool _updatingList;
+    private bool _updatingFilters;
 
     public McpToolsView(Func<CommandBus?> busAccessor, CommandSelectionState selection)
         : this(busAccessor, selection, null)
@@ -82,9 +83,8 @@ public partial class McpToolsView : UserControl
             _ = RefreshAsync();
             return;
         }
-        RefreshDomainFilter();
-        RefreshClassFilter();
-        ApplyFilter();
+        SyncFilterControls();
+        RenderList();
     }
 
     private async Task RefreshAsync(bool force = false)
@@ -107,9 +107,8 @@ public partial class McpToolsView : UserControl
                 _selection.CurrentCommandName = null;
             }
 
-            RefreshDomainFilter();
-            RefreshClassFilter();
-            ApplyFilter();
+            SyncFilterControls();
+            RenderList();
         }
         finally
         {
@@ -117,50 +116,52 @@ public partial class McpToolsView : UserControl
         }
     }
 
-    private void RefreshDomainFilter()
+    private void SyncFilterControls()
     {
-        var selected = DomainFilterBox.SelectedItem?.ToString() ?? "全部";
-        var values = new List<string> { "全部" };
-        values.AddRange(_catalogSession?.Domains ?? []);
-        DomainFilterBox.ItemsSource = values;
-        DomainFilterBox.SelectedItem = values.Contains(selected, StringComparer.OrdinalIgnoreCase)
-            ? values.First(value => value.Equals(selected, StringComparison.OrdinalIgnoreCase))
-            : "全部";
-    }
-
-    private void RefreshClassFilter()
-    {
-        var selected = ClassFilterBox.SelectedItem?.ToString() ?? "全部";
-        var domain = DomainFilterBox.SelectedItem?.ToString() ?? "全部";
-        var classes = (_catalogSession?.AllRows ?? [])
-            .Where(row => domain == "全部"
-                          || row.Domain.Equals(domain, StringComparison.OrdinalIgnoreCase))
-            .Select(row => row.CommandClass)
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(value => value, StringComparer.Ordinal)
-            .ToList();
-        var values = new List<string> { "全部" };
-        values.AddRange(classes);
-        ClassFilterBox.ItemsSource = values;
-        ClassFilterBox.SelectedItem = values.Contains(selected, StringComparer.OrdinalIgnoreCase)
-            ? values.First(value => value.Equals(selected, StringComparison.OrdinalIgnoreCase))
-            : "全部";
-    }
-
-    private void ApplyFilter()
-    {
-        if (!_initialLoadDone || _catalogSession == null)
+        if (_catalogSession == null)
             return;
-        _catalogSession.SetFilter(new CommandCatalogFilter(
-            _catalogSession.CurrentFilter.Query,
-            DomainFilterBox.SelectedItem?.ToString() ?? "全部",
-            ClassFilterBox.SelectedItem?.ToString() ?? "全部",
-            McpFilterBox.SelectedIndex,
-            false,
-            false,
-            false));
+        _updatingFilters = true;
+        try
+        {
+            var selected = _catalogSession.CurrentFilter.Domain;
+            var values = new List<string> { "全部" };
+            values.AddRange(_catalogSession.Domains);
+            DomainFilterBox.ItemsSource = values;
+            DomainFilterBox.SelectedItem = values.Contains(selected, StringComparer.OrdinalIgnoreCase)
+                ? values.First(value => value.Equals(selected, StringComparison.OrdinalIgnoreCase))
+                : "全部";
+            var classValues = new List<string> { "全部" };
+            classValues.AddRange(_catalogSession.Classes);
+            ClassFilterBox.ItemsSource = classValues;
+            ClassFilterBox.SelectedItem = classValues.Contains(
+                _catalogSession.CurrentFilter.CommandClass,
+                StringComparer.OrdinalIgnoreCase)
+                ? classValues.First(value => value.Equals(
+                    _catalogSession.CurrentFilter.CommandClass,
+                    StringComparison.OrdinalIgnoreCase))
+                : "全部";
+            ClassFilterBox.IsEnabled = _catalogSession.CurrentFilter.Domain != "全部";
+        }
+        finally
+        {
+            _updatingFilters = false;
+        }
+    }
 
+    private void ApplyMcpFilter()
+    {
+        if (!_initialLoadDone || _catalogSession == null || _updatingFilters)
+            return;
+        _catalogSession.SetFilter(_catalogSession.CurrentFilter with
+        {
+            McpFilter = McpFilterBox.SelectedIndex,
+        });
+    }
+
+    private void RenderList()
+    {
+        if (_catalogSession == null)
+            return;
         var list = _catalogSession.VisibleRows;
         var selectedName = _catalogSession.SelectedCommandName;
         _updatingList = true;
@@ -190,12 +191,22 @@ public partial class McpToolsView : UserControl
                           $"readonly {readonlyCount}，standard {standardCount}，危险拒绝 {dangerous}，模块 {modules}";
     }
 
-    private void OnFilterChanged(object sender, EventArgs e) => ApplyFilter();
+    private void OnFilterChanged(object sender, EventArgs e) => ApplyMcpFilter();
 
     private void OnDomainFilterChanged(object sender, EventArgs e)
     {
-        RefreshClassFilter();
-        ApplyFilter();
+        if (_updatingFilters || !IsLoaded || DomainFilterBox.SelectedItem is not string domain)
+            return;
+        if (_busAccessor() is { } bus)
+            _ = bus.ExecuteAsync($"log.source source={CommandParser.QuoteArg(domain)}", "UI");
+    }
+
+    private void OnClassFilterChanged(object sender, EventArgs e)
+    {
+        if (_updatingFilters || !IsLoaded || ClassFilterBox.SelectedItem is not string commandClass)
+            return;
+        if (_busAccessor() is { } bus)
+            _ = bus.ExecuteAsync($"log.class class={CommandParser.QuoteArg(commandClass)}", "UI");
     }
 
     private void OnToolSelected(object sender, SelectionChangedEventArgs e)

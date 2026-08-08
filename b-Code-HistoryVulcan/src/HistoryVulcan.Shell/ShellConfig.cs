@@ -58,6 +58,17 @@ public sealed class ShellConfig
     /// </summary>
     public string? ModuleDirectory { get; set; }
 
+    /// <summary>
+    /// Z-level module discovery roots. When non-empty, module manifests are discovered from
+    /// direct <c>z-*</c> children and <see cref="ModuleDirectory"/> is ignored.
+    /// </summary>
+    public List<string> ModuleDiscoveryRoots { get; } = new();
+
+    /// <summary>
+    /// Keeps a UI-only module host empty until the backend confirms the manifest paths to load.
+    /// </summary>
+    public bool RequireConfirmedModuleSources { get; set; }
+
     /// <summary>双击工具窗口标题条时切换窗口最大化。</summary>
     public bool EnableMaximizeOnDoubleClick { get; set; } = true;
 

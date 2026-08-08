@@ -97,6 +97,26 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
+            Name = "log.class",
+            Domain = "HistoryVulcan",
+            CommandClass = "log",
+            Summary = "设置控制台和命令集的命令类过滤",
+            Example = "log.class class=win",
+            RequiresUiThread = true,
+            Parameters = [new ParameterSpec { Name = "class", Description = "当前域内的命令类；省略时查询当前值", Position = 0 }],
+            Handler = CommandDescriptor.Sync(ctx =>
+            {
+                var commandClass = ctx.GetString("class");
+                if (commandClass == null)
+                    return CommandResult.Ok($"当前命令类: {s.Console.ClassFilterValue}");
+                if (!s.Console.TrySetClass(commandClass, out var available))
+                    return CommandResult.Fail($"命令类不存在: {commandClass}；可用类: {string.Join(" / ", available)}");
+                return CommandResult.Ok($"命令类已设置为 {s.Console.ClassFilterValue}");
+            }),
+        });
+
+        RegisterFrontend(r, new CommandDescriptor
+        {
             Name = "log.keyword",
             Domain = "HistoryVulcan",
             CommandClass = "log",

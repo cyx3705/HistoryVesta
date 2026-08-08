@@ -284,7 +284,11 @@ public static partial class BuiltinCommands
             {
                 if (ResolveWindow(s, ctx) is { } error)
                     return error;
-                return CommandResult.Ok(action(s.Docking, ctx.RequireString("name")));
+                var id = ctx.RequireString("name");
+                var message = action(s.Docking, id);
+                if (name.Equals("win.show", StringComparison.OrdinalIgnoreCase))
+                    s.Window.ActivateToolContent(id);
+                return CommandResult.Ok(message);
             }),
         });
     }

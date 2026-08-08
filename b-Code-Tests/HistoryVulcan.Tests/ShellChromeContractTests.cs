@@ -982,13 +982,16 @@ public sealed class ShellChromeContractTests
     }
 
     [Fact]
-    public void ConsoleToolbarOnlyShowsLevelAndDomain()
+    public void ConsoleToolbarShowsLevelDomainAndDependentClass()
     {
         RunShell(window =>
         {
             var console = Assert.Single(FindVisualDescendants<ConsoleView>(window));
             Assert.Equal(Visibility.Visible, Assert.IsType<ComboBox>(console.FindName("LevelFilter")).Visibility);
             Assert.Equal(Visibility.Visible, Assert.IsType<ComboBox>(console.FindName("DomainFilter")).Visibility);
+            var classFilter = Assert.IsType<ComboBox>(console.FindName("ClassFilter"));
+            Assert.Equal(Visibility.Visible, classFilter.Visibility);
+            Assert.False(classFilter.IsEnabled);
             Assert.Equal(Visibility.Collapsed, Assert.IsType<TextBox>(console.FindName("KeywordFilter")).Visibility);
             Assert.Equal(Visibility.Collapsed, Assert.IsType<CheckBox>(console.FindName("MuteLayout")).Visibility);
             Assert.Equal(Visibility.Collapsed, Assert.IsType<CheckBox>(console.FindName("AutoScroll")).Visibility);
@@ -1158,12 +1161,15 @@ public sealed class ShellChromeContractTests
                 grid.Columns.Select(column => column.Header?.ToString()));
 
             var domainFilter = Assert.IsType<ComboBox>(view.FindName("DomainFilterBox"));
+            var classFilter = Assert.IsType<ComboBox>(view.FindName("ClassFilterBox"));
+            Assert.False(classFilter.IsEnabled);
+            Assert.Equal(["全部"], classFilter.Items.Cast<string>());
             var domains = domainFilter.Items.Cast<string>().ToList();
             Assert.Contains("HistoryVulcan", domains);
             Assert.Equal(domains.Count, domains.Distinct(StringComparer.OrdinalIgnoreCase).Count());
             domainFilter.SelectedItem = "HistoryVulcan";
             PumpDispatcher();
-            var classFilter = Assert.IsType<ComboBox>(view.FindName("ClassFilterBox"));
+            Assert.True(classFilter.IsEnabled);
             Assert.Contains("win", classFilter.Items.Cast<string>());
             classFilter.SelectedItem = "win";
             PumpDispatcher();

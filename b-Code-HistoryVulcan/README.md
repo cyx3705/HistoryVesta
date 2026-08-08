@@ -27,7 +27,7 @@ dotnet build .\HistoryVulcan.sln -c Release --no-restore
 
 ## 3.x 宿主
 
-3.0.3 是冻结基线；当前源码目标为 3.2.1，正式消费快照仍为 3.2.0。3.1.8 是不受支持的内部过渡版本，
+3.0.3 是冻结基线；当前源码目标为 3.2.2。3.1.8 是不受支持的内部过渡版本，
 不得作为新消费基线。当前正式交付物是 win-x64、依赖 .NET 8 Desktop
 Runtime 的 HistoryVulcan 宿主，不生成 NuGet 包。兼容包合同继续保留，但必须从单独批准的同版本包源消费。
 
@@ -36,10 +36,10 @@ Runtime 的 HistoryVulcan 宿主，不生成 NuGet 包。兼容包合同继续�
 
 ```powershell
 # 可覆盖 current：生成 Release 宿主、UI/消费文档和 SHA-256 清单
-.\eng\Publish-HistoryVulcanHost.ps1 -Version 3.2.1
+.\eng\Publish-HistoryVulcanHost.ps1 -Version 3.2.2
 
 # 候选审核通过后部署同一完整快照到 Z
-.\eng\Publish-HistoryVulcanHost.ps1 -Version 3.2.1 -DeployToZ
+.\eng\Publish-HistoryVulcanHost.ps1 -Version 3.2.2 -DeployToZ
 ```
 
 当前交付物是宿主程序，不生成 NuGet 包。旧 `Publish-AppShell.ps1` 仅保留库消费兼容和历史验证。
