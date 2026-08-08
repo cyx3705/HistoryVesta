@@ -1,10 +1,10 @@
-# HistoryVulcan 3.2.0
+# HistoryVulcan 3.2.1
 
 本仓库是 OneHistory HistoryVulcan（原 AppShell，3.2.0 起改名）的独立源码、合同与发布资产真值。
 `3.0.3` 是 V3 冻结基线，冻结标签为 `v3.0.3`；版本线不再与 HistoryJanus 对齐，`0.7.x` 仅保留用于回滚。
 
-当前正式版本为 `3.2.0`：在 3.1.10 共享命令目录会话基础上执行产品改名，项目、命名空间、程序集、
-宿主 EXE 与消费文档统一为 HistoryVulcan；不新增功能或改变命令语义。
+当前源码目标为 `3.2.1`：命令目录采用“一个宿主或模块一个域、域内功能分支为类”的结构化合同，
+HistoryVulcan 内置命令统一归入 `HistoryVulcan` 域；现有命令文本和执行语义不变。当前正式 Z 快照仍为 `3.2.0`。
 `3.1.8` 仅是内部过渡版本，不作为稳定支持版本；`3.1.9` 是旧名 AppShell 的最后快照。
 3.1.10 对“轻松指令”和中央命令集做了内部高内聚重构：
 两种交互共享由 `CommandBus` 驱动的目录快照、详情缓存、检索和选择状态，不新增公开 API 或改变命令语义。
@@ -66,10 +66,10 @@ dotnet format .\HistoryVulcan.sln --verify-no-changes --no-restore
 
 ```powershell
 # 生成 b-Publish/current 下的宿主 + 文档完整候选
-.\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.2.0
+.\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.2.1
 
 # 候选审核通过后，将同一完整快照一次性部署到 z-HistoryVulcan
-.\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.2.0 -DeployToZ
+.\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.2.1 -DeployToZ
 ```
 
 当前交付物是可直接运行的 HistoryVulcan 宿主，不是 NuGet 包。历史四包发布脚本只保留用于库消费兼容、

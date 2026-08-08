@@ -348,7 +348,7 @@ public partial class ConsoleView : UserControl
         for (var i = 0; i < 8000 && _incoming.TryDequeue(out var entry); i++)
         {
             Interlocked.Decrement(ref _incomingCount);
-            foreach (var row in ConsoleRow.From(entry))
+            foreach (var row in ConsoleRow.From(entry, _bus.Registry))
             {
                 _all.Add(row);
                 if (PassesFilter(row))

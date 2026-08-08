@@ -49,6 +49,12 @@ public sealed record FrontendCommandCapability(
     bool AllowMcpExecution,
     string Source)
 {
+    /// <summary>命令所属宿主或模块域；附加属性保持旧位置构造函数兼容。</summary>
+    public string? Domain { get; init; }
+
+    /// <summary>命令在域内的功能类；附加属性保持旧位置构造函数兼容。</summary>
+    public string? CommandClass { get; init; }
+
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
     public static FrontendCommandCapability From(
         CommandDescriptor descriptor,
@@ -63,12 +69,18 @@ public sealed record FrontendCommandCapability(
         descriptor.RequiresUiThread,
         descriptor.AllowUnspecifiedParameters,
         descriptor.AllowMcpExecution,
-        source);
+        source)
+        {
+            Domain = CommandRegistry.ResolveDomain(descriptor, source),
+            CommandClass = CommandRegistry.ResolveCommandClass(descriptor, source),
+        };
 
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
     public CommandDescriptor CreateProxy() => new()
     {
         Name = Name,
+        Domain = Domain,
+        CommandClass = CommandClass,
         Summary = Summary,
         Example = Example,
         Parameters = Parameters.Select(parameter => parameter.ToParameter()).ToList(),

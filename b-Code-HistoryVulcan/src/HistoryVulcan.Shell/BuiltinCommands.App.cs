@@ -20,6 +20,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "app.exit",
+            Domain = "HistoryVulcan",
+            CommandClass = "app",
             Summary = "退出程序",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -32,6 +34,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "app.about",
+            Domain = "HistoryVulcan",
+            CommandClass = "app",
             Summary = "显示关于对话框",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>

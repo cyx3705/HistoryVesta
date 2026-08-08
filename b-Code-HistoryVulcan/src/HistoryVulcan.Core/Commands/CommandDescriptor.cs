@@ -9,6 +9,18 @@ public sealed class CommandDescriptor
     /// <summary>完整指令名,小写,如 "win.dock"、"help"。</summary>
     public required string Name { get; init; }
 
+    /// <summary>
+    /// 指令所属宿主或模块域。模块命令的有效域由模块宿主强制设置；
+    /// 未声明的旧指令由注册表按旧命令前缀兼容推导。
+    /// </summary>
+    public string? Domain { get; init; }
+
+    /// <summary>
+    /// 域内功能类，如 app、log、win。未声明的模块命令归入 core，
+    /// 未声明的旧非模块指令由注册表按旧命令前缀兼容推导。
+    /// </summary>
+    public string? CommandClass { get; init; }
+
     /// <summary>一句话说明(help 列表用)。</summary>
     public required string Summary { get; init; }
 

@@ -16,6 +16,8 @@ public static class WebCommands
         registry.Register(new CommandDescriptor
         {
             Name = "web.status",
+            Domain = "HistoryVulcan",
+            CommandClass = "web",
             Summary = "查看 Web 服务状态",
             Readonly = true,
             Handler = CommandDescriptor.Sync(_ => CommandResult.Ok(
@@ -51,6 +53,8 @@ public static class WebCommands
         registry.Register(new CommandDescriptor
         {
             Name = "web.confirm",
+            Domain = "HistoryVulcan",
+            CommandClass = "web",
             Summary = "设置远程确认模式(local/web；缺省 local)",
             Parameters =
             [
@@ -82,6 +86,8 @@ public static class WebCommands
         => new()
         {
             Name = name,
+            Domain = "HistoryVulcan",
+            CommandClass = "web",
             Summary = summary,
             Parameters = [new ParameterSpec { Name = "value", Description = "新的设置值", Position = 0 }],
             Handler = CommandDescriptor.Sync(ctx =>

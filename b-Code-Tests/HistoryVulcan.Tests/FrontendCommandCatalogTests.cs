@@ -31,6 +31,8 @@ public sealed class FrontendCommandCatalogTests
         var source = new CommandDescriptor
         {
             Name = "ui.inspect",
+            Domain = "InspectorModule",
+            CommandClass = "ui",
             Summary = "Inspect the active UI object",
             Example = "ui.inspect mode=brief",
             Parameters =
@@ -58,6 +60,10 @@ public sealed class FrontendCommandCatalogTests
 
         Assert.Equal("app:frontend", capability.Source);
         Assert.Equal(source.Name, proxy.Name);
+        Assert.Equal(source.Domain, capability.Domain);
+        Assert.Equal(source.CommandClass, capability.CommandClass);
+        Assert.Equal(source.Domain, proxy.Domain);
+        Assert.Equal(source.CommandClass, proxy.CommandClass);
         Assert.Equal(source.Summary, proxy.Summary);
         Assert.Equal(source.Example, proxy.Example);
         Assert.Equal(source.SupportsUndo, proxy.SupportsUndo);

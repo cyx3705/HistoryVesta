@@ -1,1 +1,3 @@
 #nullable enable
+HistoryVulcan.Shell.Mcp.CommandCatalogRow.CommandClass.get -> string!
+HistoryVulcan.Shell.Mcp.CommandCatalogRow.CommandClass.init -> void

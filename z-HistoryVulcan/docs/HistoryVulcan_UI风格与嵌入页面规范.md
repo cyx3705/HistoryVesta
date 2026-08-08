@@ -1,6 +1,6 @@
 # HistoryVulcan UI 风格与嵌入页面规范
 
-> 适用版本：HistoryVulcan 3.2.0（当前稳定消费版本；3.1.9 为旧名 AppShell 的最后快照），3.1.8 不受支持
+> 适用版本：HistoryVulcan 3.2.1 源码候选（当前正式 Z 快照仍为 3.2.0），3.1.8 不受支持
 
 本文是 HistoryVulcan 宿主、内置页面和外置 UI 模块的视觉合同。嵌入页面必须复用 HistoryVulcan 动态资源，
 不得复制固定色板或在页面内维护第二套浅色/深色主题。运行时真值位于

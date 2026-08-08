@@ -20,6 +20,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "layout.save",
+            Domain = "HistoryVulcan",
+            CommandClass = "layout",
             Summary = "把当前布局保存为命名方案",
             Example = "layout.save name=调试布局",
             RequiresUiThread = true,
@@ -38,6 +40,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "layout.load",
+            Domain = "HistoryVulcan",
+            CommandClass = "layout",
             Summary = "加载命名布局方案",
             Example = "layout.load name=调试布局",
             RequiresUiThread = true,
@@ -57,6 +61,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "layout.list",
+            Domain = "HistoryVulcan",
+            CommandClass = "layout",
             Summary = "列出全部命名布局方案",
             Readonly = true,
             RequiresUiThread = true,
@@ -72,6 +78,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "layout.reset",
+            Domain = "HistoryVulcan",
+            CommandClass = "layout",
             Summary = "重置为默认布局",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>

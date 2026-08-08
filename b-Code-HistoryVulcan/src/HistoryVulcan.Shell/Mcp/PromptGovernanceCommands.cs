@@ -42,6 +42,8 @@ public static class PromptGovernanceCommands
         CommandSchemaExporter exporter, PromptGovernanceStore store) => new()
         {
             Name = "mcp.desc",
+            Domain = "HistoryVulcan",
+            CommandClass = "mcp",
             Summary = "本地查看/直接修订 MCP 工具描述；远程 AI 请使用 prompt.propose",
             Example = "mcp.desc name=command.list text=\"列出当前可用指令\" reason=人工修订",
             Parameters =
@@ -89,6 +91,8 @@ public static class PromptGovernanceCommands
         CommandSchemaExporter exporter, PromptGovernanceStore store) => new()
         {
             Name = "prompt.get",
+            Domain = "HistoryVulcan",
+            CommandClass = "prompt",
             Summary = "查看 MCP 工具的默认描述、生效描述、当前修订和待审核提案数",
             Readonly = true,
             Example = "prompt.get name=command.list",
@@ -104,6 +108,8 @@ public static class PromptGovernanceCommands
         CommandSchemaExporter exporter, PromptGovernanceStore store) => new()
         {
             Name = "prompt.history",
+            Domain = "HistoryVulcan",
+            CommandClass = "prompt",
             Summary = "查看某个 MCP 工具的描述修订历史",
             Readonly = true,
             Example = "prompt.history name=command.list limit=20",
@@ -136,6 +142,8 @@ public static class PromptGovernanceCommands
     private static CommandDescriptor BuildDiff(PromptGovernanceStore store) => new()
     {
         Name = "prompt.diff",
+        Domain = "HistoryVulcan",
+        CommandClass = "prompt",
         Summary = "查看提示词提案的原文、新文和文本差异",
         Readonly = true,
         Example = "prompt.diff id=proposal_xxx",
@@ -155,6 +163,8 @@ public static class PromptGovernanceCommands
         CommandSchemaExporter exporter, PromptGovernanceStore store) => new()
         {
             Name = "prompt.propose",
+            Domain = "HistoryVulcan",
+            CommandClass = "prompt",
             Summary = "提交 MCP 工具描述修改提案；不会直接改变生效描述",
             Example = "prompt.propose name=command.list text=\"列出当前可用指令\" reason=澄清目录语义",
             Parameters =
@@ -191,6 +201,8 @@ public static class PromptGovernanceCommands
     private static CommandDescriptor BuildCorrectionList(PromptGovernanceStore store) => new()
     {
         Name = "correction.list",
+        Domain = "HistoryVulcan",
+        CommandClass = "correction",
         Summary = "列出 MCP 工具描述勘误记录",
         Readonly = true,
         Example = "correction.list name=command.list limit=20",
@@ -214,6 +226,8 @@ public static class PromptGovernanceCommands
         CommandSchemaExporter exporter, PromptGovernanceStore store) => new()
         {
             Name = "correction.propose",
+            Domain = "HistoryVulcan",
+            CommandClass = "correction",
             Summary = "提交工具描述勘误，不直接修改生效描述",
             Example = "correction.propose name=command.list claim=\"只返回框架指令\" correction=\"返回权威目录中的全部指令\"",
             Parameters =
@@ -241,6 +255,8 @@ public static class PromptGovernanceCommands
     private static CommandDescriptor BuildIncidentList(PromptGovernanceStore store) => new()
     {
         Name = "incident.list",
+        Domain = "HistoryVulcan",
+        CommandClass = "incident",
         Summary = "列出 MCP 工具调用或描述事故记录",
         Readonly = true,
         Example = "incident.list name=command.list limit=20",
@@ -264,6 +280,8 @@ public static class PromptGovernanceCommands
         CommandSchemaExporter exporter, PromptGovernanceStore store) => new()
         {
             Name = "incident.record",
+            Domain = "HistoryVulcan",
+            CommandClass = "incident",
             Summary = "记录工具调用或描述事故；保留预期、实际和证据",
             Example = "incident.record name=command.list symptom=遗漏前端指令 expected=返回权威目录 actual=只返回后端指令",
             Parameters =
@@ -292,6 +310,8 @@ public static class PromptGovernanceCommands
     private static CommandDescriptor BuildPending(PromptGovernanceStore store) => new()
     {
         Name = "mcp.pending",
+        Domain = "HistoryVulcan",
+        CommandClass = "mcp",
         Summary = "本地列出待审核或已批准未应用的提示词提案",
         Example = "mcp.pending name=command.list",
         Parameters =
@@ -313,6 +333,8 @@ public static class PromptGovernanceCommands
     private static CommandDescriptor BuildApprove(PromptGovernanceStore store) => new()
     {
         Name = "mcp.approve",
+        Domain = "HistoryVulcan",
+        CommandClass = "mcp",
         Summary = "本地批准提示词提案；批准后仍需 apply 才生效",
         Example = "mcp.approve id=proposal_xxx reviewer=Administrator",
         Parameters =
@@ -330,6 +352,8 @@ public static class PromptGovernanceCommands
     private static CommandDescriptor BuildReject(PromptGovernanceStore store) => new()
     {
         Name = "mcp.reject",
+        Domain = "HistoryVulcan",
+        CommandClass = "mcp",
         Summary = "本地拒绝提示词提案并保留理由",
         Example = "mcp.reject id=proposal_xxx reason=边界描述不准确",
         Parameters =
@@ -349,6 +373,8 @@ public static class PromptGovernanceCommands
     private static CommandDescriptor BuildApply(PromptGovernanceStore store) => new()
     {
         Name = "mcp.apply",
+        Domain = "HistoryVulcan",
+        CommandClass = "mcp",
         Summary = "本地应用已批准提案；基线变化时拒绝覆盖",
         Example = "mcp.apply id=proposal_xxx reviewer=Administrator",
         Parameters =
@@ -367,6 +393,8 @@ public static class PromptGovernanceCommands
     private static CommandDescriptor BuildRevert(PromptGovernanceStore store) => new()
     {
         Name = "mcp.revert",
+        Domain = "HistoryVulcan",
+        CommandClass = "mcp",
         Summary = "本地把指定历史修订内容生成为新的当前修订",
         Example = "mcp.revert revision=rev_xxx reason=回退错误描述",
         Parameters =

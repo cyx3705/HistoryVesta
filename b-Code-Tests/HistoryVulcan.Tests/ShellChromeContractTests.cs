@@ -267,7 +267,7 @@ public sealed class ShellChromeContractTests
     }
 
     [Fact]
-    public void DarkThemeUsesTokenizedCheckBoxesAndConsoleRows()
+    public void DarkThemeUsesTokenizedCatalogControlsAndConsoleRows()
     {
         var log = new RelayLog();
         RunShell(
@@ -278,31 +278,14 @@ public sealed class ShellChromeContractTests
                 PumpDispatcher();
 
                 var primary = ((SolidColorBrush)window.FindResource("Shell.Brush.TextPrimary")).Color;
-                var checkBoxes = FindVisualDescendants<CheckBox>(window)
-                    .Where(box => box.IsVisible && box.Content != null)
-                    .ToList();
-                Assert.NotEmpty(checkBoxes);
-                foreach (var checkBox in checkBoxes)
+                window.Docking.Show(StandardWindowIds.Mcp);
+                PumpDispatcher(600);
+                var catalog = Assert.Single(
+                    FindVisualDescendants<HistoryVulcan.Shell.Views.McpToolsView>(window));
+                foreach (var name in new[] { "DomainFilterBox", "ClassFilterBox", "McpFilterBox" })
                 {
-                    var expectedText = checkBox.IsEnabled
-                        ? primary
-                        : ((SolidColorBrush)window.FindResource("Shell.Brush.TextDisabled")).Color;
-                    Assert.Equal(expectedText, ((SolidColorBrush)checkBox.Foreground).Color);
-                    var box = FindVisualDescendants<Border>(checkBox)
-                        .First(border => border.ActualWidth >= 15 && border.ActualWidth <= 17);
-                    var color = ((SolidColorBrush)box.Background).Color;
-                    if (checkBox.IsChecked == true)
-                    {
-                        Assert.Equal(
-                            ((SolidColorBrush)window.FindResource("Shell.Brush.Accent")).Color,
-                            color);
-                    }
-                    else
-                    {
-                        Assert.True(
-                            (color.R + color.G + color.B) / 3 < 0x90,
-                            $"checkbox background leaked a light system color: {color}");
-                    }
+                    var combo = Assert.IsType<ComboBox>(catalog.FindName(name));
+                    Assert.Equal(primary, ((SolidColorBrush)combo.Foreground).Color);
                 }
 
                 var console = Assert.Single(
@@ -1033,7 +1016,7 @@ public sealed class ShellChromeContractTests
                 var consoleDomains = consoleFilter.Items.Cast<string>().ToList();
                 var catalogDomains = catalogFilter.Items.Cast<string>().ToList();
                 Assert.Equal(catalogDomains, consoleDomains);
-                Assert.Contains("core", consoleDomains);
+                Assert.Contains("HistoryVulcan", consoleDomains);
                 Assert.Equal(consoleDomains.Skip(1).OrderBy(value => value, StringComparer.Ordinal),
                     consoleDomains.Skip(1));
                 Assert.Equal(consoleDomains.Count,
@@ -1043,31 +1026,32 @@ public sealed class ShellChromeContractTests
                 PumpDispatcher();
                 Assert.DoesNotContain("private", consoleFilter.Items.Cast<string>(),
                     StringComparer.OrdinalIgnoreCase);
-                Assert.True(console.TrySetSource("core", out _));
                 var output = Assert.IsType<ListBox>(console.FindName("Output"));
                 Assert.Contains(output.Items.Cast<ConsoleRow>(), row =>
                     row.Text.Contains("private-log", StringComparison.Ordinal));
 
-                Assert.True(console.TrySetSource("app", out _));
-                catalogFilter.SelectedItem = "app";
+                Assert.True(console.TrySetSource("HistoryVulcan", out _));
+                catalogFilter.SelectedItem = "HistoryVulcan";
                 window.Commands.Registry.Register(new CommandDescriptor
                 {
                     Name = "zeta.sample",
+                    Domain = "Fixture",
+                    CommandClass = "sample",
                     Summary = "动态域同步测试",
                     Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("ok")),
                 }, "test");
                 PumpDispatcher(600);
-                Assert.Contains("zeta", consoleFilter.Items.Cast<string>());
-                Assert.Contains("zeta", catalogFilter.Items.Cast<string>());
-                Assert.Equal("app", consoleFilter.SelectedItem);
-                Assert.Equal("app", catalogFilter.SelectedItem);
+                Assert.Contains("Fixture", consoleFilter.Items.Cast<string>());
+                Assert.Contains("Fixture", catalogFilter.Items.Cast<string>());
+                Assert.Equal("HistoryVulcan", consoleFilter.SelectedItem);
+                Assert.Equal("HistoryVulcan", catalogFilter.SelectedItem);
 
                 Assert.True(window.Commands.Registry.Unregister("zeta.sample"));
                 PumpDispatcher(600);
-                Assert.DoesNotContain("zeta", consoleFilter.Items.Cast<string>());
-                Assert.DoesNotContain("zeta", catalogFilter.Items.Cast<string>());
-                Assert.Equal("app", consoleFilter.SelectedItem);
-                Assert.Equal("app", catalogFilter.SelectedItem);
+                Assert.DoesNotContain("Fixture", consoleFilter.Items.Cast<string>());
+                Assert.DoesNotContain("Fixture", catalogFilter.Items.Cast<string>());
+                Assert.Equal("HistoryVulcan", consoleFilter.SelectedItem);
+                Assert.Equal("HistoryVulcan", catalogFilter.SelectedItem);
                 Assert.Equal(catalogFilter.Items.Cast<string>(), consoleFilter.Items.Cast<string>());
 
                 var rejected = window.Commands.ExecuteAsync("log.source source=missing-domain", "Test")
@@ -1153,7 +1137,7 @@ public sealed class ShellChromeContractTests
     }
 
     [Fact]
-    public void CommandCatalogUsesOneDomainFilterAndNoSourceColumn()
+    public void CommandCatalogUsesDomainAndClassFiltersWithoutRetiredControls()
     {
         RunShell(window =>
         {
@@ -1161,22 +1145,34 @@ public sealed class ShellChromeContractTests
             PumpDispatcher(600);
             var view = Assert.Single(FindVisualDescendants<HistoryVulcan.Shell.Views.McpToolsView>(window));
             Assert.NotNull(view.FindName("DomainFilterBox"));
+            Assert.NotNull(view.FindName("ClassFilterBox"));
             Assert.Null(view.FindName("SourceFilterBox"));
+            Assert.Null(view.FindName("CustomizedOnlyCheck"));
+            Assert.Null(view.FindName("PendingOnlyCheck"));
+            Assert.Null(view.FindName("IncidentOnlyCheck"));
+            Assert.Null(view.FindName("McpStatusButton"));
 
             var list = Assert.IsType<ListView>(view.FindName("ToolList"));
             var grid = Assert.IsType<GridView>(list.View);
-            Assert.Equal(new[] { "指令", "域", "MCP", "参数", "说明" },
+            Assert.Equal(new[] { "指令", "域", "类", "MCP", "参数", "说明" },
                 grid.Columns.Select(column => column.Header?.ToString()));
 
             var domainFilter = Assert.IsType<ComboBox>(view.FindName("DomainFilterBox"));
             var domains = domainFilter.Items.Cast<string>().ToList();
-            Assert.Contains("core", domains);
+            Assert.Contains("HistoryVulcan", domains);
             Assert.Equal(domains.Count, domains.Distinct(StringComparer.OrdinalIgnoreCase).Count());
-            domainFilter.SelectedItem = "app";
+            domainFilter.SelectedItem = "HistoryVulcan";
+            PumpDispatcher();
+            var classFilter = Assert.IsType<ComboBox>(view.FindName("ClassFilterBox"));
+            Assert.Contains("win", classFilter.Items.Cast<string>());
+            classFilter.SelectedItem = "win";
             PumpDispatcher();
             Assert.NotEmpty(list.Items);
             Assert.All(list.Items.Cast<HistoryVulcan.Shell.Mcp.CommandCatalogRow>(), row =>
-                Assert.Equal("app", row.Domain, ignoreCase: true));
+            {
+                Assert.Equal("HistoryVulcan", row.Domain, ignoreCase: true);
+                Assert.Equal("win", row.CommandClass, ignoreCase: true);
+            });
         });
     }
 

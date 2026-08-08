@@ -377,7 +377,7 @@ public sealed class CommandBus
         }
     }
 
-    private static string DomainOfCommandText(string text)
+    private string DomainOfCommandText(string text)
     {
         string name;
         try
@@ -390,6 +390,8 @@ public sealed class CommandBus
             name = separator >= 0 ? text[..separator] : text;
         }
 
+        if (_registry.TryGet(name, out _))
+            return _registry.GetDomain(name);
         var dot = name.IndexOf('.');
         return dot > 0 ? name[..dot] : "core";
     }

@@ -376,8 +376,8 @@
         </member>
         <member name="M:HistoryVulcan.Services.Modules.ModuleHost.FindModuleDomainConflicts(System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.String})">
             <summary>
-            返回候选模块命令中与宿主已有命令域冲突的一级域。
-            该纯函数同时供生产换血路径和 Smoke 回归使用。
+            返回按旧命令名前缀计算的冲突集合。仅保留给旧消费方诊断；
+            3.2.1 起模块实际域由 module owner 决定，装载路径不再调用本方法。
             </summary>
         </member>
         <member name="M:HistoryVulcan.Services.Modules.ModuleHost.IsModuleArtifactDirectory(System.String)">

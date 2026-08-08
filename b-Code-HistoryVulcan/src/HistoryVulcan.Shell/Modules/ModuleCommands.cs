@@ -18,6 +18,8 @@ public static class ModuleCommands
         registry.Register(new CommandDescriptor
         {
             Name = "module.list",
+            Domain = "HistoryVulcan",
+            CommandClass = "module",
             Summary = "列出已加载模块(名称/版本/描述/指令数)",
             Readonly = true,
             Example = "module.list",
@@ -45,6 +47,8 @@ public static class ModuleCommands
         registry.Register(new CommandDescriptor
         {
             Name = "module.reload",
+            Domain = "HistoryVulcan",
+            CommandClass = "module",
             Summary = "手动整体重载全部模块(文件变化会自动热重载,通常无需手动)",
             Example = "module.reload",
             Handler = async _ =>
@@ -58,6 +62,8 @@ public static class ModuleCommands
         registry.Register(new CommandDescriptor
         {
             Name = "module.dir",
+            Domain = "HistoryVulcan",
+            CommandClass = "module",
             Summary = "查看/切换模块目录(切换后立即重载并持久化)",
             Example = "module.dir path=D:\\MyModules",
             Parameters =
@@ -86,6 +92,8 @@ public static class ModuleCommands
         registry.Register(new CommandDescriptor
         {
             Name = "module.open",
+            Domain = "HistoryVulcan",
+            CommandClass = "module",
             Summary = "在系统资源管理器中打开模块目录(UI-12 面板按钮落点)",
             Example = "module.open",
             Handler = CommandDescriptor.Sync(_ =>

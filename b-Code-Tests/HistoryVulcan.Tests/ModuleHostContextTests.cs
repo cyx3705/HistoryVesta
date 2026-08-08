@@ -39,9 +39,13 @@ namespace HistoryVulcan.Tests
                 host.Attach(registry, bus, settings, dataDirectory);
                 host.Start();
 
-                Assert.True(registry.TryGet("contextfixture.context-probe", out _));
-                Assert.True(registry.TryGet("contextfixture.Probe", out _));
+                Assert.True(registry.TryGet("contextfixture.context-probe", out var direct));
+                Assert.True(registry.TryGet("contextfixture.Probe", out var reflected));
                 Assert.False(registry.TryGet("contextfixture.Attach", out _));
+                Assert.Equal("contextfixture", registry.GetDomain(direct.Name));
+                Assert.Equal("context", registry.GetCommandClass(direct.Name));
+                Assert.Equal("contextfixture", registry.GetDomain(reflected.Name));
+                Assert.Equal("probe", registry.GetCommandClass(reflected.Name));
 
                 var result = await bus.ExecuteAsync("contextfixture.context-probe", "test");
 
@@ -183,6 +187,8 @@ namespace HistoryVulcan.Tests
             context.RegisterCommands(registry => registry.Register(new CommandDescriptor
             {
                 Name = "contextfixture.context-probe",
+                Domain = "spoofed-domain",
+                CommandClass = "context",
                 Summary = "Returns the injected host context values.",
                 Readonly = true,
                 Handler = CommandDescriptor.Sync(_ => CommandResult.Ok(
@@ -190,6 +196,7 @@ namespace HistoryVulcan.Tests
             }));
         }
 
+        [ModuleCommand(CommandClass = "probe")]
         public string Probe() => "reflected";
     }
 

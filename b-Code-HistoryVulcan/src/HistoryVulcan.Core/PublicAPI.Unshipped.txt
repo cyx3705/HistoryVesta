@@ -1,1 +1,13 @@
 #nullable enable
+HistoryVulcan.Core.Commands.CommandDescriptor.CommandClass.get -> string?
+HistoryVulcan.Core.Commands.CommandDescriptor.CommandClass.init -> void
+HistoryVulcan.Core.Commands.CommandDescriptor.Domain.get -> string?
+HistoryVulcan.Core.Commands.CommandDescriptor.Domain.init -> void
+HistoryVulcan.Core.Commands.CommandRegistry.GetCommandClass(string! name) -> string!
+HistoryVulcan.Core.Commands.CommandRegistry.GetDomain(string! name) -> string!
+HistoryVulcan.Core.Commands.FrontendCommandCapability.CommandClass.get -> string?
+HistoryVulcan.Core.Commands.FrontendCommandCapability.CommandClass.init -> void
+HistoryVulcan.Core.Commands.FrontendCommandCapability.Domain.get -> string?
+HistoryVulcan.Core.Commands.FrontendCommandCapability.Domain.init -> void
+HistoryVulcan.Core.Modules.ModuleCommandAttribute.CommandClass.get -> string?
+HistoryVulcan.Core.Modules.ModuleCommandAttribute.CommandClass.init -> void

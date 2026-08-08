@@ -249,30 +249,12 @@ public sealed class ModuleHost : IDisposable
             _registry.Unregister(command.Name);
         }
 
-        var reservedCommandNames = _registry.All()
-            .Where(command =>
-            {
-                var source = _registry.GetSource(command.Name);
-                return !source.StartsWith("module:", StringComparison.OrdinalIgnoreCase)
-                       && !source.StartsWith("frontend:", StringComparison.OrdinalIgnoreCase);
-            })
-            .Select(command => command.Name);
-        var blockedDomains = FindModuleDomainConflicts(
-            reservedCommandNames,
-            next.PendingCommands.Select(item => item.Descriptor.Name));
-
         foreach (var (descriptor, moduleName) in next.PendingCommands)
         {
-            var domain = DomainOf(descriptor.Name);
-            if (blockedDomains.Contains(domain))
-            {
-                _log.Warn("module", $"模块 {moduleName} 的指令域 {domain} 与宿主保留域冲突,已拒绝装载");
-                continue;
-            }
-
             try
             {
-                _registry.Register(descriptor, $"module:{moduleName}");
+                var ownedDescriptor = ModuleCommandTaxonomy.Apply(descriptor, moduleName);
+                _registry.Register(ownedDescriptor, $"module:{moduleName}");
                 next.RegisteredNames.Add(descriptor.Name);
                 next.CountCommand(moduleName);
             }
@@ -287,8 +269,8 @@ public sealed class ModuleHost : IDisposable
     }
 
     /// <summary>
-    /// 返回候选模块命令中与宿主已有命令域冲突的一级域。
-    /// 该纯函数同时供生产换血路径和 Smoke 回归使用。
+    /// 返回按旧命令名前缀计算的冲突集合。仅保留给旧消费方诊断；
+    /// 3.2.1 起模块实际域由 module owner 决定，装载路径不再调用本方法。
     /// </summary>
     public static IReadOnlySet<string> FindModuleDomainConflicts(
         IEnumerable<string> reservedCommandNames,
@@ -303,12 +285,6 @@ public sealed class ModuleHost : IDisposable
             StringComparer.OrdinalIgnoreCase);
         moduleDomains.IntersectWith(reserved);
         return moduleDomains;
-    }
-
-    private static string DomainOf(string commandName)
-    {
-        var dot = commandName.IndexOf('.');
-        return dot > 0 ? commandName[..dot] : commandName;
     }
 
     // ---------------------------------------------------------------- 快照构建
@@ -668,6 +644,8 @@ public sealed class ModuleHost : IDisposable
         return new CommandDescriptor
         {
             Name = commandName,
+            Domain = moduleName,
+            CommandClass = method.GetCustomAttribute<ModuleCommandAttribute>()?.CommandClass ?? "core",
             Summary = summary.Length > 0 ? summary : $"{moduleName} 模块 {type.Name}.{method.Name} 方法",
             Example = example,
             Parameters = parameters,

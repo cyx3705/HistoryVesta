@@ -52,9 +52,6 @@ public partial class McpToolsView : UserControl
 
     private async void OnRefreshClick(object sender, RoutedEventArgs e) => await RefreshAsync(force: true);
 
-    private void OnStatusClick(object sender, RoutedEventArgs e)
-        => _ = _busAccessor()?.ExecuteAsync("mcp.status", "UI");
-
     private CommandCatalogSession? EnsureSession()
     {
         if (_catalogSession != null)
@@ -86,6 +83,7 @@ public partial class McpToolsView : UserControl
             return;
         }
         RefreshDomainFilter();
+        RefreshClassFilter();
         ApplyFilter();
     }
 
@@ -103,19 +101,6 @@ public partial class McpToolsView : UserControl
                 return;
             }
 
-            var mcpEnabled = session.ContainsCommand("mcp.status");
-            var governanceEnabled = session.ContainsCommand("prompt.get");
-            McpStatusButton.IsEnabled = mcpEnabled;
-            CustomizedOnlyCheck.IsEnabled = governanceEnabled;
-            PendingOnlyCheck.IsEnabled = governanceEnabled;
-            IncidentOnlyCheck.IsEnabled = governanceEnabled;
-            if (!governanceEnabled)
-            {
-                CustomizedOnlyCheck.IsChecked = false;
-                PendingOnlyCheck.IsChecked = false;
-                IncidentOnlyCheck.IsChecked = false;
-            }
-
             if (_selection.CurrentCommandName is { } current
                 && !session.AllRows.Any(row => row.CommandName.Equals(current, StringComparison.OrdinalIgnoreCase)))
             {
@@ -123,6 +108,7 @@ public partial class McpToolsView : UserControl
             }
 
             RefreshDomainFilter();
+            RefreshClassFilter();
             ApplyFilter();
         }
         finally
@@ -142,6 +128,26 @@ public partial class McpToolsView : UserControl
             : "全部";
     }
 
+    private void RefreshClassFilter()
+    {
+        var selected = ClassFilterBox.SelectedItem?.ToString() ?? "全部";
+        var domain = DomainFilterBox.SelectedItem?.ToString() ?? "全部";
+        var classes = (_catalogSession?.AllRows ?? [])
+            .Where(row => domain == "全部"
+                          || row.Domain.Equals(domain, StringComparison.OrdinalIgnoreCase))
+            .Select(row => row.CommandClass)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(value => value, StringComparer.Ordinal)
+            .ToList();
+        var values = new List<string> { "全部" };
+        values.AddRange(classes);
+        ClassFilterBox.ItemsSource = values;
+        ClassFilterBox.SelectedItem = values.Contains(selected, StringComparer.OrdinalIgnoreCase)
+            ? values.First(value => value.Equals(selected, StringComparison.OrdinalIgnoreCase))
+            : "全部";
+    }
+
     private void ApplyFilter()
     {
         if (!_initialLoadDone || _catalogSession == null)
@@ -149,10 +155,11 @@ public partial class McpToolsView : UserControl
         _catalogSession.SetFilter(new CommandCatalogFilter(
             _catalogSession.CurrentFilter.Query,
             DomainFilterBox.SelectedItem?.ToString() ?? "全部",
+            ClassFilterBox.SelectedItem?.ToString() ?? "全部",
             McpFilterBox.SelectedIndex,
-            CustomizedOnlyCheck.IsChecked == true,
-            PendingOnlyCheck.IsChecked == true,
-            IncidentOnlyCheck.IsChecked == true));
+            false,
+            false,
+            false));
 
         var list = _catalogSession.VisibleRows;
         var selectedName = _catalogSession.SelectedCommandName;
@@ -179,12 +186,17 @@ public partial class McpToolsView : UserControl
         var standardCount = allRows.Count(row => row.McpState == "standard");
         var dangerous = allRows.Count(row => row.McpState == "dangerous");
         var modules = allRows.Count(row => row.Source == "module");
-        var serviceState = McpStatusButton.IsEnabled ? "MCP 已装配" : "MCP 未启用";
-        StatusText.Text = $"显示 {list.Count}/{allRows.Count} 条；{serviceState}；硬排除 {hardExcluded}，" +
+        StatusText.Text = $"显示 {list.Count}/{allRows.Count} 条；硬排除 {hardExcluded}，" +
                           $"readonly {readonlyCount}，standard {standardCount}，危险拒绝 {dangerous}，模块 {modules}";
     }
 
     private void OnFilterChanged(object sender, EventArgs e) => ApplyFilter();
+
+    private void OnDomainFilterChanged(object sender, EventArgs e)
+    {
+        RefreshClassFilter();
+        ApplyFilter();
+    }
 
     private void OnToolSelected(object sender, SelectionChangedEventArgs e)
     {

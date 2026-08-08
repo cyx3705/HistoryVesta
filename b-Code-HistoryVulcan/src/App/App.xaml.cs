@@ -230,6 +230,8 @@ public partial class App : Application
         registry.Register(new CommandDescriptor
         {
             Name = "module.list",
+            Domain = "HistoryVulcan",
+            CommandClass = "module",
             Summary = "列出已加载模块",
             Readonly = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -244,6 +246,8 @@ public partial class App : Application
         registry.Register(new CommandDescriptor
         {
             Name = "module.reload",
+            Domain = "HistoryVulcan",
+            CommandClass = "module",
             Summary = "重载全部后台模块",
             Handler = async _ =>
             {
@@ -255,6 +259,8 @@ public partial class App : Application
         registry.Register(new CommandDescriptor
         {
             Name = "module.dir",
+            Domain = "HistoryVulcan",
+            CommandClass = "module",
             Summary = "查看或切换后台模块目录",
             Parameters = [new ParameterSpec
             {
@@ -445,6 +451,8 @@ public partial class App : Application
     private static CommandDescriptor BuildLogFloodCommand(ShellLog log) => new()
     {
         Name = "debug.logflood",
+        Domain = "HistoryVulcan",
+        CommandClass = "debug",
         Summary = "日志承压测试:按指定速率注入日志",
         Example = "debug.logflood rate=1000 seconds=30",
         Parameters =

@@ -20,6 +20,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "log.level",
+            Domain = "HistoryVulcan",
+            CommandClass = "log",
             Summary = "设置控制台显示级别",
             Example = "log.level level=warn",
             RequiresUiThread = true,
@@ -39,6 +41,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "app.window",
+            Domain = "HistoryVulcan",
+            CommandClass = "app",
             Summary = "设置主窗口状态",
             Example = "app.window state=toggle",
             RequiresUiThread = true,
@@ -74,6 +78,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "log.source",
+            Domain = "HistoryVulcan",
+            CommandClass = "log",
             Summary = "设置控制台日志域过滤（兼容命令名）",
             Example = "log.source source=app",
             RequiresUiThread = true,
@@ -92,6 +98,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "log.keyword",
+            Domain = "HistoryVulcan",
+            CommandClass = "log",
             Summary = "设置控制台关键字过滤",
             Example = "log.keyword text=timeout",
             RequiresUiThread = true,
@@ -109,6 +117,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "log.mute",
+            Domain = "HistoryVulcan",
+            CommandClass = "log",
             Summary = "屏蔽或恢复 layout 来源",
             Example = "log.mute layout=true",
             RequiresUiThread = true,
@@ -126,6 +136,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "log.autoscroll",
+            Domain = "HistoryVulcan",
+            CommandClass = "log",
             Summary = "设置控制台自动滚动",
             Example = "log.autoscroll enabled=false",
             RequiresUiThread = true,
@@ -143,6 +155,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "log.clear",
+            Domain = "HistoryVulcan",
+            CommandClass = "log",
             Summary = "清空控制台可见缓冲",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -155,6 +169,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "cls",
+            Domain = "HistoryVulcan",
+            CommandClass = "log",
             Summary = "兼容别名，转发到 log.clear",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -167,6 +183,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "log.export",
+            Domain = "HistoryVulcan",
+            CommandClass = "log",
             Summary = "导出控制台当前可见内容",
             Example = "log.export path=console.txt",
             RequiresUiThread = true,
@@ -177,6 +195,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "log.copy",
+            Domain = "HistoryVulcan",
+            CommandClass = "log",
             Summary = "复制控制台选中行",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ => CommandResult.Ok(s.Console.CopySelected())),
@@ -185,6 +205,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "log.focus",
+            Domain = "HistoryVulcan",
+            CommandClass = "log",
             Summary = "聚焦控制台，可选仅显示错误",
             Example = "log.focus errors=true",
             RequiresUiThread = true,

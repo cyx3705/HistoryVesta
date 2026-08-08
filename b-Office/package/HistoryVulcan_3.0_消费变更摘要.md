@@ -1,12 +1,15 @@
 # HistoryVulcan 消费变更摘要
 
-适用版本：HistoryVulcan 3.2.0 候选（包含 3.0.3 冻结基线、3.1.1 命令收口、3.1.2 命令目录修复、3.1.3 浮窗几何收口、3.1.5 质量更新、3.1.6 异常修复、3.1.7 UI 风格合同、3.1.8 轻松指令过渡实现、3.1.9 模块宿主合同、3.1.10 内部命令目录内聚重构和 3.2.0 产品改名）。
+适用版本：HistoryVulcan 3.2.1 源码候选（在 3.2.0 产品改名基础上增加命令域/类合同；当前正式 Z 快照仍为 3.2.0）。
 
 本文只记录会影响消费应用、模块作者和部署者的变化；源码施工、冻结审查、完整测试证据和发布操作不属于本文。
 
 ## 部署与引用方式
 
-- HistoryVulcan 自身以 `host/HistoryVulcan.exe` 部署；当前稳定消费快照为 3.2.0，不生成 NuGet 包。
+- HistoryVulcan 自身以 `host/HistoryVulcan.exe` 部署；当前稳定消费快照为 3.2.0，3.2.1 尚未部署，不生成 NuGet 包。
+
+- 3.2.1 将 HistoryVulcan 内置命令统一归入 `HistoryVulcan` 域，以 `CommandClass` 区分功能分支；
+  模块稳定名称就是模块域，旧模块未声明类时归入 `core`。现有命令文本和执行语义不变。
 - 3.1.8 是不受支持的内部过渡版本，消费方不得将其作为稳定升级目标。
 - 兼容嵌入式消费应用若使用单独批准的 NuGet 源，必须固定引用同一版本的 HistoryVulcan 四包。
 - 桌面应用通常引用 `OneHistory.HistoryVulcan.Shell`；无窗口服务宿主引用 `OneHistory.HistoryVulcan.ServiceHost`。

@@ -1,8 +1,8 @@
 # HistoryVulcan API 与指令手册
 
-> 适用版本：HistoryVulcan 3.2.0（当前稳定消费版本；3.1.9 为旧名 AppShell 的最后快照；3.1.8 不受支持）
+> 适用版本：HistoryVulcan 3.2.1 源码候选（当前正式 Z 快照仍为 3.2.0；3.1.8 不受支持）
 
-本手册给出 3.2.0 候选公开 API 的常用入口和框架基础命令。正式宿主运行入口为
+本手册给出 3.2.1 候选公开 API 的常用入口和框架基础命令。正式宿主运行入口为
 `host/HistoryVulcan.exe`，程序集 XML 文档位于同一 `host/` 目录；兼容框架包的完整签名位于
 `lib/<TFM>/HistoryVulcan.*.xml`。源码仓中的四份 `PublicAPI.Shipped.txt` 是冻结门禁，不随运行宿主发布。
 最终命令集合以应用运行时的 `command.list`、`command.show` 和 `command.manual` 为准。
@@ -88,9 +88,9 @@ Shell 核心、窗口和业务命令；仍保留中央命令集与 `command.*`�
 
 | API | 常用成员 | 说明 |
 |---|---|---|
-| `CommandRegistry` | `Register`、`Unregister`、`TryGet`、`All`、`Suggest`、`GetSource` | 权威命令注册表；重名注册会拒绝 |
+| `CommandRegistry` | `Register`、`Unregister`、`TryGet`、`All`、`Suggest`、`GetSource`、`GetDomain`、`GetCommandClass` | 权威命令注册表；重名注册会拒绝，域/类以有效解析结果为准 |
 | `CommandBus` | `Validate`、`ExecuteAsync`、`Executed`、`Confirmation` | 唯一执行入口，统一校验、确认、线程切换、回显和错误结果 |
-| `CommandDescriptor` | `Name`、`Summary`、`Example`、`Parameters`、`Readonly`、`Dangerous`、`ExecutionSite`、`AllowMcpExecution` | 命令的完整合同 |
+| `CommandDescriptor` | `Name`、`Domain`、`CommandClass`、`Summary`、`Example`、`Parameters`、`Readonly`、`Dangerous`、`ExecutionSite`、`AllowMcpExecution` | 命令的完整合同 |
 | `CommandContext` | `RequireString`、`GetString`、`GetInt`、`GetDouble`、`GetBool`、`Has` | 读取已校验参数 |
 | `CommandResult` | `Ok`、`Fail`、`Success`、`Message`、`Data` | 统一执行结果 |
 | `CommandSchemaExporter` | `ExportTools`、`Find`、`BuildCommandText` | 从最终注册表生成 MCP schema 和反向命令文本 |
@@ -111,6 +111,8 @@ Shell 核心、窗口和业务命令；仍保留中央命令集与 `command.*`�
 registry.Register(new CommandDescriptor
 {
     Name = "device.move",
+    Domain = "DeviceModule",
+    CommandClass = "motion",
     Summary = "移动指定轴",
     Example = "device.move axis=X distance=10",
     Parameters =
@@ -200,10 +202,11 @@ registry.Register(new CommandDescriptor
 - 所有 UI、脚本、Web 和 MCP 调用最终都进入 `CommandBus.ExecuteAsync`。
 - `ExecutionSite=Local` 在当前宿主执行；`Frontend` 由服务转发给在线 Shell。
 - `Readonly`、`Dangerous` 和 `AllowMcpExecution` 是安全合同。前端/UI 命令默认不进入 MCP。
-- 命令集页面只显示一个“域”筛选器和一个“域”列：命令名取第一个 `.` 前缀，无点命令归 `core`。
+- 3.2.1 起一个宿主或模块对应一个域，域内功能分支对应命令类。命令集显示“域”和“类”筛选器及对应列；
+  命令名不因分类升级而改写。HistoryVulcan 内置命令统一属于 `HistoryVulcan` 域。
   `CommandCatalogRow.Source/SourceDetail`、`CommandRegistry.GetSource` 与 `FrontendCommandCatalog.Source`
   仍表示注册来源，供结构化目录、模块管理和外部消费者使用，不再作为命令集页面筛选。
-- 控制台与命令集都通过 `command.domains` 读取同一份运行期已注册域集合。普通日志类别的第一个 `:` 或 `.`
+- 控制台与命令集都通过统一注册表元数据读取同一份运行期已注册域集合。普通日志类别的第一个 `:` 或 `.`
   前缀只有命中已注册域时才用于过滤，否则归入 `core`，不会产生控制台私有域。命令结果/进度类别在
   `CommandBus.ResultCategory` / `ProgressCategory` 兼容前缀后附加命令域。长文本按当前窗格宽度软换行，复制和导出保留原始逻辑文本。
 - 3.1.10 内部将控制台候选、命令集检索和指令详情统一到一个目录会话：目录来自 `command.list` / `command.domains`，
@@ -215,7 +218,28 @@ registry.Register(new CommandDescriptor
 
 ## 5. 基础命令目录
 
-以下是 3.1.10 候选框架命令快照。宿主只注册已启用能力对应的组；运行时 `command.list` 是最终权威目录。
+以下是 3.2.1 候选框架命令快照。宿主只注册已启用能力对应的组；运行时 `command.list` 是最终权威目录。
+
+HistoryVulcan 自身只有一个域 `HistoryVulcan`，内置命令分类如下；新增内置命令必须显式归类：
+
+| 类 | 命令范围 |
+|---|---|
+| `core` | `help`、`history`、`run` |
+| `app` | `app.*` |
+| `log` | `log.*`、兼容别名 `cls` |
+| `win` | `win.*` |
+| `layout` | `layout.*` |
+| `panel` | `panel.*` |
+| `module` | `module.*` |
+| `command` | `command.*` |
+| `mcp` | `mcp.*` |
+| `prompt` | `prompt.*` |
+| `correction` | `correction.*` |
+| `incident` | `incident.*` |
+| `web` | `web.*` |
+| `svc` | `svc.*` |
+| `shortcut` | `shortcut.*` |
+| `debug` | `debug.*` |
 
 ### 5.1 基础、应用与日志
 
@@ -290,7 +314,7 @@ registry.Register(new CommandDescriptor
 
 | 命令 | 用途 / 关键参数 |
 |---|---|
-| `command.list [mcp=all|visible|hidden]` | 查看权威命令目录并按当前 MCP 可见性过滤；默认 `all` |
+| `command.list [domain=] [class=] [mcp=all|visible|hidden] [filter=]` | 查看权威命令目录并组合过滤域、类、MCP 可见性和文本；默认不过滤 |
 | `command.show name=` | 查看单条命令完整元数据 |
 | `command.domains` | 按域统计命令 |
 | `command.manual file= [apply=false]` | 生成运行时命令手册；`file` 必填，apply 由宿主控制落位 |

@@ -157,6 +157,18 @@
         <member name="P:HistoryVulcan.Core.Commands.CommandDescriptor.Name">
             <summary>完整指令名,小写,如 "win.dock"、"help"。</summary>
         </member>
+        <member name="P:HistoryVulcan.Core.Commands.CommandDescriptor.Domain">
+            <summary>
+            指令所属宿主或模块域。模块命令的有效域由模块宿主强制设置；
+            未声明的旧指令由注册表按旧命令前缀兼容推导。
+            </summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.Commands.CommandDescriptor.CommandClass">
+            <summary>
+            域内功能类，如 app、log、win。未声明的模块命令归入 core，
+            未声明的旧非模块指令由注册表按旧命令前缀兼容推导。
+            </summary>
+        </member>
         <member name="P:HistoryVulcan.Core.Commands.CommandDescriptor.Summary">
             <summary>一句话说明(help 列表用)。</summary>
         </member>
@@ -327,6 +339,12 @@
         <member name="M:HistoryVulcan.Core.Commands.CommandRegistry.GetSource(System.String)">
             <summary>返回注册来源：framework / app / module:&lt;name&gt;。</summary>
         </member>
+        <member name="M:HistoryVulcan.Core.Commands.CommandRegistry.GetDomain(System.String)">
+            <summary>返回指令的有效域；模块来源始终由模块 owner 决定。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.Commands.CommandRegistry.GetCommandClass(System.String)">
+            <summary>返回指令在有效域内的功能类。</summary>
+        </member>
         <member name="M:HistoryVulcan.Core.Commands.CommandRegistry.All">
             <summary>全部指令,按名称排序(help 列表)。</summary>
         </member>
@@ -390,6 +408,12 @@
             <summary>
             前端向服务端权威目录发布的执行能力。只携带稳定元数据，不序列化 handler。
             </summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.Commands.FrontendCommandCapability.Domain">
+            <summary>命令所属宿主或模块域；附加属性保持旧位置构造函数兼容。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.Commands.FrontendCommandCapability.CommandClass">
+            <summary>命令在域内的功能类；附加属性保持旧位置构造函数兼容。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Commands.FrontendCommandCapability.From(HistoryVulcan.Core.Commands.CommandDescriptor,System.String)">
             <summary>Provides this HistoryVulcan public contract member.</summary>
@@ -1056,6 +1080,9 @@
         </member>
         <member name="P:HistoryVulcan.Core.Modules.ModuleCommandAttribute.Readonly">
             <summary>Provides this HistoryVulcan public contract member.</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.Modules.ModuleCommandAttribute.CommandClass">
+            <summary>命令在当前模块域内的功能类；未声明时归入 core。</summary>
         </member>
         <member name="T:HistoryVulcan.Core.Modules.IDeferredStartupWork">
             <summary>网关就绪后执行的非关键启动工作；失败不得阻断宿主。</summary>

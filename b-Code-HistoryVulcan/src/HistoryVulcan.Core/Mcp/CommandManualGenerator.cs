@@ -36,56 +36,69 @@ public static class CommandManualGenerator
         builder.AppendLine();
         builder.AppendLine($"<!-- command-count: {commands.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)} -->");
 
-        foreach (var domain in commands.GroupBy(command => DomainOf(command.Name), StringComparer.OrdinalIgnoreCase))
+        foreach (var domain in commands.GroupBy(
+                     command => registry.GetDomain(command.Name),
+                     StringComparer.OrdinalIgnoreCase)
+                     .OrderBy(group => group.Key, StringComparer.Ordinal))
         {
             builder.AppendLine();
             builder.AppendLine($"## {domain.Key} ({domain.Count().ToString(System.Globalization.CultureInfo.InvariantCulture)})");
-            foreach (var command in domain)
+            foreach (var commandClass in domain.GroupBy(
+                         command => registry.GetCommandClass(command.Name),
+                         StringComparer.OrdinalIgnoreCase)
+                         .OrderBy(group => group.Key, StringComparer.Ordinal))
             {
-                var source = registry.GetSource(command.Name);
-                var tool = exporter.Find(command.Name);
-                var mcpState = McpExposurePolicy.State(command);
-                var visible = McpExposurePolicy.IsVisible(command, policy);
-
                 builder.AppendLine();
-                builder.AppendLine($"### `{command.Name}`");
-                builder.AppendLine();
-                builder.AppendLine(Escape(command.Summary));
-                builder.AppendLine();
-                builder.AppendLine($"- 来源：`{Escape(source)}`");
-                builder.AppendLine($"- 安全：{(command.IsDangerous ? "本地二次确认" : "普通")}");
-                builder.AppendLine($"- UI 线程：{(command.RequiresUiThread ? "是" : "否")}");
-                builder.AppendLine($"- MCP：`{mcpState}`，当前策略{(visible ? "可见" : "隐藏")}" +
-                                   (tool != null ? $"，工具名 `{tool.ToolName}`" : string.Empty));
-                if (McpExposurePolicy.HardExclusionReason(command.Name) is { } reason)
-                    builder.AppendLine($"- MCP 排除原因：{Escape(reason)}");
-
-                if (command.Parameters.Count > 0)
+                builder.AppendLine($"### {commandClass.Key} ({commandClass.Count().ToString(System.Globalization.CultureInfo.InvariantCulture)})");
+                foreach (var command in commandClass)
                 {
+                    var source = registry.GetSource(command.Name);
+                    var tool = exporter.Find(command.Name);
+                    var mcpState = McpExposurePolicy.State(command);
+                    var visible = McpExposurePolicy.IsVisible(command, policy);
+
                     builder.AppendLine();
-                    builder.AppendLine("| 参数 | 类型 | 必填 | 默认值 | 允许值 | 说明 |");
-                    builder.AppendLine("|---|---|---|---|---|---|");
-                    foreach (var parameter in command.Parameters)
+                    builder.AppendLine($"#### `{command.Name}`");
+                    builder.AppendLine();
+                    builder.AppendLine(Escape(command.Summary));
+                    builder.AppendLine();
+                    builder.AppendLine($"- 域：`{Escape(domain.Key)}`");
+                    builder.AppendLine($"- 类：`{Escape(commandClass.Key)}`");
+                    builder.AppendLine($"- 来源：`{Escape(source)}`");
+                    builder.AppendLine($"- 安全：{(command.IsDangerous ? "本地二次确认" : "普通")}");
+                    builder.AppendLine($"- UI 线程：{(command.RequiresUiThread ? "是" : "否")}");
+                    builder.AppendLine($"- MCP：`{mcpState}`，当前策略{(visible ? "可见" : "隐藏")}" +
+                                       (tool != null ? $"，工具名 `{tool.ToolName}`" : string.Empty));
+                    if (McpExposurePolicy.HardExclusionReason(command.Name) is { } reason)
+                        builder.AppendLine($"- MCP 排除原因：{Escape(reason)}");
+
+                    if (command.Parameters.Count > 0)
                     {
-                        builder.AppendLine(
-                            $"| `{Escape(parameter.Name)}` | `{parameter.Type.ToString().ToLowerInvariant()}` | " +
-                            $"{(parameter.Required ? "是" : "否")} | {Cell(parameter.Default)} | " +
-                            $"{Cell(parameter.AllowedValues is { Length: > 0 } ? string.Join(" / ", parameter.AllowedValues) : null)} | " +
-                            $"{Cell(parameter.Description)} |");
+                        builder.AppendLine();
+                        builder.AppendLine("| 参数 | 类型 | 必填 | 默认值 | 允许值 | 说明 |");
+                        builder.AppendLine("|---|---|---|---|---|---|");
+                        foreach (var parameter in command.Parameters)
+                        {
+                            builder.AppendLine(
+                                $"| `{Escape(parameter.Name)}` | `{parameter.Type.ToString().ToLowerInvariant()}` | " +
+                                $"{(parameter.Required ? "是" : "否")} | {Cell(parameter.Default)} | " +
+                                $"{Cell(parameter.AllowedValues is { Length: > 0 } ? string.Join(" / ", parameter.AllowedValues) : null)} | " +
+                                $"{Cell(parameter.Description)} |");
+                        }
                     }
-                }
-                else
-                {
-                    builder.AppendLine();
-                    builder.AppendLine("参数：无。");
-                }
+                    else
+                    {
+                        builder.AppendLine();
+                        builder.AppendLine("参数：无。");
+                    }
 
-                if (!string.IsNullOrWhiteSpace(command.Example))
-                {
-                    builder.AppendLine();
-                    builder.AppendLine("```text");
-                    builder.AppendLine(command.Example);
-                    builder.AppendLine("```");
+                    if (!string.IsNullOrWhiteSpace(command.Example))
+                    {
+                        builder.AppendLine();
+                        builder.AppendLine("```text");
+                        builder.AppendLine(command.Example);
+                        builder.AppendLine("```");
+                    }
                 }
             }
         }
@@ -96,12 +109,6 @@ public static class CommandManualGenerator
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
     public static string Sha256(string markdown)
         => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(markdown)));
-
-    private static string DomainOf(string name)
-    {
-        var dot = name.IndexOf('.');
-        return dot > 0 ? name[..dot] : "core";
-    }
 
     private static string Cell(string? value)
         => string.IsNullOrWhiteSpace(value) ? "-" : Escape(value);

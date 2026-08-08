@@ -16,8 +16,16 @@ public sealed class CommandRegistry
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
     public void Register(CommandDescriptor descriptor, string source = "framework")
     {
+        ArgumentNullException.ThrowIfNull(descriptor);
         if (string.IsNullOrWhiteSpace(source))
             throw new ArgumentException("指令来源不能为空", nameof(source));
+        if (!string.IsNullOrWhiteSpace(descriptor.CommandClass)
+            && !IsValidCommandClass(descriptor.CommandClass.Trim()))
+        {
+            throw new ArgumentException(
+                "命令类必须是以字母开头、只包含字母、数字或连字符的稳定标识符",
+                nameof(descriptor));
+        }
         lock (_gate)
         {
             if (!_commands.TryAdd(descriptor.Name, descriptor))
@@ -59,6 +67,28 @@ public sealed class CommandRegistry
             return _sources.GetValueOrDefault(name, "framework");
     }
 
+    /// <summary>返回指令的有效域；模块来源始终由模块 owner 决定。</summary>
+    public string GetDomain(string name)
+    {
+        lock (_gate)
+        {
+            if (!_commands.TryGetValue(name, out var descriptor))
+                return LegacyDomain(name);
+            return ResolveDomain(descriptor, _sources.GetValueOrDefault(name, "framework"));
+        }
+    }
+
+    /// <summary>返回指令在有效域内的功能类。</summary>
+    public string GetCommandClass(string name)
+    {
+        lock (_gate)
+        {
+            if (!_commands.TryGetValue(name, out var descriptor))
+                return LegacyClass(name);
+            return ResolveCommandClass(descriptor, _sources.GetValueOrDefault(name, "framework"));
+        }
+    }
+
     /// <summary>全部指令,按名称排序(help 列表)。</summary>
     public IReadOnlyList<CommandDescriptor> All()
     {
@@ -85,6 +115,48 @@ public sealed class CommandRegistry
         }
 
         return domains;
+    }
+
+    internal static string ResolveDomain(CommandDescriptor descriptor, string source)
+    {
+        if (source.StartsWith("module:", StringComparison.OrdinalIgnoreCase))
+        {
+            var owner = source["module:".Length..].Trim();
+            if (owner.Length > 0)
+                return owner;
+        }
+
+        return string.IsNullOrWhiteSpace(descriptor.Domain)
+            ? LegacyDomain(descriptor.Name)
+            : descriptor.Domain.Trim();
+    }
+
+    internal static string ResolveCommandClass(CommandDescriptor descriptor, string source)
+    {
+        if (!string.IsNullOrWhiteSpace(descriptor.CommandClass))
+            return descriptor.CommandClass.Trim().ToLowerInvariant();
+        return source.StartsWith("module:", StringComparison.OrdinalIgnoreCase)
+            ? "core"
+            : LegacyClass(descriptor.Name);
+    }
+
+    private static string LegacyDomain(string name)
+    {
+        var trimmed = name.Trim();
+        var dot = trimmed.IndexOf('.');
+        return dot > 0 ? trimmed[..dot] : "core";
+    }
+
+    private static string LegacyClass(string name) => LegacyDomain(name).ToLowerInvariant();
+
+    private static bool IsValidCommandClass(string value)
+    {
+        var normalized = value.ToLowerInvariant();
+        if (normalized.Length == 0 || normalized[0] is < 'a' or > 'z')
+            return false;
+        return normalized.All(character => character is >= 'a' and <= 'z'
+                                           or >= '0' and <= '9'
+                                           or '-');
     }
 
     /// <summary>

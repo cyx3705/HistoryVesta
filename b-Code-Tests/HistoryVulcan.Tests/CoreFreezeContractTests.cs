@@ -153,6 +153,32 @@ public sealed class CoreFreezeContractTests
         Assert.Equal(2, log.Entries.Count(entry => entry.Category == "cmd:Test"));
     }
 
+    [Fact]
+    public void CommandRegistryResolvesExplicitAndModuleOwnedTaxonomy()
+    {
+        var registry = new CommandRegistry();
+        registry.Register(new CommandDescriptor
+        {
+            Name = "window.inspect",
+            Domain = "HistoryVulcan",
+            CommandClass = "WIN",
+            Summary = "inspect",
+            Handler = CommandDescriptor.Sync(_ => CommandResult.Ok()),
+        });
+        registry.Register(new CommandDescriptor
+        {
+            Name = "fixture.run",
+            Domain = "spoofed",
+            Summary = "run",
+            Handler = CommandDescriptor.Sync(_ => CommandResult.Ok()),
+        }, "module:FixtureModule");
+
+        Assert.Equal("HistoryVulcan", registry.GetDomain("window.inspect"));
+        Assert.Equal("win", registry.GetCommandClass("window.inspect"));
+        Assert.Equal("FixtureModule", registry.GetDomain("fixture.run"));
+        Assert.Equal("core", registry.GetCommandClass("fixture.run"));
+    }
+
 
 
     [Fact]

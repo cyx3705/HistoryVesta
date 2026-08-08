@@ -7,6 +7,7 @@ namespace HistoryVulcan.Shell.Views;
 internal sealed record CommandCatalogFilter(
     string Query = "",
     string Domain = "全部",
+    string CommandClass = "全部",
     int McpFilter = 0,
     bool CustomizedOnly = false,
     bool PendingOnly = false,
@@ -266,7 +267,7 @@ internal sealed class CommandCatalogSession : IDisposable
             var source = _bus.Registry.GetSource(descriptor.Name);
             return new CommandCatalogRow(
                 descriptor.Name,
-                DomainOf(descriptor.Name),
+                _bus.Registry.GetDomain(descriptor.Name),
                 descriptor.Summary,
                 descriptor.Example,
                 descriptor.Parameters.Count,
@@ -281,7 +282,10 @@ internal sealed class CommandCatalogSession : IDisposable
                 null,
                 0,
                 0,
-                null);
+                null)
+            {
+                CommandClass = _bus.Registry.GetCommandClass(descriptor.Name),
+            };
         }).ToList();
         var domains = rows.Select(row => row.Domain)
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -304,6 +308,11 @@ internal sealed class CommandCatalogSession : IDisposable
 
         if (!string.IsNullOrWhiteSpace(_filter.Domain) && _filter.Domain != "全部")
             rows = rows.Where(row => row.Domain.Equals(_filter.Domain, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(_filter.CommandClass) && _filter.CommandClass != "全部")
+            rows = rows.Where(row => row.CommandClass.Equals(
+                _filter.CommandClass,
+                StringComparison.OrdinalIgnoreCase));
 
         rows = _filter.McpFilter switch
         {
@@ -375,11 +384,11 @@ internal sealed class CommandCatalogSession : IDisposable
                 AllowedValues = parameter.AllowedValues.ToArray(),
             }).ToList());
 
-    private static CommandCatalogDetail Detail(CommandDescriptor descriptor)
+    private CommandCatalogDetail Detail(CommandDescriptor descriptor)
         => new(
             new CommandCatalogRow(
                 descriptor.Name,
-                DomainOf(descriptor.Name),
+                _bus.Registry.GetDomain(descriptor.Name),
                 descriptor.Summary,
                 descriptor.Example,
                 descriptor.Parameters.Count,
@@ -394,7 +403,10 @@ internal sealed class CommandCatalogSession : IDisposable
                 null,
                 0,
                 0,
-                null),
+                null)
+            {
+                CommandClass = _bus.Registry.GetCommandClass(descriptor.Name),
+            },
             descriptor.Parameters.Select(parameter => new CommandParameterInfo(
                 parameter.Name,
                 parameter.Type.ToString().ToLowerInvariant(),
@@ -404,12 +416,6 @@ internal sealed class CommandCatalogSession : IDisposable
                 parameter.AllowedValues ?? [],
                 parameter.Description)).ToList(),
             null);
-
-    private static string DomainOf(string name)
-    {
-        var dot = name.IndexOf('.');
-        return dot > 0 ? name[..dot] : "core";
-    }
 
     private void RaiseChanged(CommandCatalogChangeKind kind)
     {

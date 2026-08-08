@@ -1,6 +1,6 @@
 # HistoryVulcan 模块与 MCP 接入
 
-> 适用版本：HistoryVulcan 3.2.0（当前稳定消费版本；3.1.9 为旧名 AppShell 的最后快照），3.1.8 不受支持
+> 适用版本：HistoryVulcan 3.2.1 源码候选（当前正式 Z 快照仍为 3.2.0），3.1.8 不受支持
 > 边界：本文只描述框架能力。项目库、外部账号、工具同步等消费产品业务不属于 HistoryVulcan。
 > 常用公开方法和基础命令见 [HistoryVulcan API 与指令手册](HistoryVulcan_API与指令手册.md)。
 
@@ -34,6 +34,31 @@
 `ShellConfig.ModuleDirectory` 可显式指向其他部署目录；未设置时继续使用应用数据目录下的默认模块目录。
 禁用模块不会收到上下文；`Attach`、`RegisterShortcuts`、`CreateUi` 和 `DestroyUi` 等生命周期方法不会进入
 反射命令目录。模块不得保存上下文供卸载后使用，也不得自行创建第二个命令总线或设置服务。
+
+### 模块命令域与类
+
+3.2.1 起每个模块稳定名称就是该模块的唯一命令域。`ModuleHost` 会强制使用当前 module owner，
+模块在 `CommandDescriptor.Domain` 中填写其他值也不能冒用其他域。全局命令文本仍保持唯一，分类不会改写
+`<模块名>.<方法名>` 或模块自定义命令名。
+
+模块内部功能分支通过 `CommandClass` 区分，类名使用小写稳定标识符：
+
+```csharp
+context.RegisterCommands(registry => registry.Register(new CommandDescriptor
+{
+    Name = "historyvesta.timeline.list",
+    CommandClass = "timeline",
+    Summary = "列出时间线",
+    Handler = CommandDescriptor.Sync(_ => CommandResult.Ok()),
+}));
+
+[ModuleCommand(CommandClass = "report", Readonly = true)]
+public string BuildReport() => "ready";
+```
+
+直接注册命令使用 `CommandDescriptor.CommandClass`，反射方法使用 `ModuleCommandAttribute.CommandClass`。
+旧模块未声明类时统一归入 `core`；宿主外的旧非模块命令仍按旧命令前缀兼容推导。域和类经前后端目录同步，
+命令集、控制台、Help、MCP 和生成手册读取同一结果。
 
 UI 模块实现 `IUiModule`；需要注册宿主窗口时实现 UI 感知接口并使用 `IShellUiRegistrar`。窗口使用
 `ToolWindowDescriptor` 注册，中央业务窗口显式指定 `DockSide.Center`。模块卸载时先销毁 UI、注销 owner

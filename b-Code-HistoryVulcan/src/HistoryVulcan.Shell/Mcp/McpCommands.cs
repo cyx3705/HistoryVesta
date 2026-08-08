@@ -40,6 +40,8 @@ public static class McpCommands
     private static CommandDescriptor BuildStart(Func<McpGateway?> gateway) => new()
     {
         Name = "mcp.start",
+        Domain = "HistoryVulcan",
+        CommandClass = "mcp",
         Summary = "启动 MCP 服务(仅 127.0.0.1;策略/令牌经 app.set mcp.policy / mcp.token 配置)",
         Example = "mcp.start port=8737",
         Parameters =
@@ -66,6 +68,8 @@ public static class McpCommands
     private static CommandDescriptor BuildStop(Func<McpGateway?> gateway) => new()
     {
         Name = "mcp.stop",
+        Domain = "HistoryVulcan",
+        CommandClass = "mcp",
         Summary = "停止 MCP 服务并释放端口",
         Example = "mcp.stop",
         Handler = CommandDescriptor.Sync(_ =>
@@ -82,6 +86,8 @@ public static class McpCommands
         Func<McpGateway?> gateway, HistoryVulcan.Core.Storage.ISettingsService settings) => new()
         {
             Name = "mcp.status",
+            Domain = "HistoryVulcan",
+            CommandClass = "mcp",
             Summary = "查看 MCP 服务状态(运行/端口/策略/暴露工具数/累计调用/最近一次调用)",
             Example = "mcp.status",
             Handler = CommandDescriptor.Sync(_ =>
@@ -108,6 +114,8 @@ public static class McpCommands
     private static CommandDescriptor BuildSchema(CommandSchemaExporter exporter, CommandRegistry registry) => new()
     {
         Name = "mcp.schema",
+        Domain = "HistoryVulcan",
+        CommandClass = "mcp",
         Summary = "查看指令的 MCP 工具形态(不带参列全部;带 name 输出单条完整 JSON Schema)",
         Example = "mcp.schema name=command.list",
         Parameters =
@@ -164,6 +172,8 @@ public static class McpCommands
     private static CommandDescriptor BuildParse(Func<CommandBus?> busAccessor) => new()
     {
         Name = "mcp.parse",
+        Domain = "HistoryVulcan",
+        CommandClass = "mcp",
         Summary = "调试:模拟 tools/call 反向解析——JSON arguments 组装为指令文本,exec=true 随即经总线执行",
         Example = "mcp.parse command=command.list args=\"{}\" exec=true",
         Parameters =

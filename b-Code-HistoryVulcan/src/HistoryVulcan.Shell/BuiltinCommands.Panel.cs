@@ -20,6 +20,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "panel.select-file",
+            Domain = "HistoryVulcan",
+            CommandClass = "panel",
             Summary = "选择本地文件",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -34,6 +36,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "panel.select-directory",
+            Domain = "HistoryVulcan",
+            CommandClass = "panel",
             Summary = "选择本地目录",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -48,6 +52,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "panel.list",
+            Domain = "HistoryVulcan",
+            CommandClass = "panel",
             Summary = "列出全部控制面板及其窗口状态",
             Readonly = true,
             RequiresUiThread = true,
@@ -74,6 +80,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "panel.show",
+            Domain = "HistoryVulcan",
+            CommandClass = "panel",
             Summary = "显示控制面板(等价 win.show)",
             Example = "panel.show id=my-panel",
             RequiresUiThread = true,
@@ -99,6 +107,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "panel.set",
+            Domain = "HistoryVulcan",
+            CommandClass = "panel",
             Summary = "程序向面板控件回写值(P-07)",
             Example = "panel.set panel=my-panel control=speed value=800",
             RequiresUiThread = true,
@@ -125,6 +135,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "panel.reload",
+            Domain = "HistoryVulcan",
+            CommandClass = "panel",
             Summary = "重读面板 JSON 配置并原地重建(新增面板需重启)",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ => CommandResult.Ok(panels.Reload())),

@@ -28,6 +28,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "command.copy-example",
+            Domain = "HistoryVulcan",
+            CommandClass = "command",
             Summary = "复制指定命令的示例",
             Example = "command.copy-example name=log.level",
             RequiresUiThread = true,
@@ -57,6 +59,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "history",
+            Domain = "HistoryVulcan",
+            CommandClass = "core",
             Summary = "查看指令历史",
             Readonly = true,
             Example = "history count=10",
@@ -89,6 +93,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "run",
+            Domain = "HistoryVulcan",
+            CommandClass = "core",
             Summary = "逐行执行指令脚本文件(# 注释与空行忽略)",
             Example = "run file=每日巡检.txt continue=true",
             Parameters =

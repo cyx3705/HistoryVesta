@@ -255,6 +255,8 @@ public partial class ShellWindow : Window
         registry.Register(new CommandDescriptor
         {
             Name = "app.theme",
+            Domain = "HistoryVulcan",
+            CommandClass = "app",
             Summary = "切换界面主题(浅色 / 深色)",
             Example = "app.theme mode=dark",
             RequiresUiThread = true,
@@ -646,6 +648,8 @@ public partial class ShellWindow : Window
         registry.Register(new CommandDescriptor
         {
             Name = "app.frontend.hide",
+            Domain = "HistoryVulcan",
+            CommandClass = "app",
             Summary = "隐藏 HistoryVulcan 前端窗口并保持后台连接",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -658,6 +662,8 @@ public partial class ShellWindow : Window
         registry.Register(new CommandDescriptor
         {
             Name = "app.frontend.show",
+            Domain = "HistoryVulcan",
+            CommandClass = "app",
             Summary = "显示并激活 HistoryVulcan 前端窗口",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -673,6 +679,8 @@ public partial class ShellWindow : Window
         registry.Register(new CommandDescriptor
         {
             Name = "app.frontend.focus-console",
+            Domain = "HistoryVulcan",
+            CommandClass = "app",
             Summary = "显示并聚焦控制台",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -704,6 +712,8 @@ public partial class ShellWindow : Window
         registry.Register(new CommandDescriptor
         {
             Name = "app.frontend.exit",
+            Domain = "HistoryVulcan",
+            CommandClass = "app",
             Summary = "退出 HistoryVulcan 前端进程",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>

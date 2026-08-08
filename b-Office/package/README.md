@@ -4,9 +4,9 @@
 
 本目录只保存面向消费方的 HistoryVulcan 合同文档编辑源。它是 023 内部源目录，不是消费者运行时目录；发布副本不得直接修改。
 
-本目录当前维护 HistoryVulcan 3.2.0 合同（3.2.0 起产品由 AppShell 改名为 HistoryVulcan，包 ID 为
+本目录当前维护 HistoryVulcan 3.2.1 候选合同（3.2.0 起产品由 AppShell 改名为 HistoryVulcan，包 ID 为
 `OneHistory.HistoryVulcan.*`）；3.1.8 是不受支持的内部过渡版本，当前稳定消费者使用
-已正式部署的 3.2.0“宿主 + 同版本文档”快照（`../../z-HistoryVulcan/`）。未来候选位于 `../../b-Publish/current/`，
+已正式部署的 3.2.0“宿主 + 同版本文档”快照位于 `../../z-HistoryVulcan/`；3.2.1 尚未生成候选或部署。未来候选位于 `../../b-Publish/current/`，
 审核通过后整体部署到 `../../z-HistoryVulcan/`，运行入口为 `host/HistoryVulcan.exe`。本目录中的 NuGet/API 文档仍服务于需要嵌入框架的消费方，
 不代表宿主部署会生成或发布 NuGet 包。
 

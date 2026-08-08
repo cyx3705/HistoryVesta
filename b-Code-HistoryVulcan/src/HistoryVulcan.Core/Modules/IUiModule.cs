@@ -23,6 +23,9 @@ public sealed class ModuleCommandAttribute : Attribute
 {
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
     public bool Readonly { get; init; }
+
+    /// <summary>命令在当前模块域内的功能类；未声明时归入 core。</summary>
+    public string? CommandClass { get; init; }
 }
 
 /// <summary>网关就绪后执行的非关键启动工作；失败不得阻断宿主。</summary>

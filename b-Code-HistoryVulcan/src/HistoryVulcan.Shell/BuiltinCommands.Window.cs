@@ -28,6 +28,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "win.list",
+            Domain = "HistoryVulcan",
+            CommandClass = "win",
             Summary = "列出全部窗口及状态",
             Readonly = true,
             RequiresUiThread = true,
@@ -67,6 +69,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "win.autohide",
+            Domain = "HistoryVulcan",
+            CommandClass = "win",
             Summary = "切换工具窗口的自动隐藏状态",
             Example = $"win.autohide name={StandardWindowIds.Console}",
             RequiresUiThread = true,
@@ -97,6 +101,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "win.max",
+            Domain = "HistoryVulcan",
+            CommandClass = "win",
             Summary = "最大化指定工具窗口",
             Example = "win.max name=se2sw",
             RequiresUiThread = true,
@@ -116,6 +122,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "win.float-state",
+            Domain = "HistoryVulcan",
+            CommandClass = "win",
             Summary = "设置独立浮窗宿主的最大化状态",
             Example = $"win.float-state name={StandardWindowIds.Console} state=toggle",
             RequiresUiThread = true,
@@ -143,6 +151,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "win.restore",
+            Domain = "HistoryVulcan",
+            CommandClass = "win",
             Summary = "退出窗口最大化并恢复原布局",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -155,6 +165,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "win.dock",
+            Domain = "HistoryVulcan",
+            CommandClass = "win",
             Summary = "停靠窗口到指定方位(pos=center 占中央区，pos=tab 并入目标标签组)",
             Example = $"win.dock name={StandardWindowIds.Console} pos=bottom ratio=0.3",
             RequiresUiThread = true,
@@ -210,6 +222,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = "win.ratio",
+            Domain = "HistoryVulcan",
+            CommandClass = "win",
             Summary = "调整窗口占主窗体的比例",
             Example = $"win.ratio name={StandardWindowIds.Console} value=0.3",
             RequiresUiThread = true,
@@ -251,6 +265,8 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = name,
+            Domain = "HistoryVulcan",
+            CommandClass = "win",
             Summary = summary,
             Example = $"{name} name={StandardWindowIds.Console}",
             RequiresUiThread = true,

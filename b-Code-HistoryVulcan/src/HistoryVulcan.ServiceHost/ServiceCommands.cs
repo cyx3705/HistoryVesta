@@ -18,6 +18,8 @@ public static class ServiceCommands
         registry.Register(new CommandDescriptor
         {
             Name = "svc.status",
+            Domain = "HistoryVulcan",
+            CommandClass = "svc",
             Summary = "查看服务进程状态",
             Readonly = true,
             Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("服务运行中", new
@@ -35,6 +37,8 @@ public static class ServiceCommands
         registry.Register(new CommandDescriptor
         {
             Name = "svc.stop",
+            Domain = "HistoryVulcan",
+            CommandClass = "svc",
             Summary = "停止服务进程",
             ConfirmPrompt = _ => "确认停止后台服务？前端和远程客户端会断开。",
             Handler = CommandDescriptor.Sync(_ =>
@@ -47,6 +51,8 @@ public static class ServiceCommands
         registry.Register(new CommandDescriptor
         {
             Name = "app.exit",
+            Domain = "HistoryVulcan",
+            CommandClass = "app",
             Summary = "退出 HistoryVulcan 前端与后台服务",
             ConfirmPrompt = _ => "确认退出 HistoryVulcan 前端和后台服务？",
             Handler = async ctx =>
@@ -67,6 +73,8 @@ public static class ServiceCommands
         registry.Register(new CommandDescriptor
         {
             Name = "shortcut.list",
+            Domain = "HistoryVulcan",
+            CommandClass = "shortcut",
             Summary = "列出已注册的全局快捷键",
             Readonly = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -84,6 +92,8 @@ public static class ServiceCommands
         registry.Register(new CommandDescriptor
         {
             Name = "svc.restart",
+            Domain = "HistoryVulcan",
+            CommandClass = "svc",
             Summary = "重启服务进程",
             ConfirmPrompt = _ => "确认重启后台服务？客户端会短暂断开。",
             Handler = CommandDescriptor.Sync(_ =>
@@ -100,6 +110,8 @@ public static class ServiceCommands
         registry.Register(new CommandDescriptor
         {
             Name = "svc.autostart",
+            Domain = "HistoryVulcan",
+            CommandClass = "svc",
             Summary = "查看或设置用户级登录启动",
             Parameters =
             [
@@ -145,6 +157,8 @@ public static class ServiceCommands
         registry.Register(new CommandDescriptor
         {
             Name = "app.frontend.show",
+            Domain = "HistoryVulcan",
+            CommandClass = "app",
             Summary = "显示并激活前端窗口",
             Handler = ctx => RelayOrStartAsync(composition, executablePath, "app.frontend.show", "--show", ctx),
         }, source);
@@ -152,6 +166,8 @@ public static class ServiceCommands
         registry.Register(new CommandDescriptor
         {
             Name = "app.frontend.focus-console",
+            Domain = "HistoryVulcan",
+            CommandClass = "app",
             Summary = "唤出并聚焦前端控制台",
             Handler = ctx => RelayOrStartAsync(
                 composition, executablePath, "app.frontend.focus-console", "--focus-console", ctx),
@@ -160,6 +176,8 @@ public static class ServiceCommands
         registry.Register(new CommandDescriptor
         {
             Name = "app.frontend.hide",
+            Domain = "HistoryVulcan",
+            CommandClass = "app",
             Summary = "隐藏前端窗口并保持后台运行",
             Handler = ctx => RelayOrStartAsync(composition, executablePath, "app.frontend.hide", null, ctx),
         }, source);
@@ -167,6 +185,8 @@ public static class ServiceCommands
         registry.Register(new CommandDescriptor
         {
             Name = "app.frontend.exit",
+            Domain = "HistoryVulcan",
+            CommandClass = "app",
             Summary = "退出前端进程",
             Handler = async ctx =>
             {

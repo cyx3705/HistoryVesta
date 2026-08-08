@@ -24,7 +24,11 @@ public sealed record CommandCatalogRow(
     string? CurrentRevision,
     int OpenProposals,
     int IncidentCount,
-    string? HardExclusionReason);
+    string? HardExclusionReason)
+{
+    /// <summary>指令在所属域内的功能类；附加属性保持旧位置构造函数兼容。</summary>
+    public string CommandClass { get; init; } = "core";
+}
 
 public sealed record CommandParameterInfo(
     string Name,
@@ -118,7 +122,7 @@ public static class CommandCatalogCommands
 
             return new CommandCatalogRow(
                 descriptor.Name,
-                DomainOf(descriptor.Name),
+                registry.GetDomain(descriptor.Name),
                 descriptor.Summary,
                 descriptor.Example,
                 descriptor.Parameters.Count,
@@ -133,7 +137,10 @@ public static class CommandCatalogCommands
                 revision,
                 openProposals.GetValueOrDefault(descriptor.Name),
                 incidents.GetValueOrDefault(descriptor.Name),
-                McpExposurePolicy.HardExclusionReason(descriptor.Name));
+                McpExposurePolicy.HardExclusionReason(descriptor.Name))
+            {
+                CommandClass = registry.GetCommandClass(descriptor.Name),
+            };
         }).ToList();
     }
 
@@ -144,12 +151,15 @@ public static class CommandCatalogCommands
         Func<McpGateway?> gateway) => new()
         {
             Name = "command.list",
+            Domain = "HistoryVulcan",
+            CommandClass = "command",
             Summary = "结构化列出全部注册指令及其来源、风险和 MCP 投影",
             Readonly = true,
-            Example = "command.list domain=proj mcp=visible filter=scan",
+            Example = "command.list domain=HistoryVulcan class=win mcp=visible filter=dock",
             Parameters =
         [
             StringParam("domain", "可选指令域，如 proj / attr / command"),
+            StringParam("class", "可选域内命令类，如 win / log / module"),
             new ParameterSpec
             {
                 Name = "mcp",
@@ -166,6 +176,12 @@ public static class CommandCatalogCommands
                 var domain = ctx.GetString("domain")?.Trim();
                 if (!string.IsNullOrWhiteSpace(domain))
                     rows = rows.Where(row => row.Domain.Equals(domain, StringComparison.OrdinalIgnoreCase));
+
+                var commandClass = ctx.GetString("class")?.Trim();
+                if (!string.IsNullOrWhiteSpace(commandClass))
+                    rows = rows.Where(row => row.CommandClass.Equals(
+                        commandClass,
+                        StringComparison.OrdinalIgnoreCase));
 
                 var mcp = ctx.GetString("mcp") ?? "all";
                 rows = mcp.ToLowerInvariant() switch
@@ -188,7 +204,7 @@ public static class CommandCatalogCommands
                 var list = rows.ToList();
                 var text = new StringBuilder($"命令集: {list.Count} / {registry.All().Count} 条");
                 foreach (var row in list)
-                    text.Append($"\n  {row.CommandName,-28} [{row.Source}/{row.McpState}] {row.Summary}");
+                    text.Append($"\n  {row.CommandName,-28} [{row.Domain}/{row.CommandClass}/{row.McpState}] {row.Summary}");
                 return CommandResult.Ok(text.ToString(), list);
             }),
         };
@@ -200,6 +216,8 @@ public static class CommandCatalogCommands
         Func<McpGateway?> gateway) => new()
         {
             Name = "command.show",
+            Domain = "HistoryVulcan",
+            CommandClass = "command",
             Summary = "查看单条指令的 Help 参数、来源、风险和 MCP 映射",
             Readonly = true,
             Example = "command.show name=mcp.apply",
@@ -224,7 +242,8 @@ public static class CommandCatalogCommands
                 var schema = tool?.InputSchema.ToJsonString(PrettyJson);
                 var detail = new CommandCatalogDetail(row, parameters, schema);
 
-                var text = new StringBuilder($"{descriptor.Name} [{row.Source}/{row.McpState}]\n{descriptor.Summary}");
+                var text = new StringBuilder(
+                    $"{descriptor.Name} [{row.Domain}/{row.CommandClass}/{row.McpState}]\n{descriptor.Summary}");
                 if (!string.IsNullOrWhiteSpace(descriptor.Example))
                     text.Append($"\n示例: {descriptor.Example}");
                 if (row.HardExclusionReason != null)
@@ -236,13 +255,15 @@ public static class CommandCatalogCommands
     private static CommandDescriptor BuildDomains(CommandRegistry registry) => new()
     {
         Name = "command.domains",
+        Domain = "HistoryVulcan",
+        CommandClass = "command",
         Summary = "列出全部指令域及注册数量",
         Readonly = true,
         Example = "command.domains",
         Handler = CommandDescriptor.Sync(_ =>
         {
             var rows = registry.All()
-                .GroupBy(item => DomainOf(item.Name), StringComparer.OrdinalIgnoreCase)
+                .GroupBy(item => registry.GetDomain(item.Name), StringComparer.OrdinalIgnoreCase)
                 .Select(group => new CommandDomainInfo(group.Key, group.Count()))
                 .OrderBy(item => item.Domain, StringComparer.Ordinal)
                 .ToList();
@@ -257,6 +278,8 @@ public static class CommandCatalogCommands
         Func<McpGateway?> gateway) => new()
         {
             Name = "command.manual",
+            Domain = "HistoryVulcan",
+            CommandClass = "command",
             Summary = "从运行时注册表和 MCP 投影预览或生成 Markdown 命令手册",
             Example = "command.manual file=command-manual.md apply=false",
             Parameters =
@@ -319,12 +342,6 @@ public static class CommandCatalogCommands
                     preview);
             }),
         };
-
-    private static string DomainOf(string name)
-    {
-        var dot = name.IndexOf('.');
-        return dot > 0 ? name[..dot] : "core";
-    }
 
     private static ParameterSpec StringParam(
         string name, string description, bool required = false, int? position = null) => new()

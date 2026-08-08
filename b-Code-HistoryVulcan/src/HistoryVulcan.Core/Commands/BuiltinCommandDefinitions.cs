@@ -28,6 +28,8 @@ public static class BuiltinCommandDefinitions
         return new CommandDescriptor
         {
             Name = definition.Name,
+            Domain = "HistoryVulcan",
+            CommandClass = definition.CommandClass,
             Summary = definition.Summary,
             Example = definition.Example,
             Parameters = definition.Parameters.Select(Clone).ToList(),
@@ -46,18 +48,21 @@ public static class BuiltinCommandDefinitions
         {
             new Definition(
                 "help",
+                "core",
                 "列出全部指令 / 显示某指令详情与示例",
                 "help win.dock",
                 [Parameter("command", "指令名;省略时列出全部指令", position: 0)],
                 Readonly: true),
             new Definition(
                 "app.get",
+                "app",
                 "读应用配置项;不带参数列出全部",
                 "app.get key=console.history",
                 [Parameter("key", "配置键;省略列出全部", position: 0)],
                 Readonly: true),
             new Definition(
                 "app.set",
+                "app",
                 "写应用配置项",
                 "app.set key=console.history value=1000",
                 [
@@ -66,6 +71,7 @@ public static class BuiltinCommandDefinitions
                 ]),
             new Definition(
                 "app.opendata",
+                "app",
                 "在系统资源管理器中打开应用数据目录"),
         };
 
@@ -102,6 +108,7 @@ public static class BuiltinCommandDefinitions
 
     private sealed record Definition(
         string Name,
+        string CommandClass,
         string Summary,
         string? Example = null,
         IReadOnlyList<ParameterSpec>? ParameterList = null,

@@ -23,6 +23,9 @@ public sealed class ConsoleRow
     /// 单个超高项会让按项滚动永远看不到项的下半截,且拖累虚拟化,故在入口处拆平。
     /// </summary>
     public static IReadOnlyList<ConsoleRow> From(ShellLogEntry e)
+        => From(e, null);
+
+    internal static IReadOnlyList<ConsoleRow> From(ShellLogEntry e, CommandRegistry? registry)
     {
         string text;
         Brush foreground;
@@ -52,7 +55,7 @@ public sealed class ConsoleRow
                 text = $"[{e.Time:HH:mm:ss}] [{source}] > {e.Message}";
                 foreground = EchoBrush;
                 sourceKey = SourceKeyOf(source);
-                domainKey = DomainOfCommandText(e.Message);
+                domainKey = DomainOfCommandText(e.Message, registry);
             }
         }
         else
@@ -111,7 +114,7 @@ public sealed class ConsoleRow
         return false;
     }
 
-    private static string DomainOfCommandText(string text)
+    private static string DomainOfCommandText(string text, CommandRegistry? registry)
     {
         string name;
         try
@@ -125,6 +128,8 @@ public sealed class ConsoleRow
             name = separator >= 0 ? trimmed[..separator] : trimmed;
         }
 
+        if (registry?.TryGet(name, out _) == true)
+            return registry.GetDomain(name);
         var dot = name.IndexOf('.');
         return dot > 0 ? name[..dot] : "core";
     }
