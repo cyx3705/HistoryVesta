@@ -143,7 +143,17 @@
             </Grid>
         </GroupBox>
 
-        <DockPanel x:Name="RulePanel" IsEnabled="False">
+        <UniformGrid DockPanel.Dock="Top" Columns="2" Margin="0,0,0,8">
+            <RadioButton x:Name="RulesPageButton" GroupName="BottomPage"
+                         Content="Git 文件规则" Style="{StaticResource OperationSegment}"
+                         IsChecked="True" Checked="OnBottomPageChanged" />
+            <RadioButton x:Name="HistoryPageButton" GroupName="BottomPage"
+                         Content="分支历史" Style="{StaticResource OperationSegment}"
+                         Checked="OnBottomPageChanged" />
+        </UniformGrid>
+
+        <Grid>
+            <DockPanel x:Name="RulePanel" IsEnabled="False">
             <TextBlock DockPanel.Dock="Top" x:Name="RuleTitle" FontWeight="SemiBold"
                        Text="Git 文件规则" Margin="0,0,0,6" TextWrapping="Wrap" />
             <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
@@ -242,5 +252,7 @@
                 </DataGrid.Columns>
             </DataGrid>
         </DockPanel>
+            <ContentControl x:Name="HistoryPanel" Visibility="Collapsed" />
+        </Grid>
     </DockPanel>
 </UserControl>

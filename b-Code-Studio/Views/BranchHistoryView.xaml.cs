@@ -161,7 +161,7 @@ public partial class BranchHistoryView : UserControl
         _report = null;
         _loadedOwnCommits = 0;
         HistoryList.ItemsSource = null;
-        BranchTitle.Text = "在项目总览或继承树中选择项目";
+        BranchTitle.Text = "在项目总览或项目操作中选择项目";
         BoundaryText.Text = "";
         StatusText.Text = status;
         SetBusy(false);

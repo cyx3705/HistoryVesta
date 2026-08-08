@@ -192,6 +192,24 @@ internal static class RepositoryTargetsSuite
             True(!named.Contains(removed), $"removed project operation control is absent: {removed}");
         Equal(4, project.Descendants().Count(element => element.Name.LocalName == "RadioButton"
             && element.Attribute("GroupName")?.Value == "OperationMode"), "four operation segments");
+        var bottomSegments = project.Descendants().Where(element =>
+                element.Name.LocalName == "RadioButton"
+                && element.Attribute("GroupName")?.Value == "BottomPage").ToArray();
+        Equal(2, bottomSegments.Length, "bottom switcher has two same-level segments");
+        True(bottomSegments.Select(segment => segment.Attribute("Content")?.Value)
+                .SequenceEqual(["Git 文件规则", "分支历史"]),
+            "bottom switcher toggles Git file rules and embedded branch history");
+        Equal("True", bottomSegments[0].Attribute("IsChecked")?.Value,
+            "bottom switcher defaults to the Git file rules page");
+        var historyPanel = project.Descendants().Single(element =>
+            element.Attribute(x + "Name")?.Value == "HistoryPanel");
+        Equal("ContentControl", historyPanel.Name.LocalName,
+            "history panel is a content host for the embedded component");
+        Equal("Collapsed", historyPanel.Attribute("Visibility")?.Value,
+            "history panel starts collapsed behind the rules page");
+        True(project.Descendants().Any(element =>
+                element.Attribute(x + "Name")?.Value == "RulePanel"),
+            "rules panel stays as the default bottom page");
         True(!overview.ToString().Contains("CommitAll", StringComparison.Ordinal)
              && !overview.ToString().Contains("PushAll", StringComparison.Ordinal)
              && !overview.ToString().Contains("Submodule", StringComparison.OrdinalIgnoreCase),

@@ -8,7 +8,7 @@
 - `Contracts/`：由 `dotnet test` 发现的编译期 API 与合同测试。
 - `Smoke/`：单一宿主承载的功能集成冒烟测试。
 - `Smoke/Suites/`：按用户可观察功能分组的 7 个 Suite。
-- `ModuleSmoke/`：HistoryVulcan UI/Service 双模式装载、命令、三个页面、卸载与热重载测试。
+- `ModuleSmoke/`：HistoryVulcan UI/Service 双模式装载、命令、两个页面（分支历史内嵌）、卸载与热重载测试。
 
 ## 执行
 

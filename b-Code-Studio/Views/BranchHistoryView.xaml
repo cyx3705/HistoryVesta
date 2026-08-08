@@ -3,9 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="{DynamicResource Shell.Brush.Surface}"
              Foreground="{DynamicResource Shell.Brush.TextPrimary}">
-    <DockPanel Margin="8">
+    <DockPanel>
         <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-            <TextBlock x:Name="BranchTitle" Text="在项目总览或继承树中选择项目"
+            <TextBlock x:Name="BranchTitle" Text="在项目总览或项目操作中选择项目"
                        FontWeight="SemiBold" FontSize="14" TextWrapping="Wrap" />
             <TextBlock x:Name="BoundaryText" Margin="0,3,0,0"
                        Foreground="{DynamicResource Shell.Brush.TextSecondary}"

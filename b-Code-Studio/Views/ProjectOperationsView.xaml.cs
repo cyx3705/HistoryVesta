@@ -21,11 +21,13 @@ public partial class ProjectOperationsView : UserControl
     private string? _loadedRuleProject;
     private int _ruleLoadGeneration;
 
-    public ProjectOperationsView(Func<CommandBus?> busAccessor, ProjectSelectionState selection)
+    public ProjectOperationsView(Func<CommandBus?> busAccessor, ProjectSelectionState selection,
+        Func<string, bool> isProtected)
     {
         InitializeComponent();
         _busAccessor = busAccessor;
         _selection = selection;
+        HistoryPanel.Content = new BranchHistoryView(busAccessor, selection, isProtected);
         SelectedCommitMessageBox.Text = "一键推送更新";
         RuleGrid.ItemsSource = _rules;
         InitializeRuleAutoSave();
@@ -155,6 +157,15 @@ public partial class ProjectOperationsView : UserControl
 
     private void OnOperationModeChanged(object sender, System.Windows.RoutedEventArgs e)
         => UpdateProjectActions();
+
+    private void OnBottomPageChanged(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (RulePanel == null || HistoryPanel == null)
+            return;
+        var showRules = RulesPageButton.IsChecked == true;
+        RulePanel.Visibility = showRules ? Visibility.Visible : Visibility.Collapsed;
+        HistoryPanel.Visibility = showRules ? Visibility.Collapsed : Visibility.Visible;
+    }
 
     private async void OnRefreshProjectsClick(object sender, System.Windows.RoutedEventArgs e)
     {

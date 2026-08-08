@@ -84,16 +84,8 @@ public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleCont
                 DefaultSide = DockSide.Right,
                 DefaultRatio = 0.28,
                 IsSingleton = true,
-                ContentFactory = () => new ProjectOperationsView(busAccessor, selection),
-            },
-            new ToolWindowDescriptor
-            {
-                Id = "history",
-                Title = "分支历史",
-                DefaultSide = DockSide.Center,
-                DefaultRatio = 0.55,
-                IsSingleton = true,
-                ContentFactory = () => new BranchHistoryView(
+                // 底部同级切换 Git 文件规则 / 分支历史(内嵌 BranchHistoryView)。
+                ContentFactory = () => new ProjectOperationsView(
                     busAccessor,
                     selection,
                     isProtected),

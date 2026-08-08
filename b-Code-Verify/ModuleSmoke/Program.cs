@@ -62,7 +62,7 @@ if (host.Modules.Count != 1)
 
 var meta = host.Modules[0];
 if (!meta.ModuleName.Equals("HistoryJanus", StringComparison.Ordinal)
-    || !meta.Version.Equals("3.2.0", StringComparison.Ordinal)
+    || !meta.Version.Equals("3.3.0", StringComparison.Ordinal)
     || !meta.Ui
     || meta.CommandCount < 29)
 {
@@ -105,14 +105,14 @@ foreach (var commandName in businessCommands)
     }
 }
 var result = await bus.ExecuteAsync("HistoryJanus.Status", "ModuleSmoke");
-if (!result.Success || !result.Message.Contains("3.2.0", StringComparison.Ordinal))
+if (!result.Success || !result.Message.Contains("3.3.0", StringComparison.Ordinal))
     throw new InvalidOperationException($"module command failed: {result.Message}");
 
 var projectList = await bus.ExecuteAsync("proj.list", "ModuleSmoke");
 if (!projectList.Success)
     throw new InvalidOperationException($"real project command failed: {projectList.Message}");
 
-var expectedWindows = new[] { "overview", "projops", "history" };
+var expectedWindows = new[] { "overview", "projops" };
 var actualWindows = shellUi.Descriptors.Select(item => item.Id).ToArray();
 if (!expectedWindows.SequenceEqual(actualWindows, StringComparer.Ordinal))
 {
@@ -123,7 +123,6 @@ if (!expectedWindows.SequenceEqual(actualWindows, StringComparer.Ordinal))
 var windowsById = shellUi.Descriptors.ToDictionary(item => item.Id, StringComparer.Ordinal);
 AssertPlacement(windowsById["overview"], DockSide.Left, 0.20);
 AssertPlacement(windowsById["projops"], DockSide.Right, 0.28);
-AssertPlacement(windowsById["history"], DockSide.Center, 0.55);
 
 if (shellUi.Descriptors.Any(item => item.Title.Equals("HistoryJanus", StringComparison.Ordinal)))
     throw new InvalidOperationException("placeholder main window is still registered");
@@ -133,7 +132,6 @@ var expectedPageTypes = new[]
 {
     "OverviewView",
     "ProjectOperationsView",
-    "BranchHistoryView",
 };
 if (!expectedPageTypes.SequenceEqual(pageTypes, StringComparer.Ordinal))
     throw new InvalidOperationException($"unexpected page types: [{string.Join(", ", pageTypes)}]");

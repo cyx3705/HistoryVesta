@@ -304,6 +304,41 @@ internal static class GitRulesSuite
             var emptyLfsList = await service.ListAsync("main");
             True(emptyLfsList.Success, $"null Git LFS files list is treated as empty: {emptyLfsList.Message}");
 
+            // 59 号文档回归:裸仓开 extensions.worktreeConfig 而 worktree 缺失 config.worktree 时,
+            // Git 把项目误判为裸仓库,列表必须报出可行动修复指引;补写 config.worktree 后恢复。
+            var brokenBare = Path.Combine(root, "broken.git");
+            var brokenTree = Path.Combine(root, "broken");
+            Ensure(await GitRunner.RunAsync(root, ["clone", "--bare", seed, brokenBare]),
+                "clone bare for bare-misidentification fixture");
+            Ensure(await GitRunner.RunAsync(brokenBare,
+                    ["config", "extensions.worktreeConfig", "true"]),
+                "enable per-worktree config on broken fixture");
+            Ensure(await GitRunner.RunAsync(brokenBare, ["worktree", "add", brokenTree, "main"]),
+                "add worktree to broken fixture");
+            var brokenConfig = Path.Combine(brokenBare, "worktrees", "broken", "config.worktree");
+            if (File.Exists(brokenConfig))
+                File.Delete(brokenConfig);
+            var misdetected = await GitRunner.RunAsync(
+                brokenTree, ["rev-parse", "--is-bare-repository"]);
+            True(misdetected.Success && misdetected.Output.Trim() == "true",
+                "fixture reproduces the bare-repository misidentification");
+            var brokenSettings = new MemorySettings();
+            brokenSettings.Set(ProjectService.KeyBareRepo, brokenBare);
+            brokenSettings.Set(ProjectService.KeyWorktreeRoot, root);
+            brokenSettings.Set(ProjectService.KeyBaseBranch, "main");
+            var brokenService = new GitFileRuleService(new ProjectService(brokenSettings, _ => true, root));
+            var brokenList = await brokenService.ListAsync("main");
+            True(!brokenList.Success
+                 && brokenList.Message.Contains("config.worktree", StringComparison.Ordinal)
+                 && brokenList.Message.Contains("bare = false", StringComparison.Ordinal),
+                $"bare misidentification reports actionable repair guidance: {brokenList.Message}");
+            await File.WriteAllTextAsync(brokenConfig, "[core]\n\tbare = false\n");
+            Ensure(await GitRunner.RunAsync(brokenTree, ["lfs", "install", "--local"]),
+                "repaired worktree lfs install");
+            var repairedList = await brokenService.ListAsync("main");
+            True(repairedList.Success,
+                $"writing config.worktree with core.bare=false repairs the worktree: {repairedList.Message}");
+
             var headAfter = await GitRunner.RunAsync(worktree, ["rev-parse", "HEAD"]);
             Ensure(headAfter, "read final HEAD");
             Equal(headBefore.Output, headAfter.Output, "rule operations do not commit or rewrite history");

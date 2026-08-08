@@ -61,7 +61,7 @@ internal static class ProjectOperationsSuite
             }),
         });
         var bus = new CommandBus(registry, new MemoryLog());
-        var view = new ProjectOperationsView(() => bus, new ProjectSelectionState());
+        var view = new ProjectOperationsView(() => bus, new ProjectSelectionState(), _ => false);
         var rules = (System.Collections.ObjectModel.ObservableCollection<ProjectOperationsView.RuleEditRow>)
             typeof(ProjectOperationsView).GetField("_rules", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .GetValue(view)!;

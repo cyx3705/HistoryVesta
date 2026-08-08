@@ -32,6 +32,7 @@ internal static class TestArchitectureSuite
         VerifyGitHubModuleBoundary(separator);
         VerifyV3HostBoundary();
         VerifyMergedOverviewBoundary(separator);
+        VerifyEmbeddedHistoryBoundary(separator);
         VerifyThemeBoundary();
 
         var smokeRoot = Path.Combine(VerifyRoot, "Smoke");
@@ -196,14 +197,42 @@ internal static class TestArchitectureSuite
         var windowIds = Regex.Matches(module, @"Id = ""(?<id>[a-z]+)""", RegexOptions.CultureInvariant)
             .Select(match => match.Groups["id"].Value)
             .ToArray();
-        True(windowIds.SequenceEqual(new[] { "overview", "projops", "history" }),
-            "merged overview: module registers exactly overview, projops and history");
+        True(windowIds.SequenceEqual(new[] { "overview", "projops" }),
+            "page consolidation: module registers exactly overview and projops");
 
         var commands = File.ReadAllText(Path.Combine(RepoRoot, "Git", "ProjectCommands.cs"));
         foreach (var retained in new[] { "\"proj.tree\"", "\"proj.metalist\"", "\"proj.metaopen\"" })
         {
             Contains(commands, retained,
                 $"merged overview: background command stays registered: {retained}");
+        }
+    }
+
+    private static void VerifyEmbeddedHistoryBoundary(char separator)
+    {
+        foreach (var retained in new[]
+                 {
+                     "Views/BranchHistoryView.xaml", "Views/BranchHistoryView.xaml.cs",
+                 })
+        {
+            True(File.Exists(Path.Combine(RepoRoot, retained.Replace('/', separator))),
+                $"embedded history: view component stays: {retained}");
+        }
+
+        var projectOperations = File.ReadAllText(
+            Path.Combine(RepoRoot, "Views", "ProjectOperationsView.xaml.cs"));
+        Contains(projectOperations, "new BranchHistoryView(",
+            "embedded history: project operations hosts the branch history component");
+
+        var commands = File.ReadAllText(Path.Combine(RepoRoot, "Git", "BranchHistoryCommands.cs"));
+        foreach (var retained in new[]
+                 {
+                     "\"proj.history\"", "\"proj.history.show\"", "\"proj.history.diff\"",
+                     "\"proj.rollback\"", "\"proj.reset\"", "\"proj.forcepush\"",
+                 })
+        {
+            Contains(commands, retained,
+                $"embedded history: history command stays registered: {retained}");
         }
     }
 

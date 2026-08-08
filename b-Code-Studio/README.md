@@ -6,7 +6,7 @@
 
 - `JanusVersion.props`：唯一 Janus 版本源。
 - `Module/module.manifest.json`：模块装载 manifest，版本必须与版本源一致。
-- `Module/HistoryJanusUiModule.cs`：宿主上下文、命令与三个页面的组合入口。
+- `Module/HistoryJanusUiModule.cs`：宿主上下文、命令与两个页面的组合入口（分支历史内嵌于项目操作）。
 - `StudioBusinessComposition.cs`：项目、Git 规则、历史和诊断命令组合。
 - `eng/Publish-Janus.ps1`：候选验证与正式提升。
 
