@@ -21,10 +21,16 @@ HistoryJanus V3 是运行在 HistoryVulcan 中的项目与 Git 治理模块。Hi
 ```powershell
 dotnet restore .\HistoryJanus.sln --locked-mode -p:NuGetAudit=false
 dotnet build .\HistoryJanus.sln -c Debug --no-restore -p:NuGetAudit=false
+dotnet test .\b-Code-Verify\Contracts\Contracts.csproj -c Debug --no-build --no-restore -p:NuGetAudit=false
+.\b-Code-Studio\eng\Test-QualityGate.ps1
 dotnet run --project .\b-Code-Verify\ModuleSmoke\ModuleSmoke.csproj -c Debug -- .\b-Code-Studio\Module\bin\Debug\net8.0-windows
 ```
 
-日常开发执行相关 Contracts、Debug 构建、定向功能 Smoke 与 ModuleSmoke。正式发布才执行 Debug/Release 全量门禁、正式包、双槽部署和回滚验证。
+日常开发执行质量门禁、相关 Contracts、Debug 构建、定向功能 Smoke 与 ModuleSmoke；`Test-QualityGate.ps1`
+把抑制标记、千行文件、版本链一致性、正式树边界和宿主合同五项漂移检查日常化（代码管道化条件 4：
+漂移由检查自动阻断，不积累到发布）。推送到 `2026-020-HistoryJanus` 分支时，GitHub Actions 门禁
+（`.github/workflows/historyjanus-gate.yml`）并行复验锁定还原、双配置构建、Contracts、格式与同一门禁脚本。
+正式发布才执行 Debug/Release 全量门禁、正式包、双槽部署和回滚验证。
 
 ```powershell
 .\b-Code-Studio\eng\Publish-Janus.ps1
