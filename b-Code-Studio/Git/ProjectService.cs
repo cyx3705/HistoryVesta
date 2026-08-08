@@ -361,7 +361,7 @@ public sealed partial class ProjectService
 
     // ---------------------------------------------------------------- 继承树
     // 构建、渲染与文件缓存由 BranchTreeService 负责；此处只保留转调，
-    // ProjectCommands / BranchTreeView / BranchHistoryService 的调用签名一字未改。
+    // ProjectCommands / BranchHistoryService 的调用签名一字未改。
 
     /// <summary>
     /// 继承树入口：默认读取文件缓存；refresh=true 时重扫并更新缓存；

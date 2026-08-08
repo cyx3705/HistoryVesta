@@ -154,7 +154,14 @@ internal static class RepositoryTargetsSuite
                 True(target.Default == null && target.AllowedValues is ["parent", "submodules", "both"],
                     $"{commandName} target enum schema");
             }
+            True(registry.TryGet("proj.metalist", out var metaListDescriptor) && metaListDescriptor.Readonly,
+                "proj.metalist stays a readonly module command");
+            True(registry.TryGet("proj.metaopen", out var metaOpenDescriptor)
+                 && metaOpenDescriptor.Parameters.Any(parameter => parameter.Name == "name")
+                 && metaOpenDescriptor.Parameters.Any(parameter => parameter.Name == "meta"),
+                "proj.metaopen keeps its name/meta parameters");
 
+            await VerifyOverviewMetaMerge(service, parent, noChild);
             VerifyXamlLayout();
         }
         finally
@@ -192,10 +199,20 @@ internal static class RepositoryTargetsSuite
         var overviewColumns = overview.Descendants()
             .Where(element => element.Name.LocalName == "GridViewColumn")
             .ToArray();
-        Equal(2, overviewColumns.Length, "overview is a compact two-column navigator");
+        Equal(3, overviewColumns.Length, "overview is a compact three-column navigator");
         True(overviewColumns.Select(column => column.Attribute("Header")?.Value)
-                .SequenceEqual(["#", "分支 / 项目"]),
-            "overview columns are number then branch/project");
+                .SequenceEqual(["#", "分支 / 项目", "元文件夹"]),
+            "overview columns are number, branch/project then meta folders");
+        var overviewMarkup = overview.ToString();
+        foreach (var token in new[]
+                 {
+                     "PrimaryMetaName", "HasMeta", "HasAdditionalMeta",
+                     "MoreMetaLabel", "OnMetaFolderClick", "OnMoreMetaClick",
+                 })
+        {
+            True(overviewMarkup.Contains(token, StringComparison.Ordinal),
+                $"overview meta column projects the merged contract: {token}");
+        }
         var overviewSource = overview.ToString();
         True(!overviewSource.Contains("LastCommitTime", StringComparison.Ordinal)
              && !overviewSource.Contains("WorktreePath", StringComparison.Ordinal)
@@ -254,6 +271,51 @@ internal static class RepositoryTargetsSuite
         True(!rulesCode.Contains("OnSaveRuleClick", StringComparison.Ordinal)
              && !rulesCode.Contains("MessageBox.Show", StringComparison.Ordinal),
             "manual save entry and unsaved-change dialog are removed");
+    }
+
+    private static async Task VerifyOverviewMetaMerge(ProjectService service, string parent, string noChild)
+    {
+        Directory.CreateDirectory(Path.Combine(parent, "z-alpha"));
+        var secondMeta = Path.Combine(parent, "z-Beta");
+        Directory.CreateDirectory(secondMeta);
+        Directory.CreateDirectory(Path.Combine(parent, "docs"));
+
+        var (metaGit, metas, metaWarnings) = await service.ListMetaFoldersAsync();
+        True(metaGit.Success && metaWarnings.Count == 0, "meta scan succeeds without warnings");
+        var parentMetas = metas.Where(meta => meta.ProjectName == parentBranch).ToList();
+        Equal(2, parentMetas.Count, "only z/Z-level folders are listed as meta");
+        True(parentMetas.Select(meta => meta.MetaName).SequenceEqual(new[] { "z-alpha", "z-Beta" }),
+            "meta folders sort by case-insensitive name");
+        True(metas.All(meta => meta.ProjectName != noChildBranch),
+            "project without z-level folder contributes no meta entries");
+
+        var (listGit, worktrees) = await service.ListWorktreesAsync();
+        True(listGit.Success, "worktree list feeds the overview merge");
+        var mergedRows = OverviewMetaMerge.Merge(worktrees, metas);
+        var parentRow = mergedRows.Single(row => row.BranchName == parentBranch);
+        var noChildRow = mergedRows.Single(row => row.BranchName == noChildBranch);
+        Equal("z-alpha", parentRow.PrimaryMetaName, "primary meta is the first by name");
+        True(parentRow.HasMeta && parentRow.HasAdditionalMeta && parentRow.MoreMetaLabel == "+1",
+            "multiple metas collapse to the primary with a +N badge");
+        True(!noChildRow.HasMeta && !noChildRow.HasAdditionalMeta
+             && noChildRow.PrimaryMetaName == "-" && noChildRow.MoreMetaLabel.Length == 0,
+            "project without meta shows the placeholder");
+        var singleRow = OverviewMetaMerge.Merge(
+                worktrees, metas.Where(meta => meta.MetaName == "z-alpha").ToList())
+            .Single(row => row.BranchName == parentBranch);
+        True(singleRow.HasMeta && !singleRow.HasAdditionalMeta && singleRow.MoreMetaLabel.Length == 0,
+            "a single meta needs no overflow badge");
+
+        True(OverviewMetaMerge.MatchesKeyword(parentRow, "beta"), "search matches the meta name");
+        True(OverviewMetaMerge.MatchesKeyword(parentRow, "232"), "search matches the project name");
+        True(OverviewMetaMerge.MatchesKeyword(parentRow, parentRow.MetaFolders[1].FullPath),
+            "search matches the meta full path");
+        True(!OverviewMetaMerge.MatchesKeyword(noChildRow, "beta"),
+            "search does not match rows missing the keyword");
+
+        Equal($"proj.metaopen name={parentBranch} meta=z-alpha",
+            OverviewMetaMerge.BuildOpenCommand(parentRow.PrimaryMeta!),
+            "meta click reuses the existing proj.metaopen command");
     }
 
     private static int CountGridRows(XElement group)

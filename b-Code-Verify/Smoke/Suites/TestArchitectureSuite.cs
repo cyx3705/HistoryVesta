@@ -31,6 +31,7 @@ internal static class TestArchitectureSuite
 
         VerifyGitHubModuleBoundary(separator);
         VerifyV3HostBoundary();
+        VerifyMergedOverviewBoundary(separator);
         VerifyThemeBoundary();
 
         var smokeRoot = Path.Combine(VerifyRoot, "Smoke");
@@ -169,6 +170,43 @@ internal static class TestArchitectureSuite
         }
     }
 
+    private static void VerifyMergedOverviewBoundary(char separator)
+    {
+        foreach (var removed in new[]
+                 {
+                     "Views/MetaView.xaml", "Views/MetaView.xaml.cs",
+                     "Views/BranchTreeView.xaml", "Views/BranchTreeView.xaml.cs",
+                     "Views/BranchTreeItem.cs",
+                 })
+        {
+            True(!File.Exists(Path.Combine(RepoRoot, removed.Replace('/', separator))),
+                $"merged overview: standalone view is removed: {removed}");
+        }
+
+        foreach (var retained in new[]
+                 {
+                     "Git/BranchTreeService.cs", "Git/BranchTreeNode.cs", "Git/ProjectService.Meta.cs",
+                 })
+        {
+            True(File.Exists(Path.Combine(RepoRoot, retained.Replace('/', separator))),
+                $"merged overview: background service stays: {retained}");
+        }
+
+        var module = File.ReadAllText(Path.Combine(RepoRoot, "Module", "HistoryJanusUiModule.cs"));
+        var windowIds = Regex.Matches(module, @"Id = ""(?<id>[a-z]+)""", RegexOptions.CultureInvariant)
+            .Select(match => match.Groups["id"].Value)
+            .ToArray();
+        True(windowIds.SequenceEqual(new[] { "overview", "projops", "history" }),
+            "merged overview: module registers exactly overview, projops and history");
+
+        var commands = File.ReadAllText(Path.Combine(RepoRoot, "Git", "ProjectCommands.cs"));
+        foreach (var retained in new[] { "\"proj.tree\"", "\"proj.metalist\"", "\"proj.metaopen\"" })
+        {
+            Contains(commands, retained,
+                $"merged overview: background command stays registered: {retained}");
+        }
+    }
+
     private static void VerifyThemeBoundary()
     {
         var viewsRoot = Path.Combine(RepoRoot, "Views");
@@ -187,8 +225,7 @@ internal static class TestArchitectureSuite
 
         var primaryViews = new[]
         {
-            "OverviewView.xaml", "MetaView.xaml", "BranchTreeView.xaml",
-            "BranchHistoryView.xaml", "ProjectOperationsView.xaml",
+            "OverviewView.xaml", "BranchHistoryView.xaml", "ProjectOperationsView.xaml",
         };
         foreach (var name in primaryViews)
         {
@@ -201,8 +238,7 @@ internal static class TestArchitectureSuite
 
         foreach (var name in new[]
                  {
-                     "OverviewView.xaml", "MetaView.xaml", "BranchHistoryView.xaml",
-                     "BranchTreeView.xaml", "ProjectOperationsView.xaml",
+                     "OverviewView.xaml", "BranchHistoryView.xaml", "ProjectOperationsView.xaml",
                  })
         {
             var source = File.ReadAllText(Path.Combine(viewsRoot, name));

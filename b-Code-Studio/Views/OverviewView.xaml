@@ -25,7 +25,39 @@
             <ListView.View>
                 <GridView ColumnHeaderContainerStyle="{DynamicResource Shell.GridHeader}">
                     <GridViewColumn Header="#" Width="44" DisplayMemberBinding="{Binding Index}" />
-                    <GridViewColumn Header="分支 / 项目" Width="260" DisplayMemberBinding="{Binding BranchName}" />
+                    <GridViewColumn Header="分支 / 项目" Width="210" DisplayMemberBinding="{Binding BranchName}" />
+                    <GridViewColumn Header="元文件夹" Width="220">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="{Binding PrimaryMetaName}"
+                                            Tag="{Binding PrimaryMeta}"
+                                            ToolTip="{Binding PrimaryMeta.FullPath}"
+                                            IsEnabled="{Binding HasMeta}"
+                                            Padding="4,1" BorderThickness="0"
+                                            Background="Transparent"
+                                            Foreground="{DynamicResource Shell.Brush.TextPrimary}"
+                                            Click="OnMetaFolderClick" />
+                                    <Button Content="{Binding MoreMetaLabel}"
+                                            Margin="4,0,0,0" Padding="4,1"
+                                            BorderThickness="0" Background="Transparent"
+                                            Foreground="{DynamicResource Shell.Brush.TextSecondary}"
+                                            Click="OnMoreMetaClick">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasAdditionalMeta}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                 </GridView>
             </ListView.View>
         </ListView>

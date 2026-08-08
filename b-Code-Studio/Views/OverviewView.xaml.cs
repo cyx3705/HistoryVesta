@@ -1,11 +1,13 @@
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using HistoryVulcan.Core.Commands;
 using HistoryJanus.Git;
 
 namespace HistoryJanus.Views;
 
-/// <summary>项目工作树列表、当前项目选择与批量提交推送。</summary>
+/// <summary>项目工作树、Z 级元文件夹与共享项目选择。</summary>
 public partial class OverviewView : UserControl
 {
     private readonly Func<CommandBus?> _busAccessor;
@@ -13,6 +15,7 @@ public partial class OverviewView : UserControl
     private List<WorktreeRow> _allRows = [];
     private bool _initialLoadDone;
     private bool _suppressSelection;
+    private string? _metaLoadWarning;
 
     public OverviewView(Func<CommandBus?> busAccessor, ProjectSelectionState selection)
     {
@@ -23,7 +26,17 @@ public partial class OverviewView : UserControl
         Unloaded += OnUnloaded;
     }
 
-    public sealed record WorktreeRow(int Index, string BranchName);
+    public sealed record WorktreeRow(
+        int Index,
+        string BranchName,
+        IReadOnlyList<MetaFolderInfo> MetaFolders)
+    {
+        public MetaFolderInfo? PrimaryMeta => MetaFolders.FirstOrDefault();
+        public string PrimaryMetaName => PrimaryMeta?.MetaName ?? "-";
+        public bool HasMeta => PrimaryMeta != null;
+        public bool HasAdditionalMeta => MetaFolders.Count > 1;
+        public string MoreMetaLabel => HasAdditionalMeta ? $"+{MetaFolders.Count - 1}" : "";
+    }
 
     private async void OnLoaded(object sender, System.Windows.RoutedEventArgs e)
     {
@@ -53,15 +66,27 @@ public partial class OverviewView : UserControl
         RefreshButton.IsEnabled = false;
         try
         {
-            var result = await bus.ExecuteAsync("proj.list", "UI");
-            if (!result.Success || !ModuleResultData.TryRead(result.Data, out List<WorktreeInfo>? list))
+            var projectsTask = bus.ExecuteAsync("proj.list", "UI");
+            var metasTask = bus.ExecuteAsync("proj.metalist", "UI");
+            await Task.WhenAll(projectsTask, metasTask);
+
+            var projectsResult = await projectsTask;
+            if (!projectsResult.Success ||
+                !ModuleResultData.TryRead(projectsResult.Data, out List<WorktreeInfo>? projects))
             {
                 StatusText.Text = "项目加载失败，详见控制台";
                 return;
             }
 
-            _allRows = list.Select((item, index) => new WorktreeRow(
-                index + 1, item.BranchName)).ToList();
+            var metasResult = await metasTask;
+            List<MetaFolderInfo>? loadedMetas = null;
+            var metasLoaded = metasResult.Success &&
+                              ModuleResultData.TryRead(metasResult.Data, out loadedMetas) &&
+                              loadedMetas != null;
+            List<MetaFolderInfo> metas = metasLoaded ? loadedMetas! : [];
+            _metaLoadWarning = metasLoaded ? null : "元文件夹加载失败，可刷新重试";
+
+            _allRows = OverviewMetaMerge.Merge(projects, metas);
             if (_selection.CurrentProjectName is { } current
                 && !_allRows.Any(row => row.BranchName.Equals(current, StringComparison.OrdinalIgnoreCase)))
             {
@@ -80,12 +105,13 @@ public partial class OverviewView : UserControl
         var keyword = SearchBox.Text.Trim();
         var rows = keyword.Length == 0
             ? _allRows
-            : _allRows.Where(row => row.BranchName.Contains(keyword, StringComparison.OrdinalIgnoreCase)).ToList();
+            : _allRows.Where(row => OverviewMetaMerge.MatchesKeyword(row, keyword)).ToList();
         WorktreeList.ItemsSource = rows;
         ApplySharedSelection();
-        StatusText.Text = keyword.Length == 0
+        var summary = keyword.Length == 0
             ? $"共 {_allRows.Count} 个工作树；双击项目在资源管理器中打开"
             : $"匹配 {rows.Count}/{_allRows.Count} 个工作树";
+        StatusText.Text = _metaLoadWarning == null ? summary : $"{summary}；{_metaLoadWarning}";
     }
 
     private void ApplySharedSelection()
@@ -122,4 +148,50 @@ public partial class OverviewView : UserControl
                 $"proj.open name={CommandParser.QuoteArg(row.BranchName)}", "UI");
     }
 
+    private async void OnMetaFolderClick(object sender, System.Windows.RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is FrameworkElement { Tag: MetaFolderInfo meta })
+            await OpenMetaFolderAsync(meta);
+    }
+
+    private void OnMoreMetaClick(object sender, System.Windows.RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not Button { DataContext: WorktreeRow row } button)
+            return;
+
+        var menu = new ContextMenu
+        {
+            PlacementTarget = button,
+            Placement = PlacementMode.Bottom,
+        };
+        foreach (var meta in row.MetaFolders)
+        {
+            var item = new MenuItem
+            {
+                Header = meta.MetaName,
+                ToolTip = meta.FullPath,
+                Tag = meta,
+            };
+            item.Click += OnMetaMenuItemClick;
+            menu.Items.Add(item);
+        }
+        menu.IsOpen = true;
+    }
+
+    private async void OnMetaMenuItemClick(object sender, System.Windows.RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is FrameworkElement { Tag: MetaFolderInfo meta })
+            await OpenMetaFolderAsync(meta);
+    }
+
+    private async Task OpenMetaFolderAsync(MetaFolderInfo meta)
+    {
+        if (_busAccessor() is not { } bus)
+            return;
+        var result = await bus.ExecuteAsync(OverviewMetaMerge.BuildOpenCommand(meta), "UI");
+        StatusText.Text = ViewKit.ResultSummary(result);
+    }
 }

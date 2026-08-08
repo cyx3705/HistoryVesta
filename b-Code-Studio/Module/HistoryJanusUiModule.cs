@@ -46,7 +46,6 @@ public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleCont
 
         Func<CommandBus?> busAccessor = () => _context?.Bus;
         Func<string, bool> isProtected = branch => _business?.Projects.IsProtected(branch) == true;
-
         foreach (var descriptor in CreateDescriptors(busAccessor, _selection, isProtected))
             _registrations.Add(_shellUi.RegisterToolWindow(descriptor, "HistoryJanus"));
     }
@@ -80,24 +79,6 @@ public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleCont
             },
             new ToolWindowDescriptor
             {
-                Id = "tree",
-                Title = "继承树",
-                DefaultSide = DockSide.Center,
-                DefaultRatio = 0.55,
-                IsSingleton = true,
-                ContentFactory = () => new BranchTreeView(busAccessor, selection),
-            },
-            new ToolWindowDescriptor
-            {
-                Id = "meta",
-                Title = "Meta文件",
-                DefaultSide = DockSide.Center,
-                DefaultRatio = 0.55,
-                IsSingleton = true,
-                ContentFactory = () => new MetaView(busAccessor),
-            },
-            new ToolWindowDescriptor
-            {
                 Id = "projops",
                 Title = "项目操作",
                 DefaultSide = DockSide.Right,
@@ -112,7 +93,10 @@ public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleCont
                 DefaultSide = DockSide.Center,
                 DefaultRatio = 0.55,
                 IsSingleton = true,
-                ContentFactory = () => new BranchHistoryView(busAccessor, selection, isProtected),
+                ContentFactory = () => new BranchHistoryView(
+                    busAccessor,
+                    selection,
+                    isProtected),
             },
         ];
     }
