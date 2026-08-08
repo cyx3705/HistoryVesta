@@ -14,8 +14,8 @@ $workRoot = Join-Path $publishRoot 'work'
 $transactionId = [Guid]::NewGuid().ToString('N')
 $stamp = [DateTimeOffset]::UtcNow.ToString('yyyyMMdd-HHmmss')
 
+# ActiveDock 已迁至 2026-021-HistoryMercury 并改名 MercuryDock，由该项目的 eng\Publish-MercuryModules.ps1 发布。
 $modules = @(
-    [ordered]@{ Name = 'ActiveDock'; Project = 'b-Code-ActiveDock\\ActiveDock.csproj'; Release = 'b-Code-ActiveDock\\bin\\Release\\net8.0-windows'; ZDirectory = 'z-ActiveDock' },
     [ordered]@{ Name = 'GitHubConnection'; Project = 'b-Code-GitHubConnection\\GitHubConnection.csproj'; Release = 'b-Code-GitHubConnection\\bin\\Release\\net8.0-windows'; ZDirectory = 'z-GitHubConnection' },
     [ordered]@{ Name = 'StudioTools'; Project = 'b-Code-StudioTools\\StudioTools.csproj'; Release = 'b-Code-StudioTools\\bin\\Release\\net8.0-windows'; ZDirectory = 'z-StudioTools' }
 )
