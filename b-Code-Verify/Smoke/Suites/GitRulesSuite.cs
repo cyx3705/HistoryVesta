@@ -1,7 +1,7 @@
-﻿using AppShell.Core;
-using AppShell.Core.Mcp;
+using HistoryVulcan.Core;
+using HistoryVulcan.Core.Mcp;
 using System.Text;
-using AppShell.Core.Commands;
+using HistoryVulcan.Core.Commands;
 using HistoryJanus.Git;
 using static HistoryJanus.Smoke.SmokeKit;
 
@@ -82,13 +82,13 @@ internal static class GitRulesSuite
             ];
             var batchPreview = await service.BatchSetAsync("main", batchChanges, apply: false);
             True(batchPreview.Success && batchPreview.Preview is
-                {
-                    Changed: true,
-                    Applied: false,
-                    Items.Count: 3,
-                    AddToIndex: 2,
-                    RemoveFromIndex: 1,
-                }, "three rule changes produce one complete batch preview");
+            {
+                Changed: true,
+                Applied: false,
+                Items.Count: 3,
+                AddToIndex: 2,
+                RemoveFromIndex: 1,
+            }, "three rule changes produce one complete batch preview");
             var invalidBatch = await service.BatchSetAsync("main",
             [
                 new("*.never", true, false, false),
@@ -116,7 +116,7 @@ internal static class GitRulesSuite
                 "all three batch rules persist after one apply");
             var unchangedBatch = await service.BatchSetAsync("main", batchChanges, apply: false);
             True(unchangedBatch.Success && unchangedBatch.Preview is
-                { Changed: false, AddToIndex: 0, RemoveFromIndex: 0, Renormalize: 0 },
+            { Changed: false, AddToIndex: 0, RemoveFromIndex: 0, Renormalize: 0 },
                 "repeating an already converged batch is a no-op");
 
             var initialRules = await service.ListAsync("main");
@@ -254,18 +254,18 @@ internal static class GitRulesSuite
 
             var scanCommand = await commandBus.ExecuteAsync("git.rule.scan name=main refresh=true", "UI");
             True(scanCommand.Success && scanCommand.Data is InventoryReport
-                {
-                    ProjectCount: 1,
-                    Formats.Count: > 0,
-                }, "format inventory executes through CommandBus and returns structured data");
+            {
+                ProjectCount: 1,
+                Formats.Count: > 0,
+            }, "format inventory executes through CommandBus and returns structured data");
             var reviewCommand = await commandBus.ExecuteAsync("git.rule.review name=main", "UI");
             True(reviewCommand.Success && reviewCommand.Data is GitRuleReviewReport
-                {
-                    Gaps.Directories.Count: > 0,
-                    Suggestions.Count: > 0,
-                    UnknownFormats.Count: > 0,
-                    SuggestedFileCount: > 0,
-                } review && review.Gaps.UndecidedCount > 0 && review.SuggestedCoverageRate > 0,
+            {
+                Gaps.Directories.Count: > 0,
+                Suggestions.Count: > 0,
+                UnknownFormats.Count: > 0,
+                SuggestedFileCount: > 0,
+            } review && review.Gaps.UndecidedCount > 0 && review.SuggestedCoverageRate > 0,
                 "one review returns suggestions, unknown formats and directory candidates from one scan");
             var reviewJson = System.Text.Json.JsonSerializer.SerializeToElement(reviewCommand.Data);
             True(System.Text.Json.JsonSerializer.Deserialize<GitRuleReviewReport>(

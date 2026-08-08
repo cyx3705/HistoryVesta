@@ -1,6 +1,6 @@
 using System.IO;
 using System.Text;
-using AppShell.Core.Commands;
+using HistoryVulcan.Core.Commands;
 
 namespace HistoryJanus.Git;
 
@@ -105,6 +105,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildList(ProjectService projects) => new()
     {
         Name = "proj.list",
+        CommandClass = "projects",
         Summary = "列出全部项目工作树(编号/分支/路径/状态)",
         Readonly = true,
         Example = "proj.list filter=2026",
@@ -153,6 +154,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildCreate(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "proj.create",
+        CommandClass = "projects",
         Summary = "创建新项目:新建分支 + 同名工作树(分支名 = 文件夹名)",
         Example = "proj.create name=2026-025-新项目",
         Parameters =
@@ -184,6 +186,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildDelete(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "proj.delete",
+        CommandClass = "projects",
         Summary = "删除项目:移除工作树 + 强制删除分支(不可撤销;受保护分支拒绝)",
         Example = "proj.delete name=9999-901-测试",
         Parameters =
@@ -221,6 +224,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildTree(ProjectService projects) => new()
     {
         Name = "proj.tree",
+        CommandClass = "projects",
         Summary = "输出分支继承树(默认读文件缓存秒开;refresh=true 重新扫描并更新缓存)",
         Readonly = true,
         Example = "proj.tree refresh=true",
@@ -257,6 +261,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildCommit(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "proj.commit",
+        CommandClass = "projects",
         Summary = "提交单个项目到本地仓库；可按子模块先、父项目后联动提交",
         Example = "proj.commit name=2026-018-MyAPI msg=\"更新说明\" target=both",
         Parameters =
@@ -314,6 +319,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildPush(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "proj.push",
+        CommandClass = "projects",
         Summary = "推送单个分支；可先推直属子模块，全部成功后再推父项目",
         Example = "proj.push name=2026-018-MyAPI target=both",
         Parameters =
@@ -354,6 +360,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildCommitAll(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "proj.commitall",
+        CommandClass = "projects",
         Summary = "一键提交全部工作树；可联动各项目直属子模块",
         Example = "proj.commitall msg=\"每日推送\" target=both",
         Parameters =
@@ -409,6 +416,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildPushAll(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "proj.pushall",
+        CommandClass = "projects",
         Summary = "推送全部分支；可先去重推送所有直属子模块",
         Example = "proj.pushall target=both",
         Parameters =
@@ -447,6 +455,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildOpen(ProjectService projects) => new()
     {
         Name = "proj.open",
+        CommandClass = "projects",
         Summary = "在系统资源管理器中打开项目工作树(不带 name 打开工作树根目录)",
         Example = "proj.open name=2026-018-MyAPI",
         Parameters =
@@ -470,6 +479,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildScan(ProjectService projects) => new()
     {
         Name = "proj.scan",
+        CommandClass = "projects",
         Summary = "扫描项目大文件并输出分级报告(不提交)",
         Readonly = true,
         Example = "proj.scan name=2026-018-MyAPI",
@@ -495,6 +505,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildRepair(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "proj.repair",
+        CommandClass = "projects",
         Summary = "worktree 断链批量修复:删除全部工作树目录→prune→按分支清单重建",
         Example = "proj.repair",
         ConfirmPrompt = _ =>
@@ -517,6 +528,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildNote(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "proj.note",
+        CommandClass = "projects",
         Summary = "写入/更新分支的项目描述(继承树与 proj.tree 优先显示此描述)",
         Example = "proj.note name=2026-018-MyAPI text=\"基础设施整合项目\"",
         Parameters =
@@ -550,6 +562,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildConfig(ProjectService projects) => new()
     {
         Name = "proj.config",
+        CommandClass = "projects",
         Summary = "显示 proj.* 当前生效配置(经 app.set 修改)",
         Readonly = true,
         Example = "proj.config",
@@ -561,6 +574,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildMetaList(ProjectService projects) => new()
     {
         Name = "proj.metalist",
+        CommandClass = "projects",
         Summary = "列出全部项目根下以 z/Z 开头的一级元文件夹",
         Readonly = true,
         Example = "proj.metalist filter=AD",
@@ -622,6 +636,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildMetaOpen(ProjectService projects) => new()
     {
         Name = "proj.metaopen",
+        CommandClass = "projects",
         Summary = "在系统资源管理器中打开指定元文件夹(path= 或 name=+meta=)",
         Example = "proj.metaopen name=2026-016-AD学习 meta=z-AD库文件汇总",
         Parameters =

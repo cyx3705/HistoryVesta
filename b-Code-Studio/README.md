@@ -9,16 +9,14 @@
 - `Module/HistoryJanusUiModule.cs`：宿主上下文、命令与五个页面的组合入口。
 - `StudioBusinessComposition.cs`：项目、Git 规则、历史和诊断命令组合。
 - `eng/Publish-Janus.ps1`：候选验证与正式提升。
-- `eng/Deploy-Janus.ps1`：AppShell UI/Service 双槽部署。
 
 ## 发布边界
 
-`b-Publish/candidate` 保存当前模块候选，`b-Publish/history` 只保存被替换的正式包，`z-Package-HistoryJanus` 只保存最新正式消费快照。正式包不得包含 EXE、PDB、AppShell DLL、deps/runtimeconfig 或旧综合 Help。
+`b-Publish/current/HistoryJanus` 保存当前模块候选，`b-Publish/history` 只保存被替换的正式包，`z-Package-HistoryJanus` 只保存最新正式消费快照。正式包不得包含 EXE、PDB、HistoryVulcan DLL、deps/runtimeconfig 或旧综合 Help。
 
 ```powershell
 .\b-Code-Studio\eng\Publish-Janus.ps1
 .\b-Code-Studio\eng\Publish-Janus.ps1 -Publish
-.\b-Code-Studio\eng\Deploy-Janus.ps1 -Apply
 ```
 
-发布和部署不启动 AppShell，不修改或测试开机自启动。
+发布和部署不启动 HistoryVulcan，不修改或测试开机自启动。

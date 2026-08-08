@@ -3,13 +3,13 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using AppShell.Core;
-using AppShell.Core.Commands;
-using AppShell.Core.Docking;
-using AppShell.Core.Logging;
-using AppShell.Core.Modules;
-using AppShell.Core.Storage;
-using AppShell.Services.Modules;
+using HistoryVulcan.Core;
+using HistoryVulcan.Core.Commands;
+using HistoryVulcan.Core.Docking;
+using HistoryVulcan.Core.Logging;
+using HistoryVulcan.Core.Modules;
+using HistoryVulcan.Core.Storage;
+using HistoryVulcan.Services.Modules;
 
 if (args.Length != 1)
 {
@@ -37,14 +37,14 @@ registry.Register(new CommandDescriptor
     Summary = "frontend proxy placeholder",
     Readonly = true,
     Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("proxy")),
-}, "frontend:AppShell.Frontend");
+}, "frontend:HistoryVulcan.Frontend");
 using var host = new ModuleHost(moduleDirectory, log)
 {
     EnableCommands = true,
     EnableUiModules = true,
     EnableFileWatching = false,
     // ModuleHost commits its snapshot through the host UI synchronization context.
-    // The real AppShell supplies WPF's DispatcherSynchronizationContext; this
+    // The real HistoryVulcan supplies WPF's DispatcherSynchronizationContext; this
     // synchronous context keeps the smoke deterministic without creating WPF UI.
     UiContext = new ImmediateSynchronizationContext(),
     ShellUi = shellUi,
@@ -62,7 +62,7 @@ if (host.Modules.Count != 1)
 
 var meta = host.Modules[0];
 if (!meta.ModuleName.Equals("HistoryJanus", StringComparison.Ordinal)
-    || !meta.Version.Equals("3.1.1", StringComparison.Ordinal)
+    || !meta.Version.Equals("3.1.2", StringComparison.Ordinal)
     || !meta.Ui
     || meta.CommandCount < 29)
 {
@@ -100,7 +100,7 @@ foreach (var commandName in businessCommands)
     }
 }
 var result = await bus.ExecuteAsync("HistoryJanus.Status", "ModuleSmoke");
-if (!result.Success || !result.Message.Contains("3.1.1", StringComparison.Ordinal))
+if (!result.Success || !result.Message.Contains("3.1.2", StringComparison.Ordinal))
     throw new InvalidOperationException($"module command failed: {result.Message}");
 
 var projectList = await bus.ExecuteAsync("proj.list", "ModuleSmoke");

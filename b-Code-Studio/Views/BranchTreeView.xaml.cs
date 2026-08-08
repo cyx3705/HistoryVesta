@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using AppShell.Core.Commands;
+using HistoryVulcan.Core.Commands;
 using HistoryJanus.Git;
 
 namespace HistoryJanus.Views;

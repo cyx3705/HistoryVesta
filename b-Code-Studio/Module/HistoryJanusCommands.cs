@@ -1,11 +1,11 @@
-using AppShell.Core.Modules;
+using HistoryVulcan.Core.Modules;
 
 namespace HistoryJanus.Module;
 
 /// <summary>Reports the loaded Janus module identity and registered business surfaces.</summary>
 public sealed class HistoryJanusCommands
 {
-    [ModuleCommand(Readonly = true)]
+    [ModuleCommand(Readonly = true, CommandClass = "status")]
     public string Status()
-        => "HistoryJanus 3.1.1 已由 AppShell 加载;已注册项目总览、继承树、Meta 文件、项目操作和分支历史页面;业务命令已接入宿主命令总线";
+        => "HistoryJanus 3.1.2 已由 HistoryVulcan 加载;已注册项目总览、继承树、Meta 文件、项目操作和分支历史页面;业务命令已接入宿主命令总线";
 }

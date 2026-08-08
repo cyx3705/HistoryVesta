@@ -182,7 +182,7 @@ internal static class TestArchitectureSuite
         {
             var source = File.ReadAllText(path);
             True(!literalColor.IsMatch(source),
-                $"view uses AppShell dynamic color tokens: {Path.GetFileName(path)}");
+                $"view uses HistoryVulcan dynamic color tokens: {Path.GetFileName(path)}");
         }
 
         var primaryViews = new[]
@@ -194,7 +194,7 @@ internal static class TestArchitectureSuite
         {
             var source = File.ReadAllText(Path.Combine(viewsRoot, name));
             Contains(source, "Background=\"{DynamicResource Shell.Brush.Surface}\"",
-                $"theme governance: {name} uses the AppShell surface token");
+                $"theme governance: {name} uses the HistoryVulcan surface token");
             Contains(source, "Shell.Brush.TextPrimary",
                 $"theme governance: {name} uses the host primary text token");
         }

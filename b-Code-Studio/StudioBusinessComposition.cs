@@ -1,6 +1,6 @@
-using AppShell.Core.Commands;
-using AppShell.Core.Logging;
-using AppShell.Core.Storage;
+using HistoryVulcan.Core.Commands;
+using HistoryVulcan.Core.Logging;
+using HistoryVulcan.Core.Storage;
 using HistoryJanus.Git;
 
 namespace HistoryJanus;

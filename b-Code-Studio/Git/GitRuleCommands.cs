@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.Json;
-using AppShell.Core.Commands;
+using HistoryVulcan.Core.Commands;
 
 namespace HistoryJanus.Git;
 
@@ -25,6 +25,7 @@ public static class GitRuleCommands
     private static CommandDescriptor BuildSync(GitFileRuleService service, ProjectService projects) => new()
     {
         Name = "git.rule.sync",
+        CommandClass = "git-rules",
         Summary = "把模板项目的规则基线刷入各项目的 baseline 块(不动项目自身 managed 块与手写内容)",
         Example = "git.rule.sync apply=false",
         Parameters =
@@ -51,6 +52,7 @@ public static class GitRuleCommands
     private static CommandDescriptor BuildScan(FormatInventoryService inventory) => new()
     {
         Name = "git.rule.scan",
+        CommandClass = "git-rules",
         Summary = "扫描项目库全部文件格式,输出台账与覆盖率(省略 name 扫全库)",
         Readonly = true,
         Example = "git.rule.scan depth=normal",
@@ -71,25 +73,27 @@ public static class GitRuleCommands
 
     private static CommandDescriptor BuildReview(
         FormatInventoryService inventory, ProjectService projects) => new()
-    {
-        Name = "git.rule.review",
-        Summary = "一次扫描合并查看未决格式、目录候选、规则建议与需人工判断的未知格式",
-        Readonly = true,
-        Example = "git.rule.review",
-        Parameters = [StringParam("name", "项目名;省略则针对全库", position: 0)],
-        Handler = async ctx =>
         {
-            var (success, message, report) = await inventory.ReviewAsync(
-                // 用警告阈值(proj.warnmb,默认 50MB)而非拒绝阈值:
-                // 超过警告线的二进制就该走 LFS,不必等到触发硬拒绝
-                ctx.GetString("name"), projects.WarnBytes, ctx.Progress, ctx.Cancellation);
-            return success ? CommandResult.Ok(message, report) : CommandResult.Fail(message);
-        },
-    };
+            Name = "git.rule.review",
+            CommandClass = "git-rules",
+            Summary = "一次扫描合并查看未决格式、目录候选、规则建议与需人工判断的未知格式",
+            Readonly = true,
+            Example = "git.rule.review",
+            Parameters = [StringParam("name", "项目名;省略则针对全库", position: 0)],
+            Handler = async ctx =>
+            {
+                var (success, message, report) = await inventory.ReviewAsync(
+                    // 用警告阈值(proj.warnmb,默认 50MB)而非拒绝阈值:
+                    // 超过警告线的二进制就该走 LFS,不必等到触发硬拒绝
+                    ctx.GetString("name"), projects.WarnBytes, ctx.Progress, ctx.Cancellation);
+                return success ? CommandResult.Ok(message, report) : CommandResult.Fail(message);
+            },
+        };
 
     private static CommandDescriptor BuildList(GitFileRuleService service) => new()
     {
         Name = "git.rule.list",
+        CommandClass = "git-rules",
         Summary = "列出项目根文件格式的纳入 Git、LFS、LF 规则和实际索引状态",
         Readonly = true,
         Example = "git.rule.list name=0000-000-Template",
@@ -113,6 +117,7 @@ public static class GitRuleCommands
     private static CommandDescriptor BuildSet(GitFileRuleService service) => new()
     {
         Name = "git.rule.set",
+        CommandClass = "git-rules",
         Summary = "预览或确认后设置文件格式的纳入 Git、LFS、LF 状态并同步索引",
         Example = "git.rule.set name=demo pattern=*.xlsx track=true lfs=true lf=false apply=false",
         Parameters =
@@ -136,6 +141,7 @@ public static class GitRuleCommands
     private static CommandDescriptor BuildBatchSet(GitFileRuleService service) => new()
     {
         Name = "git.rule.batch-set",
+        CommandClass = "git-rules",
         Summary = "一次预览、确认并保存多条 Git/LFS/LF 文件规则",
         Example = "git.rule.batch-set name=demo changes=\"[{\\\"pattern\\\":\\\"*.xlsx\\\",\\\"track\\\":true,\\\"lfs\\\":true,\\\"lf\\\":false}]\" apply=false",
         Parameters =
@@ -173,6 +179,7 @@ public static class GitRuleCommands
     private static CommandDescriptor BuildRemove(GitFileRuleService service) => new()
     {
         Name = "git.rule.remove",
+        CommandClass = "git-rules",
         Summary = "预览或确认后移除托管文件格式规则；不删除本地文件",
         Example = "git.rule.remove name=demo pattern=*.xlsx apply=false",
         Parameters =
@@ -218,12 +225,12 @@ public static class GitRuleCommands
 
     private static ParameterSpec StringParam(
         string name, string description, bool required = false, int? position = null) => new()
-    {
-        Name = name,
-        Description = description,
-        Required = required,
-        Position = position,
-    };
+        {
+            Name = name,
+            Description = description,
+            Required = required,
+            Position = position,
+        };
 
     private static ParameterSpec BoolParam(string name, string description, string defaultValue) => new()
     {

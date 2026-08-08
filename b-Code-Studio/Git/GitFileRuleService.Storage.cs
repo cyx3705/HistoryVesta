@@ -592,14 +592,14 @@ public sealed partial class GitFileRuleService
             IReadOnlyList<string> all,
             HashSet<string> pointers,
             Dictionary<string, Dictionary<string, string>> attributes) => new()
-        {
-            Success = true,
-            Tracked = tracked,
-            Ignored = ignored,
-            AllFiles = all,
-            LfsPointers = pointers,
-            Attributes = attributes,
-        };
+            {
+                Success = true,
+                Tracked = tracked,
+                Ignored = ignored,
+                AllFiles = all,
+                LfsPointers = pointers,
+                Attributes = attributes,
+            };
     }
 
     private sealed class TextDocument

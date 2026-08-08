@@ -6,17 +6,17 @@
     <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AppShellPackageRoot Condition="'$(AppShellPackageRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..\2026-023-HistoryVulcan\z-Package-AppShell</AppShellPackageRoot>
-    <AppShellHostRoot Condition="'$(AppShellHostRoot)' == ''">$(AppShellPackageRoot)\host</AppShellHostRoot>
+    <HistoryVulcanPackageRoot Condition="'$(HistoryVulcanPackageRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..\2026-023-HistoryVulcan\z-HistoryVulcan</HistoryVulcanPackageRoot>
+    <HistoryVulcanHostRoot Condition="'$(HistoryVulcanHostRoot)' == ''">$(HistoryVulcanPackageRoot)\host</HistoryVulcanHostRoot>
   </PropertyGroup>
   <ItemGroup>
     <Using Include="System.IO" />
     <Using Include="System.Net.Http" />
-    <Reference Include="AppShell.Core">
-      <HintPath>$(AppShellHostRoot)\AppShell.Core.dll</HintPath>
+    <Reference Include="HistoryVulcan.Core">
+      <HintPath>$(HistoryVulcanHostRoot)\HistoryVulcan.Core.dll</HintPath>
     </Reference>
-    <Reference Include="AppShell.Services">
-      <HintPath>$(AppShellHostRoot)\AppShell.Services.dll</HintPath>
+    <Reference Include="HistoryVulcan.Services">
+      <HintPath>$(HistoryVulcanHostRoot)\HistoryVulcan.Services.dll</HintPath>
     </Reference>
     <ProjectReference Include="..\..\b-Code-Studio\Module\HistoryJanus.Module.csproj" />
   </ItemGroup>

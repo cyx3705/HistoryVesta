@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
-using AppShell.Core.Commands;
+using HistoryVulcan.Core.Commands;
 using HistoryJanus.Git;
 
 namespace HistoryJanus.Views;

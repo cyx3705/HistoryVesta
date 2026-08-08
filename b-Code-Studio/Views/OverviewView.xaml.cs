@@ -1,6 +1,6 @@
 using System.Windows.Controls;
 using System.Windows.Input;
-using AppShell.Core.Commands;
+using HistoryVulcan.Core.Commands;
 using HistoryJanus.Git;
 
 namespace HistoryJanus.Views;

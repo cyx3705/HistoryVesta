@@ -1,6 +1,6 @@
 ﻿using System.IO;
 using System.Text;
-using AppShell.Core.Storage;
+using HistoryVulcan.Core.Storage;
 
 namespace HistoryJanus.Git;
 

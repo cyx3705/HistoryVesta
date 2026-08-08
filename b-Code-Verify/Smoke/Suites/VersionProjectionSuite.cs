@@ -8,7 +8,7 @@ using static HistoryJanus.Smoke.SmokeKit;
 
 namespace HistoryJanus.Smoke.Suites;
 
-/// <summary>验证 Janus 模块版本、AppShell 宿主合同和模块发布边界。</summary>
+/// <summary>验证 Janus 模块版本、HistoryVulcan 宿主合同和模块发布边界。</summary>
 internal static class VersionProjectionSuite
 {
     public static async Task RunAsync(string[] args)
@@ -131,10 +131,10 @@ internal static class VersionProjectionSuite
             .Select(item => (string?)item.Attribute("Include"))
             .Where(item => item is not null)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        True(moduleReferences.SetEquals(["AppShell.Core", "AppShell.Services"]),
-            "module consumption: module references only public AppShell host contracts");
+        True(moduleReferences.SetEquals(["HistoryVulcan.Core", "HistoryVulcan.Services"]),
+            "module consumption: module references only public HistoryVulcan host contracts");
         Equal(0, moduleProject.Descendants("PackageReference").Count(),
-            "module consumption: module does not restore legacy AppShell packages");
+            "module consumption: module does not restore legacy HistoryVulcan packages");
 
         True(!File.Exists(Path.Combine(ParentDir, "b-Code-Studio", "Studio.csproj")),
             "single entry: legacy Studio project is removed");
@@ -162,23 +162,23 @@ internal static class VersionProjectionSuite
                 && line.Contains(".csproj\"", StringComparison.OrdinalIgnoreCase)),
             "solution boundary: module and three verification projects are the only build projects");
 
-        True(!Directory.Exists(Path.Combine(ParentDir, "b-Code-AppShell")),
-            "repository boundary: AppShell source is not embedded in Janus");
-        True(!Directory.Exists(Path.Combine(ParentDir, "z-Package-AppShell")),
-            "repository boundary: AppShell package repository is not duplicated in Janus");
+        True(!Directory.Exists(Path.Combine(ParentDir, "b-Code-HistoryVulcan")),
+            "repository boundary: HistoryVulcan source is not embedded in Janus");
+        True(!Directory.Exists(Path.Combine(ParentDir, "z-HistoryVulcan")),
+            "repository boundary: HistoryVulcan package repository is not duplicated in Janus");
 
         var publish = File.ReadAllText(Path.Combine(
             ParentDir, "b-Code-Studio", "eng", "Publish-Janus.ps1"));
-        True(!publish.Contains("Publish-AppShell", StringComparison.OrdinalIgnoreCase)
-             && !publish.Contains("b-Code-AppShell", StringComparison.OrdinalIgnoreCase),
-            "publish boundary: Janus publish does not build or publish AppShell");
+        True(!publish.Contains("Publish-HistoryVulcan", StringComparison.OrdinalIgnoreCase)
+             && !publish.Contains("b-Code-HistoryVulcan", StringComparison.OrdinalIgnoreCase),
+            "publish boundary: Janus publish does not build or publish HistoryVulcan");
         Contains(publish, "sourceDirty", "publish governance: Janus records source state");
         Contains(publish, "sourcePaths", "publish governance: source and documents must all be clean");
         Contains(publish, "Invoke-DirectoryPromotion",
             "publish governance: Janus uses the tested promotion transaction");
         Contains(publish, "'b-Publish'", "publish governance: b-Publish is the local build and history root");
-        Contains(publish, "'candidate'",
-            "publish governance: b-Publish/candidate is the replaceable release candidate");
+        Contains(publish, "'current\\HistoryJanus'",
+            "publish governance: b-Publish/current/HistoryJanus is the replaceable release candidate");
         Contains(publish, "Join-Path $PublishRoot 'history'",
             "publish governance: formal package history is flat under b-Publish/history");
         True(!publish.Contains("history/candidate", StringComparison.OrdinalIgnoreCase)
@@ -192,8 +192,8 @@ internal static class VersionProjectionSuite
             "publish governance: module package uses an exact file-set gate");
         Contains(publish, "ModuleSmoke",
             "publish governance: UI and headless module lifecycle are release gates");
-        Contains(publish, "3.1.9",
-            "publish governance: theme-aware Janus requires the AppShell 3.1.9 host contract");
+        Contains(publish, "3.2.2",
+            "publish governance: Janus requires the HistoryVulcan 3.2.2 host contract");
         Equal(1, Regex.Matches(
                 publish,
                 @"^\s*\$PackageRoot\s*=",
@@ -202,33 +202,10 @@ internal static class VersionProjectionSuite
         Contains(publish, "$ApiDocumentSource",
             "publish governance: the single consumer API document has an explicit source");
 
-        var developmentDeployPath = Path.Combine(
-            ParentDir, "b-Code-Studio", "eng", "Test-Deploy-Janus.ps1");
-        True(File.Exists(developmentDeployPath),
-            "development governance: lightweight test deployment entry exists");
-        var developmentDeploy = File.ReadAllText(developmentDeployPath);
-        Contains(developmentDeploy, "'candidate'",
-            "development governance: lightweight verification writes the shared candidate slot");
-        True(!developmentDeploy.Contains("dev-current", StringComparison.OrdinalIgnoreCase),
-            "development governance: no extra development delivery layer exists");
-        Contains(developmentDeploy, "--suite",
-            "development governance: targeted Smoke is required");
-        True(!developmentDeploy.Contains("'Release'", StringComparison.Ordinal)
-             && !developmentDeploy.Contains("--generate-manual", StringComparison.Ordinal)
-             && !developmentDeploy.Contains("z-Package-HistoryJanus", StringComparison.Ordinal),
-            "development governance: lightweight verification does not cross release gates");
-
-        var deployPath = Path.Combine(ParentDir, "b-Code-Studio", "eng", "Deploy-Janus.ps1");
-        True(File.Exists(deployPath), "deployment governance: deployment entry exists");
-        var deploy = File.ReadAllText(deployPath);
-        Contains(deploy, "z-Package-HistoryJanus",
-            "deployment governance: deployment consumes the named formal package root");
-        Contains(deploy, "AppShell\\Modules\\HistoryJanus",
-            "deployment governance: deployment updates the AppShell UI module slot");
-        Contains(deploy, "AppShell\\service\\Modules\\HistoryJanus",
-            "deployment governance: deployment updates the AppShell service module slot");
-        Contains(deploy, "did not modify startup settings",
-            "deployment governance: module deployment does not alter startup settings");
+        True(!File.Exists(Path.Combine(ParentDir, "b-Code-Studio", "eng", "Test-Deploy-Janus.ps1")),
+            "legacy development deployment entry is removed");
+        True(!File.Exists(Path.Combine(ParentDir, "b-Code-Studio", "eng", "Deploy-Janus.ps1")),
+            "legacy AppData dual-slot deployment entry is removed");
     }
 
     private static void AssertCurrentSourceAndDocumentation()
@@ -301,7 +278,7 @@ internal static class VersionProjectionSuite
                  })
         {
             True(!moduleManual.Contains(forbidden, StringComparison.Ordinal),
-                $"module manual does not predeclare AppShell roadmap: {forbidden}");
+                $"module manual does not predeclare HistoryVulcan roadmap: {forbidden}");
         }
     }
 

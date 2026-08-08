@@ -1,6 +1,6 @@
 using System.Diagnostics;
-using AppShell.Core.Commands;
-using AppShell.Core.Logging;
+using HistoryVulcan.Core.Commands;
+using HistoryVulcan.Core.Logging;
 
 namespace HistoryJanus;
 
@@ -26,6 +26,7 @@ public static class DebugCommands
     private static CommandDescriptor BuildLogFlood(IShellLog log) => new()
     {
         Name = "debug.logflood",
+        CommandClass = "debug",
         Summary = "日志承压测试:按指定速率注入日志",
         Example = "debug.logflood rate=1000 seconds=30",
         Parameters =
@@ -96,6 +97,7 @@ public static class DebugCommands
     private static CommandDescriptor BuildSleep() => new()
     {
         Name = "debug.sleep",
+        CommandClass = "debug",
         Summary = "等待指定秒数(自动化脚本用;异步等待,不阻塞 UI)",
         Example = "debug.sleep seconds=5",
         Parameters =

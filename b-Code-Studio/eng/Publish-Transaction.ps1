@@ -252,7 +252,9 @@ function Assert-ModulePackage {
     catch {
         throw "Module manifest is invalid JSON: $($_.Exception.Message)"
     }
-    if ([string]$manifest.name -ne 'HistoryJanus' -or
+    if ([string]$manifest.schemaVersion -ne '1' -or
+        [string]$manifest.type -ne 'HistoryVulcan.Module' -or
+        [string]$manifest.name -ne 'HistoryJanus' -or
         [string]$manifest.version -ne $ExpectedVersion -or
         [string]$manifest.artifact -ne 'HistoryJanus.dll' -or
         [string]$manifest.docs -ne 'HistoryJanus.xml' -or
@@ -260,11 +262,6 @@ function Assert-ModulePackage {
         $manifest.ui -ne $true) {
         throw "Module manifest identity does not match HistoryJanus $ExpectedVersion"
     }
-    if (-not [string]::IsNullOrWhiteSpace($ExpectedChannel) -and
-        [string]$manifest.channel -ne $ExpectedChannel) {
-        throw "Module manifest channel is $($manifest.channel), expected $ExpectedChannel"
-    }
-
     $checksumPath = Join-Path $fullRoot 'SHA256SUMS'
     $checksums = Read-ReleaseChecksumMap $checksumPath
     $hashedFiles = @($expectedFiles | Where-Object { $_ -ne 'SHA256SUMS' } | Sort-Object)

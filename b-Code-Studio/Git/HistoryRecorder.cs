@@ -1,10 +1,10 @@
 using System.IO;
 using System.Text;
 using System.Text.Json;
-using AppShell.Core.Data;
-using AppShell.Core.Logging;
-using AppShell.Core.Mcp;
-using AppShell.Services.Mcp;
+using HistoryVulcan.Core.Data;
+using HistoryVulcan.Core.Logging;
+using HistoryVulcan.Core.Mcp;
+using HistoryVulcan.Services.Mcp;
 
 namespace HistoryJanus.Git;
 

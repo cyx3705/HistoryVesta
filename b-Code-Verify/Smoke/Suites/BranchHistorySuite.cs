@@ -1,6 +1,6 @@
-﻿using AppShell.Core;
-using AppShell.Core.Mcp;
-using AppShell.Core.Commands;
+using HistoryVulcan.Core;
+using HistoryVulcan.Core.Mcp;
+using HistoryVulcan.Core.Commands;
 using System.Xml.Linq;
 using HistoryJanus.Git;
 using static HistoryJanus.Smoke.SmokeKit;

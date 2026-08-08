@@ -1,5 +1,5 @@
-﻿using System.Xml.Linq;
-using AppShell.Core.Commands;
+using System.Xml.Linq;
+using HistoryVulcan.Core.Commands;
 using HistoryJanus.Git;
 using HistoryJanus.Views;
 using static HistoryJanus.Smoke.SmokeKit;

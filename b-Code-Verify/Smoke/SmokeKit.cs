@@ -1,6 +1,6 @@
-﻿using AppShell.Core;
-using AppShell.Core.Logging;
-using AppShell.Core.Storage;
+using HistoryVulcan.Core;
+using HistoryVulcan.Core.Logging;
+using HistoryVulcan.Core.Storage;
 using HistoryJanus.Git;
 
 namespace HistoryJanus.Smoke;

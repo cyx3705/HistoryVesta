@@ -1,7 +1,7 @@
 using System.IO;
-using AppShell.Core.Commands;
-using AppShell.Core.Docking;
-using AppShell.Core.Modules;
+using HistoryVulcan.Core.Commands;
+using HistoryVulcan.Core.Docking;
+using HistoryVulcan.Core.Modules;
 using HistoryJanus.Views;
 
 namespace HistoryJanus.Module;

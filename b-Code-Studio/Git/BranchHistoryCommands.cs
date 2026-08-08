@@ -1,4 +1,4 @@
-using AppShell.Core.Commands;
+using HistoryVulcan.Core.Commands;
 
 namespace HistoryJanus.Git;
 
@@ -22,6 +22,7 @@ public static class BranchHistoryCommands
     private static CommandDescriptor BuildHistory(BranchHistoryService service) => new()
     {
         Name = "proj.history",
+        CommandClass = "history",
         Summary = "查看分支从父分支分叉点到当前 HEAD 的提交历史",
         Readonly = true,
         Example = "proj.history name=2026-018-MyAPI limit=200 remote=false",
@@ -47,6 +48,7 @@ public static class BranchHistoryCommands
     private static CommandDescriptor BuildShow(BranchHistoryService service) => new()
     {
         Name = "proj.history.show",
+        CommandClass = "history",
         Summary = "查看分支历史节点的提交详情与文件变更",
         Readonly = true,
         Example = "proj.history.show name=2026-018-MyAPI sha=abc1234",
@@ -64,6 +66,7 @@ public static class BranchHistoryCommands
     private static CommandDescriptor BuildDiff(BranchHistoryService service) => new()
     {
         Name = "proj.history.diff",
+        CommandClass = "history",
         Summary = "预览历史节点与当前分支 HEAD 的提交及文件差异",
         Readonly = true,
         Example = "proj.history.diff name=2026-018-MyAPI sha=abc1234",
@@ -80,72 +83,75 @@ public static class BranchHistoryCommands
 
     private static CommandDescriptor BuildRollback(
         BranchHistoryService service, HistoryRecorder history) => new()
-    {
-        Name = "proj.rollback",
-        Summary = "把工作树恢复到历史节点内容并生成新的恢复提交",
-        Example = "proj.rollback name=2026-018-MyAPI sha=abc1234 msg=\"恢复到稳定版本\"",
-        Parameters =
+        {
+            Name = "proj.rollback",
+            CommandClass = "history",
+            Summary = "把工作树恢复到历史节点内容并生成新的恢复提交",
+            Example = "proj.rollback name=2026-018-MyAPI sha=abc1234 msg=\"恢复到稳定版本\"",
+            Parameters =
         [
             Text("name", "分支名（项目名）", required: true, position: 0),
             Text("sha", "分叉点至 HEAD 范围内的提交 SHA", required: true, position: 1),
             Text("msg", "新恢复提交的说明", required: true, position: 2),
         ],
-        ConfirmPrompt = ctx => service.BuildRollbackPrompt(
-            ctx.RequireString("name"), ctx.RequireString("sha"), hardReset: false),
-        Handler = async ctx =>
-        {
-            var expectedHead = service.TakeRollbackApproval(
-                ctx.RequireString("name"), ctx.RequireString("sha"), hardReset: false);
-            var report = await service.RollbackAsync(ctx.RequireString("name"),
-                ctx.RequireString("sha"), ctx.RequireString("msg"), ctx.Cancellation, expectedHead);
-            Record(history, "rollback", report);
-            return report.Success
-                ? CommandResult.Ok(report.Message, report)
-                : CommandResult.Fail(report.Message);
-        },
-    };
+            ConfirmPrompt = ctx => service.BuildRollbackPrompt(
+                ctx.RequireString("name"), ctx.RequireString("sha"), hardReset: false),
+            Handler = async ctx =>
+            {
+                var expectedHead = service.TakeRollbackApproval(
+                    ctx.RequireString("name"), ctx.RequireString("sha"), hardReset: false);
+                var report = await service.RollbackAsync(ctx.RequireString("name"),
+                    ctx.RequireString("sha"), ctx.RequireString("msg"), ctx.Cancellation, expectedHead);
+                Record(history, "rollback", report);
+                return report.Success
+                    ? CommandResult.Ok(report.Message, report)
+                    : CommandResult.Fail(report.Message);
+            },
+        };
 
     private static CommandDescriptor BuildReset(
         BranchHistoryService service, HistoryRecorder history) => new()
-    {
-        Name = "proj.reset",
-        Summary = "把非保护分支硬重置到历史节点（仅本地，不修改远端）",
-        Example = "proj.reset name=2026-018-MyAPI sha=abc1234",
-        Parameters = TargetParameters(),
-        ConfirmPrompt = ctx => service.BuildRollbackPrompt(
-            ctx.RequireString("name"), ctx.RequireString("sha"), hardReset: true),
-        Handler = async ctx =>
         {
-            var expectedHead = service.TakeRollbackApproval(
-                ctx.RequireString("name"), ctx.RequireString("sha"), hardReset: true);
-            var report = await service.ResetAsync(ctx.RequireString("name"),
-                ctx.RequireString("sha"), ctx.Cancellation, expectedHead);
-            Record(history, "reset", report);
-            return report.Success
-                ? CommandResult.Ok(report.Message, report)
-                : CommandResult.Fail(report.Message);
-        },
-    };
+            Name = "proj.reset",
+            CommandClass = "history",
+            Summary = "把非保护分支硬重置到历史节点（仅本地，不修改远端）",
+            Example = "proj.reset name=2026-018-MyAPI sha=abc1234",
+            Parameters = TargetParameters(),
+            ConfirmPrompt = ctx => service.BuildRollbackPrompt(
+                ctx.RequireString("name"), ctx.RequireString("sha"), hardReset: true),
+            Handler = async ctx =>
+            {
+                var expectedHead = service.TakeRollbackApproval(
+                    ctx.RequireString("name"), ctx.RequireString("sha"), hardReset: true);
+                var report = await service.ResetAsync(ctx.RequireString("name"),
+                    ctx.RequireString("sha"), ctx.Cancellation, expectedHead);
+                Record(history, "reset", report);
+                return report.Success
+                    ? CommandResult.Ok(report.Message, report)
+                    : CommandResult.Fail(report.Message);
+            },
+        };
 
     private static CommandDescriptor BuildForcePush(
         BranchHistoryService service, HistoryRecorder history) => new()
-    {
-        Name = "proj.forcepush",
-        Summary = "使用 --force-with-lease 更新非保护远端分支",
-        Example = "proj.forcepush name=2026-018-MyAPI",
-        Parameters = [Text("name", "分支名（项目名）", required: true, position: 0)],
-        ConfirmPrompt = ctx => service.BuildForcePushPrompt(ctx.RequireString("name")),
-        Handler = async ctx =>
         {
-            var expected = service.TakeForcePushApproval(ctx.RequireString("name"));
-            var report = await service.ForcePushAsync(ctx.RequireString("name"), ctx.Cancellation,
-                expected.Local, expected.Remote);
-            Record(history, "forcepush", report);
-            return report.Success
-                ? CommandResult.Ok(report.Message, report)
-                : CommandResult.Fail(report.Message);
-        },
-    };
+            Name = "proj.forcepush",
+            CommandClass = "history",
+            Summary = "使用 --force-with-lease 更新非保护远端分支",
+            Example = "proj.forcepush name=2026-018-MyAPI",
+            Parameters = [Text("name", "分支名（项目名）", required: true, position: 0)],
+            ConfirmPrompt = ctx => service.BuildForcePushPrompt(ctx.RequireString("name")),
+            Handler = async ctx =>
+            {
+                var expected = service.TakeForcePushApproval(ctx.RequireString("name"));
+                var report = await service.ForcePushAsync(ctx.RequireString("name"), ctx.Cancellation,
+                    expected.Local, expected.Remote);
+                Record(history, "forcepush", report);
+                return report.Success
+                    ? CommandResult.Ok(report.Message, report)
+                    : CommandResult.Fail(report.Message);
+            },
+        };
 
     private static IReadOnlyList<ParameterSpec> TargetParameters() =>
     [
@@ -155,12 +161,12 @@ public static class BranchHistoryCommands
 
     private static ParameterSpec Text(
         string name, string description, bool required = false, int? position = null) => new()
-    {
-        Name = name,
-        Description = description,
-        Required = required,
-        Position = position,
-    };
+        {
+            Name = name,
+            Description = description,
+            Required = required,
+            Position = position,
+        };
 
     private static ParameterSpec Int(string name, string description, string defaultValue) => new()
     {
