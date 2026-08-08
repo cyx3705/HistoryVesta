@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 public enum BranchRemoteState
 {

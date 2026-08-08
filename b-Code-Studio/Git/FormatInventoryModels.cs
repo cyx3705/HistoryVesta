@@ -1,4 +1,4 @@
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 /// <summary>台账中的一种文件格式。Suggestion 由规则建议引擎填充。</summary>
 public sealed record FormatRow(

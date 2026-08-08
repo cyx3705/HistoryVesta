@@ -1,6 +1,6 @@
-# OHS Verification
+# Janus Verification
 
-本目录是 OneHistoryStudio 的独立验证组件，产品源码位于平级 `b-Code-Studio`。验证工程可以引用产品工程，
+本目录是 HistoryJanus 的独立验证组件，产品源码位于平级 `b-Code-Studio`。验证工程可以引用产品工程，
 产品工程不得反向引用验证组件。
 
 ## 结构
@@ -30,12 +30,12 @@ dotnet run --project .\b-Code-Verify\ModuleSmoke\ModuleSmoke.csproj -c Release -
 日常功能完成由产品脚本组合 Contracts、Debug 构建、定向 Smoke 和可运行测试部署：
 
 ```powershell
-.\b-Code-Studio\eng\Test-Deploy-Studio.ps1 -Suite ProjectOperations
-.\b-Code-Studio\eng\Test-Deploy-Studio.ps1 -Suite GitRules,RepositoryTargets
+.\b-Code-Studio\eng\Test-Deploy-Janus.ps1 -Suite ProjectOperations
+.\b-Code-Studio\eng\Test-Deploy-Janus.ps1 -Suite GitRules,RepositoryTargets
 ```
 
 产物只覆盖 `b-Publish/candidate`，不保留候选历史。完整 Debug/Release Smoke、ModuleSmoke 及正式发布校验只由
-`Publish-Studio.ps1` 在发布候选阶段执行。
+`Publish-Janus.ps1` 在发布候选阶段执行。
 
 默认 Smoke 禁止真实鼠标、开机自启动、UAC、正式项目写入和第二台 LAN 设备。项目操作页行为使用隔离数据和 STA 测试线程执行：
 

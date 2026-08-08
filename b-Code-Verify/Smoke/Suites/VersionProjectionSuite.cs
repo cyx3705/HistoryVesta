@@ -3,23 +3,23 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using OneHistoryStudio.Git;
-using static OneHistoryStudio.Smoke.SmokeKit;
+using HistoryJanus.Git;
+using static HistoryJanus.Smoke.SmokeKit;
 
-namespace OneHistoryStudio.Smoke.Suites;
+namespace HistoryJanus.Smoke.Suites;
 
-/// <summary>验证 OHS 模块版本、AppShell 宿主合同和模块发布边界。</summary>
+/// <summary>验证 Janus 模块版本、AppShell 宿主合同和模块发布边界。</summary>
 internal static class VersionProjectionSuite
 {
     public static async Task RunAsync(string[] args)
     {
         var studioRoot = Path.Combine(ParentDir, "b-Code-Studio");
         var studioVersion = ReadSingleVersion(
-            Path.Combine(studioRoot, "StudioVersion.props"), "OneHistoryStudioVersion");
+            Path.Combine(studioRoot, "JanusVersion.props"), "HistoryJanusVersion");
 
         AssertRuntimeAssemblies(studioVersion, [typeof(ProjectService).Assembly]);
 
-        const string moduleProject = "b-Code-Studio/Module/OneHistoryStudio.Module.csproj";
+        const string moduleProject = "b-Code-Studio/Module/HistoryJanus.Module.csproj";
         var moduleEvaluation = await EvaluateAsync(Path.Combine(ParentDir, moduleProject));
         AssertEvaluatedVersion(moduleEvaluation, studioVersion, moduleProject);
         using (var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(
@@ -33,7 +33,7 @@ internal static class VersionProjectionSuite
         AssertCurrentSourceAndDocumentation();
         await AssertPublishAreaGovernanceAsync();
         await AssertPublishTransactionAsync(studioRoot);
-        Console.WriteLine($"version projection: OHS module {studioVersion}");
+        Console.WriteLine($"version projection: Janus module {studioVersion}");
     }
 
     private static string ReadSingleVersion(string path, string propertyName)
@@ -67,7 +67,7 @@ internal static class VersionProjectionSuite
 
     private static void AssertEvaluatedVersion(JsonElement evaluation, string expected, string project)
     {
-        Equal(expected, Property(evaluation, "OneHistoryStudioVersion"),
+        Equal(expected, Property(evaluation, "HistoryJanusVersion"),
             $"version projection: {project} source");
         Equal(expected, Property(evaluation, "VersionPrefix"),
             $"version projection: {project} prefix");
@@ -98,7 +98,7 @@ internal static class VersionProjectionSuite
         foreach (var argument in new[]
                  {
                      "msbuild", project, "-nologo",
-                     "-getProperty:OneHistoryStudioVersion", "-getProperty:VersionPrefix",
+                     "-getProperty:HistoryJanusVersion", "-getProperty:VersionPrefix",
                      "-getProperty:Version", "-getProperty:AssemblyVersion",
                      "-getProperty:FileVersion", "-getProperty:InformationalVersion",
                  })
@@ -123,10 +123,10 @@ internal static class VersionProjectionSuite
     private static void AssertPackageConsumers()
     {
         var moduleProject = XDocument.Load(Path.Combine(
-            ParentDir, "b-Code-Studio", "Module", "OneHistoryStudio.Module.csproj"));
+            ParentDir, "b-Code-Studio", "Module", "HistoryJanus.Module.csproj"));
         True(moduleProject.Descendants("Import").Any(item =>
-                ((string?)item.Attribute("Project"))?.EndsWith("StudioVersion.props", StringComparison.OrdinalIgnoreCase) == true),
-            "module consumption: module imports the single OHS version source");
+                ((string?)item.Attribute("Project"))?.EndsWith("JanusVersion.props", StringComparison.OrdinalIgnoreCase) == true),
+            "module consumption: module imports the single Janus version source");
         var moduleReferences = moduleProject.Descendants("Reference")
             .Select(item => (string?)item.Attribute("Include"))
             .Where(item => item is not null)
@@ -154,28 +154,28 @@ internal static class VersionProjectionSuite
              && !Directory.Exists(Path.Combine(ParentDir, "b-Code-Studio", "Service")),
             "single entry: legacy connection and service trees are removed");
 
-        var solution = File.ReadAllText(Path.Combine(ParentDir, "OHS.sln"));
+        var solution = File.ReadAllText(Path.Combine(ParentDir, "HistoryJanus.sln"));
         True(!solution.Contains("Studio.csproj", StringComparison.OrdinalIgnoreCase),
             "solution boundary: legacy Studio project is absent");
-        Equal(4, File.ReadAllLines(Path.Combine(ParentDir, "OHS.sln")).Count(line =>
+        Equal(4, File.ReadAllLines(Path.Combine(ParentDir, "HistoryJanus.sln")).Count(line =>
                 line.StartsWith("Project(", StringComparison.Ordinal)
                 && line.Contains(".csproj\"", StringComparison.OrdinalIgnoreCase)),
             "solution boundary: module and three verification projects are the only build projects");
 
         True(!Directory.Exists(Path.Combine(ParentDir, "b-Code-AppShell")),
-            "repository boundary: AppShell source is not embedded in OHS");
+            "repository boundary: AppShell source is not embedded in Janus");
         True(!Directory.Exists(Path.Combine(ParentDir, "z-Package-AppShell")),
-            "repository boundary: AppShell package repository is not duplicated in OHS");
+            "repository boundary: AppShell package repository is not duplicated in Janus");
 
         var publish = File.ReadAllText(Path.Combine(
-            ParentDir, "b-Code-Studio", "eng", "Publish-Studio.ps1"));
+            ParentDir, "b-Code-Studio", "eng", "Publish-Janus.ps1"));
         True(!publish.Contains("Publish-AppShell", StringComparison.OrdinalIgnoreCase)
              && !publish.Contains("b-Code-AppShell", StringComparison.OrdinalIgnoreCase),
-            "publish boundary: OHS publish does not build or publish AppShell");
-        Contains(publish, "sourceDirty", "publish governance: OHS records source state");
+            "publish boundary: Janus publish does not build or publish AppShell");
+        Contains(publish, "sourceDirty", "publish governance: Janus records source state");
         Contains(publish, "sourcePaths", "publish governance: source and documents must all be clean");
         Contains(publish, "Invoke-DirectoryPromotion",
-            "publish governance: OHS uses the tested promotion transaction");
+            "publish governance: Janus uses the tested promotion transaction");
         Contains(publish, "'b-Publish'", "publish governance: b-Publish is the local build and history root");
         Contains(publish, "'candidate'",
             "publish governance: b-Publish/candidate is the replaceable release candidate");
@@ -186,14 +186,14 @@ internal static class VersionProjectionSuite
             "publish governance: release candidates are never archived as history");
         True(!publish.Contains("Join-Path $RepoRoot \"stage\"", StringComparison.Ordinal),
             "publish governance: the removed stage root is not recreated");
-        Contains(publish, "z-Package-OneHistoryStudio",
+        Contains(publish, "z-Package-HistoryJanus",
             "publish governance: named z-level directory is the formal package root");
         Contains(publish, "Assert-ModulePackage",
             "publish governance: module package uses an exact file-set gate");
         Contains(publish, "ModuleSmoke",
             "publish governance: UI and headless module lifecycle are release gates");
         Contains(publish, "3.1.9",
-            "publish governance: theme-aware OHS requires the AppShell 3.1.9 host contract");
+            "publish governance: theme-aware Janus requires the AppShell 3.1.9 host contract");
         Equal(1, Regex.Matches(
                 publish,
                 @"^\s*\$PackageRoot\s*=",
@@ -203,7 +203,7 @@ internal static class VersionProjectionSuite
             "publish governance: the single consumer API document has an explicit source");
 
         var developmentDeployPath = Path.Combine(
-            ParentDir, "b-Code-Studio", "eng", "Test-Deploy-Studio.ps1");
+            ParentDir, "b-Code-Studio", "eng", "Test-Deploy-Janus.ps1");
         True(File.Exists(developmentDeployPath),
             "development governance: lightweight test deployment entry exists");
         var developmentDeploy = File.ReadAllText(developmentDeployPath);
@@ -215,17 +215,17 @@ internal static class VersionProjectionSuite
             "development governance: targeted Smoke is required");
         True(!developmentDeploy.Contains("'Release'", StringComparison.Ordinal)
              && !developmentDeploy.Contains("--generate-manual", StringComparison.Ordinal)
-             && !developmentDeploy.Contains("z-Package-OneHistoryStudio", StringComparison.Ordinal),
+             && !developmentDeploy.Contains("z-Package-HistoryJanus", StringComparison.Ordinal),
             "development governance: lightweight verification does not cross release gates");
 
-        var deployPath = Path.Combine(ParentDir, "b-Code-Studio", "eng", "Deploy-Studio.ps1");
+        var deployPath = Path.Combine(ParentDir, "b-Code-Studio", "eng", "Deploy-Janus.ps1");
         True(File.Exists(deployPath), "deployment governance: deployment entry exists");
         var deploy = File.ReadAllText(deployPath);
-        Contains(deploy, "z-Package-OneHistoryStudio",
+        Contains(deploy, "z-Package-HistoryJanus",
             "deployment governance: deployment consumes the named formal package root");
-        Contains(deploy, "AppShell\\Modules\\OneHistoryStudio",
+        Contains(deploy, "AppShell\\Modules\\HistoryJanus",
             "deployment governance: deployment updates the AppShell UI module slot");
-        Contains(deploy, "AppShell\\service\\Modules\\OneHistoryStudio",
+        Contains(deploy, "AppShell\\service\\Modules\\HistoryJanus",
             "deployment governance: deployment updates the AppShell service module slot");
         Contains(deploy, "did not modify startup settings",
             "deployment governance: module deployment does not alter startup settings");
@@ -258,8 +258,8 @@ internal static class VersionProjectionSuite
         var historyRoot = Path.Combine(officeRoot, "history");
         True(Directory.Exists(currentRoot) && Directory.Exists(packageRoot) && Directory.Exists(historyRoot),
             "documentation follows the current/package/history contract");
-        True(!Directory.Exists(Path.Combine(officeRoot, "OneHistoryStudio")),
-            "documentation: the drifted OneHistoryStudio document directory is removed");
+        True(!Directory.Exists(Path.Combine(officeRoot, "HistoryJanus")),
+            "documentation: the drifted HistoryJanus document directory is removed");
         True(!Directory.Exists(Path.Combine(officeRoot, "meta"))
              && !Directory.Exists(Path.Combine(officeRoot, "versions"))
              && !Directory.Exists(Path.Combine(officeRoot, "evidence")),
@@ -273,7 +273,7 @@ internal static class VersionProjectionSuite
         True(currentDocuments.SetEquals(["项目概览.md", "技术合同.md", "有效决策.md", "验证合同.md"]),
             "current contains the four AIReady meta documents");
         True(packageDocuments.SetEquals(["模块API.md"]),
-            "package contains only the OHS module API contract");
+            "package contains only the Janus module API contract");
         var documentationCenter = Path.Combine(officeRoot, "文档中心.md");
         True(File.Exists(documentationCenter), "b-Office has a root documentation center");
         Equal(0, Directory.EnumerateFiles(officeRoot, "README.md", SearchOption.AllDirectories).Count(),
@@ -314,20 +314,20 @@ internal static class VersionProjectionSuite
             "version projection: local b-Publish build and history data is ignored");
 
         var gitAttributes = File.ReadAllLines(Path.Combine(ParentDir, ".gitattributes"));
-        True(gitAttributes.Any(line => line.StartsWith("z-Package-OneHistoryStudio/**/*.dll ", StringComparison.Ordinal)),
+        True(gitAttributes.Any(line => line.StartsWith("z-Package-HistoryJanus/**/*.dll ", StringComparison.Ordinal)),
             "version projection: formal package binaries use Git LFS");
         True(!gitAttributes.Any(line => line.StartsWith("b-Publish/**/*.dll ", StringComparison.Ordinal)),
             "version projection: ignored local publish area has no tracked LFS contract");
         True(!Directory.Exists(Path.Combine(ParentDir, "z-Package")),
             "version projection: unnamed legacy package root is removed");
-        var formalRoot = Path.Combine(ParentDir, "z-Package-OneHistoryStudio");
+        var formalRoot = Path.Combine(ParentDir, "z-Package-HistoryJanus");
         if (Directory.Exists(formalRoot))
         {
             var formalPackageFiles = Directory.EnumerateFiles(formalRoot, "*", SearchOption.AllDirectories)
                 .Select(path => Path.GetRelativePath(formalRoot, path).Replace('\\', '/'))
                 .ToHashSet(StringComparer.Ordinal);
             True(formalPackageFiles.SetEquals([
-                    "OneHistoryStudio.dll", "OneHistoryStudio.xml", "module.manifest.json",
+                    "HistoryJanus.dll", "HistoryJanus.xml", "module.manifest.json",
                     "SHA256SUMS", "package/模块API.md",
                 ]),
                 "version projection: formal package is the minimal module snapshot");

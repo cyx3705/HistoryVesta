@@ -29,11 +29,11 @@ var log = new MemoryLog();
 var registry = new CommandRegistry();
 var bus = new CommandBus(registry, log);
 var settings = new MemorySettings();
-var dataDirectory = Path.Combine(Path.GetTempPath(), "OneHistoryStudio-ModuleSmoke", Guid.NewGuid().ToString("N"));
+var dataDirectory = Path.Combine(Path.GetTempPath(), "HistoryJanus-ModuleSmoke", Guid.NewGuid().ToString("N"));
 var shellUi = new RecordingShellUiRegistrar();
 registry.Register(new CommandDescriptor
 {
-    Name = "OneHistoryStudio.Status",
+    Name = "HistoryJanus.Status",
     Summary = "frontend proxy placeholder",
     Readonly = true,
     Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("proxy")),
@@ -61,8 +61,8 @@ if (host.Modules.Count != 1)
 }
 
 var meta = host.Modules[0];
-if (!meta.ModuleName.Equals("OneHistoryStudio", StringComparison.Ordinal)
-    || !meta.Version.Equals("3.0.1", StringComparison.Ordinal)
+if (!meta.ModuleName.Equals("HistoryJanus", StringComparison.Ordinal)
+    || !meta.Version.Equals("3.1.0", StringComparison.Ordinal)
     || !meta.Ui
     || meta.CommandCount < 29)
 {
@@ -70,14 +70,14 @@ if (!meta.ModuleName.Equals("OneHistoryStudio", StringComparison.Ordinal)
         $"unexpected module metadata: {meta.ModuleName} {meta.Version} ui={meta.Ui} commands={meta.CommandCount}");
 }
 
-if (!registry.TryGet("OneHistoryStudio.Status", out var descriptor)
+if (!registry.TryGet("HistoryJanus.Status", out var descriptor)
     || !descriptor.Readonly
-    || !registry.GetSource("OneHistoryStudio.Status")
-        .Equals("module:OneHistoryStudio", StringComparison.Ordinal))
+    || !registry.GetSource("HistoryJanus.Status")
+        .Equals("module:HistoryJanus", StringComparison.Ordinal))
 {
     throw new InvalidOperationException(
-        $"module command contract is not projected correctly: exists={registry.TryGet("OneHistoryStudio.Status", out _)} "
-        + $"source={registry.GetSource("OneHistoryStudio.Status")} "
+        $"module command contract is not projected correctly: exists={registry.TryGet("HistoryJanus.Status", out _)} "
+        + $"source={registry.GetSource("HistoryJanus.Status")} "
         + string.Join("; ", log.Snapshot().Where(entry => entry.Category == "module").Select(entry => entry.Message)));
 }
 
@@ -94,13 +94,13 @@ var businessCommands = new[]
 foreach (var commandName in businessCommands)
 {
     if (!registry.TryGet(commandName, out _)
-        || !registry.GetSource(commandName).Equals("module:OneHistoryStudio", StringComparison.Ordinal))
+        || !registry.GetSource(commandName).Equals("module:HistoryJanus", StringComparison.Ordinal))
     {
         throw new InvalidOperationException($"business command is not module-owned: {commandName}");
     }
 }
-var result = await bus.ExecuteAsync("OneHistoryStudio.Status", "ModuleSmoke");
-if (!result.Success || !result.Message.Contains("3.0.1", StringComparison.Ordinal))
+var result = await bus.ExecuteAsync("HistoryJanus.Status", "ModuleSmoke");
+if (!result.Success || !result.Message.Contains("3.1.0", StringComparison.Ordinal))
     throw new InvalidOperationException($"module command failed: {result.Message}");
 
 var projectList = await bus.ExecuteAsync("proj.list", "ModuleSmoke");
@@ -115,7 +115,7 @@ if (!expectedWindows.SequenceEqual(actualWindows, StringComparer.Ordinal))
         $"unexpected module windows: [{string.Join(", ", actualWindows)}]");
 }
 
-if (shellUi.Descriptors.Any(item => item.Title.Equals("OneHistoryStudio", StringComparison.Ordinal)))
+if (shellUi.Descriptors.Any(item => item.Title.Equals("HistoryJanus", StringComparison.Ordinal)))
     throw new InvalidOperationException("placeholder main window is still registered");
 
 var pageTypes = ConstructPages(shellUi.Descriptors, bus);
@@ -143,7 +143,7 @@ var emptyModuleDirectory = Path.Combine(dataDirectory, "empty-modules");
 Directory.CreateDirectory(emptyModuleDirectory);
 host.ChangeDirectory(emptyModuleDirectory);
 if (businessCommands.Any(commandName => registry.TryGet(commandName, out _))
-    || registry.TryGet("OneHistoryStudio.Status", out _))
+    || registry.TryGet("HistoryJanus.Status", out _))
 {
     throw new InvalidOperationException("module unload left owned commands in the host registry");
 }

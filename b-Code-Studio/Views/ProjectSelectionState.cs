@@ -1,4 +1,4 @@
-namespace OneHistoryStudio.Views;
+namespace HistoryJanus.Views;
 
 /// <summary>进程内共享的当前项目选择，只传递稳定的项目名。</summary>
 public sealed class ProjectSelectionState

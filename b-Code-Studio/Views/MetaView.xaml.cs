@@ -1,9 +1,9 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 using AppShell.Core.Commands;
-using OneHistoryStudio.Git;
+using HistoryJanus.Git;
 
-namespace OneHistoryStudio.Views;
+namespace HistoryJanus.Views;
 
 /// <summary>
 /// Meta 文件工具窗口：汇总各项目根下 z/Z 开头的一级元文件夹。

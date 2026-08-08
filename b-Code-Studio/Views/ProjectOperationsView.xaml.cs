@@ -5,9 +5,9 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using AppShell.Core.Commands;
-using OneHistoryStudio.Git;
+using HistoryJanus.Git;
 
-namespace OneHistoryStudio.Views;
+namespace HistoryJanus.Views;
 
 /// <summary>项目创建、提交推送和所选项目的三状态 Git 文件格式规则。</summary>
 public partial class ProjectOperationsView : UserControl

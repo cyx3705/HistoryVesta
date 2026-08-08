@@ -94,9 +94,9 @@ function Assert-ReleaseTree {
         throw "Release manifest is invalid JSON: $($_.Exception.Message)"
     }
     if ([string]$manifest.schemaVersion -ne '1' -or
-        [string]$manifest.product -ne 'OneHistoryStudio' -or
+        [string]$manifest.product -ne 'HistoryJanus' -or
         [string]$manifest.version -ne $ExpectedVersion) {
-        throw "Release manifest identity does not match OneHistoryStudio $ExpectedVersion"
+        throw "Release manifest identity does not match HistoryJanus $ExpectedVersion"
     }
     if (-not [string]::IsNullOrWhiteSpace($ExpectedChannel) -and
         [string]$manifest.channel -ne $ExpectedChannel) {
@@ -227,8 +227,8 @@ function Assert-ModulePackage {
     }
     $apiRelative = 'package/' + $packageDocs[0].Name
     $expectedFiles = @(
-        'OneHistoryStudio.dll',
-        'OneHistoryStudio.xml',
+        'HistoryJanus.dll',
+        'HistoryJanus.xml',
         'module.manifest.json',
         $apiRelative,
         'SHA256SUMS'
@@ -252,13 +252,13 @@ function Assert-ModulePackage {
     catch {
         throw "Module manifest is invalid JSON: $($_.Exception.Message)"
     }
-    if ([string]$manifest.name -ne 'OneHistoryStudio' -or
+    if ([string]$manifest.name -ne 'HistoryJanus' -or
         [string]$manifest.version -ne $ExpectedVersion -or
-        [string]$manifest.artifact -ne 'OneHistoryStudio.dll' -or
-        [string]$manifest.docs -ne 'OneHistoryStudio.xml' -or
+        [string]$manifest.artifact -ne 'HistoryJanus.dll' -or
+        [string]$manifest.docs -ne 'HistoryJanus.xml' -or
         [string]$manifest.mcpExposure -ne 'readonly' -or
         $manifest.ui -ne $true) {
-        throw "Module manifest identity does not match OneHistoryStudio $ExpectedVersion"
+        throw "Module manifest identity does not match HistoryJanus $ExpectedVersion"
     }
     if (-not [string]::IsNullOrWhiteSpace($ExpectedChannel) -and
         [string]$manifest.channel -ne $ExpectedChannel) {
@@ -282,7 +282,7 @@ function Assert-ModulePackage {
         }
     }
 
-    $assembly = [Reflection.AssemblyName]::GetAssemblyName((Join-Path $fullRoot 'OneHistoryStudio.dll'))
+    $assembly = [Reflection.AssemblyName]::GetAssemblyName((Join-Path $fullRoot 'HistoryJanus.dll'))
     if ($assembly.Version.ToString() -ne "$ExpectedVersion.0") {
         throw "Module assembly version is $($assembly.Version), expected $ExpectedVersion.0"
     }

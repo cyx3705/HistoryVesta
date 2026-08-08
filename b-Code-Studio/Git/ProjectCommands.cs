@@ -2,7 +2,7 @@ using System.IO;
 using System.Text;
 using AppShell.Core.Commands;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 /// <summary>
 /// proj.* 指令域注册。
@@ -154,7 +154,7 @@ public static class ProjectCommands
     {
         Name = "proj.create",
         Summary = "创建新项目:新建分支 + 同名工作树(分支名 = 文件夹名)",
-        Example = "proj.create name=2026-020-新项目",
+        Example = "proj.create name=2026-025-新项目",
         Parameters =
         [
             new ParameterSpec

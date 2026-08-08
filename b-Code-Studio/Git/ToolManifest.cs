@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using AppShell.Core.Commands;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 /// <summary>
 /// 工具项目 z 级元文件夹中 module.manifest.json 的解析结果。

@@ -1,16 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\StudioVersion.props" />
+  <Import Project="..\JanusVersion.props" />
 
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyName>OneHistoryStudio</AssemblyName>
-    <RootNamespace>OneHistoryStudio.Module</RootNamespace>
+    <AssemblyName>HistoryJanus</AssemblyName>
+    <RootNamespace>HistoryJanus.Module</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1573;CS1591</NoWarn>
-    <AppShellPackageRoot Condition="'$(AppShellPackageRoot)' == ''">C:\OneHistory\OneHistory-Projects\2026-023-AppShell\z-Package-AppShell</AppShellPackageRoot>
+    <AppShellPackageRoot Condition="'$(AppShellPackageRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..\2026-023-AppShell\z-Package-AppShell</AppShellPackageRoot>
     <AppShellHostRoot Condition="'$(AppShellHostRoot)' == ''">$(AppShellPackageRoot)\host</AppShellHostRoot>
   </PropertyGroup>
 

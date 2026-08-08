@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 /// <summary>
 /// ProjectService 的仓库修复切面。

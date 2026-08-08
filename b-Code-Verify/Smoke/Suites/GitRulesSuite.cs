@@ -2,10 +2,10 @@
 using AppShell.Core.Mcp;
 using System.Text;
 using AppShell.Core.Commands;
-using OneHistoryStudio.Git;
-using static OneHistoryStudio.Smoke.SmokeKit;
+using HistoryJanus.Git;
+using static HistoryJanus.Smoke.SmokeKit;
 
-namespace OneHistoryStudio.Smoke.Suites;
+namespace HistoryJanus.Smoke.Suites;
 
 /// <summary>Git 文件规则、LFS/LF 规范化与格式台账。</summary>
 internal static class GitRulesSuite
@@ -29,16 +29,16 @@ internal static class GitRulesSuite
                 "# manual attributes before\r\n" +
                 "*.bin filter=lfs diff=lfs merge=lfs -text\r\n" +
                 "*.txt text eol=lf\r\n" +
-                "# OneHistoryStudio managed begin\r\n" +
+                "# HistoryJanus managed begin\r\n" +
                 "*.seed text eol=lf\r\n" +
-                "# OneHistoryStudio managed end\r\n" +
+                "# HistoryJanus managed end\r\n" +
                 "# manual attributes after\r\n";
             var ignore =
                 "# manual ignore before\r\n" +
                 "manual-only/\r\n" +
-                "# OneHistoryStudio managed begin\r\n" +
+                "# HistoryJanus managed begin\r\n" +
                 "*.old\r\n" +
-                "# OneHistoryStudio managed end\r\n" +
+                "# HistoryJanus managed end\r\n" +
                 "# manual ignore after\r\n";
             await File.WriteAllTextAsync(Path.Combine(seed, ".gitattributes"), attributes, new UTF8Encoding(true));
             await File.WriteAllTextAsync(Path.Combine(seed, ".gitignore"), ignore, new UTF8Encoding(true));
@@ -308,8 +308,8 @@ internal static class GitRulesSuite
             Ensure(headAfter, "read final HEAD");
             Equal(headBefore.Output, headAfter.Output, "rule operations do not commit or rewrite history");
 
-            const string realRoot = @"C:\OneHistory\OneHistory-Projects";
-            const string realBare = @"C:\OneHistory\OneHistory-Projects\OneHistory-Projects.git";
+            const string realRoot = @"C:\OneHistory\HistoryVesta";
+            const string realBare = @"C:\OneHistory\HistoryVesta\HistoryVesta.git";
             var template = Path.Combine(realRoot, "0000-000-Template");
             if (args.Contains("--real-template", StringComparer.OrdinalIgnoreCase)
                 && Directory.Exists(template) && Directory.Exists(realBare))
@@ -339,8 +339,8 @@ internal static class GitRulesSuite
 
     private static byte[] OutsideManagedBytes(byte[] bytes)
     {
-        var begin = Encoding.ASCII.GetBytes("# OneHistoryStudio managed begin");
-        var end = Encoding.ASCII.GetBytes("# OneHistoryStudio managed end");
+        var begin = Encoding.ASCII.GetBytes("# HistoryJanus managed begin");
+        var end = Encoding.ASCII.GetBytes("# HistoryJanus managed end");
         var beginIndex = bytes.AsSpan().IndexOf(begin);
         if (beginIndex < 0)
             return bytes;

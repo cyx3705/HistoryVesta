@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 public sealed record GitFileRuleInfo(
     string Pattern,
@@ -68,15 +68,15 @@ public sealed record GitFileRuleBatchPreview(
 /// </summary>
 public sealed partial class GitFileRuleService
 {
-    private const string ManagedBegin = "# OneHistoryStudio managed begin";
-    private const string ManagedEnd = "# OneHistoryStudio managed end";
+    private const string ManagedBegin = "# HistoryJanus managed begin";
+    private const string ManagedEnd = "# HistoryJanus managed end";
 
     /// <summary>
     /// 基线块由 git.rule.sync 从模板整块重刷，属于机器所有内容。
     /// 与 managed 块(本项目特例)分离,基线更新不伤项目自身决定;两者都在块外内容之外。
     /// </summary>
-    private const string BaselineBegin = "# OneHistoryStudio baseline begin";
-    private const string BaselineEnd = "# OneHistoryStudio baseline end";
+    private const string BaselineBegin = "# HistoryJanus baseline begin";
+    private const string BaselineEnd = "# HistoryJanus baseline end";
     private const string LfsAttributes = "filter=lfs diff=lfs merge=lfs -text";
     private const string LfAttributes = "text eol=lf";
     private const int GitBatchSize = 100;

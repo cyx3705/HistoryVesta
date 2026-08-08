@@ -33,7 +33,7 @@
     -->
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 
-    <!-- 公共质量规则由 020 根级 props 提供；本文件只保留 OHS 可执行程序与 Smoke 的平台策略。 -->
+    <!-- 公共质量规则由 020 根级 props 提供；本文件只保留 Janus 可执行程序与 Smoke 的平台策略。 -->
   </PropertyGroup>
 
 </Project>

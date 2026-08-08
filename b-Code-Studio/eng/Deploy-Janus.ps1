@@ -10,11 +10,11 @@ Set-StrictMode -Version Latest
 
 $ComponentRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $RepoRoot = [IO.Path]::GetFullPath((Join-Path $ComponentRoot '..'))
-$PackageRoot = Join-Path $RepoRoot 'z-Package-OneHistoryStudio'
+$PackageRoot = Join-Path $RepoRoot 'z-Package-HistoryJanus'
 $appData = [Environment]::GetFolderPath([Environment+SpecialFolder]::ApplicationData)
 $Targets = @(
-    (Join-Path $appData 'AppShell\Modules\OneHistoryStudio'),
-    (Join-Path $appData 'AppShell\service\Modules\OneHistoryStudio')
+    (Join-Path $appData 'AppShell\Modules\HistoryJanus'),
+    (Join-Path $appData 'AppShell\service\Modules\HistoryJanus')
 )
 
 if (-not (Test-Path -LiteralPath (Join-Path $PackageRoot 'module.manifest.json') -PathType Leaf)) {
@@ -46,8 +46,8 @@ try {
     foreach ($target in $Targets) {
         $parent = Split-Path -Parent $target
         New-Item -ItemType Directory -Force -Path $parent | Out-Null
-        $candidate = Join-Path $parent "OneHistoryStudio.__new-$transactionId"
-        $backup = Join-Path $parent "OneHistoryStudio-rollback-$timestamp"
+        $candidate = Join-Path $parent "HistoryJanus.__new-$transactionId"
+        $backup = Join-Path $parent "HistoryJanus-rollback-$timestamp"
         if (Test-Path -LiteralPath $candidate) { throw "Deployment candidate already exists: $candidate" }
         if (Test-Path -LiteralPath $backup) { throw "Deployment backup already exists: $backup" }
         Copy-Item -LiteralPath $PackageRoot -Destination $candidate -Recurse
@@ -75,7 +75,7 @@ catch {
     throw $deploymentError
 }
 
-Write-Host "Deployed OneHistoryStudio module $Version to both AppShell module slots."
+Write-Host "Deployed HistoryJanus module $Version to both AppShell module slots."
 foreach ($entry in $completed) {
     if (Test-Path -LiteralPath $entry.Backup) { Write-Host "Rollback retained: $($entry.Backup)" }
 }

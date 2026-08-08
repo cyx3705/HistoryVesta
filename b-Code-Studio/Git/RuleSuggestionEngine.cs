@@ -1,4 +1,4 @@
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 /// <summary>一条格式处置建议。Track=false 即建议忽略。</summary>
 public sealed record RuleSuggestion(

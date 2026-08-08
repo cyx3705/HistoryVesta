@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.Json;
 using AppShell.Core.Commands;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 public static class GitRuleCommands
 {

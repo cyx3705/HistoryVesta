@@ -1,10 +1,10 @@
 using System.Reflection;
 using AppShell.Core.Commands;
-using OneHistoryStudio.Git;
-using OneHistoryStudio.Views;
-using static OneHistoryStudio.Smoke.SmokeKit;
+using HistoryJanus.Git;
+using HistoryJanus.Views;
+using static HistoryJanus.Smoke.SmokeKit;
 
-namespace OneHistoryStudio.Smoke.Suites;
+namespace HistoryJanus.Smoke.Suites;
 
 internal static class ProjectOperationsSuite
 {

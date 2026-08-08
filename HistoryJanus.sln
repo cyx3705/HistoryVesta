@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Contracts", "b-Code-Verify\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Module", "Module", "{0142C03A-A9B4-E71C-C805-477CB0609E7F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneHistoryStudio.Module", "b-Code-Studio\Module\OneHistoryStudio.Module.csproj", "{54236ABC-A50D-42CC-B7A6-AD72E1BAD961}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HistoryJanus.Module", "b-Code-Studio\Module\HistoryJanus.Module.csproj", "{54236ABC-A50D-42CC-B7A6-AD72E1BAD961}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModuleSmoke", "b-Code-Verify\ModuleSmoke\ModuleSmoke.csproj", "{08466821-F363-45FB-AE3B-CD87C6749881}"
 EndProject

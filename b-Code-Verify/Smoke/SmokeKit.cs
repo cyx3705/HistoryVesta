@@ -1,9 +1,9 @@
 ﻿using AppShell.Core;
 using AppShell.Core.Logging;
 using AppShell.Core.Storage;
-using OneHistoryStudio.Git;
+using HistoryJanus.Git;
 
-namespace OneHistoryStudio.Smoke;
+namespace HistoryJanus.Smoke;
 
 /// <summary>Smoke 套件共享的断言、临时目录与 Git 助手。</summary>
 internal static class SmokeKit
@@ -11,10 +11,10 @@ internal static class SmokeKit
     /// <summary>020 项目根。</summary>
     public static string ParentDir { get; } = DiscoverUmbrellaRoot();
 
-    /// <summary>OHS 产品根。</summary>
+    /// <summary>Janus 产品根。</summary>
     public static string RepoRoot { get; } = Path.Combine(ParentDir, "b-Code-Studio");
 
-    /// <summary>OHS 验证组件根。</summary>
+    /// <summary>Janus 验证组件根。</summary>
     public static string VerifyRoot { get; } = Path.Combine(ParentDir, "b-Code-Verify");
 
     public static string TemporaryDirectory(string feature)
@@ -29,13 +29,13 @@ internal static class SmokeKit
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir != null)
         {
-            if (File.Exists(Path.Combine(dir.FullName, "OHS.sln")))
+            if (File.Exists(Path.Combine(dir.FullName, "HistoryJanus.sln")))
                 return dir.FullName;
             dir = dir.Parent;
         }
 
         throw new InvalidOperationException(
-            $"未能从 {AppContext.BaseDirectory} 向上找到 OHS.sln");
+            $"未能从 {AppContext.BaseDirectory} 向上找到 HistoryJanus.sln");
     }
 
     // ---------------------------------------------------------------- 断言

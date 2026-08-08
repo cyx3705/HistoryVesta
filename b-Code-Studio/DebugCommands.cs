@@ -2,7 +2,7 @@ using System.Diagnostics;
 using AppShell.Core.Commands;
 using AppShell.Core.Logging;
 
-namespace OneHistoryStudio;
+namespace HistoryJanus;
 
 /// <summary>
 /// debug.* 工具指令：

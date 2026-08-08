@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 /// <summary>
 /// ProjectService 的 Meta 文件夹切面：项目根下以 z/Z 开头的一级子目录。

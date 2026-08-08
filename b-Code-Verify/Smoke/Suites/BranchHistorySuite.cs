@@ -1,10 +1,10 @@
 ﻿using AppShell.Core;
 using AppShell.Core.Mcp;
 using AppShell.Core.Commands;
-using OneHistoryStudio.Git;
-using static OneHistoryStudio.Smoke.SmokeKit;
+using HistoryJanus.Git;
+using static HistoryJanus.Smoke.SmokeKit;
 
-namespace OneHistoryStudio.Smoke.Suites;
+namespace HistoryJanus.Smoke.Suites;
 
 /// <summary>分支历史、恢复提交、本地重置与强推保护。</summary>
 internal static class BranchHistorySuite

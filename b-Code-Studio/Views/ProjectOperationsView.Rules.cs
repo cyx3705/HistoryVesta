@@ -4,9 +4,9 @@ using System.Text.Json;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using AppShell.Core.Commands;
-using OneHistoryStudio.Git;
+using HistoryJanus.Git;
 
-namespace OneHistoryStudio.Views;
+namespace HistoryJanus.Views;
 
 public partial class ProjectOperationsView
 {

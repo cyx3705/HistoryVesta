@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 public enum GitlinkKind
 {

@@ -5,7 +5,7 @@ using System.Text.Json;
 using AppShell.Core.Logging;
 using AppShell.Services;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 /// <summary>
 /// 文件格式全覆盖扫描。三条效率约束：

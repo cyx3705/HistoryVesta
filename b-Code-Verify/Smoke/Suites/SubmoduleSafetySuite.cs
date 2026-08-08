@@ -1,8 +1,8 @@
 ﻿using AppShell.Core.Commands;
-using OneHistoryStudio.Git;
-using static OneHistoryStudio.Smoke.SmokeKit;
+using HistoryJanus.Git;
+using static HistoryJanus.Smoke.SmokeKit;
 
-namespace OneHistoryStudio.Smoke.Suites;
+namespace HistoryJanus.Smoke.Suites;
 
 /// <summary>子模块提交、推送、gitlink 与嵌套仓库安全边界。</summary>
 internal static class SubmoduleSafetySuite

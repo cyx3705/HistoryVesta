@@ -1,12 +1,12 @@
 using AppShell.Core.Commands;
 using AppShell.Core.Logging;
 using AppShell.Core.Storage;
-using OneHistoryStudio.Git;
+using HistoryJanus.Git;
 
-namespace OneHistoryStudio;
+namespace HistoryJanus;
 
 /// <summary>
-/// OHS business services registered into a host-owned command bus.
+/// Janus business services registered into a host-owned command bus.
 /// This boundary deliberately owns no process, window, module loader, MCP, Web, or LAN lifetime.
 /// </summary>
 public sealed class StudioBusinessComposition
@@ -37,7 +37,7 @@ public sealed class StudioBusinessComposition
 }
 
 /// <summary>
-/// Builds the OHS domain graph inside infrastructure supplied by the AppShell host.
+/// Builds the Janus domain graph inside infrastructure supplied by the AppShell host.
 /// </summary>
 public static class StudioBusinessCompositionFactory
 {

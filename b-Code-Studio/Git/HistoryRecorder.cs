@@ -6,7 +6,7 @@ using AppShell.Core.Logging;
 using AppShell.Core.Mcp;
 using AppShell.Services.Mcp;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 /// <summary>
 /// 操作留痕与分支描述的文件存储：操作和 MCP 留痕使用 JSONL 追加，

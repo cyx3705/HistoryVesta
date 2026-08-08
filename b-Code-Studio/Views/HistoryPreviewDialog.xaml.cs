@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace OneHistoryStudio.Views;
+namespace HistoryJanus.Views;
 
 public partial class HistoryPreviewDialog : Window
 {

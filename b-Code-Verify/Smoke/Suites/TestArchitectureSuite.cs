@@ -1,8 +1,8 @@
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using static OneHistoryStudio.Smoke.SmokeKit;
+using static HistoryJanus.Smoke.SmokeKit;
 
-namespace OneHistoryStudio.Smoke.Suites;
+namespace HistoryJanus.Smoke.Suites;
 
 /// <summary>Smoke 套件的功能命名、文件体积、运行隔离与单宿主结构。</summary>
 internal static class TestArchitectureSuite
@@ -79,7 +79,7 @@ internal static class TestArchitectureSuite
         Equal(1, project.Descendants("ProjectReference").Count(),
             "test architecture uses the single module product reference");
         Contains(project.Descendants("ProjectReference").Single().Attribute("Include")?.Value ?? "",
-            "OneHistoryStudio.Module.csproj",
+            "HistoryJanus.Module.csproj",
             "test architecture references the module project");
         var kit = File.ReadAllText(Path.Combine(smokeRoot, "SmokeKit.cs"));
         Contains(kit, "Path.GetTempPath()",
@@ -164,7 +164,7 @@ internal static class TestArchitectureSuite
             var source = File.ReadAllText(path);
             foreach (var identifier in prohibitedIdentifiers)
                 True(!source.Contains(identifier, StringComparison.OrdinalIgnoreCase),
-                    $"OHS host does not contain GitHub module identifier {identifier}: " +
+                    $"Janus host does not contain GitHub module identifier {identifier}: " +
                     Path.GetRelativePath(RepoRoot, path));
         }
     }

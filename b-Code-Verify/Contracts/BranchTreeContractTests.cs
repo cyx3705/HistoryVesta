@@ -1,8 +1,8 @@
 using System.Text.Json;
-using OneHistoryStudio.Git;
+using HistoryJanus.Git;
 using Xunit;
 
-namespace OneHistoryStudio.Contracts;
+namespace HistoryJanus.Contracts;
 
 public sealed class BranchTreeContractTests
 {

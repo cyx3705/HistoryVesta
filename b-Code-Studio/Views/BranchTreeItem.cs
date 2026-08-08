@@ -1,7 +1,7 @@
 using System.ComponentModel;
-using OneHistoryStudio.Git;
+using HistoryJanus.Git;
 
-namespace OneHistoryStudio.Views;
+namespace HistoryJanus.Views;
 
 internal sealed class BranchTreeItem : INotifyPropertyChanged
 {

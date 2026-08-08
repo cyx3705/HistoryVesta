@@ -1,9 +1,9 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 using AppShell.Core.Commands;
-using OneHistoryStudio.Git;
+using HistoryJanus.Git;
 
-namespace OneHistoryStudio.Views;
+namespace HistoryJanus.Views;
 
 /// <summary>项目工作树列表、当前项目选择与批量提交推送。</summary>
 public partial class OverviewView : UserControl

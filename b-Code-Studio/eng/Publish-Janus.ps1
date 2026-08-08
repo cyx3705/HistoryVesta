@@ -15,14 +15,14 @@ $CandidateRoot = Join-Path $PublishRoot 'candidate'
 $WorkRoot = Join-Path $PublishRoot 'work'
 $HistoryRoot = Join-Path $PublishRoot 'history'
 $QuarantineRoot = Join-Path $PublishRoot 'quarantine'
-$PackageRoot = Join-Path $RepoRoot 'z-Package-OneHistoryStudio'
-$ModuleProject = Join-Path $ComponentRoot 'Module\OneHistoryStudio.Module.csproj'
+$PackageRoot = Join-Path $RepoRoot 'z-Package-HistoryJanus'
+$ModuleProject = Join-Path $ComponentRoot 'Module\HistoryJanus.Module.csproj'
 $ModuleManifestSource = Join-Path $ComponentRoot 'Module\module.manifest.json'
 $ApiDocumentCandidates = @(Get-ChildItem -LiteralPath (Join-Path $RepoRoot 'b-Office\package') -Filter '*.md' -File -ErrorAction SilentlyContinue)
 if ($ApiDocumentCandidates.Count -ne 1) { throw 'b-Office/package must contain exactly one API Markdown document' }
 $ApiDocumentSource = $ApiDocumentCandidates[0].FullName
 $ApiDocumentName = $ApiDocumentCandidates[0].Name
-$AppShellPackageRoot = 'C:\OneHistory\OneHistory-Projects\2026-023-AppShell\z-Package-AppShell'
+$AppShellPackageRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\2026-023-AppShell\z-Package-AppShell'))
 
 function Invoke-Dotnet {
     param([string[]]$Arguments)
@@ -33,8 +33,8 @@ function Invoke-Dotnet {
 }
 
 function Get-VersionProperties {
-    $output = & dotnet msbuild $ModuleProject -nologo -getProperty:OneHistoryStudioVersion -getProperty:AssemblyVersion
-    if ($LASTEXITCODE -ne 0) { throw 'Unable to evaluate OHS version source' }
+    $output = & dotnet msbuild $ModuleProject -nologo -getProperty:HistoryJanusVersion -getProperty:AssemblyVersion
+    if ($LASTEXITCODE -ne 0) { throw 'Unable to evaluate Janus version source' }
     return (($output -join "`n") | ConvertFrom-Json).Properties
 }
 
@@ -50,8 +50,8 @@ function New-ModulePackage {
     )
 
     New-Item -ItemType Directory -Force -Path (Join-Path $OutputRoot 'package') | Out-Null
-    Copy-Item -LiteralPath (Join-Path $BuildOutput 'OneHistoryStudio.dll') -Destination $OutputRoot
-    Copy-Item -LiteralPath (Join-Path $BuildOutput 'OneHistoryStudio.xml') -Destination $OutputRoot
+    Copy-Item -LiteralPath (Join-Path $BuildOutput 'HistoryJanus.dll') -Destination $OutputRoot
+    Copy-Item -LiteralPath (Join-Path $BuildOutput 'HistoryJanus.xml') -Destination $OutputRoot
     Copy-Item -LiteralPath $ApiDocumentSource -Destination (Join-Path $OutputRoot ('package\' + $ApiDocumentName))
 
     $manifest = [IO.File]::ReadAllText($ModuleManifestSource) | ConvertFrom-Json
@@ -66,7 +66,7 @@ function New-ModulePackage {
         (($manifest | ConvertTo-Json -Depth 8) + "`n"),
         [Text.UTF8Encoding]::new($false))
 
-    $relativeFiles = @('OneHistoryStudio.dll', 'OneHistoryStudio.xml', 'module.manifest.json', "package/$ApiDocumentName")
+    $relativeFiles = @('HistoryJanus.dll', 'HistoryJanus.xml', 'module.manifest.json', "package/$ApiDocumentName")
     $checksumLines = foreach ($relative in $relativeFiles) {
         $path = Join-Path $OutputRoot $relative.Replace('/', [IO.Path]::DirectorySeparatorChar)
         "$(Get-FileHash -LiteralPath $path -Algorithm SHA256 | Select-Object -ExpandProperty Hash)  $relative"
@@ -78,9 +78,9 @@ function New-ModulePackage {
 }
 
 $properties = Get-VersionProperties
-$sourceVersion = [string]$properties.OneHistoryStudioVersion
+$sourceVersion = [string]$properties.HistoryJanusVersion
 if ([string]::IsNullOrWhiteSpace($Version)) { $Version = $sourceVersion }
-if ($Version -ne $sourceVersion) { throw "StudioVersion.props declares $sourceVersion; requested $Version" }
+if ($Version -ne $sourceVersion) { throw "JanusVersion.props declares $sourceVersion; requested $Version" }
 
 $sourceManifest = [IO.File]::ReadAllText($ModuleManifestSource) | ConvertFrom-Json
 if ([string]$sourceManifest.version -ne $Version) {
@@ -100,10 +100,10 @@ $appShellManifest = [IO.File]::ReadAllText($appShellManifestPath) | ConvertFrom-
 $appShellVersion = [string]$appShellManifest.version
 $appShellManifestSha256 = (Get-FileHash -LiteralPath $appShellManifestPath -Algorithm SHA256).Hash
 if ([version]$appShellVersion -lt [version]'3.1.9') {
-    throw "OHS $Version requires AppShell 3.1.9 or newer; found $appShellVersion"
+    throw "Janus $Version requires AppShell 3.1.9 or newer; found $appShellVersion"
 }
 
-$sourcePaths = @('b-Code-Studio', 'b-Code-Verify', 'b-Office', 'README.md', '.gitattributes', '.gitignore', 'OHS.sln')
+$sourcePaths = @('b-Code-Studio', 'b-Code-Verify', 'b-Office', 'README.md', '.gitattributes', '.gitignore', 'HistoryJanus.sln')
 $sourceStatus = (& git -C $RepoRoot status --porcelain -- @sourcePaths) -join "`n"
 $sourceDirty = -not [string]::IsNullOrWhiteSpace($sourceStatus)
 if ($Publish -and $sourceDirty) {
@@ -129,9 +129,9 @@ try {
     }
     New-Item -ItemType Directory -Force -Path $HistoryRoot | Out-Null
 
-    Invoke-Dotnet @('restore', 'OHS.sln', '--locked-mode', '-p:NuGetAudit=false')
-    Invoke-Dotnet @('build', 'OHS.sln', '-c', 'Debug', '--no-restore', '-p:NuGetAudit=false')
-    Invoke-Dotnet @('build', 'OHS.sln', '-c', 'Release', '--no-restore', '-p:NuGetAudit=false')
+    Invoke-Dotnet @('restore', 'HistoryJanus.sln', '--locked-mode', '-p:NuGetAudit=false')
+    Invoke-Dotnet @('build', 'HistoryJanus.sln', '-c', 'Debug', '--no-restore', '-p:NuGetAudit=false')
+    Invoke-Dotnet @('build', 'HistoryJanus.sln', '-c', 'Release', '--no-restore', '-p:NuGetAudit=false')
     Invoke-Dotnet @('test', 'b-Code-Verify\Contracts\Contracts.csproj', '-c', 'Debug', '--no-build', '--no-restore', '-p:NuGetAudit=false')
     Invoke-Dotnet @('test', 'b-Code-Verify\Contracts\Contracts.csproj', '-c', 'Release', '--no-build', '--no-restore', '-p:NuGetAudit=false')
     Invoke-Dotnet @('run', '--project', 'b-Code-Verify\Smoke\Smoke.csproj', '-c', 'Debug', '--no-build', '--no-restore', '--')
@@ -158,7 +158,7 @@ try {
         $formalBackup = Join-Path $HistoryRoot "package-$installedVersion-$archiveStamp"
         $validateFormal = { param($Root) Assert-ModulePackage $Root $Version 'formal' }
         Invoke-DirectoryPromotion $formalNew $PackageRoot $formalBackup $formalFailed $validateFormal
-        Write-Host "Formal OneHistoryStudio module ${Version}: $PackageRoot"
+        Write-Host "Formal HistoryJanus module ${Version}: $PackageRoot"
         if (Test-Path -LiteralPath $formalBackup) { Write-Host "Previous formal package: $formalBackup" }
     }
     else {

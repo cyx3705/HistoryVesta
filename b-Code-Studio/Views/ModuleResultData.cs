@@ -1,9 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
-namespace OneHistoryStudio.Views;
+namespace HistoryJanus.Views;
 
-/// <summary>Restores typed OHS contracts when a command result crossed the AppShell web boundary.</summary>
+/// <summary>Restores typed Janus contracts when a command result crossed the AppShell web boundary.</summary>
 internal static class ModuleResultData
 {
     private static readonly JsonSerializerOptions JsonOptions = new()

@@ -1,10 +1,10 @@
 ﻿using System.Xml.Linq;
 using AppShell.Core.Commands;
-using OneHistoryStudio.Git;
-using OneHistoryStudio.Views;
-using static OneHistoryStudio.Smoke.SmokeKit;
+using HistoryJanus.Git;
+using HistoryJanus.Views;
+using static HistoryJanus.Smoke.SmokeKit;
 
-namespace OneHistoryStudio.Smoke.Suites;
+namespace HistoryJanus.Smoke.Suites;
 
 /// <summary>父仓库、子模块与批量提交推送范围。</summary>
 internal static class RepositoryTargetsSuite

@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 public sealed partial class GitFileRuleService
 {

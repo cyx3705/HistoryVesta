@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 public sealed record GitResult(int ExitCode, string Output)
 {

@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 // worktree 文件扫描器。
 // 阈值由调用方从 proj.warnmb / proj.rejectmb 配置传入。

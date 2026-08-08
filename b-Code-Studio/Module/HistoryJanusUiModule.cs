@@ -2,12 +2,12 @@ using System.IO;
 using AppShell.Core.Commands;
 using AppShell.Core.Docking;
 using AppShell.Core.Modules;
-using OneHistoryStudio.Views;
+using HistoryJanus.Views;
 
-namespace OneHistoryStudio.Module;
+namespace HistoryJanus.Module;
 
-/// <summary>Registers the existing OHS business pages into the AppShell host.</summary>
-public sealed class OneHistoryStudioUiModule : IUiModule, IShellUiAware, IModuleContextAware
+/// <summary>Registers the existing Janus business pages into the AppShell host.</summary>
+public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleContextAware
 {
     private readonly List<IDisposable> _registrations = [];
     private readonly ProjectSelectionState _selection = new();
@@ -24,7 +24,7 @@ public sealed class OneHistoryStudioUiModule : IUiModule, IShellUiAware, IModule
     {
         ArgumentNullException.ThrowIfNull(context);
         if (_context != null)
-            throw new InvalidOperationException("OneHistoryStudio module context is already attached.");
+            throw new InvalidOperationException("HistoryJanus module context is already attached.");
 
         _context = context;
         context.RegisterCommands(registry =>
@@ -34,8 +34,8 @@ public sealed class OneHistoryStudioUiModule : IUiModule, IShellUiAware, IModule
                 context.Bus,
                 context.Settings,
                 context.Log,
-                Path.Combine(context.DataDirectory, "OneHistoryStudio"),
-                "module:OneHistoryStudio");
+                Path.Combine(context.DataDirectory, "HistoryJanus"),
+                "module:HistoryJanus");
         });
     }
 
@@ -48,7 +48,7 @@ public sealed class OneHistoryStudioUiModule : IUiModule, IShellUiAware, IModule
         Func<string, bool> isProtected = branch => _business?.Projects.IsProtected(branch) == true;
 
         foreach (var descriptor in CreateDescriptors(busAccessor, _selection, isProtected))
-            _registrations.Add(_shellUi.RegisterToolWindow(descriptor, "OneHistoryStudio"));
+            _registrations.Add(_shellUi.RegisterToolWindow(descriptor, "HistoryJanus"));
     }
 
     public void DestroyUi()

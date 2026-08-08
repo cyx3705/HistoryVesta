@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 
-namespace OneHistoryStudio.Views;
+namespace HistoryJanus.Views;
 
 public partial class RollbackMessageDialog : Window
 {

@@ -1,4 +1,4 @@
-<Window x:Class="OneHistoryStudio.Views.RollbackMessageDialog"
+<Window x:Class="HistoryJanus.Views.RollbackMessageDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="生成恢复提交" Width="520" Height="190" ResizeMode="NoResize"

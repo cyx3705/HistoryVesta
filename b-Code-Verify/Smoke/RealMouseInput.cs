@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
-namespace OneHistoryStudio.Smoke;
+namespace HistoryJanus.Smoke;
 
 internal static class RealMouseInput
 {

@@ -32,8 +32,8 @@ try {
         New-Item -ItemType Directory -Force -Path $path | Out-Null
     }
 
-    Invoke-Dotnet @('restore', 'OHS.sln', '--locked-mode', '-p:NuGetAudit=false')
-    Invoke-Dotnet @('build', 'OHS.sln', '-c', 'Debug', '--no-restore', '-p:NuGetAudit=false')
+    Invoke-Dotnet @('restore', 'HistoryJanus.sln', '--locked-mode', '-p:NuGetAudit=false')
+    Invoke-Dotnet @('build', 'HistoryJanus.sln', '-c', 'Debug', '--no-restore', '-p:NuGetAudit=false')
 
     $contractArgs = @('test', 'b-Code-Verify\Contracts\Contracts.csproj', '-c', 'Debug', '--no-build', '--no-restore', '-p:NuGetAudit=false')
     if (-not [string]::IsNullOrWhiteSpace($TestFilter)) { $contractArgs += @('--filter', $TestFilter) }
@@ -49,8 +49,8 @@ try {
     Invoke-Dotnet @('run', '--project', 'b-Code-Verify\ModuleSmoke\ModuleSmoke.csproj', '-c', 'Debug', '--no-build', '--no-restore', '--', $moduleOutput)
 
     New-Item -ItemType Directory -Force -Path (Join-Path $candidateNew 'package') | Out-Null
-    Copy-Item -LiteralPath (Join-Path $moduleOutput 'OneHistoryStudio.dll') -Destination $candidateNew
-    Copy-Item -LiteralPath (Join-Path $moduleOutput 'OneHistoryStudio.xml') -Destination $candidateNew
+    Copy-Item -LiteralPath (Join-Path $moduleOutput 'HistoryJanus.dll') -Destination $candidateNew
+    Copy-Item -LiteralPath (Join-Path $moduleOutput 'HistoryJanus.xml') -Destination $candidateNew
     Copy-Item -LiteralPath (Join-Path $ComponentRoot 'Module\module.manifest.json') -Destination $candidateNew
     $apiDocuments = @(Get-ChildItem -LiteralPath (Join-Path $RepoRoot 'b-Office\package') -Filter '*.md' -File)
     if ($apiDocuments.Count -ne 1) { throw 'b-Office/package must contain exactly one API Markdown document' }
@@ -64,7 +64,7 @@ try {
         (Join-Path $candidateNew 'module.manifest.json'),
         (($manifest | ConvertTo-Json -Depth 8) + "`n"),
         [Text.UTF8Encoding]::new($false))
-    $relativeFiles = @('OneHistoryStudio.dll', 'OneHistoryStudio.xml', 'module.manifest.json', "package/$apiName")
+    $relativeFiles = @('HistoryJanus.dll', 'HistoryJanus.xml', 'module.manifest.json', "package/$apiName")
     $lines = foreach ($relative in $relativeFiles) {
         $path = Join-Path $candidateNew $relative.Replace('/', [IO.Path]::DirectorySeparatorChar)
         "$(Get-FileHash -LiteralPath $path -Algorithm SHA256 | Select-Object -ExpandProperty Hash)  $relative"

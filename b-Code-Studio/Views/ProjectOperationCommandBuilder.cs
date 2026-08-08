@@ -1,6 +1,6 @@
 using AppShell.Core.Commands;
 
-namespace OneHistoryStudio.Views;
+namespace HistoryJanus.Views;
 
 public enum ProjectOperationMode
 {

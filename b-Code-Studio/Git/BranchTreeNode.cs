@@ -1,4 +1,4 @@
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 /// <summary>proj.tree 跨进程传输合同；不携带 WPF 控件或展开状态。</summary>
 public sealed class BranchTreeNode

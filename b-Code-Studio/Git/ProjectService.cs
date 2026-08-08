@@ -2,7 +2,7 @@
 using System.Text;
 using AppShell.Core.Storage;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 public sealed record WorktreeInfo(string BranchName, string WorktreePath, string LastCommitTime = "");
 
@@ -91,10 +91,10 @@ public sealed partial class ProjectService
     // ---------------------------------------------------------------- 配置(现读现生效)
 
     public string BareRepo =>
-        _settings.Get(KeyBareRepo) ?? @"C:\OneHistory\OneHistory-Projects\OneHistory-Projects.git";
+        _settings.Get(KeyBareRepo) ?? @"C:\OneHistory\HistoryVesta\HistoryVesta.git";
 
     public string WorktreeRoot =>
-        _settings.Get(KeyWorktreeRoot) ?? @"C:\OneHistory\OneHistory-Projects";
+        _settings.Get(KeyWorktreeRoot) ?? @"C:\OneHistory\HistoryVesta";
 
     public string BaseBranch => _settings.Get(KeyBaseBranch) ?? "0000-000-Template";
 
@@ -118,8 +118,8 @@ public sealed partial class ProjectService
     /// <summary>首启把默认配置写入 settings.json,使 app.get 可见、app.set 可改。</summary>
     public void EnsureDefaultSettings()
     {
-        SetIfMissing(KeyBareRepo, @"C:\OneHistory\OneHistory-Projects\OneHistory-Projects.git");
-        SetIfMissing(KeyWorktreeRoot, @"C:\OneHistory\OneHistory-Projects");
+        SetIfMissing(KeyBareRepo, @"C:\OneHistory\HistoryVesta\HistoryVesta.git");
+        SetIfMissing(KeyWorktreeRoot, @"C:\OneHistory\HistoryVesta");
         SetIfMissing(KeyBaseBranch, "0000-000-Template");
         SetIfMissing(KeyWarnMb, "50");
         SetIfMissing(KeyRejectMb, "100");

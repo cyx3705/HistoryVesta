@@ -1,6 +1,6 @@
 using AppShell.Core.Commands;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 /// <summary>
 /// tool.* 工具发现、同步与溯源指令域。

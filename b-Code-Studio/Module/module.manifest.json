@@ -1,9 +1,9 @@
 {
-  "name": "OneHistoryStudio",
-  "version": "3.0.1",
-  "description": "OneHistoryStudio 项目与 Git 治理模块",
-  "artifact": "OneHistoryStudio.dll",
-  "docs": "OneHistoryStudio.xml",
+  "name": "HistoryJanus",
+  "version": "3.1.0",
+  "description": "HistoryJanus 项目与 Git 治理模块",
+  "artifact": "HistoryJanus.dll",
+  "docs": "HistoryJanus.xml",
   "mcpExposure": "readonly",
   "ui": true
 }

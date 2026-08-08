@@ -2,7 +2,7 @@ using System.IO;
 using System.Text;
 using AppShell.Services;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 /// <summary>
 /// 分支继承树的构建、渲染与文件缓存。

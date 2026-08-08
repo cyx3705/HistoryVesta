@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using AppShell.Core.Logging;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 /// <summary>tool.scan 的一行结果(Data 载荷,MCP 可读)。</summary>
 public sealed record ToolScanRow(

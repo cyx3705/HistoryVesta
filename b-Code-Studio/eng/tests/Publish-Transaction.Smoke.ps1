@@ -21,7 +21,7 @@ function Read-Marker {
 
 function Invoke-PromotionCase {
     param([string]$Name, [scriptblock]$Body)
-    $root = Join-Path ([IO.Path]::GetTempPath()) "OHS-Publish-Transaction-$Name-$([Guid]::NewGuid().ToString('N'))"
+    $root = Join-Path ([IO.Path]::GetTempPath()) "Janus-Publish-Transaction-$Name-$([Guid]::NewGuid().ToString('N'))"
     New-Item -ItemType Directory -Path $root | Out-Null
     try { & $Body $root }
     finally {
@@ -30,7 +30,7 @@ function Invoke-PromotionCase {
             [IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
         if (-not $fullRoot.StartsWith($tempPrefix, [StringComparison]::OrdinalIgnoreCase) -or
             -not ([IO.Path]::GetFileName($fullRoot)).StartsWith(
-                'OHS-Publish-Transaction-', [StringComparison]::Ordinal)) {
+                'Janus-Publish-Transaction-', [StringComparison]::Ordinal)) {
             throw "Refusing to clean unexpected transaction test path: $fullRoot"
         }
         Remove-Item -LiteralPath $fullRoot -Recurse -Force -ErrorAction SilentlyContinue
@@ -125,18 +125,18 @@ Invoke-PromotionCase 'release-tree' {
     $releaseRoot = Join-Path $root 'release-root'
     $metadataRoot = Join-Path $releaseRoot 'release'
     New-Item -ItemType Directory -Force -Path $metadataRoot | Out-Null
-    [IO.File]::WriteAllText((Join-Path $releaseRoot 'OneHistoryStudio.exe'), 'exe')
+    [IO.File]::WriteAllText((Join-Path $releaseRoot 'HistoryJanus.exe'), 'exe')
     [IO.File]::WriteAllText((Join-Path $releaseRoot 'docs.md'), 'docs')
     $artifacts = @()
     $checksumLines = @()
-    foreach ($relative in @('OneHistoryStudio.exe', 'docs.md')) {
+    foreach ($relative in @('HistoryJanus.exe', 'docs.md')) {
         $path = Join-Path $releaseRoot $relative
         $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash
         $artifacts += [ordered]@{ file = $relative; bytes = (Get-Item $path).Length; sha256 = $hash }
         $checksumLines += "$hash  $relative"
     }
     $manifest = [ordered]@{
-        schemaVersion = 1; product = 'OneHistoryStudio'; version = '2.7.5'; channel = 'candidate'; artifacts = $artifacts
+        schemaVersion = 1; product = 'HistoryJanus'; version = '2.7.5'; channel = 'candidate'; artifacts = $artifacts
     }
     [IO.File]::WriteAllText((Join-Path $metadataRoot '2.7.5.json'), ($manifest | ConvertTo-Json -Depth 5))
     [IO.File]::WriteAllLines((Join-Path $metadataRoot '2.7.5.sha256'), $checksumLines)

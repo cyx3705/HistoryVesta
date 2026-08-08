@@ -1,7 +1,7 @@
 using System.Windows;
 using AppShell.Core.Commands;
 
-namespace OneHistoryStudio.Views;
+namespace HistoryJanus.Views;
 
 /// <summary>
 /// 视图通用小件。

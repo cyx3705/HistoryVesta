@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 /// <summary>
 /// ProjectService 的提交与推送切面。提交链路与确认通道、gitlink 子模块发现、

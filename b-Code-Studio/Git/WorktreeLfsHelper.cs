@@ -1,7 +1,7 @@
 using System.IO;
 using System.Text;
 
-namespace OneHistoryStudio.Git;
+namespace HistoryJanus.Git;
 
 // worktree LFS 操作统一经 GitRunner 封装。
 

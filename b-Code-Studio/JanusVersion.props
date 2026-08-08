@@ -1,0 +1,11 @@
+﻿<Project>
+  <PropertyGroup>
+    <HistoryJanusVersion>3.1.0</HistoryJanusVersion>
+    <VersionPrefix>$(HistoryJanusVersion)</VersionPrefix>
+    <Version>$(HistoryJanusVersion)</Version>
+    <AssemblyVersion>$(HistoryJanusVersion).0</AssemblyVersion>
+    <FileVersion>$(HistoryJanusVersion).0</FileVersion>
+    <InformationalVersion>$(HistoryJanusVersion)</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+</Project>
