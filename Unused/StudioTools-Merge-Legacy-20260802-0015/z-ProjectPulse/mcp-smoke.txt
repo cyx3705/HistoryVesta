@@ -1,4 +1,0 @@
-# ProjectPulse MCP smoke
-ProjectPulse.Summary name=2026-019-Studio工具箱 top=5
-ProjectPulse.Recent name=2026-019-Studio工具箱 days=30 limit=5
-ProjectPulse.Largest name=2026-019-Studio工具箱 limit=5 minMb=1

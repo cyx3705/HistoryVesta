@@ -1,4 +1,0 @@
-# ToolRelay MCP smoke
-ToolRelay.List filter=ProjectPulse modulesOnly=true
-ToolRelay.Describe name=ProjectPulse_Summary
-ToolRelay.Call name=ProjectPulse_Summary argumentsJson="{\"name\":\"2026-019-Studio工具箱\",\"top\":3}"

@@ -1,12 +1,21 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
+using System.Text;
 
 namespace ActiveDock;
 
 /// <summary>Keeps the Explorer-facing shortcut folder identical to the current dock list.</summary>
 public static class DockShortcutFolder
 {
+    private static readonly object WatchGate = new();
+    private static readonly TimeSpan WatchDebounce = TimeSpan.FromMilliseconds(350);
+    private static FileSystemWatcher? _watcher;
+    private static Timer? _debounceTimer;
+    private static Action<ShortcutFolderDelta>? _changed;
+    private static IReadOnlyDictionary<string, string> _expected =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
     public const string FolderName = "\u5feb\u6377\u65b9\u5f0f";
     public const string ModuleSlotName = "ActiveDock";
 
@@ -52,7 +61,40 @@ public static class DockShortcutFolder
             written++;
         }
 
+        if (folderOverride == null)
+            RememberSnapshot(ReadShortcuts(folder));
+
         return new ShortcutSyncResult(folder, written, removed);
+    }
+
+    /// <summary>
+    /// Watches user edits to the managed folder. A missing existing link means the
+    /// corresponding dock item was removed; a new link is a request to add its target.
+    /// </summary>
+    public static void StartWatching(Action<ShortcutFolderDelta> changed)
+    {
+        if (IsExplorerRegistrationDisabled)
+            return;
+
+        lock (WatchGate)
+        {
+            _changed = changed;
+            if (_watcher != null)
+                return;
+
+            Directory.CreateDirectory(Path);
+            _expected = ReadShortcuts(Path);
+            _watcher = new FileSystemWatcher(Path, "*.lnk")
+            {
+                IncludeSubdirectories = false,
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size,
+                EnableRaisingEvents = true,
+            };
+            _watcher.Created += (_, _) => ScheduleReconcile();
+            _watcher.Deleted += (_, _) => ScheduleReconcile();
+            _watcher.Changed += (_, _) => ScheduleReconcile();
+            _watcher.Renamed += (_, _) => ScheduleReconcile();
+        }
     }
 
     private static string ResolvePath()
@@ -87,7 +129,102 @@ public static class DockShortcutFolder
         ((IPersistFile)shellLink).Save(linkPath, true);
     }
 
+    private static void ScheduleReconcile()
+    {
+        lock (WatchGate)
+        {
+            _debounceTimer ??= new Timer(
+                _ => ReconcileExternalChanges(),
+                null,
+                Timeout.InfiniteTimeSpan,
+                Timeout.InfiniteTimeSpan);
+            _debounceTimer.Change(WatchDebounce, Timeout.InfiniteTimeSpan);
+        }
+    }
+
+    private static void ReconcileExternalChanges()
+    {
+        ShortcutFolderDelta changes;
+        Action<ShortcutFolderDelta>? changed;
+        lock (WatchGate)
+        {
+            var actual = ReadShortcuts(Path);
+            changes = Compare(_expected, actual);
+            _expected = actual;
+            changed = _changed;
+        }
+
+        if (!changes.HasChanges || changed == null)
+            return;
+
+        try
+        {
+            changed(changes);
+        }
+        catch (Exception)
+        {
+            // A file-system event must never terminate the watcher callback thread.
+        }
+    }
+
+    private static void RememberSnapshot(IReadOnlyDictionary<string, string> snapshot)
+    {
+        lock (WatchGate)
+            _expected = snapshot;
+    }
+
+    internal static ShortcutFolderDelta Compare(
+        IReadOnlyDictionary<string, string> expected,
+        IReadOnlyDictionary<string, string> actual)
+    {
+        var removed = expected
+            .Where(item => !actual.TryGetValue(item.Key, out var target)
+                || !string.Equals(item.Value, target, StringComparison.OrdinalIgnoreCase))
+            .Select(item => item.Value)
+            .ToList();
+        var added = actual
+            .Where(item => !expected.TryGetValue(item.Key, out var target)
+                || !string.Equals(item.Value, target, StringComparison.OrdinalIgnoreCase))
+            .Select(item => item.Value)
+            .ToList();
+        return new ShortcutFolderDelta(removed, added);
+    }
+
+    private static IReadOnlyDictionary<string, string> ReadShortcuts(string folder)
+    {
+        var links = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (!Directory.Exists(folder))
+            return links;
+
+        foreach (var linkPath in Directory.EnumerateFiles(folder, "*.lnk", SearchOption.TopDirectoryOnly))
+            links[linkPath] = ReadShortcutTarget(linkPath);
+        return links;
+    }
+
+    private static string ReadShortcutTarget(string linkPath)
+    {
+        try
+        {
+            var shellLink = (IShellLinkW)new ShellLink();
+            ((IPersistFile)shellLink).Load(linkPath, 0);
+            var target = new StringBuilder(32768);
+            shellLink.GetPath(target, target.Capacity, nint.Zero, 0);
+            return target.Length == 0 ? string.Empty : System.IO.Path.GetFullPath(target.ToString());
+        }
+        catch (Exception)
+        {
+            return string.Empty;
+        }
+    }
+
     public readonly record struct ShortcutSyncResult(string Folder, int Written, int Removed);
+
+    public sealed record ShortcutFolderDelta(
+        IReadOnlyList<string> RemovedTargets,
+        IReadOnlyList<string> AddedTargets)
+    {
+        public bool HasChanges => RemovedTargets.Count != 0 || AddedTargets.Count != 0;
+    }
 
     [ComImport]
     [Guid("00021401-0000-0000-C000-000000000046")]

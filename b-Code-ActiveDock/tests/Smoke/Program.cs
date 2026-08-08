@@ -15,7 +15,7 @@ var moduleInfos = assembly.GetTypes()
 
 Equal(1, moduleInfos.Count, "独立程序集必须只有一个模块入口");
 Equal("dock", moduleInfos[0].ModuleName, "命令域必须沿用 dock");
-Equal("2.2.1", moduleInfos[0].Version, "模块版本");
+Equal("2.3.2", moduleInfos[0].Version, "模块版本");
 Equal(typeof(ActiveDockCommands), moduleInfos[0].MainClassType, "命令入口类型");
 
 Equal(
@@ -31,7 +31,7 @@ var uiTypes = assembly.GetTypes()
 Equal(1, uiTypes.Count, "独立程序集必须只注册一个 UI 生命周期");
 Equal(typeof(ActiveDockUiModule), uiTypes[0], "UI 生命周期类型");
 
-// 宿主判据：注入过 ShellUi 即桌面 Shell 进程，2.0.0 起该侧注册扩展坞管理页面而不是活动坞窗口。
+// 桌面 Shell 同时注册管理页面和活动坞；无窗口 Smoke 只断言注册器生命周期。
 True(
     typeof(IShellUiAware).IsAssignableFrom(typeof(ActiveDockUiModule)),
     "必须实现 IShellUiAware 才能被宿主注入并据此判定归属");
@@ -140,6 +140,18 @@ try
     var reconciled = DockShortcutFolder.Synchronize([second], shortcuts);
     Equal(1, reconciled.Removed, "退出活动坞的项目快捷方式必须移除");
     Equal(1, Directory.EnumerateFiles(shortcuts, "*.lnk").Count(), "同步后快捷方式必须与活动坞一致");
+
+    var beforeUserEdit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        [Path.Combine(shortcuts, "2026-001-First.lnk")] = firstProject,
+    };
+    var afterUserEdit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        [Path.Combine(shortcuts, "2026-002-Second.lnk")] = secondProject,
+    };
+    var userChanges = DockShortcutFolder.Compare(beforeUserEdit, afterUserEdit);
+    Equal(firstProject, userChanges.RemovedTargets.Single(), "用户删除快捷方式必须映射回原项目");
+    Equal(secondProject, userChanges.AddedTargets.Single(), "用户新增快捷方式必须映射回目标项目");
 }
 finally
 {

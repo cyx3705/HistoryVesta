@@ -199,6 +199,36 @@ internal static partial class ActiveDockState
         return projects;
     }
 
+    internal static void ApplyShortcutFolderChanges(DockShortcutFolder.ShortcutFolderDelta changes)
+    {
+        var preferencesChanged = false;
+        lock (Gate)
+        {
+            foreach (var target in changes.RemovedTargets)
+            {
+                if (!TryGetWorktreeProjectName(target, out var name))
+                    continue;
+                preferencesChanged |= _preferences.Excluded.Add(name);
+                preferencesChanged |= _preferences.Pins.Remove(name);
+            }
+
+            foreach (var target in changes.AddedTargets)
+            {
+                if (!TryGetWorktreeProjectName(target, out var name))
+                    continue;
+                preferencesChanged |= _preferences.Excluded.Remove(name);
+                preferencesChanged |= _preferences.Pins.Add(name);
+            }
+
+            if (preferencesChanged)
+                SavePreferences();
+        }
+
+        // Invalid, stale, or renamed links must also be reconciled away even when they
+        // did not produce a preference change.
+        _ = RefreshAsync();
+    }
+
     public static bool Pin(string name, bool pinned)
     {
         lock (Gate)
@@ -348,7 +378,39 @@ internal static partial class ActiveDockState
         {
         }
 
-        return @"C:\OneHistory\OneHistory-Projects";
+        return @"C:\OneHistory\HistoryVesta";
+    }
+
+    private static bool TryGetWorktreeProjectName(string target, out string name)
+    {
+        name = string.Empty;
+        if (string.IsNullOrWhiteSpace(target))
+            return false;
+
+        try
+        {
+            var projectPath = Path.GetFullPath(target.Trim());
+            if (!Directory.Exists(projectPath))
+                return false;
+            var parent = Path.GetDirectoryName(projectPath);
+            var candidate = Path.GetFileName(projectPath.TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar));
+            if (string.IsNullOrWhiteSpace(parent)
+                || string.IsNullOrWhiteSpace(candidate)
+                || !RecentFolders.SamePath(parent, ReadWorktreeRoot())
+                || !ProjectNumber().IsMatch(candidate))
+            {
+                return false;
+            }
+
+            name = candidate;
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     private static DateTimeOffset ReadLastActivity(string directory)

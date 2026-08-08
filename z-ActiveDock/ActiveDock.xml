@@ -221,32 +221,14 @@
             Reconciles only .lnk files owned by the dock. Non-shortcut files are intentionally untouched.
             </summary>
         </member>
-        <member name="T:ActiveDock.DockTheme">
+        <member name="M:ActiveDock.DockShortcutFolder.StartWatching(System.Action{ActiveDock.DockShortcutFolder.ShortcutFolderDelta})">
             <summary>
-            活动坞配色。2.0.0 由浅底改为深色半透明底，前景色整体反相。
+            Watches user edits to the managed folder. A missing existing link means the
+            corresponding dock item was removed; a new link is a request to add its target.
             </summary>
-            <remarks>
-            不做系统毛玻璃：那要求拆掉 AllowsTransparency，而 1.1.x 已在窗口基础样式上翻过两次车
-            （坐标基准错乱、鼠标输入丢失）。这里只换画刷，窗口结构一律不动。
-            </remarks>
         </member>
-        <member name="F:ActiveDock.DockTheme.PanelBackground">
-            <summary>面板深色半透明底，透出的是桌面壁纸。</summary>
-        </member>
-        <member name="F:ActiveDock.DockTheme.PanelBorder">
-            <summary>浅色低对比描边，避免深底上边框突兀。</summary>
-        </member>
-        <member name="F:ActiveDock.DockTheme.Label">
-            <summary>项目编号文字。</summary>
-        </member>
-        <member name="F:ActiveDock.DockTheme.Muted">
-            <summary>空列表提示文字。</summary>
-        </member>
-        <member name="F:ActiveDock.DockTheme.Hover">
-            <summary>悬停态用浅色半透明叠加，深底上不会闪出白块。</summary>
-        </member>
-        <member name="F:ActiveDock.DockTheme.Glow">
-            <summary>权重光圈统一白色，不随项目主色变化。</summary>
+        <member name="T:ActiveDock.DockTheme">
+            <summary>ActiveDock 的 AppShell 视觉令牌适配层。</summary>
         </member>
         <member name="T:ActiveDock.DockWeight">
             <summary>

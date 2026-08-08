@@ -1,9 +1,0 @@
-{
-  "name": "ActiveDock",
-  "version": "1.0.0",
-  "description": "桌面右下角活动项目坞",
-  "artifact": "b-Code-ActiveDock/bin/Release/net8.0-windows/ActiveDock.dll",
-  "docs": "b-Code-ActiveDock/bin/Release/net8.0-windows/ActiveDock.xml",
-  "mcpExposure": "standard",
-  "ui": true
-}

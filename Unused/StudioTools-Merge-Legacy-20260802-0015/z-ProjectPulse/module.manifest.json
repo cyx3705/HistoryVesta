@@ -1,8 +1,0 @@
-{
-  "name": "ProjectPulse",
-  "version": "1.0.0",
-  "description": "面向 Codex 的只读项目工作树巡检",
-  "artifact": "b-Code-ProjectPulse/bin/Release/net8.0/ProjectPulse.dll",
-  "docs": "b-Code-ProjectPulse/bin/Release/net8.0/ProjectPulse.xml",
-  "mcpExposure": "readonly"
-}

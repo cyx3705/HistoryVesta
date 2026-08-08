@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Media;
 using AppShell.Core.Docking;
 
 namespace ActiveDock;
@@ -35,12 +37,23 @@ public static class DockManagerView
 
         public ManagerPage()
         {
-            var root = new DockPanel { Margin = new Thickness(10) };
+            var root = new DockPanel
+            {
+                Margin = new Thickness(12),
+            };
+            root.SetValue(TextElement.FontFamilyProperty, DockTheme.FontFamily);
+            root.SetValue(TextElement.FontSizeProperty, DockTheme.BodyFontSize);
+            ConfigureInput(_minItems);
+            ConfigureInput(_maxItems);
+            ConfigureInput(_halfLife);
 
             var policyBar = new WrapPanel { Margin = new Thickness(0, 0, 0, 8) };
             policyBar.Children.Add(new TextBlock
             {
                 Text = "最少显示",
+                FontFamily = DockTheme.FontFamily,
+                FontSize = DockTheme.BodyFontSize,
+                Foreground = DockTheme.Label,
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 0, 4, 0),
             });
@@ -50,7 +63,8 @@ public static class DockManagerView
             policyBar.Children.Add(Gap("半衰期(天)"));
             policyBar.Children.Add(_halfLife);
 
-            var apply = new Button { Content = "保存策略", Margin = new Thickness(10, 0, 0, 0), Padding = new Thickness(10, 2, 10, 2) };
+            var apply = new Button { Content = "保存策略", Margin = new Thickness(10, 0, 0, 0) };
+            DockTheme.StyleButton(apply, accent: true);
             apply.Click += (_, _) => ApplyPolicy();
             policyBar.Children.Add(apply);
             DockPanel.SetDock(policyBar, Dock.Top);
@@ -71,12 +85,22 @@ public static class DockManagerView
             {
                 Text = "固定项无论打开次数如何都会显示；权重按半衰期衰减，光圈亮度随权重变化。",
                 TextWrapping = TextWrapping.Wrap,
-                Opacity = 0.7,
+                FontFamily = DockTheme.FontFamily,
+                FontSize = DockTheme.SmallFontSize,
+                Foreground = DockTheme.Muted,
                 Margin = new Thickness(0, 0, 0, 6),
             });
             DockPanel.SetDock(root.Children[^1], Dock.Bottom);
 
             _list.View = BuildColumns();
+            _list.Background = DockTheme.SurfaceAlt;
+            _list.BorderBrush = DockTheme.PanelBorder;
+            _list.BorderThickness = new Thickness(1);
+            _list.Foreground = DockTheme.Label;
+            _list.FontFamily = DockTheme.FontFamily;
+            _list.FontSize = DockTheme.BodyFontSize;
+            _list.Resources[SystemColors.HighlightBrushKey] = DockTheme.AccentSoft;
+            _list.Resources[SystemColors.HighlightTextBrushKey] = DockTheme.Label;
             root.Children.Add(_list);
             Content = root;
 
@@ -118,15 +142,31 @@ public static class DockManagerView
         private static UIElement Gap(string text) => new TextBlock
         {
             Text = text,
+            FontFamily = DockTheme.FontFamily,
+            FontSize = DockTheme.BodyFontSize,
+            Foreground = DockTheme.Label,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(12, 0, 4, 0),
         };
 
         private static Button Action(string text, Action run)
         {
-            var button = new Button { Content = text, Margin = new Thickness(0, 0, 6, 0), Padding = new Thickness(10, 2, 10, 2) };
+            var button = new Button { Content = text, Margin = new Thickness(0, 0, 6, 0) };
+            DockTheme.StyleButton(button);
             button.Click += (_, _) => run();
             return button;
+        }
+
+        private static void ConfigureInput(TextBox input)
+        {
+            input.Height = 28;
+            input.Padding = DockTheme.ControlPadding;
+            input.FontFamily = DockTheme.FontFamily;
+            input.FontSize = DockTheme.BodyFontSize;
+            input.Foreground = DockTheme.Label;
+            input.Background = DockTheme.SurfaceAlt;
+            input.BorderBrush = DockTheme.PanelBorder;
+            input.BorderThickness = new Thickness(1);
         }
 
         private void Selected(Action<DockProject> run)

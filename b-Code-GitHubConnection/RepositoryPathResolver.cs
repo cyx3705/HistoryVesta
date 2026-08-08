@@ -5,7 +5,7 @@ namespace GitHubConnection;
 
 public sealed class RepositoryPathResolver
 {
-    public const string DefaultRepository = @"C:\OneHistory\OneHistory-Projects\OneHistory-Projects.git";
+    public const string DefaultRepository = @"C:\OneHistory\HistoryVesta\HistoryVesta.git";
 
     private readonly string _settingsPath;
     private readonly string _defaultRepository;

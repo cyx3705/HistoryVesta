@@ -32,24 +32,27 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
         ActiveDockState.StartWatching();
         if (!DockShortcutFolder.IsExplorerRegistrationDisabled)
         {
-            _ = DockShortcutFolder.Synchronize(ActiveDockState.Projects);
+            DockShortcutFolder.StartWatching(ActiveDockState.ApplyShortcutFolderChanges);
             _ = ExplorerNamespaceRegistration.RegisterOrUpdate(DockShortcutFolder.Path);
         }
 
+        _ = ActiveDockState.RefreshAsync();
+
         // 桌面 Shell 侧承载扩展坞管理页面，服务宿主侧承载活动坞本体。
         if (_shellUi != null)
-        {
             _managerWindow ??= _shellUi.RegisterToolWindow(DockManagerView.CreateDescriptor(), "ActiveDock");
-            return;
-        }
 
         if (_window != null)
+            return;
+        // Shell hosts need both the manager page and the desktop dock. A
+        // headless Smoke caller can still verify registrar behavior without
+        // creating a WPF window on an MTA thread.
+        if (Application.Current == null)
             return;
         _window = new DockWindow();
         _window.Show();
         if (ActiveDockState.Hidden)
             _window.Hide();
-        _ = ActiveDockState.RefreshAsync();
     }
 
     public void DestroyUi()
@@ -82,6 +85,8 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
             ResizeMode = ResizeMode.CanResize;
             AllowsTransparency = true;
             Background = Brushes.Transparent;
+            FontFamily = DockTheme.FontFamily;
+            FontSize = DockTheme.BodyFontSize;
             ShowInTaskbar = false;
             ShowActivated = false;
             Topmost = false;
@@ -92,7 +97,7 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
                 BorderBrush = DockTheme.PanelBorder,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(8),
-                Padding = new Thickness(8),
+                Padding = new Thickness(12),
                 Child = new ScrollViewer
                 {
                     VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
@@ -248,6 +253,8 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
                 {
                     Text = "暂无活动项目",
                     Foreground = DockTheme.Muted,
+                    FontFamily = DockTheme.FontFamily,
+                    FontSize = DockTheme.BodyFontSize,
                     Margin = new Thickness(12),
                 });
             }
@@ -260,14 +267,15 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
             {
                 Width = 52,
                 Height = 52,
-                CornerRadius = new CornerRadius(10),
-                Background = new SolidColorBrush(Color.FromRgb(0x35, 0x5B, 0x7E)),
+                CornerRadius = new CornerRadius(8),
+                Background = DockTheme.Accent,
                 Child = new TextBlock
                 {
                     Text = "OHS",
-                    FontSize = 15,
+                    FontFamily = DockTheme.FontFamily,
+                    FontSize = DockTheme.BodyFontSize,
                     FontWeight = FontWeights.SemiBold,
-                    Foreground = Brushes.White,
+                    Foreground = DockTheme.TextOnAccent,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
                 },
@@ -277,7 +285,8 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
             stack.Children.Add(new TextBlock
             {
                 Text = "主界面",
-                FontSize = 11,
+                FontFamily = DockTheme.FontFamily,
+                FontSize = DockTheme.SmallFontSize,
                 Foreground = DockTheme.Label,
                 HorizontalAlignment = HorizontalAlignment.Center,
             });
@@ -313,7 +322,8 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
             var label = new TextBlock
             {
                 Text = project.Number + (project.Pinned ? "  ·" : ""),
-                FontSize = 11,
+                FontFamily = DockTheme.FontFamily,
+                FontSize = DockTheme.SmallFontSize,
                 Foreground = DockTheme.Label,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 TextTrimming = TextTrimming.CharacterEllipsis,
@@ -327,7 +337,18 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
                 ActiveDockState.RecordOpen(project.Name);
                 Process.Start(new ProcessStartInfo(project.Path) { UseShellExecute = true });
             };
-            var menu = new ContextMenu();
+            var menu = new ContextMenu
+            {
+                Background = DockTheme.PanelBackground,
+                Foreground = DockTheme.Label,
+                BorderBrush = DockTheme.PanelBorder,
+                FontFamily = DockTheme.FontFamily,
+                FontSize = DockTheme.BodyFontSize,
+            };
+            menu.Resources[SystemColors.MenuBrushKey] = DockTheme.PanelBackground;
+            menu.Resources[SystemColors.MenuTextBrushKey] = DockTheme.Label;
+            menu.Resources[SystemColors.HighlightBrushKey] = DockTheme.Hover;
+            menu.Resources[SystemColors.HighlightTextBrushKey] = DockTheme.Label;
             var pin = new MenuItem { Header = project.Pinned ? "取消置顶" : "置顶" };
             pin.Click += (_, _) => ActiveDockState.Pin(project.Name, !project.Pinned);
             var refresh = new MenuItem { Header = "刷新" };
@@ -358,6 +379,8 @@ public sealed class ActiveDockUiModule : IUiModule, IShellUiAware
                 Width = 78,
                 Height = 82,
                 Margin = new Thickness(3),
+                FontFamily = DockTheme.FontFamily,
+                FontSize = DockTheme.SmallFontSize,
                 Template = template,
                 ToolTip = tooltip,
             };

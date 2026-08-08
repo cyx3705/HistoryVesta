@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 
 namespace ProjectPulse;
@@ -11,7 +11,7 @@ public sealed class ProjectPulseCommands
     };
 
     /// <summary>汇总一个 OHS 工作树的文件数量、体积、格式和一级目录热点</summary>
-    /// <param name="name">已登记工作树名称，例如 2026-020-OneHistoryStudio</param>
+    /// <param name="name">已登记工作树名称，例如 2026-020-HistoryJanus</param>
     /// <param name="includeGenerated">是否包含 bin、obj、.vs、node_modules 等生成目录</param>
     /// <param name="top">最多返回多少项格式和一级目录统计，范围 1~50</param>
     public object Summary(string name, bool includeGenerated = false, int top = 10)
@@ -58,7 +58,7 @@ public sealed class ProjectPulseCommands
     }
 
     /// <summary>列出一个 OHS 工作树最近修改的文件</summary>
-    /// <param name="name">已登记工作树名称，例如 2026-020-OneHistoryStudio</param>
+    /// <param name="name">已登记工作树名称，例如 2026-020-HistoryJanus</param>
     /// <param name="days">回看天数，范围 1~3650</param>
     /// <param name="limit">最多返回文件数，范围 1~200</param>
     /// <param name="includeGenerated">是否包含 bin、obj、.vs、node_modules 等生成目录</param>
@@ -90,7 +90,7 @@ public sealed class ProjectPulseCommands
     }
 
     /// <summary>列出一个 OHS 工作树中最大的文件</summary>
-    /// <param name="name">已登记工作树名称，例如 2026-020-OneHistoryStudio</param>
+    /// <param name="name">已登记工作树名称，例如 2026-020-HistoryJanus</param>
     /// <param name="limit">最多返回文件数，范围 1~200</param>
     /// <param name="minMb">最小体积 MB，范围 0~1048576</param>
     /// <param name="includeGenerated">是否包含 bin、obj、.vs、node_modules 等生成目录</param>
