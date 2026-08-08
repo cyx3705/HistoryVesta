@@ -25,7 +25,7 @@ public static class GitRuleCommands
     private static CommandDescriptor BuildSync(GitFileRuleService service, ProjectService projects) => new()
     {
         Name = "janus.gitrule.sync",
-        CommandClass = "git-rules",
+        CommandClass = "gitrule",
         Summary = "把模板项目的规则基线刷入各项目的 baseline 块(不动项目自身 managed 块与手写内容)",
         Example = "janus.gitrule.sync apply=false",
         Parameters =
@@ -52,7 +52,7 @@ public static class GitRuleCommands
     private static CommandDescriptor BuildScan(FormatInventoryService inventory) => new()
     {
         Name = "janus.gitrule.scan",
-        CommandClass = "git-rules",
+        CommandClass = "gitrule",
         Summary = "扫描项目库全部文件格式,输出台账与覆盖率(省略 name 扫全库)",
         Readonly = true,
         Example = "janus.gitrule.scan depth=normal",
@@ -75,7 +75,7 @@ public static class GitRuleCommands
         FormatInventoryService inventory, ProjectService projects) => new()
         {
             Name = "janus.gitrule.review",
-            CommandClass = "git-rules",
+            CommandClass = "gitrule",
             Summary = "一次扫描合并查看未决格式、目录候选、规则建议与需人工判断的未知格式",
             Readonly = true,
             Example = "janus.gitrule.review",
@@ -93,7 +93,7 @@ public static class GitRuleCommands
     private static CommandDescriptor BuildList(GitFileRuleService service) => new()
     {
         Name = "janus.gitrule.list",
-        CommandClass = "git-rules",
+        CommandClass = "gitrule",
         Summary = "列出项目根文件格式的纳入 Git、LFS、LF 规则和实际索引状态",
         Readonly = true,
         Example = "janus.gitrule.list name=0000-000-Template",
@@ -117,7 +117,7 @@ public static class GitRuleCommands
     private static CommandDescriptor BuildSet(GitFileRuleService service) => new()
     {
         Name = "janus.gitrule.set",
-        CommandClass = "git-rules",
+        CommandClass = "gitrule",
         Summary = "预览或确认后设置文件格式的纳入 Git、LFS、LF 状态并同步索引",
         Example = "janus.gitrule.set name=demo pattern=*.xlsx track=true lfs=true lf=false apply=false",
         Parameters =
@@ -141,7 +141,7 @@ public static class GitRuleCommands
     private static CommandDescriptor BuildBatchSet(GitFileRuleService service) => new()
     {
         Name = "janus.gitrule.batchset",
-        CommandClass = "git-rules",
+        CommandClass = "gitrule",
         Summary = "一次预览、确认并保存多条 Git/LFS/LF 文件规则",
         Example = "janus.gitrule.batchset name=demo changes=\"[{\\\"pattern\\\":\\\"*.xlsx\\\",\\\"track\\\":true,\\\"lfs\\\":true,\\\"lf\\\":false}]\" apply=false",
         Parameters =
@@ -179,7 +179,7 @@ public static class GitRuleCommands
     private static CommandDescriptor BuildRemove(GitFileRuleService service) => new()
     {
         Name = "janus.gitrule.remove",
-        CommandClass = "git-rules",
+        CommandClass = "gitrule",
         Summary = "预览或确认后移除托管文件格式规则；不删除本地文件",
         Example = "janus.gitrule.remove name=demo pattern=*.xlsx apply=false",
         Parameters =

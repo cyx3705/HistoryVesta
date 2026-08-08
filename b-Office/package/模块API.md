@@ -6,7 +6,7 @@
 
 - 正式快照：`z-HistoryJanus`。
 - 模块名：`HistoryJanus`。
-- 版本：`3.5.0`。
+- 版本：`3.5.1`。
 - 入口：`HistoryJanus.dll`。
 - 宿主基线：HistoryVulcan `3.2.2` current-host 快照，从 `2026-023-HistoryVulcan/z-HistoryVulcan` 消费；该快照的 `sourceDirty` 仍由 HistoryVulcan manifest 如实标记。
 - 主题：页面使用 HistoryVulcan `Shell.Brush.*` 动态资源，跟随宿主深色/浅色切换，不在模块内维护第二套主题。
@@ -107,3 +107,4 @@ if (!result.Success)
 - V3.3.2：正式目录改名为 `z-HistoryJanus`，API 文档位于 `docs/`。
 - V3.4.0：GitHubConnection 并入为 `github` 页面与 `github.*` 命令。
 - V3.5.0：全部指令改为 `janus.<类>.<方法>`；github 页删除隐式 Button 样式并补齐 DataGrid Surface 刷子。
+- V3.5.1：`CommandClass` 与命令名中间段对齐；清除宿主残留 `GitHubConnection` 独立域槽。

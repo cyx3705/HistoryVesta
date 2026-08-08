@@ -105,7 +105,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildList(ProjectService projects) => new()
     {
         Name = "janus.proj.list",
-        CommandClass = "projects",
+        CommandClass = "proj",
         Summary = "列出全部项目工作树(编号/分支/路径/状态)",
         Readonly = true,
         Example = "janus.proj.list filter=2026",
@@ -154,7 +154,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildCreate(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "janus.proj.create",
-        CommandClass = "projects",
+        CommandClass = "proj",
         Summary = "创建新项目:新建分支 + 同名工作树(分支名 = 文件夹名)",
         Example = "janus.proj.create name=2026-025-新项目",
         Parameters =
@@ -186,7 +186,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildDelete(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "janus.proj.delete",
-        CommandClass = "projects",
+        CommandClass = "proj",
         Summary = "删除项目:移除工作树 + 强制删除分支(不可撤销;受保护分支拒绝)",
         Example = "janus.proj.delete name=9999-901-测试",
         Parameters =
@@ -224,7 +224,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildTree(ProjectService projects) => new()
     {
         Name = "janus.proj.tree",
-        CommandClass = "projects",
+        CommandClass = "proj",
         Summary = "输出分支继承树(默认读文件缓存秒开;refresh=true 重新扫描并更新缓存)",
         Readonly = true,
         Example = "janus.proj.tree refresh=true",
@@ -261,7 +261,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildCommit(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "janus.proj.commit",
-        CommandClass = "projects",
+        CommandClass = "proj",
         Summary = "提交单个项目到本地仓库；可按子模块先、父项目后联动提交",
         Example = "janus.proj.commit name=2026-018-MyAPI msg=\"更新说明\" target=both",
         Parameters =
@@ -319,7 +319,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildPush(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "janus.proj.push",
-        CommandClass = "projects",
+        CommandClass = "proj",
         Summary = "推送单个分支；可先推直属子模块，全部成功后再推父项目",
         Example = "janus.proj.push name=2026-018-MyAPI target=both",
         Parameters =
@@ -360,7 +360,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildCommitAll(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "janus.proj.commitall",
-        CommandClass = "projects",
+        CommandClass = "proj",
         Summary = "一键提交全部工作树；可联动各项目直属子模块",
         Example = "janus.proj.commitall msg=\"每日推送\" target=both",
         Parameters =
@@ -416,7 +416,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildPushAll(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "janus.proj.pushall",
-        CommandClass = "projects",
+        CommandClass = "proj",
         Summary = "推送全部分支；可先去重推送所有直属子模块",
         Example = "janus.proj.pushall target=both",
         Parameters =
@@ -455,7 +455,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildOpen(ProjectService projects) => new()
     {
         Name = "janus.proj.open",
-        CommandClass = "projects",
+        CommandClass = "proj",
         Summary = "在系统资源管理器中打开项目工作树(不带 name 打开工作树根目录)",
         Example = "janus.proj.open name=2026-018-MyAPI",
         Parameters =
@@ -479,7 +479,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildScan(ProjectService projects) => new()
     {
         Name = "janus.proj.scan",
-        CommandClass = "projects",
+        CommandClass = "proj",
         Summary = "扫描项目大文件并输出分级报告(不提交)",
         Readonly = true,
         Example = "janus.proj.scan name=2026-018-MyAPI",
@@ -505,7 +505,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildRepair(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "janus.proj.repair",
-        CommandClass = "projects",
+        CommandClass = "proj",
         Summary = "worktree 断链批量修复:删除全部工作树目录→prune→按分支清单重建",
         Example = "janus.proj.repair",
         ConfirmPrompt = _ =>
@@ -528,7 +528,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildNote(ProjectService projects, HistoryRecorder history) => new()
     {
         Name = "janus.proj.note",
-        CommandClass = "projects",
+        CommandClass = "proj",
         Summary = "写入/更新分支的项目描述(继承树与 janus.proj.tree 优先显示此描述)",
         Example = "janus.proj.note name=2026-018-MyAPI text=\"基础设施整合项目\"",
         Parameters =
@@ -562,7 +562,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildConfig(ProjectService projects) => new()
     {
         Name = "janus.proj.config",
-        CommandClass = "projects",
+        CommandClass = "proj",
         Summary = "显示 proj.* 当前生效配置(经 app.set 修改)",
         Readonly = true,
         Example = "janus.proj.config",
@@ -574,7 +574,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildMetaList(ProjectService projects) => new()
     {
         Name = "janus.meta.list",
-        CommandClass = "projects",
+        CommandClass = "meta",
         Summary = "列出全部项目根下以 z/Z 开头的一级元文件夹",
         Readonly = true,
         Example = "janus.meta.list filter=AD",
@@ -636,7 +636,7 @@ public static class ProjectCommands
     private static CommandDescriptor BuildMetaOpen(ProjectService projects) => new()
     {
         Name = "janus.meta.open",
-        CommandClass = "projects",
+        CommandClass = "meta",
         Summary = "在系统资源管理器中打开指定元文件夹(path= 或 name=+meta=)",
         Example = "janus.meta.open name=2026-016-AD学习 meta=z-AD库文件汇总",
         Parameters =

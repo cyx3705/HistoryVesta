@@ -119,6 +119,22 @@ public sealed class CommandCatalogContractTests
         }
     }
 
+    [Fact]
+    public void CommandClassMatchesTheMiddleNameSegment()
+    {
+        using var fixture = new CompositionFixture();
+
+        foreach (var descriptor in fixture.Registry.All())
+        {
+            var parts = descriptor.Name.Split('.');
+            Assert.True(parts.Length >= 3, $"{descriptor.Name} must be janus.<class>.<method>");
+            Assert.Equal("janus", parts[0]);
+            Assert.True(
+                string.Equals(parts[1], descriptor.CommandClass, StringComparison.Ordinal),
+                $"{descriptor.Name}: CommandClass must equal '{parts[1]}', was '{descriptor.CommandClass}'");
+        }
+    }
+
     private sealed class CompositionFixture : IDisposable
     {
         public const string Source = "test:contracts";

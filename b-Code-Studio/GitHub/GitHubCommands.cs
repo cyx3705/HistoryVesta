@@ -3,8 +3,8 @@ using HistoryVulcan.Core.Commands;
 namespace HistoryJanus.GitHub;
 
 /// <summary>
-/// github.* 指令域注册。三个命令全部只读并允许 MCP 投影；
-/// 登录、注销、提交身份和 origin 修改仅限 github 页面内经确认执行，不进入命令总线。
+/// janus.github.* 类注册（宿主域为模块名 HistoryJanus，类为 github）。
+/// 三个命令全部只读并允许 MCP 投影；登录、注销、提交身份和 origin 修改仅限 github 页面内经确认执行，不进入命令总线。
 /// </summary>
 public static class GitHubCommands
 {
@@ -21,7 +21,7 @@ public static class GitHubCommands
     private static CommandDescriptor BuildStatus(GitHubConnectionService service) => new()
     {
         Name = "janus.github.status",
-        CommandClass = "connection",
+        CommandClass = "github",
         Summary = "查看服务器 Git、GCM、提交身份、origin 和 SSH 状态",
         Readonly = true,
         Example = "janus.github.status",
@@ -38,7 +38,7 @@ public static class GitHubCommands
     private static CommandDescriptor BuildAccounts(GitHubConnectionService service) => new()
     {
         Name = "janus.github.accounts",
-        CommandClass = "account",
+        CommandClass = "github",
         Summary = "列出服务器 GCM 中已知的 GitHub HTTPS 凭据账号",
         Readonly = true,
         Example = "janus.github.accounts",
@@ -52,7 +52,7 @@ public static class GitHubCommands
     private static CommandDescriptor BuildTest(GitHubConnectionService service) => new()
     {
         Name = "janus.github.test",
-        CommandClass = "connection",
+        CommandClass = "github",
         Summary = "只读检测服务器 GitHub SSH 或 HTTPS 连接，不执行 push",
         Readonly = true,
         Example = "janus.github.test transport=auto timeout=15",
