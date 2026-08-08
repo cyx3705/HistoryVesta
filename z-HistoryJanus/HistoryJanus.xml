@@ -29,12 +29,12 @@
         </member>
         <member name="M:HistoryJanus.DebugCommands.BuildLogFlood(HistoryVulcan.Core.Logging.IShellLog)">
             <summary>
-            debug.logflood：按指定速率注入日志以执行承压验证。
+            janus.debug.logflood：按指定速率注入日志以执行承压验证。
             异步长任务示范:后台线程产出、经 Progress 上报进度、全程不阻塞 UI(§5.2)。
             </summary>
         </member>
         <member name="M:HistoryJanus.DebugCommands.BuildSleep">
-            <summary>debug.sleep:异步等待(自动化脚本用,如 --exec 序列中等待模块热重载生效)。</summary>
+            <summary>janus.debug.sleep:异步等待(自动化脚本用,如 --exec 序列中等待模块热重载生效)。</summary>
         </member>
         <member name="T:HistoryJanus.Git.BranchHistoryCommands">
             <summary>分支历史、恢复提交、本地硬重置与 lease 强推指令。</summary>
@@ -48,7 +48,7 @@
             <summary>CommandDescriptor 的同步确认合同使用；执行阶段仍会完整异步重验。</summary>
         </member>
         <member name="T:HistoryJanus.Git.BranchTreeNode">
-            <summary>proj.tree 跨进程传输合同；不携带 WPF 控件或展开状态。</summary>
+            <summary>janus.proj.tree 跨进程传输合同；不携带 WPF 控件或展开状态。</summary>
         </member>
         <member name="T:HistoryJanus.Git.BranchTreeService">
              <summary>
@@ -68,7 +68,7 @@
             <summary>
             分支描述提供者，由装配点连接 HistoryRecorder.AllNotes：
             继承树在展示前用它覆盖节点描述——缓存里存的是构建时的提交信息,
-            覆盖在读取时进行,proj.note 后无需重扫即可见。
+            覆盖在读取时进行,janus.proj.note 后无需重扫即可见。
             </summary>
         </member>
         <member name="M:HistoryJanus.Git.BranchTreeService.BuildTreeAsync(System.IProgress{System.String},System.Boolean,System.Boolean)">
@@ -175,7 +175,7 @@
         </member>
         <member name="F:HistoryJanus.Git.GitFileRuleService.BaselineBegin">
             <summary>
-            基线块由 git.rule.sync 从模板整块重刷，属于机器所有内容。
+            基线块由 janus.gitrule.sync 从模板整块重刷，属于机器所有内容。
             与 managed 块(本项目特例)分离,基线更新不伤项目自身决定;两者都在块外内容之外。
             </summary>
         </member>
@@ -233,7 +233,7 @@
             </summary>
         </member>
         <member name="M:HistoryJanus.Git.ProjectCommands.RecordCommit(HistoryJanus.Git.HistoryRecorder,System.String,System.String,HistoryJanus.Git.CommitReport)">
-            <summary>proj.commit / proj.commitall 共用的单项目提交留痕(R4:结果映射唯一实现)。</summary>
+            <summary>janus.proj.commit / janus.proj.commitall 共用的单项目提交留痕(R4:结果映射唯一实现)。</summary>
         </member>
         <member name="T:HistoryJanus.Git.ProjectService">
             <summary>
@@ -275,7 +275,7 @@
             <summary>
             分支描述提供者，由装配点连接 HistoryRecorder.AllNotes：
             继承树在展示前用它覆盖节点描述——缓存里存的是构建时的提交信息,
-            覆盖在读取时进行,proj.note 后无需重扫即可见。
+            覆盖在读取时进行,janus.proj.note 后无需重扫即可见。
             </summary>
         </member>
         <member name="M:HistoryJanus.Git.ProjectService.EnsureDefaultSettings">
@@ -644,7 +644,7 @@
             <summary>关键字同时匹配项目名、Meta 名和 Meta 路径(包含匹配,忽略大小写)。</summary>
         </member>
         <member name="M:HistoryJanus.Views.OverviewMetaMerge.BuildOpenCommand(HistoryJanus.Git.MetaFolderInfo)">
-            <summary>点击 Meta 名执行既有的 proj.metaopen 命令,不改变项目选择。</summary>
+            <summary>点击 Meta 名执行既有的 janus.meta.open 命令,不改变项目选择。</summary>
         </member>
         <member name="T:HistoryJanus.Views.OverviewView">
             <summary>项目工作树、Z 级元文件夹与共享项目选择。</summary>
