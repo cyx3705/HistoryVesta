@@ -110,7 +110,7 @@
             活动坞界面生命周期。窗口自持、不依赖宿主窗口，因此只在无窗服务宿主中建窗。
             </summary>
             <remarks>
-            宿主判据：模块宿主只在 <c>ShellUi</c> 非空时给 <see cref="T:AppShell.Core.Modules.IShellUiAware"/> 实例注入注册器，
+            宿主判据：模块宿主只在 <c>ShellUi</c> 非空时给 <see cref="T:HistoryVulcan.Core.Modules.IShellUiAware"/> 实例注入注册器，
             而注入发生在实例化阶段、早于 <see cref="M:ActiveDock.ActiveDockUiModule.CreateUi"/>。桌面 Shell 恒注入，无窗服务宿主恒不注入，
             因此 setter 是否被调用可确定性地区分两侧，不依赖启动顺序。本模块不使用注册器本身。
             </remarks>
