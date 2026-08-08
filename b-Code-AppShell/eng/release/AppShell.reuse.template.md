@@ -52,8 +52,8 @@
   消费方只显式启用实际需要的能力。本地 `command.*` 与命令集主窗口不依赖 MCP 网关。
 - 设置、布局、日志、模块和 MCP 治理数据写入当前应用身份对应的数据目录，不要硬编码其他产品目录。
 - 窗口使用 `ToolWindowDescriptor` 注册；不要恢复已删除的旧工作页/文档窗口接口。
-- AppShell 的 `ModulesView` 是唯一模块管理页面；OHS 等消费方只配置 `StandardWindowIds.Modules` 的位置，
-  不要复制第二套模块管理 UI。3.1.2 保留现有模块目录抽象，不执行全局 `OneHistory-Projects\\*\\z-*` 扫描。
+- AppShell 的 `ModulesView` 是唯一模块管理页面；Janus 等消费方只配置 `StandardWindowIds.Modules` 的位置，
+  不要复制第二套模块管理 UI。3.1.2 保留现有模块目录抽象，不执行全局 `HistoryVesta\\*\\z-*` 扫描。
 - 资源浏览与文件操作不属于 AppShell；`IWorkspaceService`、`ResourceView` 和 `res.*` 已删除，未来由独立模块提供。
 - 控制台检索与操作使用 `log.level/source/keyword/mute/autoscroll/clear/export/copy/focus`；`cls` 仅为 `log.clear` 兼容别名。
 - 命令名必须唯一。远程或前端执行位置由命令元数据声明，不要在消费方复制一套命令目录。

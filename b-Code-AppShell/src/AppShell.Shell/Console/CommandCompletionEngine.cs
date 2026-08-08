@@ -39,15 +39,18 @@ internal sealed class ConsoleCompletionResult
     public bool HasCandidates => Candidates.Count > 0;
 }
 
+internal sealed record CommandCompletionDefinition(
+    string Name,
+    string Summary,
+    IReadOnlyList<ParameterSpec> Parameters);
+
 /// <summary>为控制台输入提供命令、参数名和允许值候选；不执行命令也不改变注册表。</summary>
 internal sealed class CommandCompletionEngine
 {
-    private readonly CommandRegistry _registry;
-
-    public CommandCompletionEngine(CommandRegistry registry)
-        => _registry = registry;
-
-    public ConsoleCompletionResult Complete(string text, int caretIndex)
+    public ConsoleCompletionResult Complete(
+        string text,
+        int caretIndex,
+        IReadOnlyList<CommandCompletionDefinition> definitions)
     {
         text ??= "";
         var caret = Math.Clamp(caretIndex, 0, text.Length);
@@ -57,8 +60,7 @@ internal sealed class CommandCompletionEngine
 
         if (beforeTokens.Count == 0)
         {
-            var commands = _registry.All();
-            var exact = commands.FirstOrDefault(command =>
+            var exact = definitions.FirstOrDefault(command =>
                 command.Name.Equals(token, StringComparison.OrdinalIgnoreCase));
             if (caret == tokenEnd && exact is { Parameters.Count: 0 })
                 return ConsoleCompletionResult.Empty;
@@ -66,13 +68,15 @@ internal sealed class CommandCompletionEngine
             return CreateResult(
                 tokenStart,
                 tokenEnd,
-                commands
+                definitions
                     .Where(command => command.Name.StartsWith(token, StringComparison.OrdinalIgnoreCase))
                     .Select(command => Candidate(command.Name, command.Name, command.Summary, ConsoleCompletionKind.Command)));
         }
 
         var commandName = beforeTokens[0];
-        if (!_registry.TryGet(commandName, out var command))
+        var command = definitions.FirstOrDefault(definition =>
+            definition.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase));
+        if (command == null)
             return ConsoleCompletionResult.Empty;
 
         var equals = FindUnquotedEquals(token);
@@ -127,6 +131,15 @@ internal sealed class CommandCompletionEngine
             .Where(value => value.StartsWith(token, StringComparison.OrdinalIgnoreCase))
             .Select(value => Candidate(value, value, "位置参数", ConsoleCompletionKind.Value));
         return CreateResult(tokenStart, tokenEnd, positional);
+    }
+
+    internal static string? CommandNameBeforeCurrentToken(string text, int caretIndex)
+    {
+        text ??= "";
+        var caret = Math.Clamp(caretIndex, 0, text.Length);
+        var (tokenStart, _) = TokenBounds(text, caret);
+        var beforeTokens = Lex(text[..tokenStart]);
+        return beforeTokens.Count == 0 ? null : beforeTokens[0];
     }
 
     private static ConsoleCompletionCandidate Candidate(

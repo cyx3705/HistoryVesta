@@ -9,7 +9,7 @@ using System.Windows.Threading;
 using AppShell.Core;
 using AppShell.Core.Commands;
 using AppShell.Core.Logging;
-using AppShell.Shell.Mcp;
+using AppShell.Shell.Views;
 
 namespace AppShell.Shell.Console;
 
@@ -28,7 +28,7 @@ public partial class ConsoleView : UserControl
     private readonly IShellLog _log;
     private readonly CommandBus _bus;
     private readonly CommandHistory _history;
-    private readonly CommandCompletionEngine _completionEngine;
+    private readonly CommandCatalogSession _catalogSession;
     private readonly int _bufferLimit;
 
     private readonly ConcurrentQueue<ShellLogEntry> _incoming = new();
@@ -43,8 +43,6 @@ public partial class ConsoleView : UserControl
     {
         "core",
     };
-    private bool _registryRefreshPending;
-    private bool _observingRegistry;
     private string _keyword = "";
     private bool _muteLayout;
     private bool _autoScroll = true;
@@ -58,20 +56,33 @@ public partial class ConsoleView : UserControl
     private bool _suppressTextChanged;
     private Func<bool>? _completionFocusPredicate;
     private Action? _showCommandCatalog;
-    private Action<string>? _setCommandCatalogQuery;
-    private Func<int, bool>? _moveCommandCatalogSelection;
-    private Func<string?>? _getSelectedCommandName;
     private bool _completionFocusEnabled = true;
     private bool _catalogShownForInput;
+    private CancellationTokenSource? _completionRefresh;
 
     public ConsoleView(IShellLog log, CommandBus bus, CommandHistory history, int bufferLimit = 50_000)
+        : this(
+            log,
+            bus,
+            history,
+            new CommandCatalogSession(bus, new CommandSelectionState()),
+            bufferLimit)
+    {
+    }
+
+    internal ConsoleView(
+        IShellLog log,
+        CommandBus bus,
+        CommandHistory history,
+        CommandCatalogSession catalogSession,
+        int bufferLimit = 50_000)
     {
         InitializeComponent();
 
         _log = log;
         _bus = bus;
         _history = history;
-        _completionEngine = new CommandCompletionEngine(bus.Registry);
+        _catalogSession = catalogSession;
         _bufferLimit = Math.Max(1000, bufferLimit);
 
         LevelFilter.ItemsSource = new[] { "全部", "Trace", "Debug", "Info", "Warn", "Error", "Fatal" };
@@ -106,13 +117,14 @@ public partial class ConsoleView : UserControl
         Loaded += async (_, _) =>
         {
             _scroll ??= FindScrollViewer(Output);
-            ObserveRegistry();
+            _catalogSession.Changed -= OnCatalogChanged;
+            _catalogSession.Changed += OnCatalogChanged;
             await RefreshDomainsAsync();
         };
         Unloaded += (_, _) =>
         {
             HideCompletions();
-            StopObservingRegistry();
+            _catalogSession.Changed -= OnCatalogChanged;
         };
     }
 
@@ -143,16 +155,10 @@ public partial class ConsoleView : UserControl
     /// <summary>由 ShellWindow 注入聚焦判定和非聚焦命令集切换；保持为内部接线，不进入公开 API。</summary>
     internal void ConfigureCompletionRouting(
         Func<bool> completionFocusPredicate,
-        Action showCommandCatalog,
-        Action<string>? setCommandCatalogQuery = null,
-        Func<int, bool>? moveCommandCatalogSelection = null,
-        Func<string?>? getSelectedCommandName = null)
+        Action showCommandCatalog)
     {
         _completionFocusPredicate = completionFocusPredicate;
         _showCommandCatalog = showCommandCatalog;
-        _setCommandCatalogQuery = setCommandCatalogQuery;
-        _moveCommandCatalogSelection = moveCommandCatalogSelection;
-        _getSelectedCommandName = getSelectedCommandName;
         RefreshCompletionFocus();
     }
 
@@ -174,7 +180,7 @@ public partial class ConsoleView : UserControl
         else if (Input.IsKeyboardFocusWithin && !string.IsNullOrWhiteSpace(Input.Text))
             RefreshCompletions();
         else
-            _setCommandCatalogQuery?.Invoke("");
+            _catalogSession.SetConsoleQuery("");
     }
 
     internal bool TrySetSource(string source, out IReadOnlyList<string> availableDomains)
@@ -412,50 +418,33 @@ public partial class ConsoleView : UserControl
         _ = _bus.ExecuteAsync($"log.source source={CommandParser.QuoteArg(source)}", "UI");
     }
 
-    private void ObserveRegistry()
+    private void OnCatalogChanged(object? sender, CommandCatalogChangedEventArgs e)
     {
-        if (_observingRegistry)
+        if (e.Kind is CommandCatalogChangeKind.Filter or CommandCatalogChangeKind.Selection)
             return;
-        _bus.Registry.Changed += OnRegistryChanged;
-        _observingRegistry = true;
-    }
-
-    private void StopObservingRegistry()
-    {
-        if (!_observingRegistry)
-            return;
-        _bus.Registry.Changed -= OnRegistryChanged;
-        _observingRegistry = false;
-    }
-
-    private void OnRegistryChanged()
-    {
-        if (_registryRefreshPending)
-            return;
-        _registryRefreshPending = true;
         Dispatcher.BeginInvoke(async () =>
         {
-            await Task.Delay(200);
-            _registryRefreshPending = false;
-            if (IsLoaded)
-            {
+            if (!IsLoaded)
+                return;
+            if (e.Kind == CommandCatalogChangeKind.Invalidated)
                 await RefreshDomainsAsync();
-                RefreshCompletions();
-            }
+            else
+                ApplyDomainSnapshot();
+            RefreshCompletions();
         });
     }
 
     private async Task RefreshDomainsAsync()
     {
-        if (_bus.Validate("command.domains") != null)
+        if (!await _catalogSession.RefreshAsync())
             return;
 
-        var result = await _bus.ExecuteAsync("command.domains", "UI");
-        if (!result.Success
-            || !CommandResultData.TryRead<IReadOnlyList<CommandDomainInfo>>(result.Data, out var rows))
-            return;
+        ApplyDomainSnapshot();
+    }
 
-        var registered = rows.Select(row => row.Domain)
+    private void ApplyDomainSnapshot()
+    {
+        var registered = _catalogSession.Domains
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(value => value, StringComparer.Ordinal)
@@ -625,34 +614,61 @@ public partial class ConsoleView : UserControl
 
     private void RefreshCompletions(bool redirectNonFocused)
     {
+        _completionRefresh?.Cancel();
+        _completionRefresh?.Dispose();
+        _completionRefresh = new CancellationTokenSource();
+        _ = RefreshCompletionsAsync(redirectNonFocused, _completionRefresh.Token);
+    }
+
+    private async Task RefreshCompletionsAsync(
+        bool redirectNonFocused,
+        CancellationToken cancellationToken)
+    {
         if (!IsLoaded)
             return;
 
         if (string.IsNullOrWhiteSpace(Input.Text))
         {
             _catalogShownForInput = false;
-            _setCommandCatalogQuery?.Invoke("");
-            HideCompletions();
+            _catalogSession.SetConsoleQuery("");
+            ClearCompletionVisuals();
             return;
         }
 
         if (!(_completionFocusPredicate?.Invoke() ?? _completionFocusEnabled))
         {
-            HideCompletions();
+            ClearCompletionVisuals();
             SyncCommandCatalog(redirectNonFocused && Input.IsKeyboardFocusWithin);
             return;
         }
 
         if (!Input.IsKeyboardFocusWithin)
         {
-            HideCompletions();
+            ClearCompletionVisuals();
             return;
         }
 
         _catalogShownForInput = false;
-        _setCommandCatalogQuery?.Invoke("");
-
-        _completionResult = _completionEngine.Complete(Input.Text, Input.CaretIndex);
+        _catalogSession.SetConsoleQuery("");
+        var text = Input.Text;
+        var caret = Input.CaretIndex;
+        try
+        {
+            _completionResult = await _catalogSession.CompleteAsync(
+                text,
+                caret,
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        if (cancellationToken.IsCancellationRequested
+            || !string.Equals(Input.Text, text, StringComparison.Ordinal)
+            || Input.CaretIndex != caret)
+        {
+            return;
+        }
         _completionIndex = 0;
         CompletionList.ItemsSource = _completionResult.Candidates;
         CompletionList.SelectedIndex = _completionResult.HasCandidates ? 0 : -1;
@@ -663,7 +679,7 @@ public partial class ConsoleView : UserControl
     private void SyncCommandCatalog(bool showCatalog)
     {
         var query = Input.Text;
-        _setCommandCatalogQuery?.Invoke(query);
+        _catalogSession.SetConsoleQuery(query);
         if (string.IsNullOrWhiteSpace(query))
         {
             _catalogShownForInput = false;
@@ -715,6 +731,14 @@ public partial class ConsoleView : UserControl
 
     private void HideCompletions()
     {
+        _completionRefresh?.Cancel();
+        _completionRefresh?.Dispose();
+        _completionRefresh = null;
+        ClearCompletionVisuals();
+    }
+
+    private void ClearCompletionVisuals()
+    {
         _completionResult = ConsoleCompletionResult.Empty;
         _completionIndex = 0;
         if (CompletionPopup != null)
@@ -748,9 +772,9 @@ public partial class ConsoleView : UserControl
         if (!_completionResult.HasCandidates && catalogMode && modifiers == ModifierKeys.Shift)
         {
             if (key == Key.W)
-                return _moveCommandCatalogSelection?.Invoke(-1) == true;
+                return _catalogSession.MoveSelection(-1);
             if (key == Key.S)
-                return _moveCommandCatalogSelection?.Invoke(+1) == true;
+                return _catalogSession.MoveSelection(+1);
         }
 
         if (key != Key.Tab)
@@ -766,7 +790,7 @@ public partial class ConsoleView : UserControl
             return true;
         }
 
-        if (catalogMode && _getSelectedCommandName?.Invoke() is { } commandName)
+        if (catalogMode && _catalogSession.SelectedCommandName is { } commandName)
         {
             SetInputText(commandName);
             return true;

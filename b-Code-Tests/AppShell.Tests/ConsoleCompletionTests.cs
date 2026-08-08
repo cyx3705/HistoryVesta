@@ -8,6 +8,7 @@ using System.Windows.Threading;
 using AppShell.Core.Commands;
 using AppShell.Core.Logging;
 using AppShell.Shell.Console;
+using AppShell.Shell.Views;
 using Xunit;
 
 namespace AppShell.Tests;
@@ -22,7 +23,7 @@ public sealed class ConsoleCompletionTests
             Command("win.reset", "Reset the layout"),
             Command("app.show", "Show the frontend"));
 
-        var result = new CommandCompletionEngine(registry).Complete("win.", 4);
+        var result = Complete(registry, "win.", 4);
 
         Assert.Equal(new[] { "win.reset", "win.restore" },
             result.Candidates.Select(item => item.InsertText));
@@ -41,7 +42,7 @@ public sealed class ConsoleCompletionTests
             new ParameterSpec { Name = "pos", Description = "Dock position" },
             new ParameterSpec { Name = "ratio", Description = "Dock ratio" }));
 
-        var result = new CommandCompletionEngine(registry).Complete("win.dock name=console p", 23);
+        var result = Complete(registry, "win.dock name=console p", 23);
 
         var candidate = Assert.Single(result.Candidates);
         Assert.Equal("pos=", candidate.InsertText);
@@ -63,7 +64,7 @@ public sealed class ConsoleCompletionTests
                 AllowedValues = ["left", "right", "top", "bottom"],
             }));
 
-        var result = new CommandCompletionEngine(registry).Complete("win.dock pos=\"t", 15);
+        var result = Complete(registry, "win.dock pos=\"t", 15);
 
         var candidate = Assert.Single(result.Candidates);
         Assert.Equal("\"top\"", candidate.InsertText);
@@ -86,7 +87,7 @@ public sealed class ConsoleCompletionTests
                 AllowedValues = ["trace", "debug", "info", "warn", "error", "fatal"],
             }));
 
-        var result = new CommandCompletionEngine(registry).Complete("log.level er", 12);
+        var result = Complete(registry, "log.level er", 12);
 
         var candidate = Assert.Single(result.Candidates);
         Assert.Equal("error", candidate.InsertText);
@@ -98,8 +99,7 @@ public sealed class ConsoleCompletionTests
     {
         var registry = Registry(Command("app.frontend.focus-console", "Focus the console"));
 
-        var result = new CommandCompletionEngine(registry)
-            .Complete("app.frontend.fo trailing", 15);
+        var result = Complete(registry, "app.frontend.fo trailing", 15);
 
         var candidate = Assert.Single(result.Candidates);
         var completed = "app.frontend.fo trailing"
@@ -113,11 +113,9 @@ public sealed class ConsoleCompletionTests
     public void UnknownCommandOrValueProducesNoCandidates()
     {
         var registry = Registry(Command("app.show", "Show the frontend"));
-        var engine = new CommandCompletionEngine(registry);
-
-        Assert.False(engine.Complete("missing.", 8).HasCandidates);
-        Assert.False(engine.Complete("app.show mode=unknown", 21).HasCandidates);
-        Assert.False(engine.Complete("app.show", 8).HasCandidates);
+        Assert.False(Complete(registry, "missing.", 8).HasCandidates);
+        Assert.False(Complete(registry, "app.show mode=unknown", 21).HasCandidates);
+        Assert.False(Complete(registry, "app.show", 8).HasCandidates);
     }
 
     [Fact]
@@ -130,7 +128,10 @@ public sealed class ConsoleCompletionTests
                 Command("win.reset", "Reset the layout"));
             var log = new NullLog();
             var path = Path.Combine(Path.GetTempPath(), $"appshell-completion-{Guid.NewGuid():N}.txt");
-            var view = new ConsoleView(log, new CommandBus(registry, log), new CommandHistory(path));
+            var bus = new CommandBus(registry, log);
+            var selection = new CommandSelectionState();
+            using var session = new CommandCatalogSession(bus, selection);
+            var view = new ConsoleView(log, bus, new CommandHistory(path), session);
             var host = new Window
             {
                 Content = view,
@@ -204,7 +205,10 @@ public sealed class ConsoleCompletionTests
                 Command("win.reset", "Reset the layout"));
             var log = new NullLog();
             var path = Path.Combine(Path.GetTempPath(), $"appshell-completion-{Guid.NewGuid():N}.txt");
-            var view = new ConsoleView(log, new CommandBus(registry, log), new CommandHistory(path));
+            var bus = new CommandBus(registry, log);
+            var selection = new CommandSelectionState();
+            using var session = new CommandCatalogSession(bus, selection);
+            var view = new ConsoleView(log, bus, new CommandHistory(path), session);
             var host = new Window
             {
                 Content = view,
@@ -223,19 +227,10 @@ public sealed class ConsoleCompletionTests
                 var popup = Assert.IsType<Popup>(view.FindName("CompletionPopup"));
                 Keyboard.Focus(input);
                 var catalogRequests = 0;
-                var catalogQueries = new List<string>();
-                var catalogMoves = new List<int>();
                 var completionFocused = false;
                 view.ConfigureCompletionRouting(
                     () => completionFocused,
-                    () => catalogRequests++,
-                    query => catalogQueries.Add(query),
-                    direction =>
-                    {
-                        catalogMoves.Add(direction);
-                        return true;
-                    },
-                    () => "win.restore");
+                    () => catalogRequests++);
 
                 input.Text = "win.";
                 input.CaretIndex = input.Text.Length;
@@ -243,23 +238,25 @@ public sealed class ConsoleCompletionTests
 
                 Assert.Equal(1, catalogRequests);
                 Assert.Equal("win.", input.Text);
-                Assert.Equal("win.", catalogQueries[^1]);
+                Assert.Equal("win.", session.CurrentFilter.Query);
                 Assert.False(popup.IsOpen);
 
                 input.Text += "r";
                 input.CaretIndex = input.Text.Length;
                 PumpDispatcher();
                 Assert.Equal(1, catalogRequests);
-                Assert.Equal("win.r", catalogQueries[^1]);
+                Assert.Equal("win.r", session.CurrentFilter.Query);
                 Assert.False(popup.IsOpen);
 
                 Assert.True(view.HandleCompletionKey(Key.S, ModifierKeys.Shift));
-                Assert.Equal([1], catalogMoves);
+                Assert.Equal("win.restore", selection.CurrentCommandName);
                 Assert.True(view.HandleCompletionKey(Key.W, ModifierKeys.Shift));
-                Assert.Equal([1, -1], catalogMoves);
+                Assert.Equal("win.reset", selection.CurrentCommandName);
+                Assert.True(view.HandleCompletionKey(Key.S, ModifierKeys.Shift));
+                Assert.Equal("win.restore", selection.CurrentCommandName);
                 Assert.True(view.HandleCompletionKey(Key.Tab, ModifierKeys.None));
                 Assert.Equal("win.restore", input.Text);
-                Assert.Equal("win.restore", catalogQueries[^1]);
+                Assert.Equal("win.restore", session.CurrentFilter.Query);
 
                 input.Text = "win.";
                 input.CaretIndex = input.Text.Length;
@@ -269,12 +266,12 @@ public sealed class ConsoleCompletionTests
                 view.RefreshCompletionFocus();
                 PumpDispatcher();
                 Assert.True(popup.IsOpen);
-                Assert.Equal(string.Empty, catalogQueries[^1]);
+                Assert.Equal(string.Empty, session.CurrentFilter.Query);
 
                 completionFocused = false;
                 view.RefreshCompletionFocus();
                 Assert.False(popup.IsOpen);
-                Assert.Equal("win.", catalogQueries[^1]);
+                Assert.Equal("win.", session.CurrentFilter.Query);
                 Assert.Equal(2, catalogRequests);
 
                 input.Text = "";
@@ -337,6 +334,20 @@ public sealed class ConsoleCompletionTests
         foreach (var descriptor in descriptors)
             registry.Register(descriptor, "test");
         return registry;
+    }
+
+    private static ConsoleCompletionResult Complete(
+        CommandRegistry registry,
+        string text,
+        int caretIndex)
+    {
+        var definitions = registry.All()
+            .Select(command => new CommandCompletionDefinition(
+                command.Name,
+                command.Summary,
+                command.Parameters))
+            .ToList();
+        return new CommandCompletionEngine().Complete(text, caretIndex, definitions);
     }
 
     private static CommandDescriptor Command(

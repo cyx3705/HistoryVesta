@@ -325,10 +325,32 @@ public sealed class ModuleHost : IDisposable
         // 模块槽(V2.2 MH-01):每个一级子目录一个独立可回收 ALC,
         // 槽内依赖只在槽内解析(MH-02),槽间同名依赖不同版互不冲突
         foreach (var slotDir in Directory.GetDirectories(_dir))
-            LoadGroup(snap, slotDir, Path.GetFileName(slotDir), ReadUiFlag(slotDir));
+        {
+            var slot = Path.GetFileName(slotDir);
+            if (IsModuleArtifactDirectory(slot))
+            {
+                _log.Log(ShellLogLevel.Debug, "module", $"忽略模块目录产物: {slot}");
+                continue;
+            }
+
+            LoadGroup(snap, slotDir, slot, ReadUiFlag(slotDir));
+        }
 
         return snap;
     }
+
+    /// <summary>
+    /// 模块目录同时承载热重载和发布工具的暂存内容。回滚/备份目录仍然包含
+    /// DLL 和 manifest，但不是活动模块，不能被扫描成第二个同名模块。
+    /// </summary>
+    private static bool IsModuleArtifactDirectory(string name)
+        => name.StartsWith(".", StringComparison.Ordinal)
+           || name.Contains("-rollback-", StringComparison.OrdinalIgnoreCase)
+           || name.Contains("-backup-", StringComparison.OrdinalIgnoreCase)
+           || name.Contains("-staging-", StringComparison.OrdinalIgnoreCase)
+           || name.EndsWith("-rollback", StringComparison.OrdinalIgnoreCase)
+           || name.EndsWith("-backup", StringComparison.OrdinalIgnoreCase)
+           || name.EndsWith("-staging", StringComparison.OrdinalIgnoreCase);
 
     private void LoadGroup(Snapshot snap, string dir, string slot, bool uiEnabled)
     {

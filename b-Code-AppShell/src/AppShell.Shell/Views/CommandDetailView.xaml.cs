@@ -13,13 +13,23 @@ public partial class CommandDetailView : UserControl
 {
     private readonly Func<CommandBus?> _busAccessor;
     private readonly CommandSelectionState _selection;
+    private CommandCatalogSession? _catalogSession;
     private CommandCatalogRow? _current;
 
     public CommandDetailView(Func<CommandBus?> busAccessor, CommandSelectionState selection)
+        : this(busAccessor, selection, null)
+    {
+    }
+
+    internal CommandDetailView(
+        Func<CommandBus?> busAccessor,
+        CommandSelectionState selection,
+        CommandCatalogSession? catalogSession)
     {
         InitializeComponent();
         _busAccessor = busAccessor;
         _selection = selection;
+        _catalogSession = catalogSession;
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }
@@ -28,11 +38,37 @@ public partial class CommandDetailView : UserControl
     {
         _selection.Changed -= OnSelectionChanged;
         _selection.Changed += OnSelectionChanged;
+        if (EnsureSession() is { } session)
+        {
+            session.Changed -= OnCatalogChanged;
+            session.Changed += OnCatalogChanged;
+        }
         await LoadSelectionAsync();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
-        => _selection.Changed -= OnSelectionChanged;
+    {
+        _selection.Changed -= OnSelectionChanged;
+        if (_catalogSession != null)
+            _catalogSession.Changed -= OnCatalogChanged;
+    }
+
+    private CommandCatalogSession? EnsureSession()
+    {
+        if (_catalogSession != null)
+            return _catalogSession;
+        if (_busAccessor() is not { } bus)
+            return null;
+        _catalogSession = new CommandCatalogSession(bus, _selection);
+        return _catalogSession;
+    }
+
+    private void OnCatalogChanged(object? sender, CommandCatalogChangedEventArgs e)
+    {
+        if (e.Kind != CommandCatalogChangeKind.Snapshot)
+            return;
+        Dispatcher.BeginInvoke(async () => await LoadSelectionAsync());
+    }
 
     private void OnSelectionChanged(object? sender, EventArgs e)
     {
@@ -59,21 +95,20 @@ public partial class CommandDetailView : UserControl
             return;
         }
 
-        if (_busAccessor() is not { } bus)
+        if (_busAccessor() is not { } bus || EnsureSession() is not { } session)
             return;
 
-        var name = CommandParser.QuoteArg(commandName);
-        var commandResult = await bus.ExecuteAsync($"command.show name={name}", "UI");
+        var detail = await session.GetDetailAsync(commandName);
         if (!IsCurrent(commandName))
             return;
-        if (!commandResult.Success
-            || !CommandResultData.TryRead<CommandCatalogDetail>(commandResult.Data, out var detail))
+        if (detail == null)
         {
             _selection.CurrentCommandName = null;
             ClearDetails();
             return;
         }
 
+        var name = CommandParser.QuoteArg(commandName);
         _current = detail.Command;
         DetailTabs.IsEnabled = true;
         SummaryBox.Text = detail.Command.Summary;
@@ -88,7 +123,7 @@ public partial class CommandDetailView : UserControl
                              $"工具名: {detail.Command.McpToolName ?? "(无)"}{reason}";
         SchemaBox.Text = detail.McpInputSchema ?? "该指令没有 MCP 工具形态";
         ShowSchemaButton.IsEnabled = detail.Command.McpToolName != null
-                                     && bus.Registry.TryGet("mcp.schema", out _);
+                                     && session.ContainsCommand("mcp.schema");
 
         if (detail.Command.McpToolName == null)
         {
@@ -101,7 +136,7 @@ public partial class CommandDetailView : UserControl
             return;
         }
 
-        if (!bus.Registry.TryGet("prompt.get", out _))
+        if (!session.ContainsCommand("prompt.get"))
         {
             RevisionStatusText.Text = "MCP 未启用，提示词治理未装配";
             DefaultDescBox.Text = detail.Command.Summary

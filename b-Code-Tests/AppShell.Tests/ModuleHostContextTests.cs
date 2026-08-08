@@ -98,6 +98,44 @@ namespace AppShell.Tests
             }
         }
 
+        [Fact]
+        public void RollbackSlotsAreIgnoredByModuleDiscovery()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "AppShell.Tests", Guid.NewGuid().ToString("N"));
+            var modulesDirectory = Path.Combine(root, "modules");
+            var activeDirectory = Path.Combine(modulesDirectory, "context-fixture");
+            var rollbackDirectory = Path.Combine(modulesDirectory, "context-fixture-rollback-20260808-000000");
+            Directory.CreateDirectory(activeDirectory);
+            Directory.CreateDirectory(rollbackDirectory);
+            File.Copy(typeof(ContextFixtureModuleInfo).Assembly.Location,
+                Path.Combine(activeDirectory, "ContextFixture.dll"));
+            File.Copy(typeof(ContextFixtureModuleInfo).Assembly.Location,
+                Path.Combine(rollbackDirectory, "ContextFixture.dll"));
+
+            var registry = new CommandRegistry();
+            var log = new TestLog();
+            using var host = new ModuleHost(modulesDirectory, log)
+            {
+                EnableFileWatching = false,
+                EnableUiModules = false,
+            };
+
+            try
+            {
+                host.Attach(registry);
+                host.Start();
+
+                var module = Assert.Single(host.Modules);
+                Assert.Equal("contextfixture", module.ModuleName);
+                Assert.Single(registry.All());
+            }
+            finally
+            {
+                host.Dispose();
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
         private sealed class MemorySettings : ISettingsService
         {
             private readonly Dictionary<string, string> _values = new(StringComparer.OrdinalIgnoreCase);
@@ -167,7 +205,7 @@ namespace BaseVariable
 
         public virtual string Author => "AppShell.Tests";
 
-        public virtual string Version => "3.1.9";
+        public virtual string Version => "3.1.10";
 
         public virtual bool Open => false;
 

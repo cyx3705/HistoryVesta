@@ -48,6 +48,7 @@ public partial class ShellWindow : Window
     // 未传则自建。由构造函数赋值——工具窗口内容工厂在 DockingHost 构建默认布局时即被调用,
     // 派生应用那时拿不到 window,故联动实例必须由派生侧创建并传入。
     private readonly CommandSelectionState _commandSelection;
+    private readonly Views.CommandCatalogSession _commandCatalogSession;
     private readonly Views.McpToolsView _commandCatalog;
 
     // UI-03:折叠后的菜单挂在顶栏菜单按钮上(挂上去才能继承窗体资源与样式)
@@ -135,8 +136,17 @@ public partial class ShellWindow : Window
         _history = new CommandHistory(
             Path.Combine(dataDirectory, "history.txt"),
             settings.GetInt(ConsoleView.KeyHistory, 500));
-        _console = new ConsoleView(log, _bus, _history, settings.GetInt(ConsoleView.KeyBuffer, 50_000));
-        _commandCatalog = new Views.McpToolsView(() => _bus, _commandSelection);
+        _commandCatalogSession = new Views.CommandCatalogSession(_bus, _commandSelection);
+        _console = new ConsoleView(
+            log,
+            _bus,
+            _history,
+            _commandCatalogSession,
+            settings.GetInt(ConsoleView.KeyBuffer, 50_000));
+        _commandCatalog = new Views.McpToolsView(
+            () => _bus,
+            _commandSelection,
+            _commandCatalogSession);
 
         // 控制台窗口内容由 Shell 接管(§4.4 标准窗口;描述符位置仍由派生应用决定)
         TakeOverDescriptor(StandardWindowIds.Console, "控制台", DockSide.Bottom, 0.25, () => _console);
@@ -151,7 +161,10 @@ public partial class ShellWindow : Window
             () => _commandCatalog, forcePlacement: true);
         // 指令详情窗口:命令集选中项的详情(参数/来源/MCP 映射/提示词状态),与命令集共享选中状态
         TakeOverDescriptor(StandardWindowIds.CommandDetail, "指令详情", DockSide.Right, 0.32,
-            () => new Views.CommandDetailView(() => _bus, _commandSelection));
+            () => new Views.CommandDetailView(
+                () => _bus,
+                _commandSelection,
+                _commandCatalogSession));
 
         if (config.EnableModules || config.EnableRemoteManagementViews)
         {
@@ -176,10 +189,7 @@ public partial class ShellWindow : Window
             () =>
             {
                 _ = ShowCommandCatalogForCompletionAsync();
-            },
-            query => _commandCatalog.SetConsoleQuery(query),
-            direction => _commandCatalog.MoveConsoleSelection(direction),
-            () => _commandCatalog.SelectedCommandName);
+            });
         _topBar = new ShellTopBarCoordinator(
             this,
             DockManager,
@@ -625,6 +635,7 @@ public partial class ShellWindow : Window
         // 派生应用不再需要(也不应该)重复 Dispose 这两件。
         _mcp?.Dispose();
         _modules?.Dispose();
+        _commandCatalogSession.Dispose();
     }
 
     private void OnShellClosed(object? sender, EventArgs e)

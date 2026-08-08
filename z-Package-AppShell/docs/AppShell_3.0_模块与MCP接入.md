@@ -1,6 +1,6 @@
-# AppShell 3.2 模块与 MCP 接入
+# AppShell 模块与 MCP 接入
 
-> 适用版本：AppShell 3.1.7
+> 适用版本：AppShell 3.1.9 候选；当前稳定消费版本为 3.1.7，3.1.8 不受支持
 > 边界：本文只描述框架能力。项目库、外部账号、工具同步等消费产品业务不属于 AppShell。
 > 常用公开方法和基础命令见 [AppShell API 与指令手册](AppShell_API与指令手册.md)。
 
@@ -26,6 +26,14 @@
 模块以 `BaseVariable.ModuleInfoBase` 派生类型描述名称、版本、启用状态与方法暴露。公共、非泛型、非属性
 访问器方法映射为 `<模块名>.<方法名>`；相邻 XML 文件为 Help、命令目录和 MCP schema 提供摘要。命令重名
 时拒绝新项，不覆盖框架、应用或其他模块命令。
+
+3.1.9 起，需要宿主服务的外置模块实现 `IModuleContextAware`。装载后宿主调用 `Attach(IModuleContext)`，
+上下文提供权威 `CommandBus`、`IShellLog`、`ISettingsService` 和宿主数据根目录；模块应在该根目录下使用
+自身专属子目录。模块通过
+`RegisterCommands` 注册的命令仍由模块 owner 在卸载时统一回收。独立宿主可设置
+`ShellConfig.ModuleDirectory` 可显式指向其他部署目录；未设置时继续使用应用数据目录下的默认模块目录。
+禁用模块不会收到上下文；`Attach`、`RegisterShortcuts`、`CreateUi` 和 `DestroyUi` 等生命周期方法不会进入
+反射命令目录。模块不得保存上下文供卸载后使用，也不得自行创建第二个命令总线或设置服务。
 
 UI 模块实现 `IUiModule`；需要注册宿主窗口时实现 UI 感知接口并使用 `IShellUiRegistrar`。窗口使用
 `ToolWindowDescriptor` 注册，中央业务窗口显式指定 `DockSide.Center`。模块卸载时先销毁 UI、注销 owner
@@ -91,7 +99,8 @@ WebSocket 支持分片文本消息，总消息上限 1 MiB。
 2. UI、Help、Web、MCP 与命令手册都从最终 `CommandRegistry` 投影，不复制名单。
 3. 危险操作必须由宿主确认；`--yes`、HTTP 参数或 MCP 参数都不能绕过远程确认。
 4. token、密码、私钥和连接串不得写入命令结果、日志或审计文件。
-5. 3.1.7 是当前功能线；全局 z 级模块扫描仍不在本版本范围。双进程服务历史设计不随消费包发布。
+5. 3.1.9 是当前源码候选；3.1.8 不作为稳定支持版本。全局 z 级模块扫描仍不在本版本范围。
+   双进程服务历史设计不随消费包发布。
 
 ## 最小验收
 

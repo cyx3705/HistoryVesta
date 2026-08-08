@@ -18,7 +18,7 @@ using AppShell.Shell;
 namespace AppShell.App;
 
 /// <summary>
-/// AppShell 独立演示宿主(§9):用于验证框架脱离 OHS 仍可构建和运行。
+/// AppShell 独立演示宿主(§9):用于验证框架脱离 Janus 仍可构建和运行。
 /// M2:控制台窗口由 Shell 提供真实实现;本层注册自定义指令示范
 /// (debug.logflood,兼作验收 8 的承压测试入口)。
 /// 控制面板与资源窗口由 Shell 提供，派生应用可继续注册自己的业务窗口。
@@ -86,7 +86,7 @@ public partial class App : Application
             ModuleDirectory = ResolvePackagedModuleDirectory(paths.ModulesDir),
             EnableRemoteManagementViews = true,
             CloseBehavior = ShellCloseBehavior.Hide,
-            // AppShell 独立宿主是模块生命周期的最终所有者；OHS 等产品只声明
+            // AppShell 独立宿主是模块生命周期的最终所有者；Janus 等产品只声明
             // 自己的业务窗口与模块，不再包装第二套 ModuleHost/ModulesView。
         };
 

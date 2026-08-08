@@ -30,7 +30,7 @@ public sealed class CommandRegistry
     /// <summary>
     /// 注销指令(模块热重载场景:模块 DLL 下线时其指令域随之移除)。
     /// 调用方须只注销自己注册过的名称;存在则移除并返回 true。
-    /// [基线 0.4.2 新增,由派生应用 OneHistoryStudio V2-M3 反哺]
+    /// [基线 0.4.2 新增,由派生应用 HistoryJanus V2-M3 反哺]
     /// </summary>
     public bool Unregister(string name)
     {

@@ -10,7 +10,7 @@ public sealed record ApplicationIdentity(
     string FileVersion);
 
 /// <summary>
-/// 从程序集元数据读取应用身份（0.4.4 由 OneHistoryStudio 反哺）。
+/// 从程序集元数据读取应用身份（0.4.4 由 HistoryJanus 反哺）。
 /// 派生应用无需自建身份类：Shell 装配时默认取入口程序集，
 /// 也可用 <see cref="From"/> 指定程序集。
 /// </summary>

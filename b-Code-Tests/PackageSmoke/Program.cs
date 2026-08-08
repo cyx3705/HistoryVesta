@@ -49,7 +49,7 @@ registry.Register(new CommandDescriptor
 });
 var manual = CommandManualGenerator.Render(registry, new CommandSchemaExporter(registry), "readonly");
 if (!manual.StartsWith("# AppShellPackageSmoke 命令手册", StringComparison.Ordinal)
-    || manual.Contains("OneHistoryStudio 命令手册", StringComparison.Ordinal)
+    || manual.Contains("HistoryJanus 命令手册", StringComparison.Ordinal)
     || manual.Contains("b-Office/", StringComparison.Ordinal))
 {
     throw new InvalidOperationException("Command manual still leaks a derived application identity or path");

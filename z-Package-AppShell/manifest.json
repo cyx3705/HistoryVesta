@@ -1,12 +1,12 @@
 {
     "schemaVersion":  1,
     "product":  "AppShell",
-    "version":  "3.1.7",
+    "version":  "3.1.9",
     "channel":  "current-host",
     "runtime":  "win-x64-framework-dependent",
     "executable":  "host/AppShell.exe",
     "selfContained":  false,
-    "sourceCommit":  "d50234589ccd420eb5b26e18b4894c22a347b5e8",
+    "sourceCommit":  "c48c1fd1ba898daece33bbccc5ea5e03ed8481ad",
     "sourceDirty":  false,
     "documents":  [
                       "docs/AppShell_API与指令手册.md",
@@ -19,67 +19,67 @@
                   {
                       "file":  "AppShell.reuse.md",
                       "bytes":  4691,
-                      "sha256":  "EFBC2E1B1B08823976F562A1C907E974416530C385DAE6060DAD0D1B36048C09"
+                      "sha256":  "42B4005CE81F11D0C68CF80A422A1297AD148327CD2F40147EEAB01462DE4DA7"
                   },
                   {
                       "file":  "docs/AppShell_3.0_模块与MCP接入.md",
-                      "bytes":  7514,
-                      "sha256":  "AE9DCB227CEE1101F5B771862C4E692ED188AB56A12E24EB2E549973A03759A2"
+                      "bytes":  8410,
+                      "sha256":  "97CA1753C6ADB1A443F01562A090681BD864A21A557CD91A8864334146B69B21"
                   },
                   {
                       "file":  "docs/AppShell_3.0_消费变更摘要.md",
-                      "bytes":  8304,
-                      "sha256":  "09C53CDCD54D79ED5EA140C700FDF2F7D197108F4EF2359B1773455E5F0FFE45"
+                      "bytes":  9730,
+                      "sha256":  "86D67179A541256F999652E60D735269553214EDFED73AE5E7D9A281691519A1"
                   },
                   {
                       "file":  "docs/AppShell_3.0_运行时约束与已知限制.md",
-                      "bytes":  6736,
-                      "sha256":  "942BC2924B7B03D2AFE86BB6B827DDAB19F0CCA5D251CFA7D012925A6C925230"
+                      "bytes":  6825,
+                      "sha256":  "3D5271FC131767D6F72B96FF4A502D114BC7D7B1FA7DE5ADA191E59DB9DB38BC"
                   },
                   {
                       "file":  "docs/AppShell_API与指令手册.md",
-                      "bytes":  20982,
-                      "sha256":  "19347F10BF6D62BF730B5B82678FED0C9275A623BB88006C170B3A3EA6A6E01B"
+                      "bytes":  22579,
+                      "sha256":  "717B8A5B49C79C6FE39969EC997EFFB5511AC5B7839552777A0C57A6E18CBC8B"
                   },
                   {
                       "file":  "docs/AppShell_UI风格与嵌入页面规范.md",
-                      "bytes":  8576,
-                      "sha256":  "87468B15D25E684101F652A38E3A472111EB4202B4B58C60FF0E6F957989B556"
+                      "bytes":  8640,
+                      "sha256":  "D2E0D5FF73E73E6C3B8071BB9B88667BD0466AEE201BF06E9DDC5134F0618F54"
                   },
                   {
                       "file":  "host/AppShell.Core.dll",
-                      "bytes":  108544,
-                      "sha256":  "1760B2AD5B0853D70E18362114745ED4B068618736740F2AEAE2D67E20910DFB"
+                      "bytes":  109056,
+                      "sha256":  "CB61FD06CA990A876AAC26123F29E16444237E8AEBC614A6DE2DA5CCDF984D61"
                   },
                   {
                       "file":  "host/AppShell.Core.pdb",
-                      "bytes":  39320,
-                      "sha256":  "A1CB99A4437DCFAF5D0BC0FA4154F0EBF89127846012573CDEDA9472BCF41838"
+                      "bytes":  39432,
+                      "sha256":  "C7691E8EE945674DE8E2BDE0E3113CD19EC5DEEBB30B31F5ADA4C56DDDFC6474"
                   },
                   {
                       "file":  "host/AppShell.Core.xml",
-                      "bytes":  81004,
-                      "sha256":  "20B74108DDEF8FF429F0CDB642A932B521D4DE3D859779118BD01B8497AFD23F"
+                      "bytes":  82708,
+                      "sha256":  "EFB08C111AC2F5CB1EA6C7E771C2342AD4A0FB3070B99EBC6F95C454209D5053"
                   },
                   {
                       "file":  "host/AppShell.deps.json",
                       "bytes":  7220,
-                      "sha256":  "716870553FCD7D5B21DE9913B17308676F47F77213F508FCDF832D8122B16B2C"
+                      "sha256":  "0C70357EB83B41E60289ACDC1277EE498FD6BCC02069C5A1F666D309AF4701DD"
                   },
                   {
                       "file":  "host/AppShell.dll",
                       "bytes":  35840,
-                      "sha256":  "8425DE1FC999105362C8593889F51C5EF6C6DEABB0C628BE6A1380B3114F5744"
+                      "sha256":  "F50F7A177ABB7F7C00B159F7B39877090C8D5C6480FFE00A77AE29C536310B8A"
                   },
                   {
                       "file":  "host/AppShell.exe",
                       "bytes":  152064,
-                      "sha256":  "6A83398A013529914F3EFFD1D04379DDFBC446AEA4089E11D762337898007985"
+                      "sha256":  "0CE1CE9404FA3122FB277FC93E7C39976B97B297D0B0551934AA59B8D601BC3E"
                   },
                   {
                       "file":  "host/AppShell.pdb",
-                      "bytes":  19604,
-                      "sha256":  "0BCDAFEB8BED046A2C64E790E663CC33067562EDFC5029091D4F3B813F12391E"
+                      "bytes":  19652,
+                      "sha256":  "CF01E50714C5A59FFFD45F079913B6A056E9F4105EC2A0F3991C00B6D188067F"
                   },
                   {
                       "file":  "host/AppShell.runtimeconfig.json",
@@ -89,37 +89,37 @@
                   {
                       "file":  "host/AppShell.ServiceHost.dll",
                       "bytes":  35840,
-                      "sha256":  "24430580B75F187F0C7FD14C785482B2BE3311B9B8D4998B994D36F9B591FBFD"
+                      "sha256":  "01F7F89F76A70A20FE2A3470918A22503A285729CD9802A5D0A6830D0ED0E0B8"
                   },
                   {
                       "file":  "host/AppShell.ServiceHost.pdb",
                       "bytes":  17476,
-                      "sha256":  "D5654F3942575D032CF1D144E3908B907D7A76975AEDCBFDF9B6BBAF9018815C"
+                      "sha256":  "F0679867311BBE3A3233B7B615865A02CF81369E8519231BBF0349C827EC3D46"
                   },
                   {
                       "file":  "host/AppShell.Services.dll",
-                      "bytes":  224768,
-                      "sha256":  "47C8394036D644F53BC66E9D24A046A3FD99FDD3EFC9A8866D04688552D07547"
+                      "bytes":  228352,
+                      "sha256":  "CE612B2CD44421B25F4A358AB7DF6801321736AC30E8676A95CD3C282719E6CC"
                   },
                   {
                       "file":  "host/AppShell.Services.pdb",
-                      "bytes":  55088,
-                      "sha256":  "D7FDBF7724E3802BC2C17EEE0C23104D3FE60115A277FAF794FE5A80B129E9F5"
+                      "bytes":  56104,
+                      "sha256":  "901F26B384362A5329D8EB4F4FB7915CEF210B383A1B07E9D382DC6FEB21ED2A"
                   },
                   {
                       "file":  "host/AppShell.Services.xml",
-                      "bytes":  45232,
-                      "sha256":  "0CECA57204A13B228A268B15B3F55EC354222E7715F7D118BAC8A306B992AE42"
+                      "bytes":  45539,
+                      "sha256":  "846AAB653CD84C08C8FFBD88262175730738621F034F075F98779144C43B6381"
                   },
                   {
                       "file":  "host/AppShell.Shell.dll",
-                      "bytes":  367104,
-                      "sha256":  "F502E96C921D652CDC28956BBE59D7F326FD5BAEC378A724E1E9114E382ADECC"
+                      "bytes":  377344,
+                      "sha256":  "E418CAFD7ADB18C7D9AF82225494EA3F577998661AA6FF0EE04DA944905F6D1A"
                   },
                   {
                       "file":  "host/AppShell.Shell.pdb",
-                      "bytes":  88864,
-                      "sha256":  "0BDFCBF548A5883477CC049D48958412A015D85EFE5FC5935CCE1D67C86921A4"
+                      "bytes":  92640,
+                      "sha256":  "FDBF5C67DE1EBA98417DB9F4F66982457DF1B94A21434091E8BDEAF48A4A26FB"
                   },
                   {
                       "file":  "host/AvalonDock.dll",
@@ -219,7 +219,7 @@
                   {
                       "file":  "README.md",
                       "bytes":  416,
-                      "sha256":  "60A81711627DB2B983810CC3B8CD28E9F53C12F1A8FEE93B7F555DE489C17133"
+                      "sha256":  "143FC8D68AA40F9C7BA20596FAD052CF8DF5B85B158C83C830558A77C2A0005B"
                   }
               ]
 }

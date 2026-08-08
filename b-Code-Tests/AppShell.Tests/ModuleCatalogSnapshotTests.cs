@@ -87,7 +87,7 @@ public sealed class ModuleCatalogSnapshotTests
     public async Task ModulesViewReaderDoesNotRequireCommandCatalogConsistency()
     {
         var calls = new List<string>();
-        var modules = new List<ModuleMeta> { Module("OneHistoryStudio", 31) };
+        var modules = new List<ModuleMeta> { Module("HistoryJanus", 31) };
         var bus = new CommandBus(new CommandRegistry(), new TestLog())
         {
             RemoteExecutor = (text, _, _) =>
@@ -103,7 +103,7 @@ public sealed class ModuleCatalogSnapshotTests
 
         Assert.True(result.Success, result.Message);
         Assert.Equal(["module.list"], calls);
-        Assert.Equal("OneHistoryStudio", Assert.Single(result.Snapshot!.Modules).ModuleName);
+        Assert.Equal("HistoryJanus", Assert.Single(result.Snapshot!.Modules).ModuleName);
         Assert.Empty(result.Snapshot.Commands);
     }
 
