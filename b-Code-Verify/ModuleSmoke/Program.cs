@@ -62,7 +62,7 @@ if (host.Modules.Count != 1)
 
 var meta = host.Modules[0];
 if (!meta.ModuleName.Equals("HistoryJanus", StringComparison.Ordinal)
-    || !meta.Version.Equals("3.3.1", StringComparison.Ordinal)
+    || !meta.Version.Equals("3.3.2", StringComparison.Ordinal)
     || !meta.Ui
     || meta.CommandCount < 29)
 {
@@ -105,7 +105,7 @@ foreach (var commandName in businessCommands)
     }
 }
 var result = await bus.ExecuteAsync("HistoryJanus.Status", "ModuleSmoke");
-if (!result.Success || !result.Message.Contains("3.3.1", StringComparison.Ordinal))
+if (!result.Success || !result.Message.Contains("3.3.2", StringComparison.Ordinal))
     throw new InvalidOperationException($"module command failed: {result.Message}");
 
 var projectList = await bus.ExecuteAsync("proj.list", "ModuleSmoke");

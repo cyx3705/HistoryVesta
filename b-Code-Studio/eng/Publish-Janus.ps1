@@ -15,7 +15,7 @@ $CandidateRoot = Join-Path $PublishRoot 'current\HistoryJanus'
 $WorkRoot = Join-Path $PublishRoot 'work'
 $HistoryRoot = Join-Path $PublishRoot 'history'
 $QuarantineRoot = Join-Path $PublishRoot 'quarantine'
-$PackageRoot = Join-Path $RepoRoot 'z-Package-HistoryJanus'
+$PackageRoot = Join-Path $RepoRoot 'z-HistoryJanus'
 $ModuleProject = Join-Path $ComponentRoot 'Module\HistoryJanus.Module.csproj'
 $ModuleManifestSource = Join-Path $ComponentRoot 'Module\module.manifest.json'
 $ApiDocumentCandidates = @(Get-ChildItem -LiteralPath (Join-Path $RepoRoot 'b-Office\package') -Filter '*.md' -File -ErrorAction SilentlyContinue)
@@ -44,14 +44,14 @@ function New-ModulePackage {
         [string]$BuildOutput
     )
 
-    New-Item -ItemType Directory -Force -Path (Join-Path $OutputRoot 'package') | Out-Null
+    New-Item -ItemType Directory -Force -Path (Join-Path $OutputRoot 'docs') | Out-Null
     Copy-Item -LiteralPath (Join-Path $BuildOutput 'HistoryJanus.dll') -Destination $OutputRoot
     Copy-Item -LiteralPath (Join-Path $BuildOutput 'HistoryJanus.xml') -Destination $OutputRoot
-    Copy-Item -LiteralPath $ApiDocumentSource -Destination (Join-Path $OutputRoot ('package\' + $ApiDocumentName))
+    Copy-Item -LiteralPath $ApiDocumentSource -Destination (Join-Path $OutputRoot ('docs\' + $ApiDocumentName))
 
     Copy-Item -LiteralPath $ModuleManifestSource -Destination (Join-Path $OutputRoot 'module.manifest.json')
 
-    $relativeFiles = @('HistoryJanus.dll', 'HistoryJanus.xml', 'module.manifest.json', "package/$ApiDocumentName")
+    $relativeFiles = @('HistoryJanus.dll', 'HistoryJanus.xml', 'module.manifest.json', "docs/$ApiDocumentName")
     $checksumLines = foreach ($relative in $relativeFiles) {
         $path = Join-Path $OutputRoot $relative.Replace('/', [IO.Path]::DirectorySeparatorChar)
         "$(Get-FileHash -LiteralPath $path -Algorithm SHA256 | Select-Object -ExpandProperty Hash)  $relative"

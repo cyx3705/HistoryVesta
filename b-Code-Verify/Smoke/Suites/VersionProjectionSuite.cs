@@ -186,7 +186,7 @@ internal static class VersionProjectionSuite
             "publish governance: release candidates are never archived as history");
         True(!publish.Contains("Join-Path $RepoRoot \"stage\"", StringComparison.Ordinal),
             "publish governance: the removed stage root is not recreated");
-        Contains(publish, "z-Package-HistoryJanus",
+        Contains(publish, "z-HistoryJanus",
             "publish governance: named z-level directory is the formal package root");
         Contains(publish, "Assert-ModulePackage",
             "publish governance: module package uses an exact file-set gate");
@@ -291,13 +291,13 @@ internal static class VersionProjectionSuite
             "version projection: local b-Publish build and history data is ignored");
 
         var gitAttributes = File.ReadAllLines(Path.Combine(ParentDir, ".gitattributes"));
-        True(gitAttributes.Any(line => line.StartsWith("z-Package-HistoryJanus/**/*.dll ", StringComparison.Ordinal)),
+        True(gitAttributes.Any(line => line.StartsWith("z-HistoryJanus/**/*.dll ", StringComparison.Ordinal)),
             "version projection: formal package binaries use Git LFS");
         True(!gitAttributes.Any(line => line.StartsWith("b-Publish/**/*.dll ", StringComparison.Ordinal)),
             "version projection: ignored local publish area has no tracked LFS contract");
         True(!Directory.Exists(Path.Combine(ParentDir, "z-Package")),
             "version projection: unnamed legacy package root is removed");
-        var formalRoot = Path.Combine(ParentDir, "z-Package-HistoryJanus");
+        var formalRoot = Path.Combine(ParentDir, "z-HistoryJanus");
         if (Directory.Exists(formalRoot))
         {
             var formalPackageFiles = Directory.EnumerateFiles(formalRoot, "*", SearchOption.AllDirectories)
@@ -305,7 +305,7 @@ internal static class VersionProjectionSuite
                 .ToHashSet(StringComparer.Ordinal);
             True(formalPackageFiles.SetEquals([
                     "HistoryJanus.dll", "HistoryJanus.xml", "module.manifest.json",
-                    "SHA256SUMS", "package/模块API.md",
+                    "SHA256SUMS", "docs/模块API.md",
                 ]),
                 "version projection: formal package is the minimal module snapshot");
         }

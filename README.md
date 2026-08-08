@@ -12,7 +12,7 @@ HistoryJanus V3 是运行在 HistoryVulcan 中的项目与 Git 治理模块。Hi
 | `b-Office/package` | 唯一跨项目模块 API 文档 |
 | `b-Office/history` | 只读版本记录，不是现行开发输入 |
 | `b-Publish` | 单槽候选、历史正式包、事务工作区，不入 Git |
-| `z-Package-HistoryJanus` | 最新正式模块消费快照 |
+| `z-HistoryJanus` | 最新正式模块消费快照 |
 
 文档入口：[文档中心](./b-Office/文档中心.md)；跨模块入口：[模块 API](./b-Office/package/模块API.md)。
 

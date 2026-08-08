@@ -71,27 +71,17 @@
     </UserControl.Resources>
     <DockPanel Margin="6">
         <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="新项目名称:" Margin="0,0,6,4"
+            <TextBlock Grid.Column="0" Text="新项目名称:"
                        VerticalAlignment="Center" />
-            <TextBox Grid.Row="0" Grid.Column="1" x:Name="NewProjectNameBox" Margin="0,0,6,4"
+            <TextBox Grid.Column="1" x:Name="NewProjectNameBox" Margin="0,0,6,0"
                      VerticalContentAlignment="Center" TextChanged="OnNewProjectNameChanged" />
-            <Button Grid.Row="0" Grid.Column="2" x:Name="CreateProjectButton" Content="新建"
-                    Padding="10,3" Margin="0,0,0,4" IsEnabled="False" Click="OnCreateClick" />
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="当前项目:"
-                       VerticalAlignment="Center" />
-            <ComboBox Grid.Row="1" Grid.Column="1" x:Name="CurrentProjectBox" IsEditable="True"
-                      Margin="0,0,6,0" SelectionChanged="OnProjectSelected" />
-            <Button Grid.Row="1" Grid.Column="2" x:Name="RefreshProjectsButton" Content="刷新"
-                    Padding="10,3" Click="OnRefreshProjectsClick" />
+            <Button Grid.Column="2" x:Name="CreateProjectButton" Content="新建"
+                    Padding="10,3" IsEnabled="False" Click="OnCreateClick" />
         </Grid>
 
         <Grid DockPanel.Dock="Top" Margin="0,0,0,6">

@@ -221,11 +221,11 @@ function Assert-ModulePackage {
     )
 
     $fullRoot = [IO.Path]::GetFullPath($Root)
-    $packageDocs = @(Get-ChildItem -LiteralPath (Join-Path $fullRoot 'package') -Filter '*.md' -File -ErrorAction SilentlyContinue)
+    $packageDocs = @(Get-ChildItem -LiteralPath (Join-Path $fullRoot 'docs') -Filter '*.md' -File -ErrorAction SilentlyContinue)
     if ($packageDocs.Count -ne 1) {
         throw "Module package must contain exactly one API Markdown document"
     }
-    $apiRelative = 'package/' + $packageDocs[0].Name
+    $apiRelative = 'docs/' + $packageDocs[0].Name
     $expectedFiles = @(
         'HistoryJanus.dll',
         'HistoryJanus.xml',

@@ -236,7 +236,7 @@
 *.snupkg filter=lfs diff=lfs merge=lfs -text
 
 # HistoryJanus keeps the latest formal module snapshot in its named z-level package.
-z-Package-HistoryJanus/**/*.dll filter=lfs diff=lfs merge=lfs -text
+z-HistoryJanus/**/*.dll filter=lfs diff=lfs merge=lfs -text
 
 # HistoryJanus managed begin
 *.asm filter=lfs diff=lfs merge=lfs -text

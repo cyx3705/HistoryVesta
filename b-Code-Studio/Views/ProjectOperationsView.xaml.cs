@@ -15,7 +15,7 @@ public partial class ProjectOperationsView : UserControl
     private readonly Func<CommandBus?> _busAccessor;
     private readonly ProjectSelectionState _selection;
     private readonly ObservableCollection<RuleEditRow> _rules = [];
-    private bool _suppressProjectSelection;
+    private List<string> _projectNames = [];
     private bool _projectOperationRunning;
     private bool _ruleOperationRunning;
     private string? _loadedRuleProject;
@@ -46,104 +46,52 @@ public partial class ProjectOperationsView : UserControl
     private void OnUnloaded(object sender, System.Windows.RoutedEventArgs e)
         => _selection.Changed -= OnSharedSelectionChanged;
 
+    // 项目选择唯一真源是共享 ProjectSelectionState（项目总览页驱动）；本页只跟随
     private async Task RefreshProjectsAsync(string? select = null)
     {
         if (_busAccessor() is not { } bus)
             return;
-        var current = select ?? _selection.CurrentProjectName ?? CurrentProjectName();
-        RefreshProjectsButton.IsEnabled = false;
-        try
+        var result = await bus.ExecuteAsync("proj.list", "UI");
+        if (!result.Success || !ModuleResultData.TryRead(result.Data, out List<WorktreeInfo>? projects))
+            return;
+        _projectNames = projects.Select(project => project.BranchName).ToList();
+        var requested = select ?? _selection.CurrentProjectName;
+        var selected = _projectNames.FirstOrDefault(name =>
+            name.Equals(requested, StringComparison.OrdinalIgnoreCase)) ?? _projectNames.FirstOrDefault();
+        if (!string.Equals(selected, _selection.CurrentProjectName, StringComparison.OrdinalIgnoreCase))
         {
-            var result = await bus.ExecuteAsync("proj.list", "UI");
-            if (!result.Success || !ModuleResultData.TryRead(result.Data, out List<WorktreeInfo>? projects))
-                return;
-            var names = projects.Select(project => project.BranchName).ToList();
-            _suppressProjectSelection = true;
-            CurrentProjectBox.ItemsSource = names;
-            var selected = names.FirstOrDefault(name =>
-                name.Equals(current, StringComparison.OrdinalIgnoreCase)) ?? names.FirstOrDefault();
-            CurrentProjectBox.SelectedItem = selected;
             _selection.CurrentProjectName = selected;
-            _suppressProjectSelection = false;
-            UpdateProjectActions();
-            if (CurrentProjectName() is { Length: > 0 } name)
-                await LoadRulesAsync(name);
-            else
-                ClearRules();
-        }
-        finally
-        {
-            RefreshProjectsButton.IsEnabled = true;
-        }
-    }
-
-    private async void OnProjectSelected(object sender, SelectionChangedEventArgs e)
-    {
-        if (_suppressProjectSelection)
-            return;
-        var requested = CurrentProjectName();
-        if (_loadedRuleProject is { Length: > 0 } loaded
-            && !requested.Equals(loaded, StringComparison.OrdinalIgnoreCase)
-            && !await EnsureDirtyRulesHandledAsync())
-        {
-            RestoreProjectSelection(loaded);
             return;
         }
         UpdateProjectActions();
-        if (requested is { Length: > 0 } name)
-        {
-            _suppressProjectSelection = true;
-            _selection.CurrentProjectName = name;
-            _suppressProjectSelection = false;
-            await LoadRulesAsync(name);
-        }
-        else
-            ClearRules();
-    }
-
-    private void OnSharedSelectionChanged(object? sender, EventArgs e)
-    {
-        if (_suppressProjectSelection)
-            return;
-        Dispatcher.BeginInvoke(async () => await ApplySharedSelectionAsync());
-    }
-
-    private async Task ApplySharedSelectionAsync()
-    {
-        var names = CurrentProjectBox.ItemsSource as IEnumerable<string> ?? [];
-        var selected = _selection.CurrentProjectName is { } current
-            ? names.FirstOrDefault(name => name.Equals(current, StringComparison.OrdinalIgnoreCase))
-            : null;
-
-        if (_loadedRuleProject is { Length: > 0 } loaded
-            && !string.Equals(selected, loaded, StringComparison.OrdinalIgnoreCase)
-            && !await EnsureDirtyRulesHandledAsync())
-        {
-            RestoreProjectSelection(loaded);
-            return;
-        }
-
-        _suppressProjectSelection = true;
-        CurrentProjectBox.SelectedItem = selected;
-        if (selected == null)
-            CurrentProjectBox.Text = "";
-        _suppressProjectSelection = false;
-        UpdateProjectActions();
-
         if (selected != null)
             await LoadRulesAsync(selected);
         else
             ClearRules();
     }
 
-    private void RestoreProjectSelection(string project)
+    private void OnSharedSelectionChanged(object? sender, EventArgs e)
+        => Dispatcher.BeginInvoke(async () => await ApplySharedSelectionAsync());
+
+    private async Task ApplySharedSelectionAsync()
     {
-        _suppressProjectSelection = true;
-        CurrentProjectBox.SelectedItem = project;
-        CurrentProjectBox.Text = project;
-        _selection.CurrentProjectName = project;
-        _suppressProjectSelection = false;
+        var selected = _selection.CurrentProjectName is { } current
+            ? _projectNames.FirstOrDefault(name => name.Equals(current, StringComparison.OrdinalIgnoreCase))
+            : null;
+
+        if (_loadedRuleProject is { Length: > 0 } loaded
+            && !string.Equals(selected, loaded, StringComparison.OrdinalIgnoreCase)
+            && !await EnsureDirtyRulesHandledAsync())
+        {
+            _selection.CurrentProjectName = loaded;
+            return;
+        }
+
         UpdateProjectActions();
+        if (selected != null)
+            await LoadRulesAsync(selected);
+        else
+            ClearRules();
     }
 
     private void OnNewProjectNameChanged(object sender, TextChangedEventArgs e)
@@ -162,12 +110,6 @@ public partial class ProjectOperationsView : UserControl
         var showRules = RulesPageButton.IsChecked == true;
         RulePanel.Visibility = showRules ? Visibility.Visible : Visibility.Collapsed;
         HistoryPanel.Visibility = showRules ? Visibility.Collapsed : Visibility.Visible;
-    }
-
-    private async void OnRefreshProjectsClick(object sender, System.Windows.RoutedEventArgs e)
-    {
-        if (await EnsureDirtyRulesHandledAsync())
-            await RefreshProjectsAsync();
     }
 
     private async void OnCreateClick(object sender, System.Windows.RoutedEventArgs e)
@@ -229,7 +171,7 @@ public partial class ProjectOperationsView : UserControl
 
     private string NewProjectName() => NewProjectNameBox.Text.Trim();
 
-    private string CurrentProjectName() => CurrentProjectBox.Text.Trim();
+    private string CurrentProjectName() => _selection.CurrentProjectName?.Trim() ?? "";
 
     private void UpdateProjectActions()
     {

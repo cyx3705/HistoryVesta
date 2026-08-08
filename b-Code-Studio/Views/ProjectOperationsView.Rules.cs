@@ -265,8 +265,6 @@ public partial class ProjectOperationsView
         RefreshRulesButton.IsEnabled = !running;
         ReviewRulesButton.IsEnabled = !running;
         SyncBaselineButton.IsEnabled = !running;
-        CurrentProjectBox.IsEnabled = !running;
-        RefreshProjectsButton.IsEnabled = !running;
         UpdateRuleActions();
     }
 

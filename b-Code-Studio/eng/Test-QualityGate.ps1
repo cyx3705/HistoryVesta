@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 # HistoryJanus 日常质量门禁（VERIFY-FAST 组成部分）。
 # 定位：代码管道化条件 4 —— 漂移由日常检查自动阻断，而不是积累到正式发布才暴露。
 # 权威源上游：JanusVersion.props（版本）、module.manifest.json（模块身份）、
-# z-Package-HistoryJanus（正式树边界）、2026-023-HistoryVulcan z 级快照（宿主合同）。
+# z-HistoryJanus（正式树边界）、2026-023-HistoryVulcan z 级快照（宿主合同）。
 #
 # 注意：所有收集结果必须经 @(...) 包装；单个违规项在 Windows PowerShell 5.1 下是标量，
 # 直接读 .Count 会得到 $null 并静默绕过失败分支（2026-08 在 HistoryVulcan 同类脚本中实证）。
@@ -14,7 +14,7 @@ $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $componentRoot = Join-Path $root 'b-Code-Studio'
 $activeRoots = @('b-Code-Studio', 'b-Code-Verify')
-$excluded = '\\(bin|obj|Unused|b-Publish|z-Package-HistoryJanus)\\'
+$excluded = '\\(bin|obj|Unused|b-Publish|z-HistoryJanus)\\'
 
 $violations = [System.Collections.Generic.List[string]]::new()
 
@@ -79,20 +79,20 @@ if ($statusSource -match '"[^"]*\d+\.\d+\.\d+[^"]*"') {
 }
 
 # --- 4. 正式树边界（QA-004 日常化）：z 级快照只允许五类条目 -----------------------------
-$packageRoot = Join-Path $root 'z-Package-HistoryJanus'
+$packageRoot = Join-Path $root 'z-HistoryJanus'
 if (Test-Path -LiteralPath $packageRoot) {
-    $allowed = @('HistoryJanus.dll', 'HistoryJanus.xml', 'module.manifest.json', 'SHA256SUMS', 'package')
+    $allowed = @('HistoryJanus.dll', 'HistoryJanus.xml', 'module.manifest.json', 'SHA256SUMS', 'docs')
     $unexpected = @(
         Get-ChildItem -LiteralPath $packageRoot |
             Where-Object { $_.Name -notin $allowed }
     )
     foreach ($item in $unexpected) {
-        $violations.Add("Unexpected entry in z-Package-HistoryJanus: $($item.Name)")
+        $violations.Add("Unexpected entry in z-HistoryJanus: $($item.Name)")
     }
-    $packageDoc = Join-Path $packageRoot 'package'
+    $packageDoc = Join-Path $packageRoot 'docs'
     if ((Test-Path -LiteralPath $packageDoc) -and
         @(Get-ChildItem -LiteralPath $packageDoc -File).Count -ne 1) {
-        $violations.Add('z-Package-HistoryJanus/package must contain exactly one API document')
+        $violations.Add('z-HistoryJanus/docs must contain exactly one API document')
     }
 }
 

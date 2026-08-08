@@ -188,6 +188,7 @@ internal static class RepositoryTargetsSuite
                  {
                      "OpenProjectButton", "ScanCoverageButton", "ReloadRulesButton",
                      "ShowGapsButton", "SuggestButton", "SaveRuleButton",
+                     "CurrentProjectBox", "RefreshProjectsButton",
                  })
             True(!named.Contains(removed), $"removed project operation control is absent: {removed}");
         Equal(4, project.Descendants().Count(element => element.Name.LocalName == "RadioButton"
@@ -262,8 +263,6 @@ internal static class RepositoryTargetsSuite
             .ToDictionary(element => element.Attribute(x + "Name")!.Value);
         Equal("2", byName["CreateProjectButton"].Attribute("Grid.Column")?.Value,
             "new project action sits to the right of its input");
-        Equal("2", byName["RefreshProjectsButton"].Attribute("Grid.Column")?.Value,
-            "project refresh sits to the right of current project");
         Equal("1", byName["SelectedCommitMessageBox"].Attribute("Grid.Row")?.Value,
             "commit description remains on the action row");
         var commitActions = byName["SelectedCommitButton"].Parent;
