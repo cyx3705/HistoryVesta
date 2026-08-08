@@ -18,7 +18,7 @@ if ($DeployToZ -and -not $VirtualPublish) {
 $ComponentRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $RepoRoot = [IO.Path]::GetFullPath((Join-Path $ComponentRoot ".."))
 $PublishRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "b-Publish"))
-$FormalRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "z-Package-AppShell"))
+$FormalRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot "z-HistoryVulcan"))
 $OfficeRoot = Join-Path $RepoRoot "b-Office"
 # The repository keeps the editable consumer contract beside the HistoryVulcan-specific
 # office documents. The manifest is the source of truth for this location.
@@ -605,7 +605,7 @@ function Publish-VirtualSnapshot {
         $readmeText = @"
 # AppShell $VirtualVersion virtual publish
 
-This directory validates the historical packages, consumer-document generation, manifest, and SHA-256 release chain. It is not the formal feed and declares compatibilityValidated=false. The z-Package-AppShell root remains the formal entry point.
+This directory validates the historical packages, consumer-document generation, manifest, and SHA-256 release chain. It is not the formal feed and declares compatibilityValidated=false. The z-HistoryVulcan root remains the formal entry point.
 
 - feed/: four $VirtualVersion packages copied from the immutable b-Publish archive after identity validation.
 - docs/: generated from the current consumer-contract sources with a virtual-publish warning.

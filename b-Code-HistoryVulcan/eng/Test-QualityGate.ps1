@@ -4,7 +4,7 @@ param()
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $activeRoots = @('b-Code-HistoryVulcan\src', 'b-Code-Samples')
-$excluded = '\\(bin|obj|artifacts|history|b-Publish|z-Package-AppShell|z-Package-HistoryVulcan)\\'
+$excluded = '\\(bin|obj|artifacts|history|b-Publish|z-HistoryVulcan)\\'
 $suppressionPattern = 'NoWarn|SuppressMessage|#pragma\s+warning\s+disable'
 $violations = [System.Collections.Generic.List[string]]::new()
 

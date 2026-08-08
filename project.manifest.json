@@ -41,7 +41,7 @@
       "b-Publish"
     ],
     "releaseRoots": [
-      "z-Package-AppShell"
+      "z-HistoryVulcan"
     ],
     "allowedRootDirectoryPrefixes": [
       "a-",
@@ -98,8 +98,7 @@
   "contextExclusions": [
     "b-Office/history/**",
     "b-Publish/**",
-    "z-Package-AppShell/**",
-    "z-Package-HistoryVulcan/**",
+      "z-HistoryVulcan/**",
     "eng/**",
     "Unused/**",
     "**/bin/**",
