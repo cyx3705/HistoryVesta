@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\b-Code-HistoryVulcan\src\HistoryVulcan.Core\HistoryVulcan.Core.csproj" />
+    <ProjectReference Include="..\..\b-Code-HistoryVulcan\src\HistoryVulcan.ServiceHost\HistoryVulcan.ServiceHost.csproj" />
+    <ProjectReference Include="..\..\b-Code-HistoryVulcan\src\HistoryVulcan.Services\HistoryVulcan.Services.csproj" />
+    <ProjectReference Include="..\..\b-Code-HistoryVulcan\src\HistoryVulcan.Shell\HistoryVulcan.Shell.csproj" />
+  </ItemGroup>
+
+</Project>

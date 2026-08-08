@@ -7,16 +7,16 @@
     <SelfContained>false</SelfContained>
     <UseWPF>true</UseWPF>
     <IsPackable>false</IsPackable>
-    <Product>AppShellPackageSmoke</Product>
-    <AssemblyTitle>AppShellPackageSmoke</AssemblyTitle>
-    <Title>AppShellPackageSmoke</Title>
+    <Product>HistoryVulcanPackageSmoke</Product>
+    <AssemblyTitle>HistoryVulcanPackageSmoke</AssemblyTitle>
+    <Title>HistoryVulcanPackageSmoke</Title>
     <!-- The release script restores this project from the freshly built local feed. -->
     <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="OneHistory.AppShell.Shell" />
-    <PackageReference Include="OneHistory.AppShell.ServiceHost" />
+    <PackageReference Include="OneHistory.HistoryVulcan.Shell" />
+    <PackageReference Include="OneHistory.HistoryVulcan.ServiceHost" />
   </ItemGroup>
 
 </Project>

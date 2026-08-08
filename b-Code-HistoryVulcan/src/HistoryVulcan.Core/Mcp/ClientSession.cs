@@ -1,0 +1,62 @@
+namespace HistoryVulcan.Core.Mcp;
+
+/// <summary>接入命令总线的客户端种类。</summary>
+public enum ClientKind
+{
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    Mcp,
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    Shell,
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    Web,
+}
+
+/// <summary>一次客户端会话的稳定身份。</summary>
+public sealed record ClientSession(
+    string Id,
+    ClientKind Kind,
+    string Name,
+    string ProtocolVersion,
+    DateTimeOffset ConnectedAt)
+{
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    public string? RemoteAddress { get; init; }
+
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    public string? DeviceId { get; init; }
+
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    public string? AuthSubject { get; init; }
+
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    public IReadOnlySet<string> Scopes { get; init; } =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    public bool IsLoopback { get; init; }
+
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    public static ClientSession Create(
+        ClientKind kind,
+        string name,
+        string protocolVersion = "2025-03-26",
+        string? id = null,
+        string? remoteAddress = null,
+        string? deviceId = null,
+        string? authSubject = null,
+        IEnumerable<string>? scopes = null,
+        bool isLoopback = false)
+        => new(
+            id ?? Guid.NewGuid().ToString("N"),
+            kind,
+            string.IsNullOrWhiteSpace(name) ? "client" : name.Trim(),
+            protocolVersion,
+            DateTimeOffset.UtcNow)
+        {
+            RemoteAddress = remoteAddress,
+            DeviceId = deviceId,
+            AuthSubject = authSubject,
+            Scopes = new HashSet<string>(scopes ?? [], StringComparer.OrdinalIgnoreCase),
+            IsLoopback = isLoopback,
+        };
+}

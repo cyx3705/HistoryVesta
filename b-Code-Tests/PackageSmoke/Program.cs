@@ -1,10 +1,10 @@
 using System.Reflection;
-using AppShell.Core;
-using AppShell.Core.Commands;
-using AppShell.Core.Mcp;
-using AppShell.Services;
-using AppShell.ServiceHost;
-using AppShell.Shell;
+using HistoryVulcan.Core;
+using HistoryVulcan.Core.Commands;
+using HistoryVulcan.Core.Mcp;
+using HistoryVulcan.Services;
+using HistoryVulcan.ServiceHost;
+using HistoryVulcan.Shell;
 
 var smokeAssembly = Assembly.GetExecutingAssembly();
 var smokeIdentity = AppIdentity.From(smokeAssembly);
@@ -27,7 +27,7 @@ foreach (var assembly in assemblies)
 
 var config = new ShellConfig
 {
-    AppName = "AppShellPackageSmoke",
+    AppName = "HistoryVulcanPackageSmoke",
     AppVersion = smokeIdentity.Version,
 };
 
@@ -48,7 +48,7 @@ registry.Register(new CommandDescriptor
     Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("pong")),
 });
 var manual = CommandManualGenerator.Render(registry, new CommandSchemaExporter(registry), "readonly");
-if (!manual.StartsWith("# AppShellPackageSmoke 命令手册", StringComparison.Ordinal)
+if (!manual.StartsWith("# HistoryVulcanPackageSmoke 命令手册", StringComparison.Ordinal)
     || manual.Contains("HistoryJanus 命令手册", StringComparison.Ordinal)
     || manual.Contains("b-Office/", StringComparison.Ordinal))
 {

@@ -4,17 +4,17 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $projects = @(
-    'AppShell.Core'
-    'AppShell.Services'
-    'AppShell.ServiceHost'
-    'AppShell.Shell'
+    'HistoryVulcan.Core'
+    'HistoryVulcan.Services'
+    'HistoryVulcan.ServiceHost'
+    'HistoryVulcan.Shell'
 )
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $violations = @()
 
 foreach ($project in $projects) {
-    $path = Join-Path $repoRoot "b-Code-AppShell\src\$project\PublicAPI.Unshipped.txt"
+    $path = Join-Path $repoRoot "b-Code-HistoryVulcan\src\$project\PublicAPI.Unshipped.txt"
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         $violations += "$project : PublicAPI.Unshipped.txt missing"
         continue
@@ -35,7 +35,7 @@ if ($violations.Count -ne 0) {
     Write-Host 'Public API freeze gate failed:' -ForegroundColor Red
     $violations | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
     Write-Host ''
-    Write-Host 'AppShell 3.0.x is frozen and must not add public APIs. Open and review a new version line instead.'
+    Write-Host 'HistoryVulcan 3.0.x is frozen and must not add public APIs. Open and review a new version line instead.'
     exit 1
 }
 

@@ -1,12 +1,13 @@
-# AppShell 消费合同源（内部索引）
+# HistoryVulcan 消费合同源（内部索引）
 
 稳定读取顺序和发布边界见 [复用说明](复用说明.md)。本文件保留原发布源索引职责。
 
-本目录只保存面向消费方的 AppShell 合同文档编辑源。它是 023 内部源目录，不是消费者运行时目录；发布副本不得直接修改。
+本目录只保存面向消费方的 HistoryVulcan 合同文档编辑源。它是 023 内部源目录，不是消费者运行时目录；发布副本不得直接修改。
 
-本目录当前维护 AppShell 3.1.10 候选合同；3.1.8 是不受支持的内部过渡版本，当前稳定消费者使用
-已正式部署的 3.1.9“宿主 + 同版本文档”快照。未来候选位于 `../../b-Publish/current/`，
-审核通过后整体部署到 `../../z-Package-AppShell/`，运行入口为 `host/AppShell.exe`。本目录中的 NuGet/API 文档仍服务于需要嵌入框架的消费方，
+本目录当前维护 HistoryVulcan 3.2.0 候选合同（3.2.0 起产品由 AppShell 改名为 HistoryVulcan，包 ID 为
+`OneHistory.HistoryVulcan.*`）；3.1.8 是不受支持的内部过渡版本，当前稳定消费者使用
+已正式部署的 3.1.9“宿主 + 同版本文档”快照（旧名 `../../z-Package-AppShell/`）。未来候选位于 `../../b-Publish/current/`，
+审核通过后整体部署到 `../../z-Package-HistoryVulcan/`，运行入口为 `host/HistoryVulcan.exe`。本目录中的 NuGet/API 文档仍服务于需要嵌入框架的消费方，
 不代表本轮宿主部署会生成或发布 NuGet 包。
 
 ## 文档流向
@@ -14,23 +15,23 @@
 ```text
 b-Office/package/
   -> b-Publish/current/docs/
-  -> z-Package-AppShell/docs/（当前正式快照）
+  -> z-Package-HistoryVulcan/docs/（3.2.0 起正式快照；当前 3.1.9 位于 z-Package-AppShell/docs/）
   -> b-Publish/history/<版本>/docs/（正式发布后）
 ```
 
-`z-Package-AppShell` 同时保留当前正式包、精简复用说明和四份当前版本消费合同，是其他项目与 AI
-可稳定索引的当前快照入口；这些文件均由发布脚本整体生成，不得手工修改。历史版本的消费合同以
+`z-Package-AppShell`（3.1.9 当前正式）同时保留当前正式包、精简复用说明和四份当前版本消费合同，是其他项目与 AI
+可稳定索引的当前快照入口；3.2.0 发布后该入口迁移到 `z-Package-HistoryVulcan`。这些文件均由发布脚本整体生成，不得手工修改。历史版本的消费合同以
 `b-Publish/history/<版本>/docs/` 为准。
 
 ## 消费合同
 
-- [AppShell UI 风格与嵌入页面规范](AppShell_UI风格与嵌入页面规范.md)：颜色、字体、字号、圆角、间距、控件和嵌入页布局合同。
-- [AppShell API 与指令手册](AppShell_API与指令手册.md)：包选择、公开 API、命令合同和最小宿主。
-- [模块与 MCP 接入](AppShell_3.0_模块与MCP接入.md)：模块、工具窗口、MCP 和 Web 接入边界。
-- [运行时约束与已知限制](AppShell_3.0_运行时约束与已知限制.md)：消费方必须遵守的运行时限制。
-- [3.0 消费变更摘要](AppShell_3.0_消费变更摘要.md)：只保留影响消费者的版本变化。
+- [HistoryVulcan UI 风格与嵌入页面规范](HistoryVulcan_UI风格与嵌入页面规范.md)：颜色、字体、字号、圆角、间距、控件和嵌入页布局合同。
+- [HistoryVulcan API 与指令手册](HistoryVulcan_API与指令手册.md)：包选择、公开 API、命令合同和最小宿主。
+- [模块与 MCP 接入](HistoryVulcan_3.0_模块与MCP接入.md)：模块、工具窗口、MCP 和 Web 接入边界。
+- [运行时约束与已知限制](HistoryVulcan_3.0_运行时约束与已知限制.md)：消费方必须遵守的运行时限制。
+- [3.0 消费变更摘要](HistoryVulcan_3.0_消费变更摘要.md)：只保留影响消费者的版本变化。
 
-发布清单和生成模板位于 `../../b-Code-AppShell/eng/release/`；升级、发布与回滚规则位于
+发布清单和生成模板位于 `../../b-Code-HistoryVulcan/eng/release/`；升级、发布与回滚规则位于
 `../current/升级与发布.md`，完整版本记录位于 `../history/`。新增或改名消费手册时，必须同时更新
-`../../b-Code-AppShell/eng/release/consumer-docs.json` 和本索引；不得直接编辑 `b-Publish/current/docs`
+`../../b-Code-HistoryVulcan/eng/release/consumer-docs.json` 和本索引；不得直接编辑 `b-Publish/current/docs`
 或 `b-Publish/history/<版本>/docs` 下的生成副本。

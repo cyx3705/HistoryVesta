@@ -1,6 +1,6 @@
 <Project>
 
-  <!-- Keep test dependency versions aligned with the AppShell product graph. -->
-  <Import Project="..\b-Code-AppShell\Directory.Packages.props" />
+  <!-- Keep test dependency versions aligned with the HistoryVulcan product graph. -->
+  <Import Project="..\b-Code-HistoryVulcan\Directory.Packages.props" />
 
 </Project>
