@@ -3,9 +3,9 @@
 本仓库是 OneHistory HistoryVulcan（原 AppShell，3.2.0 起改名）的独立源码、合同与发布资产真值。
 `3.0.3` 是 V3 冻结基线，冻结标签为 `v3.0.3`；版本线不再与 HistoryJanus 对齐，`0.7.x` 仅保留用于回滚。
 
-当前源码候选为 `3.2.0`：在 3.1.10 共享命令目录会话基础上执行产品改名，项目、命名空间、程序集、
+当前正式版本为 `3.2.0`：在 3.1.10 共享命令目录会话基础上执行产品改名，项目、命名空间、程序集、
 宿主 EXE 与消费文档统一为 HistoryVulcan；不新增功能或改变命令语义。
-`3.1.8` 仅是内部过渡版本，不作为稳定支持版本；当前稳定消费者使用已正式部署的 `3.1.9`。
+`3.1.8` 仅是内部过渡版本，不作为稳定支持版本；`3.1.9` 是旧名 AppShell 的最后快照。
 3.1.10 对“轻松指令”和中央命令集做了内部高内聚重构：
 两种交互共享由 `CommandBus` 驱动的目录快照、详情缓存、检索和选择状态，不新增公开 API 或改变命令语义。
 控制台聚焦时输入框上方显示命令、参数名和允许值候选，
@@ -31,7 +31,7 @@
 | [文档中心](b-Office/文档中心.md) | current、package、history 与发布资产边界 |
 
 常规维护不要扫描 `b-Office/history/`、`b-Publish/` 或生成目录；跨项目消费直接读取
-`z-Package-AppShell/AppShell.reuse.md`。
+`z-HistoryVulcan/HistoryVulcan.reuse.md`。
 
 ## 仓库结构
 
@@ -46,7 +46,7 @@
 | `b-Office/` | 冻结契约、内部设计与执行证据 |
 | `b-Publish/current/` | 唯一一份可覆盖的当前候选和完整发布测试结果 |
 | `b-Publish/history/<版本>/` | 与当时 Z 快照同构的最小正式历史副本 |
-| `z-Package-AppShell/` | 当前发布快照的展开内容，不保存历史版本目录 |
+| `z-HistoryVulcan/` | 当前发布快照的展开内容，不保存历史版本目录 |
 
 根级 `HistoryVulcan.sln` 是仓库验收入口，只包含六个冻结项目；组件目录内的
 `b-Code-HistoryVulcan/HistoryVulcan.sln` 是发布脚本使用的等价入口。
@@ -68,7 +68,7 @@ dotnet format .\HistoryVulcan.sln --verify-no-changes --no-restore
 # 生成 b-Publish/current 下的宿主 + 文档完整候选
 .\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.2.0
 
-# 候选审核通过后，将同一完整快照一次性部署到 z-Package-HistoryVulcan
+# 候选审核通过后，将同一完整快照一次性部署到 z-HistoryVulcan
 .\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.2.0 -DeployToZ
 ```
 
@@ -83,10 +83,9 @@ dotnet format .\HistoryVulcan.sln --verify-no-changes --no-restore
 .\b-Code-HistoryVulcan\eng\Publish-AppShell.ps1 -Version 0.7.2 -VirtualPublish -DeployToZ
 ```
 
-宿主候选位于 `b-Publish/current`。当前正式快照仍是 3.1.9：运行入口 `z-Package-AppShell/host/AppShell.exe`，
-UI 风格合同 `z-Package-AppShell/docs/AppShell_UI风格与嵌入页面规范.md`；3.2.0 候选审核发布后，
-正式快照整体迁移到 `z-Package-HistoryVulcan/`，运行入口为 `host/HistoryVulcan.exe`，
-旧 `z-Package-AppShell/` 作为 3.1.x 遗留快照退役。
+宿主候选位于 `b-Publish/current`。当前正式快照为 3.2.0：运行入口 `z-HistoryVulcan/host/HistoryVulcan.exe`，
+UI 风格合同 `z-HistoryVulcan/docs/HistoryVulcan_UI风格与嵌入页面规范.md`。
+旧名 `z-Package-AppShell/` 的 3.1.9 快照已随 3.2.0 发布退役删除（同构副本入库于 `b-Publish/history/3.1.9/`）。
 旧候选整体归档到 `b-Publish/history/<版本>/`。宿主部署脚本不会执行 Git commit、tag、push，
 也不会生成或推送 NuGet 包。
 
@@ -94,4 +93,4 @@ UI 风格合同 `z-Package-AppShell/docs/AppShell_UI风格与嵌入页面规范.
 `OneHistory.HistoryVulcan.ServiceHost`。当前已验证消费方为 HistoryJanus（020）和 WBall（022）。
 
 维护入口见 [b-Office/文档中心.md](b-Office/文档中心.md)。其他项目和 AI 先读取
-`z-Package-AppShell/AppShell.reuse.md`，再按需索引同一当前快照中的 `z-Package-AppShell/docs/`；历史版本文档与发布证据从 `b-Publish` 查阅。
+`z-HistoryVulcan/HistoryVulcan.reuse.md`，再按需索引同一当前快照中的 `z-HistoryVulcan/docs/`；历史版本文档与发布证据从 `b-Publish` 查阅。
