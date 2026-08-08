@@ -10,13 +10,15 @@
 | `b-Code-StudioTools` | `z-StudioTools` | `StudioTools` | `standard` | 服务 | 聚合 `ProjectPulse`、`ToolKit`、`ToolRelay` 三个逻辑模块 |
 | `b-Code-ActiveDock` | `z-ActiveDock` | `ActiveDock` | `standard` | 服务（自持窗口） | 桌面右下角活动项目坞，命令域 `dock` |
 | `b-Code-GitHubConnection` | `z-GitHubConnection` | `GitHubConnection` | `readonly` | 桌面（停靠窗口） | 服务器本机 GitHub、GCM、SSH 和 origin 连接治理 |
-| `b-Code-SE2SW` | `z-SE2SW` | `SE2SW` | `hidden` | 服务 | Solid Edge 零件/装配体转换为 SolidWorks |
-| `b-Code-SWuse` | `z-SWuse` | `SWuse` | `hidden` | 服务（自持顶层窗口） | 多文件 C# 经受控 API 生成 SolidWorks 零件 |
 
 `StudioTools.dll` 使用 AppShell 支持的多 `ModuleInfoBase` 合同保留三个原逻辑命令域和 10 条命令，
-同时只占用一个源码项目、一份发布清单和一个正式模块槽。ActiveDock、GitHubConnection 与 SE2SW 因宿主归属、
+同时只占用一个源码项目、一份发布清单和一个正式模块槽。ActiveDock 与 GitHubConnection 因宿主归属、
 安全边界、依赖和发布节奏不同独立维护。四模块聚合期的源码和清单保存在
 `Unused/StudioTools-Merge-Legacy-20260802-0015`，不参与发现、构建或发布。
+
+SE2SW 与 SWuse 已先后迁出：`SE2SW`（对外名 Mapping）先迁入 `2026-024-SE2SW`，`SWuse` 随后并入同一项目；
+该项目现改名为 **HistoryMinerva**（`2026-024-HistoryMinerva`），两个模块的源码、清单与发布合同以
+HistoryMinerva 为唯一来源。
 
 带界面的模块分两类：**停靠型**（`IUiModule + IShellUiAware`，窗口停靠进 OHS 主窗口，由桌面进程承载）与
 **自持型**（`IUiModule`，模块自建顶层窗口，由无窗服务宿主承载，关闭主窗口不受影响）。两类模块被同一模块槽
@@ -36,10 +38,6 @@ dotnet build .\b-Code-ActiveDock\ActiveDock.csproj -c Release -p:NuGetAudit=fals
 dotnet run --project .\b-Code-ActiveDock\tests\Smoke\Smoke.csproj -c Release -p:NuGetAudit=false
 dotnet build .\b-Code-GitHubConnection\GitHubConnection.csproj -c Release -p:NuGetAudit=false
 dotnet run --project .\b-Code-GitHubConnection\tests\Smoke\Smoke.csproj -c Release
-dotnet build .\b-Code-SE2SW\src\SE2SW\SE2SW.csproj -c Release --no-restore
-dotnet run --project .\b-Code-SE2SW\tests\SE2SW.Smoke\SE2SW.Smoke.csproj -c Release --no-restore
-dotnet build .\b-Code-SWuse\src\SWuse\SWuse.csproj -c Release -p:NuGetAudit=false
-dotnet run --project .\b-Code-SWuse\tests\SWuse.Smoke\SWuse.Smoke.csproj -c Release -p:NuGetAudit=false
 ```
 
 ```text
@@ -47,8 +45,6 @@ tool.scan
 tool.sync name=StudioTools
 tool.sync name=ActiveDock
 tool.sync name=GitHubConnection
-tool.sync name=SE2SW
-tool.sync name=SWuse
 module.list
 ```
 
