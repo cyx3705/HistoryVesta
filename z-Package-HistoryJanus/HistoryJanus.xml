@@ -352,22 +352,6 @@
             InitializeComponent
             </summary>
         </member>
-        <member name="T:HistoryJanus.Views.BranchTreeView">
-            <summary>
-            继承树工具窗口内容：
-            启动自动加载文件缓存(proj.tree cached=true,秒开);
-            「重新扫描」= proj.tree refresh=true(重扫裸仓库并更新缓存)。
-            视图只消费 CommandResult.Data,与控制台 proj.tree 同源。
-            </summary>
-            <summary>
-            BranchTreeView
-            </summary>
-        </member>
-        <member name="M:HistoryJanus.Views.BranchTreeView.InitializeComponent">
-            <summary>
-            InitializeComponent
-            </summary>
-        </member>
         <member name="T:HistoryJanus.Views.HistoryPreviewDialog">
             <summary>
             HistoryPreviewDialog
@@ -378,26 +362,26 @@
             InitializeComponent
             </summary>
         </member>
-        <member name="T:HistoryJanus.Views.MetaView">
-            <summary>
-            Meta 文件工具窗口：汇总各项目根下 z/Z 开头的一级元文件夹。
-            架构不变量 1:刷新/双击组装指令经总线执行(来源 "UI");
-            搜索框是纯视图过滤,不改状态、不发指令。
-            </summary>
-            <summary>
-            MetaView
-            </summary>
-        </member>
-        <member name="M:HistoryJanus.Views.MetaView.InitializeComponent">
-            <summary>
-            InitializeComponent
-            </summary>
-        </member>
         <member name="T:HistoryJanus.Views.ModuleResultData">
             <summary>Restores typed Janus contracts when a command result crossed the AppShell web boundary.</summary>
         </member>
+        <member name="T:HistoryJanus.Views.OverviewMetaMerge">
+            <summary>
+            项目总览的项目/Meta 合并与关键字匹配。
+            纯函数独立成件：Smoke 不构造 WPF 视图也能验证合并、搜索和打开命令投影。
+            </summary>
+        </member>
+        <member name="M:HistoryJanus.Views.OverviewMetaMerge.Merge(System.Collections.Generic.IReadOnlyList{HistoryJanus.Git.WorktreeInfo},System.Collections.Generic.IReadOnlyList{HistoryJanus.Git.MetaFolderInfo})">
+            <summary>按项目名(忽略大小写)把 Meta 文件夹并入工作树行；组内按 Meta 名不区分大小写排序。</summary>
+        </member>
+        <member name="M:HistoryJanus.Views.OverviewMetaMerge.MatchesKeyword(HistoryJanus.Views.OverviewView.WorktreeRow,System.String)">
+            <summary>关键字同时匹配项目名、Meta 名和 Meta 路径(包含匹配,忽略大小写)。</summary>
+        </member>
+        <member name="M:HistoryJanus.Views.OverviewMetaMerge.BuildOpenCommand(HistoryJanus.Git.MetaFolderInfo)">
+            <summary>点击 Meta 名执行既有的 proj.metaopen 命令,不改变项目选择。</summary>
+        </member>
         <member name="T:HistoryJanus.Views.OverviewView">
-            <summary>项目工作树列表、当前项目选择与批量提交推送。</summary>
+            <summary>项目工作树、Z 级元文件夹与共享项目选择。</summary>
             <summary>
             OverviewView
             </summary>
