@@ -37,7 +37,11 @@
 **三、类不可省略。** 未声明 `CommandClass` 且命令名不足三段的注册将失败，不再回退 `core`。
 「无类」筛选项从目录、控制台补全和命令集中移除。
 
-**四、`vulcan.log.export` 省略 `path` 时不再弹保存对话框**，改为写入应用数据目录
+**四、诊断指令退出正式命令集。** 承压注水 `vulcan.log.flood`（3.3.1 的 `debug.logflood`）
+默认不再注册，需宿主显式设置 `diagnostics.commands=true`；注册后也标记为危险指令并被
+MCP/Web 硬排除。命令集里不应再看到 `debug` 类。
+
+**五、`vulcan.log.export` 省略 `path` 时不再弹保存对话框**，改为写入应用数据目录
 `exports/console-<时间戳>.txt` 并返回绝对路径。经 MCP、Web 或前端转发调用不再阻塞等待人工点击。
 
 ## 部署与引用方式

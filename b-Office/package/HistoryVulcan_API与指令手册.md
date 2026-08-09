@@ -409,6 +409,10 @@ HistoryVulcan 自身只有一个域 `vulcan`，内置命令分为九类；新增
 
 3.3.1 的 `core`、`frontend`、`win`、`layout`、`panel` 五个类与影子域 `debug` 已退役。
 
+> **诊断指令不进正式命令集。** 影子域 `debug` 退役后，承压注水被收编为 `vulcan.log.flood`，
+> 但它不是给最终用户的功能：默认不注册，需宿主显式设置 `diagnostics.commands=true`；
+> 即便注册，也标记为危险指令并被 MCP/Web 硬排除。上表 83 条不含它。
+
 ### 6.1 基础、应用与日志
 
 | 命令 | 用途 / 关键参数 |
@@ -435,7 +439,7 @@ HistoryVulcan 自身只有一个域 `vulcan`，内置命令分为九类；新增
 | `vulcan.log.clear`、`vulcan.log.copy` | 清屏或复制当前控制台内容 |
 | `vulcan.log.export [path=]` | 导出当前控制台可见内容。**省略 `path` 时不弹对话框**：写入应用数据目录 `exports/console-<时间戳>.txt` 并在结果中返回绝对路径（3.3.2 起） |
 | `vulcan.log.focus [errors=true|false]` | 聚焦控制台，可选切换错误过滤 |
-| `vulcan.log.flood rate= seconds=` | 按指定速率注入日志做承压验证（3.3.1 的 `debug.logflood`） |
+| `vulcan.log.flood rate= seconds=` | **诊断指令，默认不注册**：仅当宿主把设置 `diagnostics.commands` 置为 `true` 时才出现。标记为危险指令（走确认闸口），并由 `McpExposurePolicy` 硬排除，MCP/Web 永不可达。3.3.1 为 `debug.logflood` |
 
 ### 6.2 窗口、布局与面板（`ui`）
 

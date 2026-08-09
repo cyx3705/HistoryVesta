@@ -18,6 +18,7 @@ using Xunit;
 
 namespace HistoryVulcan.Tests;
 
+[Collection(TestCollections.Gateway)]
 public sealed class FreezeBlockerTests
 {
     [Fact]
@@ -352,7 +353,9 @@ public sealed class FreezeBlockerTests
         Assert.Equal(id, recovered);
     }
 
-    [Fact]
+    // 跨进程全局 mutex：本机若有 HistoryVulcan 实例在跑就会一直等不到，
+    // 超时必须是一条具名失败，而不是整轮静默挂死（DEC-023）。
+    [Fact(Timeout = 30_000)]
     public async Task ServiceHostWaitsForRestartingPredecessorToReleaseMutex()
     {
         var name = $"Local\\HistoryVulcan.Tests.{Guid.NewGuid():N}";
@@ -629,22 +632,6 @@ public sealed class FreezeBlockerTests
         using var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
         return ((IPEndPoint)listener.LocalEndpoint).Port;
-    }
-
-    private static void PumpDispatcher(TimeSpan duration)
-    {
-        var frame = new DispatcherFrame();
-        var timer = new DispatcherTimer(DispatcherPriority.SystemIdle)
-        {
-            Interval = duration,
-        };
-        timer.Tick += (_, _) =>
-        {
-            timer.Stop();
-            frame.Continue = false;
-        };
-        timer.Start();
-        Dispatcher.PushFrame(frame);
     }
 
     private sealed class ReadOnlyAuthentication : IDeviceAuthenticationProvider

@@ -32,6 +32,9 @@ public partial class App : Application
 
     private const string FrontendMutexName = "Local\\OneHistory.HistoryVulcan.Frontend";
 
+    /// <summary>诊断指令开关(DEC-023):默认关闭,正式命令集不含承压注水等诊断工具。</summary>
+    private const string DiagnosticCommandsSettingKey = "diagnostics.commands";
+
     [DllImport("user32.dll")]
     private static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
 
@@ -109,11 +112,18 @@ public partial class App : Application
             DefaultRatio = 0.32,
             // 内容由 Shell 的 ModulesView 接管；这里只声明独立宿主的默认位置。
         });
-        // 派生应用自定义指令示范(§5.3):与内置指令同表、help 自动收录
-        config.ConfigureCommands = registry =>
+        // 承压注水是诊断工具,不属于正式命令集(DEC-023):默认不注册,
+        // 只有显式把 diagnostics.commands 置为 true 的宿主才登记。
+        // 它同时是异步长任务 + Progress 上报的示范(§5.2)与验收 8 / N-03 的承压入口,
+        // 因此保留能力而不是删除。
+        if (bool.TryParse(settings.Get(DiagnosticCommandsSettingKey), out var diagnostics) && diagnostics)
         {
-            registry.Register(BuildLogFloodCommand(log));
-        };
+            config.ConfigureCommands = registry =>
+            {
+                registry.Register(BuildLogFloodCommand(log));
+            };
+            log.Warn("app", $"诊断指令已启用({DiagnosticCommandsSettingKey}=true):vulcan.log.flood 已注册。");
+        }
 
         var window = new ShellWindow(config, new FileLayoutStore(paths), log, settings, paths.Root);
         MainWindow = window;
@@ -630,8 +640,13 @@ public partial class App : Application
         Name = "vulcan.log.flood",
         Domain = "vulcan",
         CommandClass = "log",
-        Summary = "日志承压测试:按指定速率注入日志",
+        Summary = "诊断:日志承压测试,按指定速率注入日志",
         Example = "vulcan.log.flood rate=1000 seconds=30",
+        // 最高 100000 条/秒 × 600 秒;误触会淹没控制台与日志文件,故走确认闸口。
+        // MCP/Web 侧另由 McpExposurePolicy 硬排除,远程不可达。
+        Dangerous = true,
+        ConfirmPrompt = ctx =>
+            $"确认注入日志 {ctx.GetInt("rate", 1000)} 条/秒 × {ctx.GetInt("seconds", 30)} 秒?",
         Parameters =
         [
             new ParameterSpec

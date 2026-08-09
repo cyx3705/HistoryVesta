@@ -10,6 +10,7 @@ using Xunit;
 
 namespace HistoryVulcan.Tests;
 
+[Collection(TestCollections.Gateway)]
 public sealed class FrontendCommandCatalogTests
 {
     [Fact]

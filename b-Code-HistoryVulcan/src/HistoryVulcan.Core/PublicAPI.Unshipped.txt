@@ -95,3 +95,4 @@ HistoryVulcan.Core.Modules.IShellCommandWorkbenchHost.Settings.get -> HistoryVul
 
 HistoryVulcan.Core.Commands.ModuleDomainNaming
 static HistoryVulcan.Core.Commands.ModuleDomainNaming.ToDomain(string! moduleName) -> string!
+static HistoryVulcan.Core.Mcp.McpExposurePolicy.DiagnosticCommandNames.get -> System.Collections.Generic.IReadOnlyCollection<string!>!

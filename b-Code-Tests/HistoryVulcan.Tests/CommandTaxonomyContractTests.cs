@@ -1,4 +1,5 @@
 using HistoryVulcan.Core.Commands;
+using HistoryVulcan.Core.Mcp;
 using Xunit;
 
 namespace HistoryVulcan.Tests;
@@ -88,6 +89,32 @@ public sealed class CommandTaxonomyContractTests
             Assert.False(
                 name.StartsWith("debug.", StringComparison.OrdinalIgnoreCase),
                 $"{name} 仍在影子域 debug 下");
+    }
+
+    [Fact]
+    public void DiagnosticFloodCommandStaysOutOfReachOfRemoteClients()
+    {
+        // 3.3.2 把 debug.logflood 收编为 vulcan.log.flood。原先的 MCP 硬排除按 "debug." 前缀
+        // 生效，改名一度让它失效——承压注水因此可被 MCP/Web 远程触发
+        // （rate=100000 × seconds=600 即 6000 万条日志）。这里锁住修复后的行为。
+        Assert.NotNull(McpExposurePolicy.HardExclusionReason("vulcan.log.flood"));
+        Assert.Contains("vulcan.log.flood", McpExposurePolicy.DiagnosticCommandNames);
+
+        // 前缀规则保留给尚未迁移的模块调试指令。
+        Assert.NotNull(McpExposurePolicy.HardExclusionReason("debug.anything"));
+
+        // 同类的日志指令不受影响，仍可正常暴露。
+        Assert.Null(McpExposurePolicy.HardExclusionReason("vulcan.log.level"));
+    }
+
+    [Fact]
+    public void FloodIsNotPartOfTheShippedBuiltinCatalog()
+    {
+        // 诊断指令不属于正式命令集：只有把 diagnostics.commands 显式置真的宿主才注册它。
+        Assert.DoesNotContain(
+            "vulcan.log.flood",
+            BuiltinCommandDefinitions.Names,
+            StringComparer.OrdinalIgnoreCase);
     }
 
     [Fact]

@@ -18,6 +18,7 @@ using Xunit;
 
 namespace HistoryVulcan.Tests;
 
+[Collection(TestCollections.Ui)]
 public sealed class DockingContractTests
 {
     [Fact]
@@ -54,7 +55,7 @@ public sealed class DockingContractTests
     [Fact]
     public void CenterIsExplicitAndUsesTheMainDocumentPane()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var manager = new DockingManager();
             var host = new DockingHost(
@@ -83,7 +84,7 @@ public sealed class DockingContractTests
     [Fact]
     public void LastCenterCarrierCannotBeHiddenOrFloated()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var manager = new DockingManager();
             var host = new DockingHost(
@@ -116,7 +117,7 @@ public sealed class DockingContractTests
     [Fact]
     public void RemovingLastBusinessCenterRestoresCommandCatalog()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var manager = new DockingManager();
             var host = new DockingHost(
@@ -144,7 +145,7 @@ public sealed class DockingContractTests
     [Fact]
     public void RestoreMovesLegacyCommandCatalogIntoEmptyCenter()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var store = new MemoryLayoutStore();
             var oldManager = new DockingManager();
@@ -196,7 +197,7 @@ public sealed class DockingContractTests
     [Fact]
     public void RestoreNestedLegacyLayoutMovesOnlyCommandCatalog()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var store = new MemoryLayoutStore();
             var legacyWindow = ShowHost(
@@ -208,7 +209,7 @@ public sealed class DockingContractTests
                 ], store, out var legacyHost);
             try
             {
-                PumpDispatcher();
+                UiTestHost.Pump();
                 legacyHost.SaveCurrentLayout();
                 store.ReplaceCurrent("legacy-command-catalog", StandardWindowIds.Mcp);
             }
@@ -248,7 +249,7 @@ public sealed class DockingContractTests
     [Fact]
     public void ShellWindowHostsSelectablePagesInTheFullMainDocumentPane()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var dataDirectory = Path.Combine(Path.GetTempPath(), $"HistoryVulcan-center-{Guid.NewGuid():N}");
             Directory.CreateDirectory(dataDirectory);
@@ -281,7 +282,7 @@ public sealed class DockingContractTests
                 Assert.False(window.Commands.Registry.TryGet("vulcan.mcp.start", out _));
                 Assert.False(window.Commands.Registry.TryGet("vulcan.module.list", out _));
                 window.Show();
-                PumpDispatcher();
+                UiTestHost.Pump();
                 var single = Assert.Single(FindVisualDescendants<LayoutDocumentPaneControl>(window));
                 Assert.Single(single.Items);
                 Assert.True(single.ActualWidth > window.ActualWidth * 0.5,
@@ -292,7 +293,7 @@ public sealed class DockingContractTests
 
                 window.Docking.RegisterWindow(Tool("business", DockSide.Center, 1), "test");
                 window.Docking.Show("business");
-                PumpDispatcher();
+                UiTestHost.Pump();
                 var multiple = Assert.Single(FindVisualDescendants<LayoutDocumentPaneControl>(window));
                 Assert.Equal(2, multiple.Items.Count);
                 Assert.Equal(
@@ -315,7 +316,7 @@ public sealed class DockingContractTests
     [Fact]
     public void SideToolCanBeDraggedIntoTheMainDocumentPaneAndBackOut()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var store = new MemoryLayoutStore();
             var manager = new DockingManager();
@@ -337,7 +338,7 @@ public sealed class DockingContractTests
             ((ILayoutContainer)details.Parent!).RemoveChild(details);
             pane.Children.Add(details);
             manager.Layout.CollectGarbage();
-            PumpDispatcher();
+            UiTestHost.Pump();
 
             Assert.Equal(DockSide.Center, host.ListWindows().Single(item => item.Id == "details").Side);
             Assert.Same(pane, details.Parent);
@@ -373,7 +374,7 @@ public sealed class DockingContractTests
     [Fact]
     public void LateRegisteredSideToolRestoresIntoCenterWithoutLosingToolIdentity()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var settings = new MemorySettings();
             settings.Set(
@@ -423,7 +424,7 @@ public sealed class DockingContractTests
     [Fact]
     public void LateRegisteredDefaultModuleWindowJoinsExistingRightPane()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var manager = new DockingManager();
             var host = new DockingHost(
@@ -464,7 +465,7 @@ public sealed class DockingContractTests
     [Fact]
     public void NamedLayoutPreservesHiddenBusinessCenterPage()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var manager = new DockingManager();
             var host = new DockingHost(
@@ -493,7 +494,7 @@ public sealed class DockingContractTests
     [Fact]
     public void FloatingCenterPageRoundTripsWithoutInvalidatingMainLayout()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var store = new MemoryLayoutStore();
             var descriptors = new[]
@@ -531,7 +532,7 @@ public sealed class DockingContractTests
     [Fact]
     public void DefaultTabIntoCenterKeepsToolIdentityAcrossResetAndRestore()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var store = new MemoryLayoutStore();
             var descriptors = new[]
@@ -568,7 +569,7 @@ public sealed class DockingContractTests
     [Fact]
     public void RestoredLayoutResolvesCenterTabTargetDeclaredAfterFollower()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var store = new MemoryLayoutStore();
             var original = new DockingHost(
@@ -607,7 +608,7 @@ public sealed class DockingContractTests
     [Fact]
     public void RestoredLayoutShowsNewDefaultVisibleCenterPage()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var store = new MemoryLayoutStore();
             var firstManager = new DockingManager();
@@ -640,7 +641,7 @@ public sealed class DockingContractTests
     [Fact]
     public void CurrentLayoutPreservesHiddenCenterPageWithoutSettingsService()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var store = new MemoryLayoutStore();
             var descriptors = new[]
@@ -671,7 +672,7 @@ public sealed class DockingContractTests
     [Fact]
     public void NamedLayoutShowsDefaultVisibleCenterPageAddedAfterItWasSaved()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var store = new MemoryLayoutStore();
             var original = new DockingHost(
@@ -704,7 +705,7 @@ public sealed class DockingContractTests
     [Fact]
     public void NonFiniteRatiosAreRejectedByDockingApiAndCommands()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var manager = new DockingManager();
             var log = new NullLog();
@@ -758,14 +759,14 @@ public sealed class DockingContractTests
     [Fact]
     public void NewWindowOnRestoredLayoutKeepsDeclaredRatio()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var store = new MemoryLayoutStore();
             var first = ShowHost(
                 [Tool("existing", DockSide.Right, 0.25)], store, out var firstHost);
             try
             {
-                PumpDispatcher();
+                UiTestHost.Pump();
                 firstHost.SaveCurrentLayout();
             }
             finally
@@ -780,7 +781,7 @@ public sealed class DockingContractTests
                 ], store, out var secondHost);
             try
             {
-                PumpDispatcher();
+                UiTestHost.Pump();
                 var ratio = secondHost.ListWindows().Single(item => item.Id == "stage").Ratio;
                 Assert.NotNull(ratio);
                 Assert.InRange(ratio.Value, 0.25, 0.55);
@@ -795,7 +796,7 @@ public sealed class DockingContractTests
     [Fact]
     public void OpposingSidePanesAlwaysReserveTheCenterWorkspace()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var window = ShowHost(
                 [
@@ -805,10 +806,10 @@ public sealed class DockingContractTests
                 ], new MemoryLayoutStore(), out var host);
             try
             {
-                PumpDispatcher();
+                UiTestHost.Pump();
                 host.SetRatio("left", 0.55);
                 host.SetRatio("right", 0.55);
-                PumpDispatcher();
+                UiTestHost.Pump();
 
                 var windows = host.ListWindows().ToDictionary(item => item.Id);
                 var sides = windows["left"].Ratio!.Value + windows["right"].Ratio!.Value;
@@ -824,7 +825,7 @@ public sealed class DockingContractTests
     [Fact]
     public void MainWindowResizeDoesNotBecomeANewSplitterGesture()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var window = ShowHost(
                 [
@@ -834,11 +835,12 @@ public sealed class DockingContractTests
                 ], new MemoryLayoutStore(), out var host);
             try
             {
-                PumpDispatcher();
+                UiTestHost.Pump();
                 var before = host.ListWindows().ToDictionary(item => item.Id);
                 window.Width = 620;
-                PumpDispatcher();
-                PumpDispatcher();
+                // DockingHost 的 _resizeDebounce 是 200ms：必须让它真正到期，
+                // 才能断言「尺寸变化没有被当成拖动分隔条」的最终比例。
+                UiTestHost.PumpFor(250);
                 var after = host.ListWindows().ToDictionary(item => item.Id);
 
                 Assert.InRange(
@@ -856,7 +858,7 @@ public sealed class DockingContractTests
     [Fact]
     public void RestoredOversubscribedSidePanesAreNormalized()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var tools = new[]
             {
@@ -868,7 +870,7 @@ public sealed class DockingContractTests
             var first = ShowHost(tools, store, out var firstHost);
             try
             {
-                PumpDispatcher();
+                UiTestHost.Pump();
                 var manager = (DockingManager)first.Content;
                 foreach (var pane in manager.Layout.Descendents().OfType<LayoutAnchorablePane>()
                              .Where(pane => pane.Children.Any(item =>
@@ -886,8 +888,8 @@ public sealed class DockingContractTests
             var second = ShowHost(tools, store, out var secondHost);
             try
             {
-                PumpDispatcher();
-                PumpDispatcher();
+                UiTestHost.Pump();
+                UiTestHost.Pump();
                 var windows = secondHost.ListWindows().ToDictionary(item => item.Id);
                 var sides = windows["left"].Ratio!.Value + windows["right"].Ratio!.Value;
                 Assert.InRange(sides, 0.48, 0.51);
@@ -902,7 +904,7 @@ public sealed class DockingContractTests
     [Fact]
     public void RestoredDuplicatePanesOnTheSameSideBecomeOneTabGroup()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var tools = new[]
             {
@@ -914,7 +916,7 @@ public sealed class DockingContractTests
             var first = ShowHost(tools, store, out var firstHost);
             try
             {
-                PumpDispatcher();
+                UiTestHost.Pump();
                 var manager = (DockingManager)first.Content;
                 var second = manager.Layout.Descendents().OfType<LayoutAnchorable>()
                     .Single(item => item.ContentId == "right.two");
@@ -934,8 +936,8 @@ public sealed class DockingContractTests
             var restored = ShowHost(tools, store, out _);
             try
             {
-                PumpDispatcher();
-                PumpDispatcher();
+                UiTestHost.Pump();
+                UiTestHost.Pump();
                 var manager = (DockingManager)restored.Content;
                 var right = manager.Layout.Descendents().OfType<LayoutAnchorable>()
                     .Where(item => item.ContentId is "right.one" or "right.two")
@@ -993,22 +995,6 @@ public sealed class DockingContractTests
         ContentFactory = () => new Border(),
     };
 
-    private static void PumpDispatcher()
-    {
-        var frame = new DispatcherFrame();
-        var timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
-        {
-            Interval = TimeSpan.FromMilliseconds(300),
-        };
-        timer.Tick += (_, _) =>
-        {
-            timer.Stop();
-            frame.Continue = false;
-        };
-        timer.Start();
-        Dispatcher.PushFrame(frame);
-    }
-
     private static IEnumerable<T> FindVisualDescendants<T>(DependencyObject parent)
         where T : DependencyObject
     {
@@ -1021,21 +1007,6 @@ public sealed class DockingContractTests
             foreach (var descendant in FindVisualDescendants<T>(child))
                 yield return descendant;
         }
-    }
-
-    private static void RunSta(Action action)
-    {
-        Exception? failure = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { failure = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (failure != null)
-            ExceptionDispatchInfo.Capture(failure).Throw();
     }
 
     private sealed class MemoryLayoutStore : ILayoutStore

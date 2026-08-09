@@ -9,6 +9,7 @@ using System.Net.Sockets;
 
 namespace HistoryVulcan.Tests;
 
+[Collection(TestCollections.Gateway)]
 public sealed class McpGatewayPortTests
 {
     [Fact]
@@ -47,6 +48,9 @@ public sealed class McpGatewayPortTests
         Assert.Equal(port.ToString(), fixture.Settings.Get(McpGateway.KeyPort));
     }
 
+    // 真实端口绑定：被占用时是快速失败而不是挂起，因此无需 Timeout
+    // （xUnit 的 Timeout 只对 async 用例生效）。整轮卡住的可见性由
+    // xunit.runner.json 的 longRunningTestSeconds 诊断承担。
     [Fact]
     public void ExplicitPortRetryPersistsActualPortAndStopClearsRuntimePort()
     {

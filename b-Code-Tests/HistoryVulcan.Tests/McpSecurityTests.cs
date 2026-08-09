@@ -10,10 +10,10 @@ using HistoryVulcan.Core.Storage;
 using HistoryVulcan.Services.Mcp;
 using Xunit;
 
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace HistoryVulcan.Tests;
 
+[Collection(TestCollections.Gateway)]
 public sealed class McpSecurityTests
 {
     [Fact]

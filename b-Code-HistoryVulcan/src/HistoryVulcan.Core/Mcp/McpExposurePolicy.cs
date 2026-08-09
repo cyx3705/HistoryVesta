@@ -71,13 +71,30 @@ public static class McpExposurePolicy
         => ReadonlyCommands.ContainsKey(commandName)
            || string.Equals(ExposureOf(commandName), "readonly", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// 收编进正式域但仍属诊断性质的指令:永不对 MCP/Web 暴露。
+    /// 影子域 <c>debug</c> 退役后,这类指令不再能靠名称前缀识别(DEC-023)。
+    /// </summary>
+    private static readonly HashSet<string> DiagnosticCommands =
+        new(StringComparer.OrdinalIgnoreCase) { "vulcan.log.flood" };
+
+    /// <summary>诊断指令名单,供自检与文档核对。</summary>
+    public static IReadOnlyCollection<string> DiagnosticCommandNames => DiagnosticCommands.ToArray();
+
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
     public static string? HardExclusionReason(string commandName)
     {
         if (commandName.Equals("vulcan.app.quit", StringComparison.OrdinalIgnoreCase))
             return "远程客户端不得退出宿主";
-        if (commandName.StartsWith("debug.", StringComparison.OrdinalIgnoreCase))
+        if (commandName.StartsWith("debug.", StringComparison.OrdinalIgnoreCase)
+            || DiagnosticCommands.Contains(commandName))
+        {
+            // 3.3.2 把 debug.logflood 收编为 vulcan.log.flood(影子域退役,DEC-023)。
+            // 该改名一度让这条按 "debug." 前缀生效的硬排除失效——承压注水指令因此可被
+            // MCP/Web 远程触发(rate=100000 × seconds=600 即 6000 万条)。前缀规则保留给
+            // 未迁移的模块调试指令,收编后的诊断指令改为按名登记。
             return "调试与承压指令不对远程暴露";
+        }
         if (commandName.StartsWith("vulcan.mcp.", StringComparison.OrdinalIgnoreCase))
             return "防止远程递归管理或关闭 MCP 服务";
         if (string.Equals(ExposureOf(commandName), "hidden", StringComparison.OrdinalIgnoreCase))

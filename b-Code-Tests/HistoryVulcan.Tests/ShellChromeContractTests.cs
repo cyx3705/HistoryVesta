@@ -26,6 +26,7 @@ namespace HistoryVulcan.Tests;
 /// ????????????,???????,????????????
 /// ???????????,??? XAML ??????
 /// </summary>
+[Collection(TestCollections.Ui)]
 public sealed class ShellChromeContractTests
 {
     [Fact]
@@ -109,13 +110,13 @@ public sealed class ShellChromeContractTests
         RunShell(window =>
         {
             window.Docking.Hide(StandardWindowIds.Console);
-            PumpDispatcher();
+            UiTestHost.Pump();
             Assert.False(window.Docking.ListWindows()
                 .Single(item => item.Id == StandardWindowIds.Console).IsVisible);
 
             var result = window.Commands.ExecuteAsync("missing.command", "test")
                 .GetAwaiter().GetResult();
-            PumpDispatcher();
+            UiTestHost.Pump();
 
             Assert.False(result.Success);
             Assert.True(window.Docking.ListWindows()
@@ -145,7 +146,7 @@ public sealed class ShellChromeContractTests
                     RoutedEvent = Keyboard.PreviewKeyDownEvent,
                 };
                 input.RaiseEvent(key);
-                PumpDispatcher(250);
+                UiTestHost.PumpFor(250);
 
                 var output = FindVisualDescendants<ListBox>(window)
                     .Single(list => list.Name == "Output");
@@ -161,7 +162,7 @@ public sealed class ShellChromeContractTests
                 var echo = rows.First(item => item.Text.Contains("> 123", StringComparison.Ordinal));
                 output.ScrollIntoView(echo);
                 window.UpdateLayout();
-                PumpDispatcher();
+                UiTestHost.Pump();
                 Assert.True(output.IsVisible && output.ActualHeight > 0 && output.ActualWidth > 0,
                     $"console output is not laid out: visible={output.IsVisible}, " +
                     $"size={output.ActualWidth}x{output.ActualHeight}");
@@ -211,7 +212,7 @@ public sealed class ShellChromeContractTests
             var maximize = window.Commands.ExecuteAsync(
                 $"vulcan.ui.max name={StandardWindowIds.Console}", "test").GetAwaiter().GetResult();
             Assert.True(maximize.Success, maximize.Message);
-            PumpDispatcher();
+            UiTestHost.Pump();
             Assert.Equal(StandardWindowIds.Console, window.Docking.MaximizedId);
 
             var input = FindVisualDescendants<TextBox>(window)
@@ -226,7 +227,7 @@ public sealed class ShellChromeContractTests
             {
                 RoutedEvent = Keyboard.PreviewKeyDownEvent,
             });
-            PumpDispatcher(400);
+            UiTestHost.PumpFor(400);
 
             Assert.Equal(StandardWindowIds.Console, window.Docking.MaximizedId);
             Assert.True(input.IsKeyboardFocusWithin);
@@ -240,11 +241,11 @@ public sealed class ShellChromeContractTests
         {
             Assert.True(window.Commands.ExecuteAsync("vulcan.app.hide", "test")
                 .GetAwaiter().GetResult().Success);
-            PumpDispatcher();
+            UiTestHost.Pump();
             Assert.False(window.IsVisible);
 
             Assert.True(WakeConsole(window));
-            PumpDispatcher(500);
+            UiTestHost.PumpFor(500);
 
             var input = FindVisualDescendants<TextBox>(window)
                 .Single(item => item.Name == "Input");
@@ -257,7 +258,7 @@ public sealed class ShellChromeContractTests
             window.Docking.WindowsChanged += (_, _) => layoutChanges++;
             RequireButton(window, "MenuButton").Focus();
             Assert.True(WakeConsole(window));
-            PumpDispatcher(500);
+            UiTestHost.PumpFor(500);
 
             Assert.True(HasKeyboardOrLogicalFocus(input));
             Assert.False(window.Topmost);
@@ -291,7 +292,7 @@ public sealed class ShellChromeContractTests
         RunShell(window =>
         {
             window.Commands.ExecuteAsync("vulcan.app.theme mode=dark", "test").GetAwaiter().GetResult();
-            PumpDispatcher();
+            UiTestHost.Pump();
 
             // R4-5:????????? ?? ???????? WPF ?????
             // ????????,???????????????
@@ -321,7 +322,7 @@ public sealed class ShellChromeContractTests
         {
             var manager = Assert.Single(FindVisualDescendants<AvalonDock.DockingManager>(window));
             window.Docking.Float(StandardWindowIds.Console);
-            PumpDispatcher(900);
+            UiTestHost.PumpFor(900);
 
             // R4-3:????????????,??????????
             var floating = Assert.Single(manager.FloatingWindows.ToList());
@@ -334,7 +335,7 @@ public sealed class ShellChromeContractTests
             Assert.Equal(new Thickness(1), floating.BorderThickness);
 
             window.Commands.ExecuteAsync("vulcan.app.theme mode=dark", "test").GetAwaiter().GetResult();
-            PumpDispatcher();
+            UiTestHost.Pump();
 
             Assert.Equal(
                 Assert.IsType<SolidColorBrush>(window.FindResource("Shell.Brush.Surface")).Color,
@@ -353,7 +354,7 @@ public sealed class ShellChromeContractTests
             {
                 window.Docking.Show("center.one");
                 window.Docking.Show("center.two");
-                PumpDispatcher();
+                UiTestHost.Pump();
 
                 var accent = ((SolidColorBrush)window.FindResource("Shell.Brush.AccentSoft")).Color;
                 var active = FindVisualDescendants<LayoutDocumentTabItem>(window)
@@ -394,7 +395,7 @@ public sealed class ShellChromeContractTests
                 var result = window.Commands.ExecuteAsync("vulcan.ui.max name=focus.tool", "test")
                     .GetAwaiter().GetResult();
                 Assert.True(result.Success, result.Message);
-                PumpDispatcher();
+                UiTestHost.Pump();
 
                 var focusedHeader = FindVisualDescendants<Grid>(window)
                     .SingleOrDefault(item => item.IsVisible && Equals(item.Tag, "FocusedShellPaneHeader"));
@@ -431,7 +432,7 @@ public sealed class ShellChromeContractTests
                 var result = window.Commands.ExecuteAsync("vulcan.ui.max name=focus.tool", "test")
                     .GetAwaiter().GetResult();
                 Assert.True(result.Success, result.Message);
-                PumpDispatcher();
+                UiTestHost.Pump();
 
                 var header = FindVisualDescendants<Grid>(window)
                     .Single(item => item.IsVisible && Equals(item.Tag, "FocusedShellPaneHeader"));
@@ -468,7 +469,7 @@ public sealed class ShellChromeContractTests
             Assert.NotNull(paneHeader);
 
             window.Docking.Float(StandardWindowIds.Console);
-            PumpDispatcher(900);
+            UiTestHost.PumpFor(900);
 
             var manager = Assert.Single(FindVisualDescendants<AvalonDock.DockingManager>(window));
             var floating = Assert.Single(manager.FloatingWindows.ToList());
@@ -544,7 +545,7 @@ public sealed class ShellChromeContractTests
                 var result = window.Commands.ExecuteAsync("vulcan.ui.max name=focus.tool", "test")
                     .GetAwaiter().GetResult();
                 Assert.True(result.Success, result.Message);
-                PumpDispatcher();
+                UiTestHost.Pump();
 
                 var focusedSurface = Assert.IsAssignableFrom<FrameworkElement>(
                     GetPrivateField(window, "_chromeDragSurface"));
@@ -570,10 +571,10 @@ public sealed class ShellChromeContractTests
         RunShell(window =>
         {
             window.Docking.Show("center.float");
-            PumpDispatcher();
+            UiTestHost.Pump();
             Assert.NotNull(content);
             window.Docking.Float("center.float");
-            PumpDispatcher(900);
+            UiTestHost.PumpFor(900);
 
             var manager = Assert.Single(FindVisualDescendants<AvalonDock.DockingManager>(window));
             var floating = Assert.Single(manager.FloatingWindows.ToList());
@@ -599,7 +600,7 @@ public sealed class ShellChromeContractTests
         {
             window.Docking.Show("center.float.actions");
             window.Docking.Float("center.float.actions");
-            PumpDispatcher(900);
+            UiTestHost.PumpFor(900);
 
             var manager = Assert.Single(FindVisualDescendants<AvalonDock.DockingManager>(window));
             var floating = Assert.Single(manager.FloatingWindows.ToList());
@@ -613,7 +614,7 @@ public sealed class ShellChromeContractTests
 
             Assert.True(command.CanExecute(button.CommandParameter, button.CommandTarget));
             command.Execute(button.CommandParameter, button.CommandTarget);
-            PumpDispatcher();
+            UiTestHost.Pump();
             Assert.Equal(WindowState.Maximized, floating.WindowState);
         }, configure: config => config.ToolWindows.Add(new ToolWindowDescriptor
         {
@@ -632,21 +633,21 @@ public sealed class ShellChromeContractTests
         {
             window.Docking.Show("center.state");
             window.Docking.Float("center.state");
-            PumpDispatcher(900);
+            UiTestHost.PumpFor(900);
 
             var manager = Assert.Single(FindVisualDescendants<AvalonDock.DockingManager>(window));
             var floating = Assert.Single(manager.FloatingWindows.ToList());
             var maximize = window.Commands.ExecuteAsync(
                 "vulcan.ui.floatstate name=center.state state=maximized", "Test").GetAwaiter().GetResult();
             Assert.True(maximize.Success, maximize.Message);
-            PumpDispatcher();
+            UiTestHost.Pump();
             floating = Assert.Single(manager.FloatingWindows.ToList());
             Assert.Equal(WindowState.Maximized, floating.WindowState);
 
             var restore = window.Commands.ExecuteAsync(
                 "vulcan.ui.floatstate name=center.state state=toggle", "Test").GetAwaiter().GetResult();
             Assert.True(restore.Success, restore.Message);
-            PumpDispatcher();
+            UiTestHost.Pump();
             floating = Assert.Single(manager.FloatingWindows.ToList());
             Assert.Equal(WindowState.Normal, floating.WindowState);
         }, configure: config => config.ToolWindows.Add(new ToolWindowDescriptor
@@ -698,7 +699,7 @@ public sealed class ShellChromeContractTests
                 Assert.Equal(Colors.White, ((SolidColorBrush)window.FindResource("Shell.Brush.Surface")).Color);
 
                 window.Commands.ExecuteAsync("vulcan.app.theme mode=dark", "test").GetAwaiter().GetResult();
-                PumpDispatcher();
+                UiTestHost.Pump();
 
                 var dark = (SolidColorBrush)window.FindResource("Shell.Brush.Canvas");
                 Assert.NotEqual(light.Color, dark.Color);
@@ -711,7 +712,7 @@ public sealed class ShellChromeContractTests
                 Assert.True(accent.R > accent.B + 0x40, $"accent should be amber, got {accent}");
 
                 window.Commands.ExecuteAsync("vulcan.app.theme mode=light", "test").GetAwaiter().GetResult();
-                PumpDispatcher();
+                UiTestHost.Pump();
                 Assert.Equal(light.Color, ((SolidColorBrush)window.FindResource("Shell.Brush.Canvas")).Color);
                 Assert.Equal("light", settings.Get("ui.theme"));
             },
@@ -811,7 +812,7 @@ public sealed class ShellChromeContractTests
             // 断言的是 Vulcan 自己的聚焦头与共享 chrome 归属。
             window.Docking.RegisterWindow(CenterPage(StandardWindowIds.Mcp), "test");
             window.Docking.Show(StandardWindowIds.Mcp);
-            PumpDispatcher();
+            UiTestHost.Pump();
 
             var exitFocus = RequireButton(window, "ExitFocusButton");
             Assert.Equal(Visibility.Collapsed, exitFocus.Visibility);
@@ -821,7 +822,7 @@ public sealed class ShellChromeContractTests
 
             // Focused pages keep their real tab and host the one shared main-window chrome.
             window.Docking.MaximizeWindow(StandardWindowIds.Mcp);
-            PumpDispatcher();
+            UiTestHost.Pump();
 
             Assert.Equal(
                 Visibility.Visible,
@@ -836,7 +837,7 @@ public sealed class ShellChromeContractTests
                 name => Assert.Equal(Visibility.Visible, RequireButton(window, name).Visibility));
 
             Assert.True(window.Commands.ExecuteAsync("vulcan.ui.restore", "Test").GetAwaiter().GetResult().Success);
-            PumpDispatcher();
+            UiTestHost.Pump();
 
             Assert.Null(window.Docking.MaximizedId);
             Assert.Equal(
@@ -875,7 +876,7 @@ public sealed class ShellChromeContractTests
                 Assert.Equal(Visibility.Collapsed, badge.Visibility);
 
                 log.Raise(ShellLogLevel.Error, "test", "\u754c\u9762\u5347\u7ea7\u9a8c\u8bc1\u7528\u9519\u8bef");
-                PumpDispatcher();
+                UiTestHost.Pump();
 
                 // UI-05.3: count moves to title-bar badge
                 Assert.Equal(Visibility.Visible, badge.Visibility);
@@ -908,7 +909,7 @@ public sealed class ShellChromeContractTests
     [Fact]
     public void ConsoleLongLinesWrapAtCurrentWidthWithoutHorizontalExtentOrLogicalNewlines()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var log = new RelayLog();
             var logicalText = new string('W', 320);
@@ -930,8 +931,11 @@ public sealed class ShellChromeContractTests
             try
             {
                 host.Show();
-                PumpDispatcher();
                 var output = Assert.IsType<ListBox>(console.FindName("Output"));
+                // 同上：等 100ms 批量刷新把行送进列表。
+                Assert.True(
+                    UiTestHost.PumpUntil(() => output.Items.Count > 0),
+                    "控制台批量刷新超时，没有可换行的行");
                 var row = Assert.Single(output.Items.Cast<ConsoleRow>());
                 output.ScrollIntoView(row);
                 host.UpdateLayout();
@@ -951,7 +955,7 @@ public sealed class ShellChromeContractTests
 
                 host.Width = 360;
                 host.UpdateLayout();
-                PumpDispatcher();
+                UiTestHost.Pump();
                 var narrowHeight = text.ActualHeight;
                 Assert.True(narrowHeight > wideHeight,
                     $"narrow={narrowHeight}, wide={wideHeight}");
@@ -959,7 +963,7 @@ public sealed class ShellChromeContractTests
 
                 host.Width = 760;
                 host.UpdateLayout();
-                PumpDispatcher();
+                UiTestHost.Pump();
                 Assert.True(text.ActualHeight < narrowHeight,
                     $"rewidened={text.ActualHeight}, narrow={narrowHeight}");
                 Assert.Equal(0, scroll.ScrollableWidth);
@@ -1037,7 +1041,7 @@ public sealed class ShellChromeContractTests
         IShellLog? log = null,
         ISettingsService? settings = null)
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var dataDirectory = Path.Combine(Path.GetTempPath(), $"HistoryVulcan-chrome-{Guid.NewGuid():N}");
             Directory.CreateDirectory(dataDirectory);
@@ -1066,7 +1070,7 @@ public sealed class ShellChromeContractTests
             try
             {
                 window.Show();
-                PumpDispatcher();
+                UiTestHost.Pump();
                 assert(window);
             }
             finally
@@ -1084,7 +1088,7 @@ public sealed class ShellChromeContractTests
     [Fact]
     public void ConsoleExportWithoutPathWritesDefaultFileWithoutDialog()
     {
-        RunSta(() =>
+        UiTestHost.RunSta(() =>
         {
             var log = new RelayLog();
             log.Raise(ShellLogLevel.Info, "export.test", "no-dialog-export-line");
@@ -1105,7 +1109,13 @@ public sealed class ShellChromeContractTests
             try
             {
                 host.Show();
-                PumpDispatcher();
+                // 控制台按 100ms 批量合并日志：等到行真正进入可见集合再导出，
+                // 而不是盲等一个「应该够了」的固定时长。
+                Assert.True(
+                    UiTestHost.PumpUntil(() =>
+                        ((System.Collections.IEnumerable)Assert.IsType<ListBox>(console.FindName("Output")).Items)
+                            .Cast<ConsoleRow>().Any()),
+                    "控制台批量刷新超时，没有可导出的行");
 
                 var message = console.ExportVisible(null);
 
@@ -1220,37 +1230,6 @@ public sealed class ShellChromeContractTests
             foreach (var descendant in FindVisualDescendants<T>(child))
                 yield return descendant;
         }
-    }
-
-    private static void PumpDispatcher(int milliseconds = 300)
-    {
-        var frame = new DispatcherFrame();
-        var timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
-        {
-            Interval = TimeSpan.FromMilliseconds(milliseconds),
-        };
-        timer.Tick += (_, _) =>
-        {
-            timer.Stop();
-            frame.Continue = false;
-        };
-        timer.Start();
-        Dispatcher.PushFrame(frame);
-    }
-
-    private static void RunSta(Action action)
-    {
-        Exception? failure = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { failure = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (failure != null)
-            ExceptionDispatchInfo.Capture(failure).Throw();
     }
 
     private sealed class MemoryLayoutStore : ILayoutStore
