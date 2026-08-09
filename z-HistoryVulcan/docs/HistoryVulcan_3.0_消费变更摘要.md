@@ -1,22 +1,23 @@
 # HistoryVulcan 消费变更摘要
 
-适用版本：HistoryVulcan 3.2.2 源码候选（在 3.2.1 命令域/类合同基础上增加严格筛选、Z 模块发现和 CommandSurface 边界）。
+适用版本：HistoryVulcan 3.3.0 源码候选（在 3.2.2 严格筛选/Z 发现基础上完成 DEC-022 指令硬切与 Mercury 外置）。
 
 本文只记录会影响消费应用、模块作者和部署者的变化；源码施工、冻结审查、完整测试证据和发布操作不属于本文。
 
 ## 部署与引用方式
 
-- HistoryVulcan 自身以 `host/HistoryVulcan.exe` 部署；3.2.2 候选先写入 `b-Publish/current`，审核后整体部署到 `z-HistoryVulcan`，不生成 NuGet 包。
+- HistoryVulcan 自身以 `host/HistoryVulcan.exe` 部署；3.3.0 候选先写入 `b-Publish/current`，审核后整体部署到 `z-HistoryVulcan`，不生成 NuGet 包。
 
+- 3.3.0（DEC-022）内置命令一次硬切为 `vulcan.<类>.<方法>`（全小写、无连字符、不留别名；`cls` 删除），Domain=`vulcan`；
+  命令集表格列为域|类|方法。全局快捷键与命令工作台迁至 HistoryMercury 4.1.0；无 Mercury 时双 `/` 与命令集/详情不可用。
+  旧→新映射见 `../history/3.3.0-vulcan-command-rename.md`。
 - 3.2.2 的域和类是严格两级筛选：选择具体域后类列表只来自该域，域为“全部”时类固定为“全部”且禁用；控制台新增
-  `log.class`，命令集和控制台共享同一 `CommandCatalogSession`。
+  `vulcan.log.class`，命令集和控制台共享同一目录会话合同。
 - 3.2.2 正式宿主只从 HistoryVesta 项目 `<project>/z-*` 中的 `module.manifest.json` 发现 `type=HistoryVulcan.Module`
   模块，旧 AppData Modules 和 `module.dir` 不再参与正式装载。模块名是命令域 owner，功能分支通过显式类声明。
-- 控制台、轻松指令、命令集检索、详情选择和双 `/` 唤醒由内建 `CommandSurfaceFeature` 统一持有；消费模块只接入通用
-  工具激活合同，不复制 Shell 视图。
 
-- 3.2.1 将 HistoryVulcan 内置命令统一归入 `HistoryVulcan` 域，以 `CommandClass` 区分功能分支；
-  模块稳定名称就是模块域，旧模块未声明类时归入 `core`。现有命令文本和执行语义不变。
+- 3.2.1 将 HistoryVulcan 内置命令统一归入单一宿主域，以 `CommandClass` 区分功能分支；
+  模块稳定名称就是模块域，旧模块未声明类时归入 `core`。3.3.0 起域短拼为 `vulcan` 且命令文本硬切。
 - 3.1.8 是不受支持的内部过渡版本，消费方不得将其作为稳定升级目标。
 - 兼容嵌入式消费应用若使用单独批准的 NuGet 源，必须固定引用同一版本的 HistoryVulcan 四包。
 - 桌面应用通常引用 `OneHistory.HistoryVulcan.Shell`；无窗口服务宿主引用 `OneHistory.HistoryVulcan.ServiceHost`。
@@ -25,6 +26,8 @@
 
 ## 主要变化
 
+- 3.3.0（DEC-022）内置命令硬切为 `vulcan.<类>.<方法>`，Domain=`vulcan`，命令集列为域|类|方法；
+  全局快捷键与命令工作台外置到 HistoryMercury 4.1.0（详见上文部署节与映射文件）。
 - 3.2.0 将产品从 AppShell 改名为 HistoryVulcan：包 ID 改为 `OneHistory.HistoryVulcan.*`，命名空间改为
   `HistoryVulcan.*`，宿主可执行文件为 `HistoryVulcan.exe`。公开 API 形状与命令语义不变；消费方升级时
   需要把包引用和 `using` 命名空间整体换为新名。正式快照入口随之迁移到 `z-HistoryVulcan`。

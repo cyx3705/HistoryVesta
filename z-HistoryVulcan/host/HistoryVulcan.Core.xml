@@ -26,6 +26,126 @@
         <member name="M:HistoryVulcan.Core.AppIdentity.From(System.Reflection.Assembly)">
             <summary>Provides this HistoryVulcan public contract member.</summary>
         </member>
+        <member name="T:HistoryVulcan.Core.CommandSurface.ConsoleCompletionKind">
+            <summary>控制台补全候选种类。</summary>
+        </member>
+        <member name="F:HistoryVulcan.Core.CommandSurface.ConsoleCompletionKind.Command">
+            <summary>命令名。</summary>
+        </member>
+        <member name="F:HistoryVulcan.Core.CommandSurface.ConsoleCompletionKind.Parameter">
+            <summary>参数名。</summary>
+        </member>
+        <member name="F:HistoryVulcan.Core.CommandSurface.ConsoleCompletionKind.Value">
+            <summary>参数值。</summary>
+        </member>
+        <member name="T:HistoryVulcan.Core.CommandSurface.ConsoleCompletionCandidate">
+            <summary>单条控制台补全候选。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.CommandSurface.ConsoleCompletionCandidate.InsertText">
+            <summary>写入输入框的文本。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.CommandSurface.ConsoleCompletionCandidate.DisplayText">
+            <summary>列表显示文本。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.CommandSurface.ConsoleCompletionCandidate.Description">
+            <summary>候选说明。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.CommandSurface.ConsoleCompletionCandidate.Kind">
+            <summary>候选种类。</summary>
+        </member>
+        <member name="T:HistoryVulcan.Core.CommandSurface.ConsoleCompletionResult">
+            <summary>一次补全计算结果。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.CommandSurface.ConsoleCompletionResult.Empty">
+            <summary>无候选结果。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.CommandSurface.ConsoleCompletionResult.Candidates">
+            <summary>候选列表。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.CommandSurface.ConsoleCompletionResult.ReplaceStart">
+            <summary>替换起点。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.CommandSurface.ConsoleCompletionResult.ReplaceLength">
+            <summary>替换长度。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.CommandSurface.ConsoleCompletionResult.HasCandidates">
+            <summary>是否有候选。</summary>
+        </member>
+        <member name="T:HistoryVulcan.Core.CommandSurface.CommandCatalogFilter">
+            <summary>命令目录会话筛选状态（控制台与命令集共用）。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.CommandSurface.CommandCatalogFilter.#ctor(System.String,System.String,System.String,System.Int32)">
+            <summary>命令目录会话筛选状态（控制台与命令集共用）。</summary>
+        </member>
+        <member name="T:HistoryVulcan.Core.CommandSurface.CommandCatalogChangeKind">
+            <summary>目录会话变更种类。</summary>
+        </member>
+        <member name="F:HistoryVulcan.Core.CommandSurface.CommandCatalogChangeKind.Snapshot">
+            <summary>快照重载。</summary>
+        </member>
+        <member name="F:HistoryVulcan.Core.CommandSurface.CommandCatalogChangeKind.Filter">
+            <summary>筛选变更。</summary>
+        </member>
+        <member name="F:HistoryVulcan.Core.CommandSurface.CommandCatalogChangeKind.Selection">
+            <summary>选择变更。</summary>
+        </member>
+        <member name="F:HistoryVulcan.Core.CommandSurface.CommandCatalogChangeKind.Invalidated">
+            <summary>注册表失效，需刷新。</summary>
+        </member>
+        <member name="T:HistoryVulcan.Core.CommandSurface.CommandCatalogChangedEventArgs">
+            <summary>目录会话变更参数。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.CommandSurface.CommandCatalogChangedEventArgs.#ctor(HistoryVulcan.Core.CommandSurface.CommandCatalogChangeKind)">
+            <summary>目录会话变更参数。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.CommandSurface.CommandCatalogChangedEventArgs.Kind">
+            <summary>变更种类。</summary>
+        </member>
+        <member name="T:HistoryVulcan.Core.CommandSurface.ICommandCatalogSession">
+            <summary>
+            控制台补全与命令集/详情共享的最小目录会话面。
+            具体实现由命令工作台模块（Mercury）提供；Shell 仅持有延迟代理。
+            </summary>
+        </member>
+        <member name="E:HistoryVulcan.Core.CommandSurface.ICommandCatalogSession.Changed">
+            <summary>目录或筛选变化。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.CommandSurface.ICommandCatalogSession.Domains">
+            <summary>当前可见域列表（不含「全部」）。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.CommandSurface.ICommandCatalogSession.Classes">
+            <summary>当前域下的类列表（不含「全部」）；域为全部时为空。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.CommandSurface.ICommandCatalogSession.SelectedCommandName">
+            <summary>当前选中的命令名。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.CommandSurface.ICommandCatalogSession.CurrentFilter">
+            <summary>当前筛选。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.CommandSurface.ICommandCatalogSession.RefreshAsync(System.Boolean,System.Threading.CancellationToken)">
+            <summary>刷新目录快照。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.CommandSurface.ICommandCatalogSession.SetFilter(HistoryVulcan.Core.CommandSurface.CommandCatalogFilter)">
+            <summary>设置完整筛选。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.CommandSurface.ICommandCatalogSession.TrySetDomain(System.String,System.Collections.Generic.IReadOnlyList{System.String}@)">
+            <summary>尝试设置域筛选。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.CommandSurface.ICommandCatalogSession.TrySetCommandClass(System.String,System.Collections.Generic.IReadOnlyList{System.String}@)">
+            <summary>尝试设置类筛选。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.CommandSurface.ICommandCatalogSession.SetConsoleQuery(System.String)">
+            <summary>设置控制台检索词（同步命令集列表）。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.CommandSurface.ICommandCatalogSession.MoveSelection(System.Int32)">
+            <summary>在可见行中移动选择。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.CommandSurface.ICommandCatalogSession.Select(System.String)">
+            <summary>选中指定命令。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.CommandSurface.ICommandCatalogSession.CompleteAsync(System.String,System.Int32,System.Threading.CancellationToken)">
+            <summary>为控制台输入计算补全。</summary>
+        </member>
         <member name="T:HistoryVulcan.Core.Commands.BuiltinCommandDefinitions">
             <summary>
             Shared metadata for commands that execute locally in both the desktop shell and a service host.
@@ -108,7 +228,7 @@
             </summary>
         </member>
         <member name="M:HistoryVulcan.Core.Commands.CommandBus.FormatUsage(HistoryVulcan.Core.Commands.CommandDescriptor)">
-            <summary>用法行,如 "用法: win.dock name= pos=left/right/top/bottom/tab [target=] [ratio=]"。</summary>
+            <summary>用法行,如 "用法: vulcan.win.dock name= pos=left/right/top/bottom/tab [target=] [ratio=]"。</summary>
         </member>
         <member name="T:HistoryVulcan.Core.Commands.CommandContext">
             <summary>
@@ -155,7 +275,7 @@
             </summary>
         </member>
         <member name="P:HistoryVulcan.Core.Commands.CommandDescriptor.Name">
-            <summary>完整指令名,小写,如 "win.dock"、"help"。</summary>
+            <summary>完整指令名,小写,如 "vulcan.win.dock"、"vulcan.core.help"。</summary>
         </member>
         <member name="P:HistoryVulcan.Core.Commands.CommandDescriptor.Domain">
             <summary>
@@ -173,7 +293,7 @@
             <summary>一句话说明(help 列表用)。</summary>
         </member>
         <member name="P:HistoryVulcan.Core.Commands.CommandDescriptor.Example">
-            <summary>示例行(help 详情用),如 "win.dock name=console pos=bottom ratio=0.25"。</summary>
+            <summary>示例行(help 详情用),如 "vulcan.win.dock name=console pos=bottom ratio=0.25"。</summary>
         </member>
         <member name="P:HistoryVulcan.Core.Commands.CommandDescriptor.Parameters">
             <summary>Provides this HistoryVulcan public contract member.</summary>
@@ -354,6 +474,20 @@
             <c>help.foo</c> 或 <c>future.list</c> 的形式绕过根命令/现有域冲突检查。
             </summary>
         </member>
+        <member name="M:HistoryVulcan.Core.Commands.CommandRegistry.LegacyDomain(System.String)">
+            <summary>从命令名推导域：首段；无点则 <c>core</c>。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.Commands.CommandRegistry.LegacyClass(System.String)">
+            <summary>
+            从命令名推导功能类：两段名用首段；三段及以上用第二段（不把域段如 <c>vulcan</c> 当 class）。
+            </summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.Commands.CommandRegistry.LegacyMethod(System.String)">
+            <summary>从命令名推导方法段：末段；无点则整名。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.Commands.CommandRegistry.GetMethod(System.String)">
+            <summary>同 <see cref="M:HistoryVulcan.Core.Commands.CommandRegistry.LegacyMethod(System.String)"/>。</summary>
+        </member>
         <member name="M:HistoryVulcan.Core.Commands.CommandRegistry.Suggest(System.String)">
             <summary>
             未知指令时给出最接近的候选(§5.2 P1:“你是不是想输入…”)。
@@ -474,7 +608,7 @@
         <member name="P:HistoryVulcan.Core.Commands.ParameterSpec.Position">
             <summary>
             允许按位置传入时的位置序号(0 起);null 表示只能 键=值。
-            例:help 的 command 参数 Position=0,支持 “help win.dock”。
+            例:help 的 command 参数 Position=0,支持 “help vulcan.win.dock”。
             </summary>
         </member>
         <member name="P:HistoryVulcan.Core.Commands.ParameterSpec.AllowedValues">
@@ -532,16 +666,16 @@
             <summary>Provides this HistoryVulcan public contract member.</summary>
         </member>
         <member name="F:HistoryVulcan.Core.Docking.DockSide.Tab">
-            <summary>并入目标标签组(win.dock pos=tab target=...)。</summary>
+            <summary>并入目标标签组(vulcan.win.dock pos=tab target=...)。</summary>
         </member>
         <member name="F:HistoryVulcan.Core.Docking.DockSide.Center">
             <summary>占据中央工作区；多个中央窗口组成标签组。</summary>
         </member>
         <member name="T:HistoryVulcan.Core.Docking.ToolWindowInfo">
-            <summary>某个工具窗口的当前状态快照(win.list 的数据源)。</summary>
+            <summary>某个工具窗口的当前状态快照(vulcan.win.list 的数据源)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.ToolWindowInfo.#ctor(System.String,System.String,System.Boolean,System.Boolean,System.Nullable{HistoryVulcan.Core.Docking.DockSide},System.Nullable{System.Double},System.String)">
-            <summary>某个工具窗口的当前状态快照(win.list 的数据源)。</summary>
+            <summary>某个工具窗口的当前状态快照(vulcan.win.list 的数据源)。</summary>
         </member>
         <member name="T:HistoryVulcan.Core.Docking.IDockingService">
             <summary>
@@ -554,37 +688,37 @@
             <summary>当前最大化的工具窗口 Id;未最大化时为 null。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.ListWindows">
-            <summary>列出全部已注册窗口及状态(win.list)。</summary>
+            <summary>列出全部已注册窗口及状态(vulcan.win.list)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.Show(System.String)">
-            <summary>显示窗口(win.show);若已隐藏则唤出,已显示则激活。</summary>
+            <summary>显示窗口(vulcan.win.show);若已隐藏则唤出,已显示则激活。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.Hide(System.String)">
-            <summary>隐藏窗口(win.hide);状态保留,不销毁(§4.1 关闭=隐藏)。</summary>
+            <summary>隐藏窗口(vulcan.win.hide);状态保留,不销毁(§4.1 关闭=隐藏)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.Float(System.String)">
-            <summary>浮动为独立顶层窗口(win.float)。</summary>
+            <summary>浮动为独立顶层窗口(vulcan.win.float)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.Dock(System.String,HistoryVulcan.Core.Docking.DockSide,System.Nullable{System.Double},System.String)">
-            <summary>停靠到指定方位(win.dock);Center 占中央工作区，Tab 并入 targetId 标签组。</summary>
+            <summary>停靠到指定方位(vulcan.win.dock);Center 占中央工作区，Tab 并入 targetId 标签组。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.SetRatio(System.String,System.Double)">
-            <summary>调整窗口占主程序窗体的比例(win.ratio)。</summary>
+            <summary>调整窗口占主程序窗体的比例(vulcan.win.ratio)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.ResetWindow(System.String)">
             <summary>把单个窗口复位到注册时声明的默认位置(视图菜单「复位」,W-02)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.ResetLayout">
-            <summary>整体重置为默认布局(layout.reset,W-07)。</summary>
+            <summary>整体重置为默认布局(vulcan.layout.reset,W-07)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.SaveLayout(System.String)">
-            <summary>保存当前布局为命名方案(layout.save,W-08)。</summary>
+            <summary>保存当前布局为命名方案(vulcan.layout.save,W-08)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.LoadLayout(System.String)">
-            <summary>加载命名布局方案(layout.load);失败返回 false。</summary>
+            <summary>加载命名布局方案(vulcan.layout.load);失败返回 false。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.ListLayouts">
-            <summary>列出全部命名布局方案(layout.list)。</summary>
+            <summary>列出全部命名布局方案(vulcan.layout.list)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.RegisterWindow(HistoryVulcan.Core.Docking.ToolWindowDescriptor,System.String)">
             <summary>运行期注册工具窗口。owner 是模块热重载时的回收键。</summary>
@@ -618,7 +752,7 @@
             </summary>
         </member>
         <member name="P:HistoryVulcan.Core.Docking.ShellCommandEventArgs.CommandText">
-            <summary>指令文本,如 "win.dock name=console pos=bottom ratio=0.28"。</summary>
+            <summary>指令文本,如 "vulcan.win.dock name=console pos=bottom ratio=0.28"。</summary>
         </member>
         <member name="P:HistoryVulcan.Core.Docking.ShellCommandEventArgs.Source">
             <summary>来源类别:"layout"(拖拽手势)、"UI"(菜单/按钮)等。</summary>
@@ -645,7 +779,7 @@
             </summary>
         </member>
         <member name="P:HistoryVulcan.Core.Docking.ToolWindowDescriptor.Id">
-            <summary>指令可寻址的窗口名(win.show name=...),要求小写、无空格、进程内唯一。</summary>
+            <summary>指令可寻址的窗口名(vulcan.win.show name=...),要求小写、无空格、进程内唯一。</summary>
         </member>
         <member name="P:HistoryVulcan.Core.Docking.ToolWindowDescriptor.Title">
             <summary>标题栏与「视图」菜单显示的标题。</summary>
@@ -731,6 +865,33 @@
             </summary>
         </member>
         <member name="M:HistoryVulcan.Core.Input.IGlobalShortcutModule.RegisterShortcuts(HistoryVulcan.Core.Input.IGlobalShortcutRegistrar)">
+            <summary>Provides this HistoryVulcan public contract member.</summary>
+        </member>
+        <member name="T:HistoryVulcan.Core.Input.IGlobalShortcutHost">
+            <summary>
+            Process-wide global shortcut host. Implementations live in modules (e.g. HistoryMercury);
+            the Vulcan host only holds this Core contract.
+            </summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.Input.IGlobalShortcutHost.IsEnabled">
+            <summary>Provides this HistoryVulcan public contract member.</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.Input.IGlobalShortcutHost.Registrations">
+            <summary>Provides this HistoryVulcan public contract member.</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.Input.IGlobalShortcutHost.Start">
+            <summary>Provides this HistoryVulcan public contract member.</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.Input.IGlobalShortcutHost.Stop">
+            <summary>Provides this HistoryVulcan public contract member.</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.Input.IGlobalShortcutHost.Register(HistoryVulcan.Core.Input.GlobalShortcutDescriptor,System.String)">
+            <summary>Provides this HistoryVulcan public contract member.</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.Input.IGlobalShortcutHost.CreateOwnerRegistrar(System.String)">
+            <summary>Provides this HistoryVulcan public contract member.</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.Input.IGlobalShortcutHost.UnregisterOwner(System.String)">
             <summary>Provides this HistoryVulcan public contract member.</summary>
         </member>
         <member name="T:HistoryVulcan.Core.Logging.ShellLogLevel">
@@ -840,13 +1001,13 @@
         </member>
         <member name="T:HistoryVulcan.Core.Mcp.McpToolInfo">
             <summary>
-            一条指令的 MCP 工具形态(MC-01):tools/list 条目与本地 mcp.schema 共用。
+            一条指令的 MCP 工具形态(MC-01):tools/list 条目与本地 vulcan.mcp.schema 共用。
             Dangerous = 带 ConfirmPrompt(总线确认闸口),网关侧按 MS-04 对 MCP 一律拒绝执行。
             </summary>
         </member>
         <member name="M:HistoryVulcan.Core.Mcp.McpToolInfo.#ctor(System.String,System.String,System.String,System.Text.Json.Nodes.JsonObject,System.Boolean,System.String,System.Boolean)">
             <summary>
-            一条指令的 MCP 工具形态(MC-01):tools/list 条目与本地 mcp.schema 共用。
+            一条指令的 MCP 工具形态(MC-01):tools/list 条目与本地 vulcan.mcp.schema 共用。
             Dangerous = 带 ConfirmPrompt(总线确认闸口),网关侧按 MS-04 对 MCP 一律拒绝执行。
             </summary>
         </member>
@@ -870,7 +1031,7 @@
         <member name="M:HistoryVulcan.Core.Mcp.CommandSchemaExporter.IsHardExcluded(System.String)">
             <summary>
             硬排除清单(MS-03,任何策略下都不暴露):
-            app.exit(远端不得杀宿主)、debug.*(承压/注水等自测工具)、
+            vulcan.app.exit(远端不得杀宿主)、debug.*(承压/注水等自测工具)、
             mcp.*(防远端自锁与递归启停)。代码内常量,不走配置。
             </summary>
         </member>
@@ -881,7 +1042,7 @@
             <summary>全量导出(MC-01):注册表指令 − 硬排除,含危险标记与提示词覆盖;调用即现算。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Mcp.CommandSchemaExporter.Find(System.String)">
-            <summary>按工具名或指令名找一条(mcp.schema name= 与 tools/call 共用)。</summary>
+            <summary>按工具名或指令名找一条(vulcan.mcp.schema name= 与 tools/call 共用)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Mcp.CommandSchemaExporter.MakeToolName(System.String,System.Collections.Generic.HashSet{System.String})">
             <summary>指令名 → MCP 合法工具名(^[a-zA-Z0-9_-]{1,64}$):点等非法字符换下划线,冲突追加序号。</summary>
@@ -1042,6 +1203,41 @@
         <member name="M:HistoryVulcan.Core.Modules.IModuleContextAware.Attach(HistoryVulcan.Core.Modules.IModuleContext)">
             <summary>Attaches the current host context before commands and UI are activated.</summary>
         </member>
+        <member name="T:HistoryVulcan.Core.Modules.IShellCommandWorkbenchHost">
+            <summary>
+            Shell 暴露给命令工作台模块的挂载点：共享选择态、目录会话接到控制台，以及补全路由。
+            </summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.Modules.IShellCommandWorkbenchHost.Bus">
+            <summary>宿主指令总线。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.Modules.IShellCommandWorkbenchHost.CommandSelection">
+            <summary>命令集与详情联动选中态。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.Modules.IShellCommandWorkbenchHost.Settings">
+            <summary>设置存储。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.Modules.IShellCommandWorkbenchHost.Log">
+            <summary>宿主日志。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.Modules.IShellCommandWorkbenchHost.DataDirectory">
+            <summary>数据根目录。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.Modules.IShellCommandWorkbenchHost.AttachCommandCatalogSession(HistoryVulcan.Core.CommandSurface.ICommandCatalogSession)">
+            <summary>把真实目录会话挂到控制台延迟代理上。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.Modules.IShellCommandWorkbenchHost.ConfigureCommandCompletionRouting(System.Func{System.Boolean},System.Action)">
+            <summary>配置控制台补全聚焦判定与非聚焦时唤起命令集。</summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.Modules.IShellCommandWorkbenchHost.RefreshCommandCompletionFocus">
+            <summary>布局变化后刷新补全聚焦态。</summary>
+        </member>
+        <member name="T:HistoryVulcan.Core.Modules.IShellCommandWorkbenchAware">
+            <summary>模块实现本接口后，宿主在 CreateUi 前注入命令工作台挂载点。</summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.Modules.IShellCommandWorkbenchAware.CommandWorkbench">
+            <summary>命令工作台宿主；服务宿主或未装配时可为 null。</summary>
+        </member>
         <member name="T:HistoryVulcan.Core.Modules.IShellUiRegistrar">
             <summary>模块向宿主注册内嵌界面的唯一门面。</summary>
         </member>
@@ -1103,7 +1299,7 @@
             </summary>
         </member>
         <member name="P:HistoryVulcan.Core.Panels.PanelDefinition.Id">
-            <summary>面板 id,同时是窗口名(win.show name=&lt;id&gt;);小写、进程内唯一。</summary>
+            <summary>面板 id,同时是窗口名(vulcan.win.show name=&lt;id&gt;);小写、进程内唯一。</summary>
         </member>
         <member name="P:HistoryVulcan.Core.Panels.PanelDefinition.Title">
             <summary>标题栏显示名。</summary>
@@ -1185,7 +1381,7 @@
         </member>
         <member name="T:HistoryVulcan.Core.Storage.ISettingsService">
             <summary>
-            应用设置读写(F-01/F-03):扁平键值对,app.set / app.get 指令与派生应用共用。
+            应用设置读写(F-01/F-03):扁平键值对,vulcan.app.set / vulcan.app.get 指令与派生应用共用。
             </summary>
         </member>
         <member name="M:HistoryVulcan.Core.Storage.ISettingsService.Get(System.String)">
