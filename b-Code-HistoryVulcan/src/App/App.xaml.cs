@@ -132,8 +132,28 @@ public partial class App : Application
             };
             window.Commands.RemoteExecutor = service.ExecuteAsync;
             window.Commands.ShouldUseRemoteCommand = (text, source) =>
-                !text.TrimStart().StartsWith("vulcan.frontend.", StringComparison.OrdinalIgnoreCase)
-                && !source.Equals("Service:Relay", StringComparison.OrdinalIgnoreCase);
+            {
+                if (source.Equals("Service:Relay", StringComparison.OrdinalIgnoreCase))
+                    return false;
+                if (text.TrimStart().StartsWith("vulcan.frontend.", StringComparison.OrdinalIgnoreCase))
+                    return false;
+
+                // 本机已登记且需 UI 线程的页面状态命令（如 HistoryMinerva.convert）就地执行，
+                // 勿转到服务进程——那边没有页面实例。
+                try
+                {
+                    var name = CommandParser.Parse(text.Trim()).Name;
+                    if (window.Commands.Registry.TryGet(name, out var descriptor)
+                        && descriptor.RequiresUiThread
+                        && descriptor.ExecutionSite != CommandExecutionSite.Frontend)
+                        return false;
+                }
+                catch (CommandSyntaxException)
+                {
+                }
+
+                return true;
+            };
             _ = service.RunEventLoopAsync(window.Commands);
             _ = ReloadUiModulesFromServiceAsync(service, window.Modules, log);
         }

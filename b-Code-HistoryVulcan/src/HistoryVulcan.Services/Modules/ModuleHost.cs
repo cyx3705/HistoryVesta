@@ -299,15 +299,32 @@ public sealed partial class ModuleHost : IDisposable
     {
         DisposeShortcutRegistrations(old);
 
-        if (_registry == null || !EnableCommands)
+        if (_registry == null)
         {
+            next.FinalizeMetas();
+            return;
+        }
+
+        // UI-only 前端(EnableCommands=false)不装反射业务指令，但仍须把
+        // RegisterCommands 暂存的 RequiresUiThread 页面状态命令写入本机总线；
+        // 否则 HistoryMinerva.convert 一类点击会被 RemoteExecutor 转到服务侧静默失败。
+        var pending = EnableCommands
+            ? next.PendingCommands
+            : next.PendingCommands
+                .Where(item => item.Descriptor.RequiresUiThread)
+                .ToList();
+
+        if (pending.Count == 0 && !EnableCommands)
+        {
+            foreach (var name in old.RegisteredNames)
+                _registry.Unregister(name);
             next.FinalizeMetas();
             return;
         }
 
         // 模块只能占用自己的一级域。先移除旧模块和同名前端代理，再用真实命令
         // 元数据推导宿主保留域，避免维护一份会随功能漂移的名称名单。
-        var pendingNames = next.PendingCommands
+        var pendingNames = pending
             .Select(item => item.Descriptor.Name)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -325,7 +342,7 @@ public sealed partial class ModuleHost : IDisposable
             _registry.Unregister(command.Name);
         }
 
-        foreach (var (descriptor, moduleName) in next.PendingCommands)
+        foreach (var (descriptor, moduleName) in pending)
         {
             try
             {
