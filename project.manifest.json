@@ -67,9 +67,9 @@
     "historyBoundary": "b-Office/history/历史资料说明.md",
     "servicePlan32": "b-Office/history/V3.2后台服务化方案.md",
     "apiManual": "b-Office/package/HistoryVulcan_API与指令手册.md",
-    "moduleAndMcp": "b-Office/package/HistoryVulcan_3.0_模块与MCP接入.md",
-    "runtimeLimits": "b-Office/package/HistoryVulcan_3.0_运行时约束与已知限制.md",
-    "consumerChanges": "b-Office/package/HistoryVulcan_3.0_消费变更摘要.md",
+    "moduleAndMcp": "b-Office/package/HistoryVulcan_模块与MCP接入.md",
+    "runtimeLimits": "b-Office/package/HistoryVulcan_运行时约束与已知限制.md",
+    "consumerChanges": "b-Office/package/HistoryVulcan_消费变更摘要.md",
     "uiStyle": "b-Office/package/HistoryVulcan_UI风格与嵌入页面规范.md"
   },
   "commands": {

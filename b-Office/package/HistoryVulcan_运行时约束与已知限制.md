@@ -1,7 +1,8 @@
 # HistoryVulcan 运行时约束与已知限制
 
-适用版本：`3.3.0` 源码候选；`3.1.8` 是不受支持的内部过渡版本。
-3.3.0（DEC-022）：内置命令硬切为 `vulcan.<类>.<方法>`；全局快捷键与命令工作台由 HistoryMercury 4.1.0 拥有。
+适用版本：HistoryVulcan **3.3.0** 正式（已部署于 `z-HistoryVulcan`）；`3.1.8` 是不受支持的内部过渡版本。
+3.3.0（DEC-022）：内置命令硬切为 `vulcan.<类>.<方法>`；全局快捷键（含 `GlobalShortcutService`）与命令工作台由 HistoryMercury 4.1.0 拥有。
+旧→新映射见 `../history/3.3.0-vulcan-command-rename.md`。
 本文件记录消费应用必须遵守的运行时约束、默认值和已知限制。
 
 ## 顶栏与浮窗
@@ -17,7 +18,9 @@
 - 控制台与命令集的域都来自命令总线 `vulcan.command.domains`，两页显示相同的运行期已注册域集合。
 - 命令回显、结果和进度按命令域归组；普通日志类别前缀只有命中已注册域时采用，否则归入 `core`，不产生私有域。
 - `vulcan.log.source` 参数候选由运行期命令目录生成；不存在的域会返回失败和当前可用域。
-- 3.3.0 起全局快捷键与命令工作台由 HistoryMercury 4.1.0 拥有；无 Mercury 时双 `/` 与命令集/详情不可用。
+- 3.3.0 起全局快捷键与命令工作台（目录会话、补全、命令集/详情）由 HistoryMercury 4.1.0 拥有；
+  Shell 仅保留控制台日志面，Mercury 未挂接前为 `DeferredCommandCatalogSession`。
+  无 Mercury 时：双 `/` 与命令集/详情 UI 不可用；`vulcan.shortcut.list` 可能为空；本地 `vulcan.command.*` 仍可用。
 - 输出没有水平滚动条；长文本只在视觉上随当前窗格宽度换行，复制和导出不插入软换行。
 
 ## 运行时边界
@@ -28,7 +31,7 @@
 | 未释放资源 | `McpGateway`、`WebGateway` 的监听器和 `CancellationTokenSource` 均在 Stop/Dispose 释放；WebSocket 会话、文件监视器、去抖定时器、日志流及模块加载上下文均有退出路径。 |
 | 硬编码 | MCP/Web 默认端口按稳定应用名派生并可显式覆盖；端口重试、限流、缓存容量、命令历史、控制台容量、MCP 执行/确认超时均可配置。协议报文 1 MiB 上限和 Web 前端中继 15 秒超时是 3.0 安全契约，不作为业务调优项。 |
 | 跨应用共享资源 | `%AppData%/<应用名>/`、ServiceHost 本地互斥体、MCP/Web 默认端口均按稳定应用名隔离；端口冲突自动顺延。相同 `ServiceName` 的 ServiceHost 仍为有意的单实例服务。 |
-| null 降级路径 | `CommandSelection=null` 时 Shell 创建本地状态；MCP/提示词治理不依赖数据库；前端离线时前端目录仍可查阅，执行返回明确失败。 |
+| null 降级路径 | `CommandSelection=null` 时 Shell 创建本地状态；MCP/提示词治理不依赖数据库；前端离线时前端目录仍可查阅，执行返回明确失败。无 Mercury 时命令集/详情与双 `/` 不可用，但不影响本地 `vulcan.command.*`。 |
 | 线程亲和 | 窗口、布局、面板、对话框和控制台命令均声明 `RequiresUiThread`；CommandBus 统一编组到 `UiContext`。ModuleHost 只通过注入的 `SynchronizationContext` 创建/销毁 UI，无窗服务保持 null。 |
 
 ## 默认值
@@ -40,7 +43,7 @@
 | MCP 网关与治理 | 关闭 | `ShellConfig.EnableMcp=true`；只装配不监听时另设 `mcp.autostart=false` |
 | 远程管理视图 | 关闭 | `ShellConfig.EnableRemoteManagementViews=true` |
 | 本地 `vulcan.command.*` | 开启 | Shell 核心能力，不创建网络监听 |
-| 命令集/详情与双 `/` | 依赖 Mercury | HistoryMercury 4.1.0 拥有命令工作台与全局快捷键 |
+| 命令集/详情与双 `/` | 依赖 Mercury | HistoryMercury 4.1.0 拥有命令工作台与 `GlobalShortcutService`；无 Mercury 时不可用，`vulcan.shortcut.list` 可能为空 |
 
 | 设置键 | 默认值 | 说明 |
 |---|---:|---|

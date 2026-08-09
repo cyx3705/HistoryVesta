@@ -1,15 +1,15 @@
 # HistoryVulcan API 与指令手册
 
-> 适用版本：HistoryVulcan 3.3.0 源码候选（正式宿主以 `z-HistoryVulcan/host` 为准；3.1.8 不受支持）
+> 适用版本：HistoryVulcan **3.3.0** 正式（已部署于 `z-HistoryVulcan`；3.1.8 不受支持）
 
-本手册给出 3.3.0 候选公开 API 的常用入口和框架基础命令。正式宿主运行入口为
+本手册给出 3.3.0 正式公开 API 的常用入口和框架基础命令。正式宿主运行入口为
 `host/HistoryVulcan.exe`，程序集 XML 文档位于同一 `host/` 目录；兼容框架包的完整签名位于
 `lib/<TFM>/HistoryVulcan.*.xml`。源码仓中的四份 `PublicAPI.Shipped.txt` 是冻结门禁，不随运行宿主发布。
 最终命令集合以应用运行时的 `vulcan.command.list`、`vulcan.command.show` 和 `vulcan.command.manual` 为准。
 
 3.3.0（DEC-022）将内置命令一次硬切为 `vulcan.<类>.<方法>`（全小写、无连字符、不留别名），Domain=`vulcan`；
-命令集表格列为域|类|方法。全局快捷键与命令工作台（目录会话、补全、命令集/详情）由 HistoryMercury 4.1.0 拥有；
-无 Mercury 时双 `/` 与命令集/详情不可用。当前正式部署的稳定版本仍是 3.2.0（位于 `z-HistoryVulcan`）。
+命令集表格列为域|类|方法|MCP|参数|说明。全局快捷键与命令工作台（目录会话、补全、命令集/详情）由 HistoryMercury 4.1.0 拥有；
+无 Mercury 时双 `/` 与命令集/详情不可用。当前正式部署版本为 **3.3.0**（位于 `z-HistoryVulcan`）。
 3.1.9 是旧名 AppShell 的最后快照，已随 3.2.0 发布退役；3.1.8 不作为稳定支持版本。以下包表和最小宿主代码
 描述当前正式合同，但正式部署不提供 NuGet feed。
 
@@ -76,40 +76,33 @@ Shell 核心、窗口和业务命令；仍保留 `vulcan.command.*`。中央命�
 `mcp.autostart` 启动；若只需要装配命令和治理能力而不希望启动时监听，应预先设置 `mcp.autostart=false`，
 之后可执行 `vulcan.mcp.start`。
 
-## 3. 常用公开 API
+## 3. 命令总线如何消费
 
-### 3.1 身份与路径
+消费方与模块只应通过命令总线交互，不要绕过注册表直接调用业务方法。
 
-| API | 常用成员 | 说明 |
-|---|---|---|
-| `AppIdentity` | `Current`、`From(Assembly)`、`Use(Assembly)` | 统一应用名和版本；应在创建网关前确定 |
-| `AppPaths` | `Root`、`LogsDir`、`ModulesDir`、`PanelsDir` | 建立 `%AppData%/<应用名>` 下的标准路径 |
-| `SettingsService` | `Get`、`GetInt`、`Set`、`All` | JSON 设置持久化 |
-| `FileLayoutStore` | `ReadCurrent`、`WriteCurrent`、`ReadNamed`、`WriteNamed` | 当前布局与命名布局存储 |
-| `ShellLog` | `Log`、`Snapshot`、`EntryAdded` | 文件与内存日志；使用后 `Dispose` |
+### 3.1 唯一执行入口
 
-### 3.2 命令
+`CommandBus` 是唯一执行入口：
 
-| API | 常用成员 | 说明 |
-|---|---|---|
-| `CommandRegistry` | `Register`、`Unregister`、`TryGet`、`All`、`Suggest`、`GetSource`、`GetDomain`、`GetCommandClass` | 权威命令注册表；重名注册会拒绝，域/类以有效解析结果为准 |
-| `CommandBus` | `Validate`、`ExecuteAsync`、`Executed`、`Confirmation` | 唯一执行入口，统一校验、确认、线程切换、回显和错误结果 |
-| `CommandDescriptor` | `Name`、`Domain`、`CommandClass`、`Summary`、`Example`、`Parameters`、`Readonly`、`Dangerous`、`ExecutionSite`、`AllowMcpExecution` | 命令的完整合同 |
-| `CommandContext` | `RequireString`、`GetString`、`GetInt`、`GetDouble`、`GetBool`、`Has` | 读取已校验参数 |
-| `CommandResult` | `Ok`、`Fail`、`Success`、`Message`、`Data` | 统一执行结果 |
-| `CommandSchemaExporter` | `ExportTools`、`Find`、`BuildCommandText` | 从最终注册表生成 MCP schema 和反向命令文本 |
-| `CommandManualGenerator` | `Render`、`Sha256` | 从运行时注册表生成命令手册 |
+- `Validate(text)`：只做解析与参数绑定校验，不执行、不写日志。
+- `ExecuteAsync(text, source)`：解析 → 查表 → 绑定 → 确认闸口 → UI 线程编组 / 前端中继 / 远端路由 → 返回 `CommandResult`。
+  `source` 为来源标签（如 `UI`、`手动`、`脚本:文件名`、`layout`）。
 
-模块宿主的 3.1.9 增量公开面如下：
+```csharp
+// 校验
+var error = bus.Validate("vulcan.win.show name=console");
+if (error != null) { /* 语法或参数问题 */ }
 
-| API | 常用成员 | 说明 |
-|---|---|---|
-| `IModuleContext` | `Bus`、`Log`、`Settings`、`DataDirectory`、`RegisterCommands` | 模块取得宿主权威服务和宿主数据根目录；模块自行在根目录下选择专属子目录 |
-| `IModuleContextAware` | `Attach(IModuleContext)` | 模块声明需要宿主上下文；由 `ModuleHost` 在装载阶段调用 |
-| `ModuleHost` | `Attach(registry, bus, settings, dataDirectory)` | 为模块生命周期接入完整宿主上下文 |
-| `ShellConfig` | `ModuleDirectory` | 可选的部署模块目录；未设置时沿用应用数据目录 |
+// 执行
+var result = await bus.ExecuteAsync("vulcan.win.show name=console", "UI");
+```
 
-注册命令时至少提供名称、摘要和 handler；公开给用户或 MCP 的命令还应提供参数说明与示例。
+所有 UI、脚本、Web 和 MCP 调用最终都进入 `CommandBus.ExecuteAsync`。
+
+### 3.2 注册
+
+通过 `CommandRegistry.Register(descriptor, source)` 注册。描述符至少提供 `Name`、`Summary`、`Handler`；
+面向用户或 MCP 的命令还应声明 `Domain`、`CommandClass`、`Parameters`、`Example` 等。
 
 ```csharp
 registry.Register(new CommandDescriptor
@@ -130,7 +123,94 @@ registry.Register(new CommandDescriptor
 }, "app");
 ```
 
-### 3.3 窗口与布局
+模块侧优先经 `IModuleContext.RegisterCommands` 登记；宿主提交时以 `module:<模块名>` 为 source，
+并由 owner **强制**模块域（描述符中填其他 Domain 也不能冒用）。反射方法可用 `ModuleCommandAttribute` 声明
+`CommandClass` / `Readonly`；未声明类时归入 `core`。
+
+### 3.3 命名规则（3.3.0）
+
+- 框架内置命令：`vulcan.<类>.<方法>`，全小写，**无连字符**、**不留别名**；`Domain` 恒为 `vulcan`。
+- 模块命令：属模块域（owner 强制），名称形如 `<模块名>.<方法>` 或模块自定三段式。
+- 旧别名 `cls` 已删除；清屏仅 `vulcan.log.clear`。
+- 方法段不使用连字符：例如 `floatstate`、`focusconsole`、`copyexample`、`selectfile`。
+
+### 3.4 发现
+
+权威目录命令（Shell 核心，始终注册）：
+
+| 命令 | 用途 |
+|---|---|
+| `vulcan.command.list` | 结构化目录（可按 domain/class/mcp/filter 过滤） |
+| `vulcan.command.show` | 单条完整元数据与参数 |
+| `vulcan.command.domains` | 按域统计 |
+| `vulcan.command.manual` | 生成运行时命令手册 |
+| `vulcan.command.copyexample` | 复制示例到剪贴板 |
+
+`vulcan.command.list` 返回的行含 `Domain`、`CommandClass`、`Method`（末段方法名）以及 MCP/风险等字段。
+注册表辅助：`CommandRegistry.GetMethod`（同 `LegacyMethod`）、`LegacyDomain` / `LegacyClass` / `LegacyMethod`
+可从命令名推导域/类/方法段。
+
+### 3.5 UI 与 Mercury
+
+| 能力 | 归属 |
+|---|---|
+| 目录数据权威 | 宿主 `CommandRegistry`，经 `vulcan.command.list` / `domains` / `show` |
+| 命令集 / 详情 / 补全会话 | **HistoryMercury 4.1.0**（实现 `ICommandCatalogSession`，经 `IShellCommandWorkbenchHost` 挂接） |
+| 全局快捷键宿主 | Core 合同 `IGlobalShortcutHost`；实现与双 `/` 注册由 Mercury 提供 |
+| Shell | 控制台日志面；Mercury 未挂接前仅为延迟会话代理 |
+
+命令集表格列为：**域 | 类 | 方法 | MCP | 参数 | 说明**。
+
+双 `/` 由 Mercury 快捷键模块注册，目标命令为 `vulcan.frontend.focusconsole`。
+无 Mercury 时：双 `/`、中央命令集与详情不可用；`vulcan.command.*` 等总线命令仍可执行。
+
+### 3.6 安全与执行位点（简要）
+
+- `Dangerous` / `ConfirmPrompt`：危险元数据与本地确认闸口；未注入确认服务时带确认位的命令拒绝执行。
+- `RequiresUiThread`：总线经 `UiContext` 编组到 UI 线程。
+- `ExecutionSite`：`Local` 在当前宿主执行；`Frontend` 由服务转发给在线 Shell。
+- `FrontendCommandCapability`：前端→服务的可序列化能力描述（无 Handler）；`From` / `CreateProxy` 用于跨进程目录与前端代理命令。
+
+## 4. 常用公开 API
+
+### 4.1 身份与路径
+
+| API | 常用成员 | 说明 |
+|---|---|---|
+| `AppIdentity` | `Current`、`From(Assembly)`、`Use(Assembly)` | 统一应用名和版本；应在创建网关前确定 |
+| `AppPaths` | `Root`、`LogsDir`、`ModulesDir`、`PanelsDir` | 建立 `%AppData%/<应用名>` 下的标准路径 |
+| `SettingsService` | `Get`、`GetInt`、`Set`、`All` | JSON 设置持久化 |
+| `FileLayoutStore` | `ReadCurrent`、`WriteCurrent`、`ReadNamed`、`WriteNamed` | 当前布局与命名布局存储 |
+| `ShellLog` | `Log`、`Snapshot`、`EntryAdded` | 文件与内存日志；使用后 `Dispose` |
+
+### 4.2 命令
+
+| API | 常用成员 | 说明 |
+|---|---|---|
+| `CommandRegistry` | `Register`、`Unregister`、`TryGet`、`All`、`Suggest`、`GetSource`、`GetDomain`、`GetCommandClass`、`GetMethod`、`LegacyDomain`、`LegacyClass`、`LegacyMethod` | 权威命令注册表；重名注册会拒绝；域/类以有效解析结果为准；`GetMethod` 等同末段方法名（`LegacyMethod`） |
+| `CommandBus` | `Validate`、`ExecuteAsync`、`Executed`、`Confirmation` | 唯一执行入口，统一校验、确认、线程切换、回显和错误结果 |
+| `CommandDescriptor` | `Name`、`Domain`、`CommandClass`、`Summary`、`Example`、`Parameters`、`Readonly`、`Dangerous`、`ConfirmPrompt`、`RequiresUiThread`、`ExecutionSite`、`AllowMcpExecution`、`Handler` | 命令的完整合同 |
+| `CommandContext` | `RequireString`、`GetString`、`GetInt`、`GetDouble`、`GetBool`、`Has` | 读取已校验参数 |
+| `CommandResult` | `Ok`、`Fail`、`Success`、`Message`、`Data` | 统一执行结果 |
+| `CommandSchemaExporter` | `ExportTools`、`Find`、`BuildCommandText` | 从最终注册表生成 MCP schema 和反向命令文本 |
+| `CommandManualGenerator` | `Render`、`Sha256` | 从运行时注册表生成命令手册 |
+| `FrontendCommandCapability` | `From`、`CreateProxy`、`Domain`、`CommandClass` | 前端可序列化能力；代理描述符 `ExecutionSite=Frontend` |
+| `ICommandCatalogSession` | `RefreshAsync`、`SetFilter`、`CompleteAsync`、`Select`、… | 命令目录会话合同（Core）；由 Mercury 实现并挂接 |
+| `IShellCommandWorkbenchHost` | `AttachCommandCatalogSession`、`Bus`、`ConfigureCommandCompletionRouting`、… | Shell 工作台宿主合同（Core）；`ShellWindow` 实现 |
+| `IGlobalShortcutHost` | `Register`、`Start`、`Stop`、`Registrations`、… | 全局快捷键宿主合同（Core）；Mercury 实现 |
+
+模块宿主的增量公开面如下：
+
+| API | 常用成员 | 说明 |
+|---|---|---|
+| `IModuleContext` | `Bus`、`Log`、`Settings`、`DataDirectory`、`RegisterCommands` | 模块取得宿主权威服务和宿主数据根目录；模块自行在根目录下选择专属子目录 |
+| `IModuleContextAware` | `Attach(IModuleContext)` | 模块声明需要宿主上下文；由 `ModuleHost` 在装载阶段调用 |
+| `ModuleHost` | `Attach(registry, bus, settings, dataDirectory)` | 为模块生命周期接入完整宿主上下文；可注入 `CommandWorkbench` / `GlobalShortcuts` |
+| `ShellConfig` | `ModuleDirectory` | 可选的部署模块目录；未设置时沿用应用数据目录 |
+
+注册命令时至少提供名称、摘要和 handler；公开给用户或 MCP 的命令还应提供参数说明与示例。完整示例见 §3.2。
+
+### 4.3 窗口与布局
 
 | API | 常用成员 | 说明 |
 |---|---|---|
@@ -164,7 +244,7 @@ registry.Register(new CommandDescriptor
 消费方仍只使用 `ToolWindowDescriptor` 和 `IDockingService`，不得直接依赖内部 AvalonDock 文档类型。枚举值
 固定为 `Tab=4`、`Center=5`，保证旧模块的 `Tab` 二进制值不会漂移。
 
-### 3.4 面板与模块
+### 4.4 面板与模块
 
 | API | 常用成员 | 说明 |
 |---|---|---|
@@ -174,7 +254,7 @@ registry.Register(new CommandDescriptor
 | `IUiModule` | `CreateUi`、`DestroyUi` | UI 模块生命周期 |
 | `IShellUiAware` | `ShellUi` | 注入宿主 UI 注册器 |
 
-### 3.5 MCP、Web 与 ServiceHost
+### 4.5 MCP、Web 与 ServiceHost
 
 | API | 常用成员 | 说明 |
 |---|---|---|
@@ -186,7 +266,7 @@ registry.Register(new CommandDescriptor
 | `ServiceHost` | `Run(ServiceComposition, ...)` | 启动服务循环，注册生命周期并统一释放 |
 | `IAutostartManager` | `IsEnabled`、`SetEnabled` | 登录自启抽象；Windows 实现为 `WindowsRunAutostartManager` |
 
-## 4. 命令语法与执行位置
+## 5. 命令语法与执行位置
 
 语法为：
 
@@ -207,7 +287,7 @@ registry.Register(new CommandDescriptor
 - `ExecutionSite=Local` 在当前宿主执行；`Frontend` 由服务转发给在线 Shell。
 - `Readonly`、`Dangerous` 和 `AllowMcpExecution` 是安全合同。前端/UI 命令默认不进入 MCP。
 - 3.2.1 起一个宿主或模块对应一个域，域内功能分支对应命令类。3.3.0 起内置命令名为 `vulcan.<类>.<方法>`，
-  Domain=`vulcan`；命令集表格列为域|类|方法（以及 MCP/参数/说明等）。
+  Domain=`vulcan`；命令集表格列为域|类|方法|MCP|参数|说明。
   `CommandCatalogRow.Source/SourceDetail`、`CommandRegistry.GetSource` 与 `FrontendCommandCatalog.Source`
   仍表示注册来源，供结构化目录、模块管理和外部消费者使用，不再作为命令集页面筛选。
 - 控制台与命令集都通过统一注册表元数据读取同一份运行期已注册域集合。普通日志类别的第一个 `:` 或 `.`
@@ -218,9 +298,9 @@ registry.Register(new CommandDescriptor
   Shell 仅保留控制台日志面。无 Mercury 时双 `/` 与命令集/详情不可用；有 Mercury 时，控制台聚焦态
   （如 `vulcan.win.max name=console`）仍可弹出候选，`Shift+W`/`Shift+S`/`Tab`/`Enter` 行为不变。
 
-## 5. 基础命令目录
+## 6. 基础命令目录
 
-以下是 3.3.0 候选框架命令快照。宿主只注册已启用能力对应的组；运行时 `vulcan.command.list` 是最终权威目录。
+以下是 HistoryVulcan **3.3.0 正式**框架命令快照。宿主只注册已启用能力对应的组；运行时 `vulcan.command.list` 是最终权威目录。
 旧名→新名映射见 `../history/3.3.0-vulcan-command-rename.md`。
 
 HistoryVulcan 自身只有一个域 `vulcan`，内置命令分类如下；新增内置命令必须显式归类，名称为 `vulcan.<类>.<方法>`：
@@ -245,7 +325,7 @@ HistoryVulcan 自身只有一个域 `vulcan`，内置命令分类如下；新增
 | `vulcan` | `shortcut` | `vulcan.shortcut.list` |
 | `vulcan` | `debug` | `vulcan.debug.*` |
 
-### 5.1 基础、应用与日志
+### 6.1 基础、应用与日志
 
 | 命令 | 用途 / 关键参数 |
 |---|---|
@@ -271,7 +351,7 @@ HistoryVulcan 自身只有一个域 `vulcan`，内置命令分类如下；新增
 | `vulcan.log.clear`、`vulcan.log.export [path=]`、`vulcan.log.copy` | 清屏、导出或复制当前控制台内容 |
 | `vulcan.log.focus [errors=true|false]` | 聚焦控制台，可选切换错误过滤 |
 
-### 5.2 窗口与布局
+### 6.2 窗口与布局
 
 | 命令 | 用途 / 关键参数 |
 |---|---|
@@ -284,7 +364,7 @@ HistoryVulcan 自身只有一个域 `vulcan`，内置命令分类如下；新增
 | `vulcan.layout.save name=`、`vulcan.layout.load name=` | 保存或载入命名布局 |
 | `vulcan.layout.list`、`vulcan.layout.reset` | 列出方案或恢复默认布局 |
 
-### 5.3 面板
+### 6.3 面板
 
 面板能力存在时注册 `vulcan.panel.*`。文件/目录选择也通过命令总线执行，视图按钮不得直接调用对话框服务。
 
@@ -297,7 +377,7 @@ HistoryVulcan 自身只有一个域 `vulcan`，内置命令分类如下；新增
 | `vulcan.panel.selectfile` | 打开文件选择器并返回选中的路径 |
 | `vulcan.panel.selectdirectory` | 打开目录选择器并返回选中的路径 |
 
-### 5.4 模块
+### 6.4 模块
 
 仅在 `ShellConfig.EnableModules=true` 时注册。HistoryVulcan 独立可执行宿主显式启用此项并显示唯一的“模块管理”页；
 普通包消费方仍按最小能力原则选择是否启用。消费方不得复制 `ModuleHost` 或 `ModulesView`，只声明停靠位置和业务模块。
@@ -313,13 +393,13 @@ HistoryVulcan 自身只有一个域 `vulcan`，内置命令分类如下；新增
 
 模块公开方法另外注册为 `<模块名>.<方法名>`，不属于固定基础命令。
 
-### 5.5 命令目录与 MCP
+### 6.5 命令目录与 MCP
 
 `vulcan.command.*` 是 Shell 核心能力，始终注册；`vulcan.mcp.*` 仅在消费方显式设置 `ShellConfig.EnableMcp=true` 时注册。
 
 | 命令 | 用途 / 关键参数 |
 |---|---|
-| `vulcan.command.list [domain=] [class=] [mcp=all|visible|hidden] [filter=]` | 查看权威命令目录并组合过滤域、类、MCP 可见性和文本；默认不过滤 |
+| `vulcan.command.list [domain=] [class=] [mcp=all|visible|hidden] [filter=]` | 查看权威命令目录并组合过滤域、类、MCP 可见性和文本；默认不过滤；行含 Method |
 | `vulcan.command.show name=` | 查看单条命令完整元数据 |
 | `vulcan.command.domains` | 按域统计命令 |
 | `vulcan.command.manual file= [apply=false]` | 生成运行时命令手册；`file` 必填，apply 由宿主控制落位 |
@@ -329,7 +409,7 @@ HistoryVulcan 自身只有一个域 `vulcan`，内置命令分类如下；新增
 | `vulcan.mcp.parse command= [args=|argsfile=] [exec=false]` | 调试 MCP 参数到命令文本的反向解析 |
 | `vulcan.app.get key=mcp.*`、`vulcan.app.set key=mcp.* value=` | 查看或修改 `mcp.port/token/policy/confirm/autostart` 等设置；框架不注册同名的独立 MCP 配置命令 |
 
-### 5.6 提示词治理
+### 6.6 提示词治理
 
 | 命令 | 用途 |
 |---|---|
@@ -341,7 +421,7 @@ HistoryVulcan 自身只有一个域 `vulcan`，内置命令分类如下；新增
 
 治理命令的 id、reviewer、reason、evidence 等完整参数以 `vulcan.command.show <name>` 为准，避免客户端复制一套可漂移参数表。
 
-### 5.7 Web、服务生命周期与快捷键
+### 6.7 Web、服务生命周期与快捷键
 
 Web 组合注册 `vulcan.web.*`；`ServiceHost.Run` 注册 `vulcan.svc.*`。全局快捷键基础设施由 HistoryMercury 4.1.0 拥有；
 宿主仍注册 `vulcan.shortcut.list` 供查阅。
@@ -356,7 +436,7 @@ Web 组合注册 `vulcan.web.*`；`ServiceHost.Run` 注册 `vulcan.svc.*`。全�
 | `vulcan.svc.autostart [mode=on|off]` | 无参数时查看状态；`on` / `off` 修改登录自启 |
 | `vulcan.shortcut.list` | 查看 owner、手势和目标命令；不返回原始键盘事件 |
 
-## 6. MCP 暴露规则
+## 7. MCP 暴露规则
 
 命令可查阅不等于允许 MCP 执行。最终可见性由 `CommandDescriptor`、`McpExposurePolicy` 和模块策略共同决定：
 
@@ -366,7 +446,7 @@ Web 组合注册 `vulcan.web.*`；`ServiceHost.Run` 注册 `vulcan.svc.*`。全�
 - `ExecutionSite=Frontend` 的命令必须同时 `AllowMcpExecution=true`，并且目标前端在线。
 - 多个前端在线而未指定 `_frontend` 时返回歧义错误，不随机选择。
 
-## 7. 已删除的旧接口
+## 8. 已删除的旧接口
 
 3.1.2（延续 3.1.1 收口）不再提供 `IWorkspaceService`、`WorkspaceService`、`RemoteWorkspaceService`、`ShellConfig.Workspace`、
 `ResourceView`、`StandardWindowIds.Resource` 或 `res.*`。资源浏览和文件操作应由独立模块提供。
@@ -374,4 +454,4 @@ Web 组合注册 `vulcan.web.*`；`ServiceHost.Run` 注册 `vulcan.svc.*`。全�
 `RemoteDataService`、`TableView`、`ShellConfig.DataService` 和 `db.*` 同样不提供。这些名称若仍出现在消费应用中，
 说明迁移尚未完成，不应通过添加兼容空壳解决。
 
-3.0.0 的消费变更、删除接口和迁移注意事项见 [HistoryVulcan 3.0 消费变更摘要](HistoryVulcan_3.0_消费变更摘要.md)。
+3.0.0 的消费变更、删除接口和迁移注意事项见 [HistoryVulcan 消费变更摘要](HistoryVulcan_消费变更摘要.md)。

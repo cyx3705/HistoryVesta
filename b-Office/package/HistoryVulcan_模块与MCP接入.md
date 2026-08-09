@@ -1,7 +1,8 @@
 # HistoryVulcan 模块与 MCP 接入
 
-> 适用版本：HistoryVulcan 3.3.0 源码候选；3.1.8 不受支持
-> 3.3.0（DEC-022）：内置命令硬切为 `vulcan.<类>.<方法>`（Domain=`vulcan`）；全局快捷键与命令工作台由 HistoryMercury 4.1.0 拥有。
+> 适用版本：HistoryVulcan **3.3.0** 正式（已部署于 `z-HistoryVulcan`；3.1.8 不受支持）
+> 3.3.0（DEC-022）：内置命令硬切为 `vulcan.<类>.<方法>`（Domain=`vulcan`）；全局快捷键（含 `GlobalShortcutService`）与命令工作台由 HistoryMercury 4.1.0 拥有。
+> 旧→新映射见 `../history/3.3.0-vulcan-command-rename.md`。
 > 边界：本文只描述框架能力。项目库、外部账号、工具同步等消费产品业务不属于 HistoryVulcan。
 > 常用公开方法和基础命令见 [HistoryVulcan API 与指令手册](HistoryVulcan_API与指令手册.md)。
 
@@ -9,8 +10,8 @@
 
 - `OneHistory.HistoryVulcan.Core`：命令、停靠、模块 UI、MCP 元数据与存储契约。
 - `OneHistory.HistoryVulcan.Services`：日志、设置、布局、模块宿主、MCP 网关与 Web 网关。
-- `OneHistory.HistoryVulcan.Shell`：WPF Shell、控制台、面板、模块管理与 MCP 管理视图。
-- `OneHistory.HistoryVulcan.ServiceHost`：无窗口服务组合、`svc.*` 与登录启动管理。
+- `OneHistory.HistoryVulcan.Shell`：WPF Shell、控制台日志面、面板、模块管理与 MCP 管理视图；命令集/详情/补全由 Mercury 挂接，挂接前为 `DeferredCommandCatalogSession`。
+- `OneHistory.HistoryVulcan.ServiceHost`：无窗口服务组合、`vulcan.svc.*` 与登录启动管理。
 
 桌面单进程应用可直接创建 `ShellWindow`。前后端分离应用在服务端建立自己的 `CommandRegistry`，前端使用
 `ShellServiceClient.RunEventLoopAsync(localBus)`；WebSocket 建立后，客户端会自动发布完整本地命令目录，
@@ -23,7 +24,7 @@
 每个根只枚举 `<project>/z-*`，不读取或监听 `%AppData%/<应用名>/Modules`。每个 Z 目录必须含显式
 `module.manifest.json`，且 `schemaVersion=1`、`type=HistoryVulcan.Module`；`artifact`、`docs`、`deps`
 是相对 manifest 所在 Z 目录且必须存在。模块名是生命周期 owner 和唯一命令域，文件夹名只用于定位候选。
-`module.roots` 可查询或设置分号分隔的绝对根，`paths=auto` 恢复自动识别；`module.reload` 负责重扫、卸载旧快照、
+`vulcan.module.roots` 可查询或设置分号分隔的绝对根，`paths=auto` 恢复自动识别；`vulcan.module.reload` 负责重扫、卸载旧快照、
 装载有效入口并发布修订。错误 manifest、越界、缺入口、重名和身份/版本不符会跳过并写诊断。
 
 模块以 `BaseVariable.ModuleInfoBase` 派生类型描述名称、版本、启用状态与方法暴露。公共、非泛型、非属性
@@ -32,11 +33,15 @@
 
 3.1.9 起，需要宿主服务的外置模块实现 `IModuleContextAware`。装载后宿主调用 `Attach(IModuleContext)`，
 上下文提供权威 `CommandBus`、`IShellLog`、`ISettingsService` 和宿主数据根目录；模块应在该根目录下使用
-自身专属子目录。模块通过
-`RegisterCommands` 注册的命令仍由模块 owner 在卸载时统一回收。独立宿主可设置
+自身专属子目录。模块命令优先经 `IModuleContext.RegisterCommands` 登记，仍由模块 owner 在卸载时统一回收。
+反射方法可用 `ModuleCommandAttribute` 声明 `CommandClass` / `Readonly`（次要路径）。独立宿主可设置
 `ShellConfig.ModuleDirectory` 可显式指向其他部署目录；未设置时继续使用应用数据目录下的默认模块目录。
 禁用模块不会收到上下文；`Attach`、`RegisterShortcuts`、`CreateUi` 和 `DestroyUi` 等生命周期方法不会进入
 反射命令目录。模块不得保存上下文供卸载后使用，也不得自行创建第二个命令总线或设置服务。
+
+需要向 Shell 注入命令工作台（目录会话、命令集/详情页面）时，模块实现 `IShellCommandWorkbenchAware`；
+宿主在 CreateUi 前注入 `IShellCommandWorkbenchHost`。页面与目录会话实现由 HistoryMercury 4.1.0 提供；
+模块不得自建第二套命令集/详情/补全 UI。
 
 ### 模块命令域与类
 
@@ -44,7 +49,7 @@
 模块在 `CommandDescriptor.Domain` 中填写其他值也不能冒用其他域。全局命令文本仍保持唯一，分类不会改写
 `<模块名>.<方法名>` 或模块自定义命令名。
 
-模块内部功能分支通过 `CommandClass` 区分，类名使用小写稳定标识符：
+模块内部功能分支通过 `CommandClass` 区分，类名使用小写稳定标识符。优先经 `IModuleContext.RegisterCommands`：
 
 ```csharp
 context.RegisterCommands(registry => registry.Register(new CommandDescriptor
@@ -54,7 +59,11 @@ context.RegisterCommands(registry => registry.Register(new CommandDescriptor
     Summary = "列出时间线",
     Handler = CommandDescriptor.Sync(_ => CommandResult.Ok()),
 }));
+```
 
+反射方法可用 `ModuleCommandAttribute`（次要）：
+
+```csharp
 [ModuleCommand(CommandClass = "report", Readonly = true)]
 public string BuildReport() => "ready";
 ```
@@ -70,15 +79,15 @@ UI 模块实现 `IUiModule`；需要注册宿主窗口时实现 UI 感知接口�
 
 模块的 `ToolWindowDescriptor.DefaultSide` 未设置时默认为 `DockSide.Right`；模块仍可显式指定其他方位，
 HistoryVulcan 不覆盖该声明。3.0.2 起，模块运行期注册的右侧窗口直接加入现有右侧标签组，不再为每个模块另建一块右侧
-窗格。模块无需填写 `DefaultTabTarget`；执行窗口复位或 `win.dock ... pos=right` 也沿用同一合并规则。只有
+窗格。模块无需填写 `DefaultTabTarget`；执行窗口复位或 `vulcan.win.dock ... pos=right` 也沿用同一合并规则。只有
 当前布局完全没有右侧窗格时，框架才创建新的右侧窗格。
 
 3.1.1 起，历史布局中已经存在的同侧独立窗格也会在加载时合并成一个标签组；同一轴的侧栏合计最多占 50%，
 中央主工作区至少保留 50%。模块不应通过额外侧栏规避该主区保护规则。
 
-命令集是固定中央主文档。模块中央窗口通过 `DockSide.Center` 进入同一个文档标签组；中央自己的页面头和
+命令集是固定中央主文档（由 HistoryMercury 提供页面）。模块中央窗口通过 `DockSide.Center` 进入同一个文档标签组；中央自己的页面头和
 页面选择标签始终显示，模块页可通过标签或 `IDockingService.Show` 切换。模块卸载、隐藏或浮动时，命令集仍留在主区。模块不得自行维护另一套首页
-或页面生命周期，也不得直接依赖内部 AvalonDock 文档类型。
+或页面生命周期，也不得直接依赖内部 AvalonDock 文档类型，更不得自建第二套命令目录 UI。
 
 模块注册的普通四边工具页同样允许用户拖入中央标签组并再拖回；嵌入期间仍是原工具页，由 owner 注销和模块
 卸载统一回收。模块不需要、也不得为“可嵌入中央”另建页面描述符。
@@ -89,9 +98,9 @@ HistoryVulcan 不覆盖该声明。3.0.2 起，模块运行期注册的右侧窗
 ## MCP 网关
 
 `ShellConfig.EnableMcp` 默认为 `false`。默认 Shell 不创建 `McpGateway`、提示词治理存储或 MCP 审计器，
-不注册 `mcp.*` / `prompt.*` / `correction.*` / `incident.*`，也不监听端口。本地 `command.*` 与中央命令集
-仍可使用。消费方显式设置 `EnableMcp=true` 后才装配上述能力；若同时设置 `mcp.autostart=false`，启动时只装配
-不监听，之后可用 `mcp.start` 启动。
+不注册 `vulcan.mcp.*` / `vulcan.prompt.*` / `vulcan.correction.*` / `vulcan.incident.*`，也不监听端口。本地 `vulcan.command.*` 仍可使用；
+中央命令集/详情依赖 HistoryMercury 4.1.0，无 Mercury 时不可用。消费方显式设置 `EnableMcp=true` 后才装配上述能力；若同时设置 `mcp.autostart=false`，启动时只装配
+不监听，之后可用 `vulcan.mcp.start` 启动。
 
 MCP 启用后的默认端口为 `8737 + stableHash(appName) % 200`。显式 `mcp.port` 优先；端口占用时按
 `mcp.portretries` 有界顺延，默认尝试 20 次。网关停止时释放监听、会话和取消令牌。
@@ -133,7 +142,7 @@ WebSocket 支持分片文本消息，总消息上限 1 MiB。
 
 ## 最小验收
 
-- `module.list` 能显示名称、版本、槽和命令数；坏 DLL 或缺依赖只影响对应模块。
+- `vulcan.module.list` 能显示名称、版本、槽和命令数；坏 DLL 或缺依赖只影响对应模块。
 - 模块命令在 Help、命令目录与 MCP schema 中保持同源；服务端本地模块热重载后会更新本地权威目录。
   Shell 前端在连接后动态注册的命令需要重连，才会重新发布到服务端权威目录。
 - 前端连接后目录自动出现；多前端歧义、定向、中断和离线执行行为符合上述规则。
