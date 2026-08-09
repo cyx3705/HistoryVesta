@@ -15,13 +15,13 @@
                       },
                       {
                           "file":  "HistoryVulcan-3.3.1-win-x64.7z",
-                          "bytes":  592723,
-                          "sha256":  "551B3EC7A1DD014BD6E09CAFBF60B824637ADA0C35C0A82359CF836DFAE507CC"
+                          "bytes":  592727,
+                          "sha256":  "8BA45A161632EBA080280188E8BC9F4C1DE2A1ECDBFB9B4E19129C963F6FFBD6"
                       },
                       {
                           "file":  "README.md",
-                          "bytes":  777,
-                          "sha256":  "466C7667CE591E7EA0B1F52CC2DB332D97F236029686EED067F2A833D0A99D11"
+                          "bytes":  837,
+                          "sha256":  "11C8226E0C3D5A8D67D4363D3B6F80EC6F75C5F225888142316C25F3C2316023"
                       }
                   ]
 }

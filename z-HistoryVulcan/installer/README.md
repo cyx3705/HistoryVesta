@@ -1,13 +1,14 @@
 # HistoryVulcan 3.3.1 installer package
 
 Built from formal host snapshot `z-HistoryVulcan` (win-x64, framework-dependent).
+Delivered under `z-HistoryVulcan/installer/`.
 
 ## Artifacts
 
 | File | Purpose |
 | --- | --- |
 | `HistoryVulcan-3.3.1-Setup.exe` | Windows installer (Program Files, Start Menu, optional desktop shortcut) |
-| `HistoryVulcan-3.3.1-win-x64.7z` | Portable snapshot (same layout as `z-HistoryVulcan`) |
+| `HistoryVulcan-3.3.1-win-x64.7z` | Portable snapshot (host/docs layout without this installer folder) |
 
 ## Requirements
 

@@ -46,8 +46,8 @@ HistoryVulcan 独立可执行宿主显式启用模块生命周期与模块管理
 | `b-Office/` | 冻结契约、内部设计与执行证据 |
 | `b-Publish/current/` | 唯一一份可覆盖的当前候选和完整发布测试结果 |
 | `b-Publish/history/<版本>/` | 与当时 Z 快照同构的最小正式历史副本 |
-| `b-Publish/packages/HistoryVulcan-<版本>/` | Windows 安装包（Setup.exe）与便携 7z |
 | `z-HistoryVulcan/` | 当前发布快照的展开内容，不保存历史版本目录 |
+| `z-HistoryVulcan/installer/` | Windows 安装包（Setup.exe）与便携 7z（不计入快照 SHA256SUMS） |
 
 根级 `HistoryVulcan.sln` 是仓库验收入口，只包含六个冻结项目；组件目录内的
 `b-Code-HistoryVulcan/HistoryVulcan.sln` 是发布脚本使用的等价入口。
@@ -77,7 +77,7 @@ dotnet format .\HistoryVulcan.sln --verify-no-changes --no-restore
 ```
 
 当前交付物是可直接运行的 HistoryVulcan 宿主，不是 NuGet 包。安装包位于
-`b-Publish/packages/HistoryVulcan-<版本>/`（`*-Setup.exe` 与 `*-win-x64.7z`）。历史四包发布脚本只保留用于库消费兼容、
+`z-HistoryVulcan/installer/`（`*-Setup.exe` 与 `*-win-x64.7z`）。历史四包发布脚本只保留用于库消费兼容、
 历史验证和回滚，不是 3.2.0 宿主部署入口：
 
 ```powershell

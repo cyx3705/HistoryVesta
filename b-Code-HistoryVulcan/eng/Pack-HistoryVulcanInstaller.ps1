@@ -49,7 +49,7 @@ if ($fileVersion -ne $expectedFileVersion -and $fileVersion -ne $Version) {
 }
 
 if (-not $OutputRoot) {
-    $OutputRoot = Join-Path $repoRoot "b-Publish\packages\HistoryVulcan-$Version"
+    $OutputRoot = Join-Path $formalRoot 'installer'
 }
 $OutputRoot = [IO.Path]::GetFullPath($OutputRoot)
 New-Item -ItemType Directory -Force -Path $OutputRoot | Out-Null
@@ -69,28 +69,50 @@ $portableBase = "HistoryVulcan-$Version-win-x64"
 $setupExe = Join-Path $OutputRoot "$setupBase.exe"
 $portableArchive = Join-Path $OutputRoot "$portableBase.7z"
 
-foreach ($stale in @($setupExe, $portableArchive, (Join-Path $OutputRoot 'SHA256SUMS'))) {
+foreach ($stale in @(
+        $setupExe,
+        $portableArchive,
+        (Join-Path $OutputRoot 'SHA256SUMS'),
+        (Join-Path $OutputRoot 'README.md'),
+        (Join-Path $OutputRoot 'manifest.json'))) {
     if (Test-Path -LiteralPath $stale) {
         Remove-Item -LiteralPath $stale -Force
     }
 }
 
-Write-Host "Packing portable archive from $SnapshotRoot"
-& $SevenZipPath a -t7z -mx=9 -m0=lzma2 $portableArchive (Join-Path $SnapshotRoot '*') | Out-Host
-if ($LASTEXITCODE -ne 0) {
-    throw "7-Zip failed with exit code $LASTEXITCODE"
+$stageRoot = Join-Path $repoRoot ('b-Publish\.installer-stage-' + [Guid]::NewGuid().ToString('N'))
+try {
+    New-Item -ItemType Directory -Force -Path $stageRoot | Out-Null
+    foreach ($item in Get-ChildItem -LiteralPath $SnapshotRoot -Force) {
+        if ($item.Name -eq 'installer') {
+            continue
+        }
+        Copy-Item -LiteralPath $item.FullName -Destination $stageRoot -Recurse -Force
+    }
+
+    Write-Host "Packing portable archive from staged snapshot"
+    & $SevenZipPath a -t7z -mx=9 -m0=lzma2 $portableArchive (Join-Path $stageRoot '*') | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+        throw "7-Zip failed with exit code $LASTEXITCODE"
+    }
+
+    Write-Host "Compiling Inno Setup installer"
+    & $IsccPath `
+        "/DMyAppVersion=$Version" `
+        "/DSourceDir=$stageRoot" `
+        "/DOutputDir=$OutputRoot" `
+        "/DOutputBase=$setupBase" `
+        $issPath | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+        throw "ISCC failed with exit code $LASTEXITCODE"
+    }
+}
+finally {
+    if (Test-Path -LiteralPath $stageRoot) {
+        Remove-Item -LiteralPath $stageRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
-Write-Host "Compiling Inno Setup installer"
-& $IsccPath `
-    "/DMyAppVersion=$Version" `
-    "/DSourceDir=$SnapshotRoot" `
-    "/DOutputDir=$OutputRoot" `
-    "/DOutputBase=$setupBase" `
-    $issPath | Out-Host
-if ($LASTEXITCODE -ne 0) {
-    throw "ISCC failed with exit code $LASTEXITCODE"
-}
 if (-not (Test-Path -LiteralPath $setupExe -PathType Leaf)) {
     throw "Installer was not produced: $setupExe"
 }
@@ -99,13 +121,14 @@ $readme = @"
 # HistoryVulcan $Version installer package
 
 Built from formal host snapshot ``z-HistoryVulcan`` (win-x64, framework-dependent).
+Delivered under ``z-HistoryVulcan/installer/``.
 
 ## Artifacts
 
 | File | Purpose |
 | --- | --- |
 | ``$setupBase.exe`` | Windows installer (Program Files, Start Menu, optional desktop shortcut) |
-| ``$portableBase.7z`` | Portable snapshot (same layout as ``z-HistoryVulcan``) |
+| ``$portableBase.7z`` | Portable snapshot (host/docs layout without this installer folder) |
 
 ## Requirements
 

@@ -60,8 +60,13 @@ function Assert-HostDirectory {
 
 function Get-SnapshotFiles {
     param([string]$Path)
+    $pathPrefix = [IO.Path]::GetFullPath($Path).TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+    $installerPrefix = $pathPrefix + 'installer' + [IO.Path]::DirectorySeparatorChar
     return @(Get-ChildItem -LiteralPath $Path -Recurse -File |
-        Where-Object { $_.Name -ne 'SHA256SUMS' } |
+        Where-Object {
+            $_.Name -ne 'SHA256SUMS' -and
+            -not $_.FullName.StartsWith($installerPrefix, [StringComparison]::OrdinalIgnoreCase)
+        } |
         Sort-Object FullName)
 }
 
