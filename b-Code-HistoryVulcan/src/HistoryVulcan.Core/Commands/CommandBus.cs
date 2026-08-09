@@ -540,7 +540,7 @@ public sealed class CommandBus
            || value.Equals("on", StringComparison.OrdinalIgnoreCase)
            || value.Equals("off", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>用法行,如 "用法: vulcan.win.dock name= pos=left/right/top/bottom/tab [target=] [ratio=]"。</summary>
+    /// <summary>用法行,如 "用法: vulcan.ui.dock name= pos=left/right/top/bottom/tab [target=] [ratio=]"。</summary>
     public static string FormatUsage(CommandDescriptor d)
     {
         var parts = d.Parameters.Select(p =>

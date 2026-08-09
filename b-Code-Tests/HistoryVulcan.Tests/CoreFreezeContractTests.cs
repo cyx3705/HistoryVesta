@@ -175,8 +175,10 @@ public sealed class CoreFreezeContractTests
 
         Assert.Equal("vulcan", registry.GetDomain("window.inspect"));
         Assert.Equal("win", registry.GetCommandClass("window.inspect"));
-        Assert.Equal("FixtureModule", registry.GetDomain("fixture.run"));
-        Assert.Equal("core", registry.GetCommandClass("fixture.run"));
+        // DEC-023:模块域由 owner 强制并去掉 History 品牌前缀；描述符自填的 Domain 被覆盖。
+        Assert.Equal("fixturemodule", registry.GetDomain("fixture.run"));
+        // 两段名回退到首段作为类；「无类」概念已废止。
+        Assert.Equal("fixture", registry.GetCommandClass("fixture.run"));
     }
 
 

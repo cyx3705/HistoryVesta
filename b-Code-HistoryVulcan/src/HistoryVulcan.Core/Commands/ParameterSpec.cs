@@ -35,7 +35,7 @@ public sealed class ParameterSpec
 
     /// <summary>
     /// 允许按位置传入时的位置序号(0 起);null 表示只能 键=值。
-    /// 例:help 的 command 参数 Position=0,支持 “help vulcan.win.dock”。
+    /// 例:help 的 command 参数 Position=0,支持 “help vulcan.ui.dock”。
     /// </summary>
     public int? Position { get; init; }
 

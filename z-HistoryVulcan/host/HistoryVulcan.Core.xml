@@ -228,7 +228,7 @@
             </summary>
         </member>
         <member name="M:HistoryVulcan.Core.Commands.CommandBus.FormatUsage(HistoryVulcan.Core.Commands.CommandDescriptor)">
-            <summary>用法行,如 "用法: vulcan.win.dock name= pos=left/right/top/bottom/tab [target=] [ratio=]"。</summary>
+            <summary>用法行,如 "用法: vulcan.ui.dock name= pos=left/right/top/bottom/tab [target=] [ratio=]"。</summary>
         </member>
         <member name="T:HistoryVulcan.Core.Commands.CommandContext">
             <summary>
@@ -275,7 +275,7 @@
             </summary>
         </member>
         <member name="P:HistoryVulcan.Core.Commands.CommandDescriptor.Name">
-            <summary>完整指令名,小写,如 "vulcan.win.dock"、"vulcan.core.help"。</summary>
+            <summary>完整指令名,小写,如 "vulcan.ui.dock"、"vulcan.command.help"。</summary>
         </member>
         <member name="P:HistoryVulcan.Core.Commands.CommandDescriptor.Domain">
             <summary>
@@ -293,7 +293,7 @@
             <summary>一句话说明(help 列表用)。</summary>
         </member>
         <member name="P:HistoryVulcan.Core.Commands.CommandDescriptor.Example">
-            <summary>示例行(help 详情用),如 "vulcan.win.dock name=console pos=bottom ratio=0.25"。</summary>
+            <summary>示例行(help 详情用),如 "vulcan.ui.dock name=console pos=bottom ratio=0.25"。</summary>
         </member>
         <member name="P:HistoryVulcan.Core.Commands.CommandDescriptor.Parameters">
             <summary>Provides this HistoryVulcan public contract member.</summary>
@@ -479,7 +479,9 @@
         </member>
         <member name="M:HistoryVulcan.Core.Commands.CommandRegistry.LegacyClass(System.String)">
             <summary>
-            从命令名推导功能类：两段名用首段；三段及以上用第二段（不把域段如 <c>vulcan</c> 当 class）。
+            从命令名推导功能类：三段及以上用第二段；两段 <c>类.方法</c> 用首段；
+            单段回退 <c>core</c>。3.3.2 起内置指令一律三段（DEC-023），两段回退只服务
+            未迁移的外部模块。
             </summary>
         </member>
         <member name="M:HistoryVulcan.Core.Commands.CommandRegistry.LegacyMethod(System.String)">
@@ -570,6 +572,19 @@
         <member name="M:HistoryVulcan.Core.Commands.IConfirmationService.Confirm(System.String)">
             <summary>返回 true 表示用户确认继续。</summary>
         </member>
+        <member name="T:HistoryVulcan.Core.Commands.ModuleDomainNaming">
+            <summary>
+            模块名 → 指令域的唯一归一化真值（DEC-023）。
+            模块名保留 <c>History</c> 品牌前缀，指令域去掉它：<c>HistoryJanus</c> → <c>janus</c>。
+            品牌前缀标识产品族归属，在域段里对所有模块都相同，不携带区分信息。
+            </summary>
+        </member>
+        <member name="M:HistoryVulcan.Core.Commands.ModuleDomainNaming.ToDomain(System.String)">
+            <summary>
+            把模块名归一化为指令域：大小写不敏感地剥离开头的 <c>History</c> 并转小写；
+            剥离后为空时退回原名小写；不以 <c>History</c> 开头的原样转小写。
+            </summary>
+        </member>
         <member name="T:HistoryVulcan.Core.Commands.ParamType">
             <summary>参数类型(校验用,§5.2 参数校验)。</summary>
         </member>
@@ -608,7 +623,7 @@
         <member name="P:HistoryVulcan.Core.Commands.ParameterSpec.Position">
             <summary>
             允许按位置传入时的位置序号(0 起);null 表示只能 键=值。
-            例:help 的 command 参数 Position=0,支持 “help vulcan.win.dock”。
+            例:help 的 command 参数 Position=0,支持 “help vulcan.ui.dock”。
             </summary>
         </member>
         <member name="P:HistoryVulcan.Core.Commands.ParameterSpec.AllowedValues">
@@ -666,16 +681,16 @@
             <summary>Provides this HistoryVulcan public contract member.</summary>
         </member>
         <member name="F:HistoryVulcan.Core.Docking.DockSide.Tab">
-            <summary>并入目标标签组(vulcan.win.dock pos=tab target=...)。</summary>
+            <summary>并入目标标签组(vulcan.ui.dock pos=tab target=...)。</summary>
         </member>
         <member name="F:HistoryVulcan.Core.Docking.DockSide.Center">
             <summary>占据中央工作区；多个中央窗口组成标签组。</summary>
         </member>
         <member name="T:HistoryVulcan.Core.Docking.ToolWindowInfo">
-            <summary>某个工具窗口的当前状态快照(vulcan.win.list 的数据源)。</summary>
+            <summary>某个工具窗口的当前状态快照(vulcan.ui.windows 的数据源)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.ToolWindowInfo.#ctor(System.String,System.String,System.Boolean,System.Boolean,System.Nullable{HistoryVulcan.Core.Docking.DockSide},System.Nullable{System.Double},System.String)">
-            <summary>某个工具窗口的当前状态快照(vulcan.win.list 的数据源)。</summary>
+            <summary>某个工具窗口的当前状态快照(vulcan.ui.windows 的数据源)。</summary>
         </member>
         <member name="T:HistoryVulcan.Core.Docking.IDockingService">
             <summary>
@@ -688,37 +703,37 @@
             <summary>当前最大化的工具窗口 Id;未最大化时为 null。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.ListWindows">
-            <summary>列出全部已注册窗口及状态(vulcan.win.list)。</summary>
+            <summary>列出全部已注册窗口及状态(vulcan.ui.windows)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.Show(System.String)">
-            <summary>显示窗口(vulcan.win.show);若已隐藏则唤出,已显示则激活。</summary>
+            <summary>显示窗口(vulcan.ui.show);若已隐藏则唤出,已显示则激活。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.Hide(System.String)">
-            <summary>隐藏窗口(vulcan.win.hide);状态保留,不销毁(§4.1 关闭=隐藏)。</summary>
+            <summary>隐藏窗口(vulcan.ui.hide);状态保留,不销毁(§4.1 关闭=隐藏)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.Float(System.String)">
-            <summary>浮动为独立顶层窗口(vulcan.win.float)。</summary>
+            <summary>浮动为独立顶层窗口(vulcan.ui.float)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.Dock(System.String,HistoryVulcan.Core.Docking.DockSide,System.Nullable{System.Double},System.String)">
-            <summary>停靠到指定方位(vulcan.win.dock);Center 占中央工作区，Tab 并入 targetId 标签组。</summary>
+            <summary>停靠到指定方位(vulcan.ui.dock);Center 占中央工作区，Tab 并入 targetId 标签组。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.SetRatio(System.String,System.Double)">
-            <summary>调整窗口占主程序窗体的比例(vulcan.win.ratio)。</summary>
+            <summary>调整窗口占主程序窗体的比例(vulcan.ui.ratio)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.ResetWindow(System.String)">
             <summary>把单个窗口复位到注册时声明的默认位置(视图菜单「复位」,W-02)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.ResetLayout">
-            <summary>整体重置为默认布局(vulcan.layout.reset,W-07)。</summary>
+            <summary>整体重置为默认布局(vulcan.ui.layoutreset,W-07)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.SaveLayout(System.String)">
-            <summary>保存当前布局为命名方案(vulcan.layout.save,W-08)。</summary>
+            <summary>保存当前布局为命名方案(vulcan.ui.layoutsave,W-08)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.LoadLayout(System.String)">
-            <summary>加载命名布局方案(vulcan.layout.load);失败返回 false。</summary>
+            <summary>加载命名布局方案(vulcan.ui.layoutload);失败返回 false。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.ListLayouts">
-            <summary>列出全部命名布局方案(vulcan.layout.list)。</summary>
+            <summary>列出全部命名布局方案(vulcan.ui.layouts)。</summary>
         </member>
         <member name="M:HistoryVulcan.Core.Docking.IDockingService.RegisterWindow(HistoryVulcan.Core.Docking.ToolWindowDescriptor,System.String)">
             <summary>运行期注册工具窗口。owner 是模块热重载时的回收键。</summary>
@@ -752,7 +767,7 @@
             </summary>
         </member>
         <member name="P:HistoryVulcan.Core.Docking.ShellCommandEventArgs.CommandText">
-            <summary>指令文本,如 "vulcan.win.dock name=console pos=bottom ratio=0.28"。</summary>
+            <summary>指令文本,如 "vulcan.ui.dock name=console pos=bottom ratio=0.28"。</summary>
         </member>
         <member name="P:HistoryVulcan.Core.Docking.ShellCommandEventArgs.Source">
             <summary>来源类别:"layout"(拖拽手势)、"UI"(菜单/按钮)等。</summary>
@@ -779,7 +794,7 @@
             </summary>
         </member>
         <member name="P:HistoryVulcan.Core.Docking.ToolWindowDescriptor.Id">
-            <summary>指令可寻址的窗口名(vulcan.win.show name=...),要求小写、无空格、进程内唯一。</summary>
+            <summary>指令可寻址的窗口名(vulcan.ui.show name=...),要求小写、无空格、进程内唯一。</summary>
         </member>
         <member name="P:HistoryVulcan.Core.Docking.ToolWindowDescriptor.Title">
             <summary>标题栏与「视图」菜单显示的标题。</summary>
@@ -1031,7 +1046,7 @@
         <member name="M:HistoryVulcan.Core.Mcp.CommandSchemaExporter.IsHardExcluded(System.String)">
             <summary>
             硬排除清单(MS-03,任何策略下都不暴露):
-            vulcan.app.exit(远端不得杀宿主)、debug.*(承压/注水等自测工具)、
+            vulcan.app.quit(远端不得杀宿主)、debug.*(承压/注水等自测工具)、
             mcp.*(防远端自锁与递归启停)。代码内常量,不走配置。
             </summary>
         </member>
@@ -1299,7 +1314,7 @@
             </summary>
         </member>
         <member name="P:HistoryVulcan.Core.Panels.PanelDefinition.Id">
-            <summary>面板 id,同时是窗口名(vulcan.win.show name=&lt;id&gt;);小写、进程内唯一。</summary>
+            <summary>面板 id,同时是窗口名(vulcan.ui.show name=&lt;id&gt;);小写、进程内唯一。</summary>
         </member>
         <member name="P:HistoryVulcan.Core.Panels.PanelDefinition.Title">
             <summary>标题栏显示名。</summary>

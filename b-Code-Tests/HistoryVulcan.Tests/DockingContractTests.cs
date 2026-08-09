@@ -1,4 +1,3 @@
-extern alias mercury;
 
 using System.Runtime.ExceptionServices;
 using System.Windows;
@@ -16,7 +15,6 @@ using AvalonDock.Controls;
 using AvalonDock.Layout;
 using AvalonDock.Layout.Serialization;
 using Xunit;
-using CommandSurfaceFeature = mercury::Mercury.CommandSurface.CommandSurfaceFeature;
 
 namespace HistoryVulcan.Tests;
 
@@ -77,7 +75,7 @@ public sealed class DockingContractTests
                 manager.Layout.Descendents().OfType<LayoutAnchorable>(),
                 item => item.ContentId == "stage");
             Assert.Equal(GridUnitType.Star, pane.DockWidth.GridUnitType);
-            var dock = FrontendCommandCatalog.FrameworkSourceDescriptors.Single(item => item.Name == "vulcan.win.dock");
+            var dock = FrontendCommandCatalog.FrameworkSourceDescriptors.Single(item => item.Name == "vulcan.ui.dock");
             Assert.Contains("center", dock.Parameters.Single(item => item.Name == "pos").AllowedValues!);
         });
     }
@@ -270,12 +268,10 @@ public sealed class DockingContractTests
                 ShowInTaskbar = false,
                 WindowStyle = WindowStyle.ToolWindow,
             };
-            using var commandSurface = CommandSurfaceFeature.TryAttach(
-                window,
-                new HistoryVulcan.Shell.Modules.ShellUiRegistrar(
-                    window.Docking,
-                    window.Dispatcher,
-                    new NullLog()));
+            // DEC-023:中央命令集页由 HistoryMercury 的 CommandSurfaceFeature 提供,不在本仓库门禁内。
+            // 这里注册一个等价的中央工具页,断言的是 Vulcan 自己的主文档区几何与页签行为。
+            window.Docking.RegisterWindow(Tool(StandardWindowIds.Mcp, DockSide.Center, 1), "test");
+            window.Docking.Show(StandardWindowIds.Mcp);
 
             try
             {
@@ -746,10 +742,10 @@ public sealed class DockingContractTests
             foreach (var value in new[] { "NaN", "Infinity", "-Infinity" })
             {
                 var dock = bus.ExecuteAsync(
-                    $"vulcan.win.dock name=details pos=right ratio={value}",
+                    $"vulcan.ui.dock name=details pos=right ratio={value}",
                     "Test").GetAwaiter().GetResult();
                 var ratio = bus.ExecuteAsync(
-                    $"vulcan.win.ratio name=details value={value}",
+                    $"vulcan.ui.ratio name=details value={value}",
                     "Test").GetAwaiter().GetResult();
                 Assert.False(dock.Success);
                 Assert.False(ratio.Success);

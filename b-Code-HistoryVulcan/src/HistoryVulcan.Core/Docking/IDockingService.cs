@@ -1,6 +1,6 @@
 namespace HistoryVulcan.Core.Docking;
 
-/// <summary>某个工具窗口的当前状态快照(vulcan.win.list 的数据源)。</summary>
+/// <summary>某个工具窗口的当前状态快照(vulcan.ui.windows 的数据源)。</summary>
 public sealed record ToolWindowInfo(
     string Id,
     string Title,
@@ -20,37 +20,37 @@ public interface IDockingService
     /// <summary>当前最大化的工具窗口 Id;未最大化时为 null。</summary>
     string? MaximizedId { get; }
 
-    /// <summary>列出全部已注册窗口及状态(vulcan.win.list)。</summary>
+    /// <summary>列出全部已注册窗口及状态(vulcan.ui.windows)。</summary>
     IReadOnlyList<ToolWindowInfo> ListWindows();
 
-    /// <summary>显示窗口(vulcan.win.show);若已隐藏则唤出,已显示则激活。</summary>
+    /// <summary>显示窗口(vulcan.ui.show);若已隐藏则唤出,已显示则激活。</summary>
     void Show(string id);
 
-    /// <summary>隐藏窗口(vulcan.win.hide);状态保留,不销毁(§4.1 关闭=隐藏)。</summary>
+    /// <summary>隐藏窗口(vulcan.ui.hide);状态保留,不销毁(§4.1 关闭=隐藏)。</summary>
     void Hide(string id);
 
-    /// <summary>浮动为独立顶层窗口(vulcan.win.float)。</summary>
+    /// <summary>浮动为独立顶层窗口(vulcan.ui.float)。</summary>
     void Float(string id);
 
-    /// <summary>停靠到指定方位(vulcan.win.dock);Center 占中央工作区，Tab 并入 targetId 标签组。</summary>
+    /// <summary>停靠到指定方位(vulcan.ui.dock);Center 占中央工作区，Tab 并入 targetId 标签组。</summary>
     void Dock(string id, DockSide side, double? ratio = null, string? targetId = null);
 
-    /// <summary>调整窗口占主程序窗体的比例(vulcan.win.ratio)。</summary>
+    /// <summary>调整窗口占主程序窗体的比例(vulcan.ui.ratio)。</summary>
     void SetRatio(string id, double ratio);
 
     /// <summary>把单个窗口复位到注册时声明的默认位置(视图菜单「复位」,W-02)。</summary>
     void ResetWindow(string id);
 
-    /// <summary>整体重置为默认布局(vulcan.layout.reset,W-07)。</summary>
+    /// <summary>整体重置为默认布局(vulcan.ui.layoutreset,W-07)。</summary>
     void ResetLayout();
 
-    /// <summary>保存当前布局为命名方案(vulcan.layout.save,W-08)。</summary>
+    /// <summary>保存当前布局为命名方案(vulcan.ui.layoutsave,W-08)。</summary>
     void SaveLayout(string name);
 
-    /// <summary>加载命名布局方案(vulcan.layout.load);失败返回 false。</summary>
+    /// <summary>加载命名布局方案(vulcan.ui.layoutload);失败返回 false。</summary>
     bool LoadLayout(string name);
 
-    /// <summary>列出全部命名布局方案(vulcan.layout.list)。</summary>
+    /// <summary>列出全部命名布局方案(vulcan.ui.layouts)。</summary>
     IReadOnlyList<string> ListLayouts();
 
     /// <summary>运行期注册工具窗口。owner 是模块热重载时的回收键。</summary>

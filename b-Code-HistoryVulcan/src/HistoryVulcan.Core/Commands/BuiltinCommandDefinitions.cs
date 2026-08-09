@@ -47,10 +47,10 @@ public static class BuiltinCommandDefinitions
         var definitions = new[]
         {
             new Definition(
-                "vulcan.core.help",
-                "core",
+                "vulcan.command.help",
+                "command",
                 "列出全部指令 / 显示某指令详情与示例",
-                "vulcan.core.help vulcan.win.dock",
+                "vulcan.command.help vulcan.ui.dock",
                 [Parameter("command", "指令名;省略时列出全部指令", position: 0)],
                 Readonly: true),
             new Definition(

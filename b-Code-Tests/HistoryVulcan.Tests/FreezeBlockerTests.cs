@@ -1,4 +1,3 @@
-extern alias mercury;
 
 using System.Diagnostics;
 using System.Net;
@@ -446,9 +445,7 @@ public sealed class FreezeBlockerTests
                         log,
                         bus,
                         history,
-                        new mercury::Mercury.CommandSurface.CommandCatalogSession(
-                            bus,
-                            new CommandSelectionState()));
+                        new HistoryVulcan.Shell.CommandSurface.DeferredCommandCatalogSession());
 
                     bus.ExecuteAsync("vulcan.web.token console-history-secret", "手动").GetAwaiter().GetResult();
                     bus.ExecuteAsync("vulcan.app.set mcp.token setting-history-secret", "手动")
@@ -475,7 +472,7 @@ public sealed class FreezeBlockerTests
                         Bus = historyBus,
                         DataDirectory = root,
                     });
-                    var historyResult = historyBus.ExecuteAsync("vulcan.core.history count=20", "Web:read")
+                    var historyResult = historyBus.ExecuteAsync("vulcan.command.history count=20", "Web:read")
                         .GetAwaiter().GetResult();
                     Assert.True(historyResult.Success, historyResult.Message);
                     Assert.DoesNotContain("console-history-secret", historyResult.Message, StringComparison.Ordinal);

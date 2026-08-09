@@ -137,7 +137,8 @@ public partial class ShellWindow : Window, IShellCommandWorkbenchHost
         _history = new CommandHistory(
             Path.Combine(dataDirectory, "history.txt"),
             settings.GetInt(ConsoleView.KeyHistory, 500));
-        _catalogSession = new DeferredCommandCatalogSession();
+        // 传入本地注册表:Mercury 未挂接时控制台的域/类过滤仍按本地权威目录工作(DEC-023)。
+        _catalogSession = new DeferredCommandCatalogSession(registry);
         _console = new ConsoleView(
             log,
             _bus,
@@ -369,12 +370,9 @@ public partial class ShellWindow : Window, IShellCommandWorkbenchHost
             }
         };
 
-        // C-15:Ctrl + ` 全局聚焦控制台输入框
-        var focusConsole = new RoutedCommand();
-        CommandBindings.Add(new CommandBinding(
-            focusConsole,
-            (_, _) => _ = _bus.ExecuteAsync("vulcan.log.focus", "UI")));
-        InputBindings.Add(new KeyBinding(focusConsole, Key.Oem3, ModifierKeys.Control));
+        // DEC-023:原 C-15 的 Ctrl + ` 本地 KeyBinding 已删除。快捷键整体归 HistoryMercury
+        // （DEC-022），Shell 不再自行注册 InputBinding；需要该手势时由 Mercury 注册并指向
+        // vulcan.log.focus，避免宿主与模块争夺同一组合键。
 
         if (config.EnableMaximizeOnDoubleClick)
         {
@@ -560,7 +558,7 @@ public partial class ShellWindow : Window, IShellCommandWorkbenchHost
         try
         {
             var result = await _bus.ExecuteAsync(
-                $"vulcan.win.show name={StandardWindowIds.Mcp}",
+                $"vulcan.ui.show name={StandardWindowIds.Mcp}",
                 "UI");
             if (!result.Success)
                 _log.Error("console", $"切换命令集失败: {result.Message}");
@@ -614,7 +612,7 @@ public partial class ShellWindow : Window, IShellCommandWorkbenchHost
         => _ = _bus.ExecuteAsync("vulcan.app.window state=toggle", "UI");
 
     private void OnCloseClick(object sender, RoutedEventArgs e)
-        => _ = _bus.ExecuteAsync("vulcan.frontend.hide", "UI");
+        => _ = _bus.ExecuteAsync("vulcan.app.hide", "UI");
 
     internal CommandResult SetFloatingWindowState(string id, string state)
         => _topBar.SetFloatingWindowState(id, state);
@@ -639,7 +637,7 @@ public partial class ShellWindow : Window, IShellCommandWorkbenchHost
         if (_config.CloseBehavior == ShellCloseBehavior.Hide && !_allowClose)
         {
             e.Cancel = true;
-            _ = _bus.ExecuteAsync("vulcan.frontend.hide", "UI");
+            _ = _bus.ExecuteAsync("vulcan.app.hide", "UI");
             _closing = false;
             return;
         }
@@ -665,9 +663,9 @@ public partial class ShellWindow : Window, IShellCommandWorkbenchHost
     {
         registry.Register(new CommandDescriptor
         {
-            Name = "vulcan.frontend.hide",
+            Name = "vulcan.app.hide",
             Domain = "vulcan",
-            CommandClass = "frontend",
+            CommandClass = "app",
             Summary = "隐藏 HistoryVulcan 前端窗口并保持后台连接",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -679,9 +677,9 @@ public partial class ShellWindow : Window, IShellCommandWorkbenchHost
 
         registry.Register(new CommandDescriptor
         {
-            Name = "vulcan.frontend.show",
+            Name = "vulcan.app.show",
             Domain = "vulcan",
-            CommandClass = "frontend",
+            CommandClass = "app",
             Summary = "显示并激活 HistoryVulcan 前端窗口",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -696,42 +694,9 @@ public partial class ShellWindow : Window, IShellCommandWorkbenchHost
 
         registry.Register(new CommandDescriptor
         {
-            Name = "vulcan.frontend.focusconsole",
+            Name = "vulcan.app.close",
             Domain = "vulcan",
-            CommandClass = "frontend",
-            Summary = "显示并聚焦控制台",
-            RequiresUiThread = true,
-            Handler = CommandDescriptor.Sync(_ =>
-            {
-                Show();
-                if (WindowState == WindowState.Minimized)
-                    WindowState = WindowState.Normal;
-                var consoleIsFocused = string.Equals(
-                    _docking.MaximizedId,
-                    StandardWindowIds.Console,
-                    StringComparison.OrdinalIgnoreCase);
-                if (!consoleIsFocused)
-                {
-                    if (_docking.MaximizedId != null)
-                        _docking.RestoreLayoutFromMaximized();
-                    _docking.Show(StandardWindowIds.Console);
-                    _docking.MaximizeWindow(StandardWindowIds.Console);
-                }
-                WindowForegroundActivator.Activate(this);
-                Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
-                {
-                    WindowForegroundActivator.Activate(this);
-                    ActivateToolContent(StandardWindowIds.Console);
-                });
-                return CommandResult.Ok("控制台已聚焦");
-            }),
-        }, FrontendCommandCatalog.Source);
-
-        registry.Register(new CommandDescriptor
-        {
-            Name = "vulcan.frontend.exit",
-            Domain = "vulcan",
-            CommandClass = "frontend",
+            CommandClass = "app",
             Summary = "退出 HistoryVulcan 前端进程",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>

@@ -123,7 +123,7 @@ public sealed class CommandRegistry
         {
             var owner = source["module:".Length..].Trim();
             if (owner.Length > 0)
-                return owner;
+                return ModuleDomainNaming.ToDomain(owner);
         }
 
         return string.IsNullOrWhiteSpace(descriptor.Domain)
@@ -135,9 +135,7 @@ public sealed class CommandRegistry
     {
         if (!string.IsNullOrWhiteSpace(descriptor.CommandClass))
             return descriptor.CommandClass.Trim().ToLowerInvariant();
-        return source.StartsWith("module:", StringComparison.OrdinalIgnoreCase)
-            ? "core"
-            : LegacyClass(descriptor.Name);
+        return LegacyClass(descriptor.Name);
     }
 
     /// <summary>从命令名推导域：首段；无点则 <c>core</c>。</summary>
@@ -149,7 +147,9 @@ public sealed class CommandRegistry
     }
 
     /// <summary>
-    /// 从命令名推导功能类：两段名用首段；三段及以上用第二段（不把域段如 <c>vulcan</c> 当 class）。
+    /// 从命令名推导功能类：三段及以上用第二段；两段 <c>类.方法</c> 用首段；
+    /// 单段回退 <c>core</c>。3.3.2 起内置指令一律三段（DEC-023），两段回退只服务
+    /// 未迁移的外部模块。
     /// </summary>
     public static string LegacyClass(string name)
     {

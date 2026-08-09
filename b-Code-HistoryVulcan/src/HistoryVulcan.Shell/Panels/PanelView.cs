@@ -34,7 +34,7 @@ public sealed partial class PanelView : UserControl
 
     public string PanelId => _def.Id;
 
-    /// <summary>vulcan.panel.reload:按新声明原地重建内容(P-08)。</summary>
+    /// <summary>vulcan.ui.panelreload:按新声明原地重建内容(P-08)。</summary>
     public void Rebuild(PanelDefinition def)
     {
         _def = def;
@@ -60,7 +60,7 @@ public sealed partial class PanelView : UserControl
         };
     }
 
-    /// <summary>vulcan.panel.set 反向驱动(P-07):程序向面板控件回写值。</summary>
+    /// <summary>vulcan.ui.panelset 反向驱动(P-07):程序向面板控件回写值。</summary>
     public bool TrySetValue(string controlId, string value)
     {
         if (!_setters.TryGetValue(controlId, out var setter))
@@ -69,7 +69,7 @@ public sealed partial class PanelView : UserControl
         return true;
     }
 
-    /// <summary>可反向驱动的控件 id 清单(vulcan.panel.set 报错提示用)。</summary>
+    /// <summary>可反向驱动的控件 id 清单(vulcan.ui.panelset 报错提示用)。</summary>
     public IReadOnlyList<string> ControlIds => _setters.Keys.ToList();
 
     // ---------------------------------------------------------------- 控件构建(P-02)
@@ -205,7 +205,7 @@ public sealed partial class PanelView : UserControl
                     var isDir = c.Type.Equals("dir", StringComparison.OrdinalIgnoreCase);
                     browse.Click += async (_, _) =>
                     {
-                        var command = isDir ? "vulcan.panel.selectdirectory" : "vulcan.panel.selectfile";
+                        var command = isDir ? "vulcan.ui.selectdirectory" : "vulcan.ui.selectfile";
                         var result = await _bus.ExecuteAsync(command, "UI");
                         if (result.Success
                             && CommandResultData.TryRead<string>(result.Data, out var selected))

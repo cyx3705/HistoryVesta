@@ -18,7 +18,7 @@ public static partial class BuiltinCommands
     private static void RegisterBasics(CommandRegistry r, ShellCommandServices s)
     {
         r.Register(BuiltinCommandDefinitions.Bind(
-            "vulcan.core.help",
+            "vulcan.command.help",
             CommandDescriptor.Sync(ctx =>
             {
                 var name = ctx.GetString("command");
@@ -58,12 +58,12 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "vulcan.core.history",
+            Name = "vulcan.command.history",
             Domain = "vulcan",
-            CommandClass = "core",
+            CommandClass = "command",
             Summary = "查看指令历史",
             Readonly = true,
-            Example = "vulcan.core.history count=10",
+            Example = "vulcan.command.history count=10",
             Parameters =
             [
                 new ParameterSpec
@@ -92,11 +92,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "vulcan.core.run",
+            Name = "vulcan.command.run",
             Domain = "vulcan",
-            CommandClass = "core",
+            CommandClass = "command",
             Summary = "逐行执行指令脚本文件(# 注释与空行忽略)",
-            Example = "vulcan.core.run file=每日巡检.txt continue=true",
+            Example = "vulcan.command.run file=每日巡检.txt continue=true",
             Parameters =
             [
                 new ParameterSpec
@@ -157,7 +157,7 @@ public static partial class BuiltinCommands
     private static CommandResult HelpList(CommandRegistry registry)
     {
         var all = registry.All();
-        var sb = new StringBuilder($"共 {all.Count} 条指令,vulcan.core.help <指令名> 查看详情:");
+        var sb = new StringBuilder($"共 {all.Count} 条指令,vulcan.command.help <指令名> 查看详情:");
         foreach (var group in all.GroupBy(d =>
                  {
                      var dot = d.Name.IndexOf('.');

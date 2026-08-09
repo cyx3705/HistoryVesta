@@ -260,32 +260,48 @@ public partial class ConsoleView : UserControl, Core.Modules.IActivatableToolCon
         }
     }
 
+    /// <summary>
+    /// 导出控制台可见内容。REQ-CMD-012:成功路径不得依赖人工点击——省略 <paramref name="path"/>
+    /// 时写入数据目录下带时间戳的默认文件并回报绝对路径,而不是弹 <c>SaveFileDialog</c>。
+    /// 否则 <c>vulcan.log.export</c> 经 MCP / Web / 前端转发调用会阻塞 UI 线程等待一个不会到来的点击。
+    /// </summary>
     internal string ExportVisible(string? path)
     {
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            var dialog = new Microsoft.Win32.SaveFileDialog
-            {
-                Title = "导出控制台可见内容",
-                FileName = $"console-{DateTime.Now:yyyyMMdd-HHmmss}.txt",
-                Filter = "文本文件 (*.txt)|*.txt|全部文件 (*.*)|*.*",
-            };
-            if (dialog.ShowDialog(Window.GetWindow(this)) != true)
-                return "已取消导出";
-            path = dialog.FileName;
-        }
-
+        var resolved = path?.Trim();
         try
         {
-            File.WriteAllLines(path, _visible.ToList().Select(row => row.Text));
-            _log.Info("console", $"已导出 {_visible.Count} 行到 {path}");
-            return $"已导出 {_visible.Count} 行到 {path}";
+            resolved = string.IsNullOrWhiteSpace(resolved)
+                ? BuildDefaultExportPath()
+                : Path.GetFullPath(resolved);
+
+            var directory = Path.GetDirectoryName(resolved);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            File.WriteAllLines(resolved, _visible.ToList().Select(row => row.Text));
+            _log.Info("console", $"已导出 {_visible.Count} 行到 {resolved}");
+            return $"已导出 {_visible.Count} 行到 {resolved}";
         }
         catch (Exception ex)
         {
             _log.Error("console", $"导出失败: {ex.Message}");
             return $"导出失败: {ex.Message}";
         }
+    }
+
+    /// <summary>
+    /// 默认导出落点:<c>%AppData%/&lt;应用名&gt;/exports/console-&lt;时间戳&gt;.txt</c>,
+    /// 与 <c>AppPaths</c> 的数据根目录约定一致。
+    /// </summary>
+    private static string BuildDefaultExportPath()
+    {
+        var root = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            AppIdentity.Current.Name,
+            "exports");
+        return Path.Combine(
+            Directory.CreateDirectory(root).FullName,
+            $"console-{DateTime.Now:yyyyMMdd-HHmmss-fff}.txt");
     }
 
     /// <summary>聚焦输入框(C-15 全局快捷键落点)。</summary>

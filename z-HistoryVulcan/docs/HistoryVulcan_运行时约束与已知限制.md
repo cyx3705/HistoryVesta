@@ -20,7 +20,7 @@
 - `vulcan.log.source` 参数候选由运行期命令目录生成；不存在的域会返回失败和当前可用域。
 - 3.3.0 起全局快捷键与命令工作台（目录会话、补全、命令集/详情）由 HistoryMercury 4.1.0 拥有；
   Shell 仅保留控制台日志面，Mercury 未挂接前为 `DeferredCommandCatalogSession`。
-  无 Mercury 时：双 `/` 与命令集/详情 UI 不可用；`vulcan.shortcut.list` 可能为空；本地 `vulcan.command.*` 仍可用。
+  无 Mercury 时：双 `/` 与命令集/详情 UI 不可用；`vulcan.listshortcuts` 可能为空；本地 `vulcan.command.*` 仍可用。
 - 输出没有水平滚动条；长文本只在视觉上随当前窗格宽度换行，复制和导出不插入软换行。
 
 ## 运行时边界
@@ -43,7 +43,7 @@
 | MCP 网关与治理 | 关闭 | `ShellConfig.EnableMcp=true`；只装配不监听时另设 `mcp.autostart=false` |
 | 远程管理视图 | 关闭 | `ShellConfig.EnableRemoteManagementViews=true` |
 | 本地 `vulcan.command.*` | 开启 | Shell 核心能力，不创建网络监听 |
-| 命令集/详情与双 `/` | 依赖 Mercury | HistoryMercury 4.1.0 拥有命令工作台与 `GlobalShortcutService`；无 Mercury 时不可用，`vulcan.shortcut.list` 可能为空 |
+| 命令集/详情与双 `/` | 依赖 Mercury | HistoryMercury 拥有命令工作台与 `GlobalShortcutService`；双 `/` → `mercury.wakeconsole` 再组合 Vulcan 窗口指令；无 Mercury 时不可用 |
 
 | 设置键 | 默认值 | 说明 |
 |---|---:|---|

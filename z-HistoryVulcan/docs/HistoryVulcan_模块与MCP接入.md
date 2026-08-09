@@ -1,8 +1,9 @@
 # HistoryVulcan 模块与 MCP 接入
 
-> 适用版本：HistoryVulcan **3.3.0** 正式（已部署于 `z-HistoryVulcan`；3.1.8 不受支持）
+> 适用版本：HistoryVulcan **3.3.2** 正式（已部署于 `z-HistoryVulcan`；3.1.8 不受支持）
 > 3.3.0（DEC-022）：内置命令硬切为 `vulcan.<类>.<方法>`（Domain=`vulcan`）；全局快捷键（含 `GlobalShortcutService`）与命令工作台由 HistoryMercury 4.1.0 拥有。
-> 旧→新映射见 `../history/3.3.0-vulcan-command-rename.md`。
+> **3.3.2（DEC-023）：类收敛为九类；模块指令域 = 模块名去掉 `History` 前缀（`HistoryJanus` → `janus.<类>.<方法>`），由 `ModuleDomainNaming.ToDomain` 归一化；类不可省略。**
+> 旧→新映射见 `../history/3.3.0-vulcan-command-rename.md` 与 `../history/3.3.2-vulcan-class-realign.md`。
 > 边界：本文只描述框架能力。项目库、外部账号、工具同步等消费产品业务不属于 HistoryVulcan。
 > 常用公开方法和基础命令见 [HistoryVulcan API 与指令手册](HistoryVulcan_API与指令手册.md)。
 
@@ -79,7 +80,7 @@ UI 模块实现 `IUiModule`；需要注册宿主窗口时实现 UI 感知接口�
 
 模块的 `ToolWindowDescriptor.DefaultSide` 未设置时默认为 `DockSide.Right`；模块仍可显式指定其他方位，
 HistoryVulcan 不覆盖该声明。3.0.2 起，模块运行期注册的右侧窗口直接加入现有右侧标签组，不再为每个模块另建一块右侧
-窗格。模块无需填写 `DefaultTabTarget`；执行窗口复位或 `vulcan.win.dock ... pos=right` 也沿用同一合并规则。只有
+窗格。模块无需填写 `DefaultTabTarget`；执行窗口复位或 `vulcan.ui.dock ... pos=right` 也沿用同一合并规则。只有
 当前布局完全没有右侧窗格时，框架才创建新的右侧窗格。
 
 3.1.1 起，历史布局中已经存在的同侧独立窗格也会在加载时合并成一个标签组；同一轴的侧栏合计最多占 50%，
@@ -98,7 +99,7 @@ HistoryVulcan 不覆盖该声明。3.0.2 起，模块运行期注册的右侧窗
 ## MCP 网关
 
 `ShellConfig.EnableMcp` 默认为 `false`。默认 Shell 不创建 `McpGateway`、提示词治理存储或 MCP 审计器，
-不注册 `vulcan.mcp.*` / `vulcan.prompt.*` / `vulcan.correction.*` / `vulcan.incident.*`，也不监听端口。本地 `vulcan.command.*` 仍可使用；
+不注册 `vulcan.mcp.*` / `vulcan.prompt.*`（含勘误与事故命令），也不监听端口。本地 `vulcan.command.*` 仍可使用；
 中央命令集/详情依赖 HistoryMercury 4.1.0，无 Mercury 时不可用。消费方显式设置 `EnableMcp=true` 后才装配上述能力；若同时设置 `mcp.autostart=false`，启动时只装配
 不监听，之后可用 `vulcan.mcp.start` 启动。
 

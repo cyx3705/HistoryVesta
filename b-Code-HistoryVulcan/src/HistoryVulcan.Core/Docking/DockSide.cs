@@ -13,7 +13,7 @@ public enum DockSide
     Top = 2,
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
     Bottom = 3,
-    /// <summary>并入目标标签组(vulcan.win.dock pos=tab target=...)。</summary>
+    /// <summary>并入目标标签组(vulcan.ui.dock pos=tab target=...)。</summary>
     Tab = 4,
     /// <summary>占据中央工作区；多个中央窗口组成标签组。</summary>
     Center = 5,

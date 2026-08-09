@@ -32,7 +32,7 @@
 1. **执行**：只经 `CommandBus.ExecuteAsync(text, source)` / `Validate`；不要绕过总线。
 2. **发现**：`vulcan.command.list` / `show` / `domains` 是权威目录；行含域、类、方法。
 3. **命名**：内置 `vulcan.<类>.<方法>`（Domain=`vulcan`，无连字符、无别名）；模块命令属模块域。
-4. **工作台**：命令集/详情/补全与双 `/`（→ `vulcan.frontend.focusconsole`）由 HistoryMercury 提供。
+4. **工作台**：命令集/详情/补全与双 `/`（→ `mercury.wakeconsole` 组合 Vulcan 窗口指令）由 HistoryMercury 提供。
 5. **详述**：见同版本 [API 与指令手册 · 命令总线如何消费](docs/HistoryVulcan_API与指令手册.md)。
 
 ## 包职责

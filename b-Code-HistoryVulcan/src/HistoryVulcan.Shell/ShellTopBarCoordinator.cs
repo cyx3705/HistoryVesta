@@ -248,8 +248,8 @@ internal sealed partial class ShellTopBarCoordinator : IDisposable
         ClearPendingDockTab();
         _ = _bus.ExecuteAsync(
             _docking.MaximizedId?.Equals(id, StringComparison.OrdinalIgnoreCase) == true
-                ? "vulcan.win.restore"
-                : $"vulcan.win.max name={CommandParser.QuoteArg(id)}",
+                ? "vulcan.ui.restore"
+                : $"vulcan.ui.max name={CommandParser.QuoteArg(id)}",
             "UI");
         e.Handled = true;
         return true;
@@ -351,7 +351,7 @@ internal sealed partial class ShellTopBarCoordinator : IDisposable
         string command;
         if (action.Equals("restore", StringComparison.OrdinalIgnoreCase))
         {
-            command = "vulcan.win.restore";
+            command = "vulcan.ui.restore";
         }
         else
         {
@@ -364,14 +364,14 @@ internal sealed partial class ShellTopBarCoordinator : IDisposable
 
             var quotedId = CommandParser.QuoteArg(id);
             if (action.Equals("toggle-floating", StringComparison.OrdinalIgnoreCase))
-                command = $"vulcan.win.floatstate name={quotedId} state=toggle";
+                command = $"vulcan.ui.floatstate name={quotedId} state=toggle";
             else
                 command = action.ToLowerInvariant() switch
                 {
-                    "float" => $"vulcan.win.float name={quotedId}",
-                    "hide" => $"vulcan.win.hide name={quotedId}",
-                    "dock-document" => $"vulcan.win.dock name={quotedId} pos=center",
-                    "autohide" => $"vulcan.win.autohide name={quotedId}",
+                    "float" => $"vulcan.ui.float name={quotedId}",
+                    "hide" => $"vulcan.ui.hide name={quotedId}",
+                    "dock-document" => $"vulcan.ui.dock name={quotedId} pos=center",
+                    "autohide" => $"vulcan.ui.autohide name={quotedId}",
                     _ => string.Empty,
                 };
         }
@@ -445,7 +445,7 @@ internal sealed partial class ShellTopBarCoordinator : IDisposable
         var id = context.PageId;
         if (_docking.MaximizedId != null)
         {
-            var restored = await _bus.ExecuteAsync("vulcan.win.restore", "UI").ConfigureAwait(true);
+            var restored = await _bus.ExecuteAsync("vulcan.ui.restore", "UI").ConfigureAwait(true);
             if (!restored.Success)
             {
                 _log.Error(ChromeLogSource, $"恢复专注布局失败：{restored.Message}");
@@ -463,7 +463,7 @@ internal sealed partial class ShellTopBarCoordinator : IDisposable
             TaskCreationOptions.RunContinuationsAsynchronously);
         SetPendingFloatingContext(context, completion);
         var floated = await _bus.ExecuteAsync(
-            $"vulcan.win.float name={CommandParser.QuoteArg(id)}", "UI").ConfigureAwait(true);
+            $"vulcan.ui.float name={CommandParser.QuoteArg(id)}", "UI").ConfigureAwait(true);
         if (!floated.Success)
         {
             ClearPendingFloatingContext(context);
@@ -563,7 +563,7 @@ internal sealed partial class ShellTopBarCoordinator : IDisposable
             {
                 var id = target["floating:".Length..];
                 _ = _bus.ExecuteAsync(
-                    $"vulcan.win.floatstate name={CommandParser.QuoteArg(id)} state=toggle", "UI");
+                    $"vulcan.ui.floatstate name={CommandParser.QuoteArg(id)} state=toggle", "UI");
             }
             e.Handled = true;
             return;

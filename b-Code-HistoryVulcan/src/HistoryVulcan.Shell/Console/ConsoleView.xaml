@@ -221,7 +221,7 @@
             </ListBox.ItemTemplate>
             <ListBox.ItemContainerStyle>
                 <!--
-                    UI-09.4:承压路径(debug.logflood)上的容器样式保持极简,
+                    UI-09.4:承压路径(vulcan.log.flood)上的容器样式保持极简,
                     不加投影、不加动画,行高与 3.0.3 一致。
                 -->
                 <Style TargetType="ListBoxItem">

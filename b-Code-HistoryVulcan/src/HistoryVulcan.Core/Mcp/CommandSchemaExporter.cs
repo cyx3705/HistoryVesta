@@ -40,7 +40,7 @@ public sealed partial class CommandSchemaExporter
 
     /// <summary>
     /// 硬排除清单(MS-03,任何策略下都不暴露):
-    /// vulcan.app.exit(远端不得杀宿主)、debug.*(承压/注水等自测工具)、
+    /// vulcan.app.quit(远端不得杀宿主)、debug.*(承压/注水等自测工具)、
     /// mcp.*(防远端自锁与递归启停)。代码内常量,不走配置。
     /// </summary>
     public static bool IsHardExcluded(string commandName)

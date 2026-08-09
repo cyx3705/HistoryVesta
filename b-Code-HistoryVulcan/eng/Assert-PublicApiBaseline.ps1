@@ -310,18 +310,24 @@ if ($version -eq '3.3.0') {
 }
 
 
-if ($version -eq '3.3.0') {
-    foreach ($project in $projects) {
-        $baselinePath = Join-Path $PSScriptRoot "public-api-baselines\3.3.0\$project.Unshipped.txt"
-        if (-not (Test-Path -LiteralPath $baselinePath -PathType Leaf)) {
-            throw "Missing approved Unshipped baseline: $baselinePath"
-        }
-        $approved[$project] = @(
-            [System.IO.File]::ReadAllLines($baselinePath, [System.Text.UTF8Encoding]::new($false)) |
-                ForEach-Object { $_.Trim() } |
-                Where-Object { $_ -ne '' }
-        )
+# Version-approved baselines live in public-api-baselines\<version>\. Before 3.3.2 this lookup was
+# hard-coded to '3.3.0', so every later version silently fell back to the stale in-script 3.2.x lists
+# and the gate could never pass. Resolve by the actual VulcanVersion instead (DEC-023).
+$baselineDir = Join-Path $PSScriptRoot "public-api-baselines\$version"
+if (-not (Test-Path -LiteralPath $baselineDir -PathType Container)) {
+    throw "Missing approved Unshipped baseline directory for $version : $baselineDir"
+}
+
+foreach ($project in $projects) {
+    $baselinePath = Join-Path $baselineDir "$project.Unshipped.txt"
+    if (-not (Test-Path -LiteralPath $baselinePath -PathType Leaf)) {
+        throw "Missing approved Unshipped baseline: $baselinePath"
     }
+    $approved[$project] = @(
+        [System.IO.File]::ReadAllLines($baselinePath, [System.Text.UTF8Encoding]::new($false)) |
+            ForEach-Object { $_.Trim() } |
+            Where-Object { $_ -ne '' }
+    )
 }
 
 foreach ($project in $projects) {

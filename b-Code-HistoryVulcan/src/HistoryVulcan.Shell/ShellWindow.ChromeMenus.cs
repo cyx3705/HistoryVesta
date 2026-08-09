@@ -53,20 +53,20 @@ public partial class ShellWindow
            ?? id;
 
     private void OnExitFocusClick(object sender, RoutedEventArgs e)
-        => _ = _bus.ExecuteAsync("vulcan.win.restore", "UI");
+        => _ = _bus.ExecuteAsync("vulcan.ui.restore", "UI");
 
     /// <summary>F11:在当前活动页的专注态与常规态之间切换。</summary>
     private void ToggleFocusMode()
     {
         if (_docking.MaximizedId != null)
         {
-            _ = _bus.ExecuteAsync("vulcan.win.restore", "UI");
+            _ = _bus.ExecuteAsync("vulcan.ui.restore", "UI");
             return;
         }
 
         var id = DockManager.Layout?.ActiveContent?.ContentId;
         if (!string.IsNullOrWhiteSpace(id))
-            _ = _bus.ExecuteAsync($"vulcan.win.max name={id}", "UI");
+            _ = _bus.ExecuteAsync($"vulcan.ui.max name={id}", "UI");
     }
 
     // ---------------------------------------------------------------- 键盘(UI-03.4 / UI-04.4)
@@ -88,7 +88,7 @@ public partial class ShellWindow
         }
         else if (e.Key == Key.Escape && _docking.MaximizedId != null && !IsTextInputFocused())
         {
-            _ = _bus.ExecuteAsync("vulcan.win.restore", "UI");
+            _ = _bus.ExecuteAsync("vulcan.ui.restore", "UI");
             e.Handled = true;
         }
     }
@@ -140,7 +140,7 @@ public partial class ShellWindow
 
         // 文件
         var file = new MenuItem { Header = "文件(_F)" };
-        file.Items.Add(Item("退出(_X)", "vulcan.app.exit"));
+        file.Items.Add(Item("退出(_X)", "vulcan.app.quit"));
         rebuilt.Add(file);
 
         // 编辑(预留)
@@ -152,18 +152,18 @@ public partial class ShellWindow
         foreach (var d in _docking.Descriptors)
         {
             var sub = new MenuItem { Header = d.Title };
-            sub.Items.Add(Item("显示", $"vulcan.win.show name={d.Id}"));
-            sub.Items.Add(Item("隐藏", $"vulcan.win.hide name={d.Id}"));
-            sub.Items.Add(Item("浮动", $"vulcan.win.float name={d.Id}"));
-            sub.Items.Add(Item("复位到默认位置", $"vulcan.win.reset name={d.Id}"));
+            sub.Items.Add(Item("显示", $"vulcan.ui.show name={d.Id}"));
+            sub.Items.Add(Item("隐藏", $"vulcan.ui.hide name={d.Id}"));
+            sub.Items.Add(Item("浮动", $"vulcan.ui.float name={d.Id}"));
+            sub.Items.Add(Item("复位到默认位置", $"vulcan.ui.reset name={d.Id}"));
             view.Items.Add(sub);
         }
 
         view.Items.Add(new Separator());
-        var restore = Item("退出窗口最大化", "vulcan.win.restore");
+        var restore = Item("退出窗口最大化", "vulcan.ui.restore");
         restore.IsEnabled = _docking.MaximizedId != null;
         view.Items.Add(restore);
-        view.Items.Add(Item("重置默认布局", "vulcan.layout.reset"));
+        view.Items.Add(Item("重置默认布局", "vulcan.ui.layoutreset"));
         // UI-08:主题切换(S-02,同样是发指令)
         view.Items.Add(new Separator());
         view.Items.Add(_theme == ThemeDark
@@ -183,15 +183,15 @@ public partial class ShellWindow
         // 帮助:指令手册 = help 的图形化版本(S-01)
         var help = new MenuItem { Header = "帮助(_H)" };
         var manual = new MenuItem { Header = "指令手册(_M)" };
-        var helpError = _bus.Validate("vulcan.core.help");
+        var helpError = _bus.Validate("vulcan.command.help");
         if (helpError != null && !_menusInitialized)
-            throw InvalidMenuCommand("vulcan.core.help", helpError);
+            throw InvalidMenuCommand("vulcan.command.help", helpError);
         manual.IsEnabled = helpError == null;
         manual.ToolTip = helpError == null ? null : $"指令当前不可用: {helpError}";
         manual.Click += async (_, _) =>
         {
             await _bus.ExecuteAsync("vulcan.log.focus", "UI");
-            await _bus.ExecuteAsync("vulcan.core.help", "UI");
+            await _bus.ExecuteAsync("vulcan.command.help", "UI");
         };
         help.Items.Add(manual);
         help.Items.Add(Item("关于(_A)", "vulcan.app.about"));

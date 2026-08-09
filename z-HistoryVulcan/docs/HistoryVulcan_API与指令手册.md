@@ -1,15 +1,18 @@
 # HistoryVulcan API 与指令手册
 
-> 适用版本：HistoryVulcan **3.3.0** 正式（已部署于 `z-HistoryVulcan`；3.1.8 不受支持）
+> 适用版本：HistoryVulcan **3.3.2** 正式（已部署于 `z-HistoryVulcan`；3.1.8 不受支持）
 
-本手册给出 3.3.0 正式公开 API 的常用入口和框架基础命令。正式宿主运行入口为
+本手册给出 3.3.2 正式公开 API 的常用入口和框架基础命令。正式宿主运行入口为
 `host/HistoryVulcan.exe`，程序集 XML 文档位于同一 `host/` 目录；兼容框架包的完整签名位于
 `lib/<TFM>/HistoryVulcan.*.xml`。源码仓中的四份 `PublicAPI.Shipped.txt` 是冻结门禁，不随运行宿主发布。
 最终命令集合以应用运行时的 `vulcan.command.list`、`vulcan.command.show` 和 `vulcan.command.manual` 为准。
 
 3.3.0（DEC-022）将内置命令一次硬切为 `vulcan.<类>.<方法>`（全小写、无连字符、不留别名），Domain=`vulcan`；
 命令集表格列为域|类|方法|MCP|参数|说明。全局快捷键与命令工作台（目录会话、补全、命令集/详情）由 HistoryMercury 4.1.0 拥有；
-无 Mercury 时双 `/` 与命令集/详情不可用。当前正式部署版本为 **3.3.0**（位于 `z-HistoryVulcan`）。
+无 Mercury 时双 `/` 与命令集/详情不可用。
+**3.3.2（DEC-023）在此基础上把类收敛为九类、废止「无类」与影子域 `debug`，并确立
+模块注册名与指令域的去品牌前缀规则（见 §3.3.1）。** 3.3.1 → 3.3.2 的逐条改名映射见
+§3.3.4 与 `HistoryVulcan_消费变更摘要.md`。当前正式部署版本为 **3.3.2**（位于 `z-HistoryVulcan`）。
 3.1.9 是旧名 AppShell 的最后快照，已随 3.2.0 发布退役；3.1.8 不作为稳定支持版本。以下包表和最小宿主代码
 描述当前正式合同，但正式部署不提供 NuGet feed。
 
@@ -90,11 +93,11 @@ Shell 核心、窗口和业务命令；仍保留 `vulcan.command.*`。中央命�
 
 ```csharp
 // 校验
-var error = bus.Validate("vulcan.win.show name=console");
+var error = bus.Validate("vulcan.ui.show name=console");
 if (error != null) { /* 语法或参数问题 */ }
 
 // 执行
-var result = await bus.ExecuteAsync("vulcan.win.show name=console", "UI");
+var result = await bus.ExecuteAsync("vulcan.ui.show name=console", "UI");
 ```
 
 所有 UI、脚本、Web 和 MCP 调用最终都进入 `CommandBus.ExecuteAsync`。
@@ -124,15 +127,96 @@ registry.Register(new CommandDescriptor
 ```
 
 模块侧优先经 `IModuleContext.RegisterCommands` 登记；宿主提交时以 `module:<模块名>` 为 source，
-并由 owner **强制**模块域（描述符中填其他 Domain 也不能冒用）。反射方法可用 `ModuleCommandAttribute` 声明
-`CommandClass` / `Readonly`；未声明类时归入 `core`。
+并由 owner **强制**模块域（描述符中填其他 Domain 也不能冒用，且按 §3.3.1 去掉 `History` 前缀）。
+反射方法可用 `ModuleCommandAttribute` 声明 `CommandClass` / `Readonly`。
+3.3.2 起**类不可省略**：未声明 `CommandClass` 时由命令名第二段推导，命令名不足三段则注册失败，
+不再静默回退到 `core`。
 
-### 3.3 命名规则（3.3.0）
+### 3.3 命名规则（3.3.2）
 
-- 框架内置命令：`vulcan.<类>.<方法>`，全小写，**无连字符**、**不留别名**；`Domain` 恒为 `vulcan`。
-- 模块命令：属模块域（owner 强制），名称形如 `<模块名>.<方法>` 或模块自定三段式。
+指令名恒为三段：`<域>.<类>.<方法>`，全小写、**无连字符**、**不留别名**。
+三段都必填——3.3.2 起不存在两段式「无类」指令，也不存在没有所有者的影子域。
+
+- 框架内置命令：`vulcan.<类>.<方法>`，`Domain` 恒为 `vulcan`，类取 §3.3.2 九类之一。
+- 模块命令：`<模块域>.<类>.<方法>`，模块域由 owner 强制（见 §3.3.1），模块不能冒用其他域。
 - 旧别名 `cls` 已删除；清屏仅 `vulcan.log.clear`。
-- 方法段不使用连字符：例如 `floatstate`、`focusconsole`、`copyexample`、`selectfile`。
+- 方法段不使用连字符：例如 `floatstate`、`copyexample`、`selectfile`、`layoutsave`。
+
+#### 3.3.1 模块注册名与指令域：域名去掉 `History` 品牌前缀
+
+**这是 3.3.2 必须先读懂的一条规则：模块的注册名不再和指令域名称对齐。**
+
+OneHistory 产品族的模块一律叫 `HistoryXxx`（`HistoryJanus`、`HistoryMercury`、
+`HistoryMinerva`、`HistoryVulcan`）。把 `History` 放在**模块名**前面是统一的、正确的——
+它标识产品族归属。但把同一个 `History` 带进**指令域**就完全多余：域段会出现在每一次
+指令输入、每一行命令目录、每一份 MCP schema 和每一条日志回显里，而 `History` 在那些位置
+不携带任何区分信息——所有模块都叫 `History` 开头，等于没说。
+
+因此：
+
+| 项 | 取值 | 例 |
+|---|---|---|
+| 模块名（manifest `name`、程序集、目录、Z 快照） | **保留** `History` 前缀 | `HistoryJanus` |
+| 指令域（命令名首段、`Domain`、目录「域」列） | **去掉** `History` 前缀后的小写主体 | `janus` |
+
+```
+HistoryJanus    → janus     janus.project.commit
+HistoryMercury  → mercury   mercury.shortcut.list
+HistoryMinerva  → minerva   minerva.<类>.<方法>
+HistoryVulcan   → vulcan    vulcan.command.list
+WBall           → wball     wball.<类>.<方法>          （无品牌前缀者原样小写）
+```
+
+归一化由 Core 的 `ModuleDomainNaming.ToDomain(moduleName)` 承担，是唯一真值：
+
+- 大小写不敏感地剥离开头的 `History`，其余部分转小写；
+- 剥离后为空则退回原名小写（防止出现名为 `History` 的模块被归一化成空域）；
+- 不以 `History` 开头的模块名原样转小写。
+
+`ModuleHost` 在强制 owner 域时调用同一函数，因此模块**无需也无法**自行声明域：
+描述符里写什么 `Domain` 都会被 owner 归一化结果覆盖。模块作者只需保证 manifest 的
+`name` 正确，域自动得出。
+
+> 消费方注意：这条规则改变的是**域段文本**，不是模块身份。`z-*` 目录名、manifest `name`、
+> 程序集名、日志 owner 字段继续使用带前缀的 `HistoryXxx`。
+
+#### 3.3.2 九个类
+
+3.3.2 将 13 个类收敛为 9 个，并消灭「无类」与影子域 `debug`：
+
+| 类 | 条数 | 职责 |
+|---|---|---|
+| `app` | 11 | 应用与前端生命周期、外观、配置项、数据目录、快捷键查阅 |
+| `command` | 8 | 指令目录、详情、手册、示例与执行原语 |
+| `ui` | 21 | 窗口、布局、面板与文件选择对话框 |
+| `log` | 11 | 控制台日志过滤、导出与承压注入 |
+| `mcp` | 11 | MCP 网关与提案审批 |
+| `module` | 4 | 模块发现、装载与管理页 |
+| `prompt` | 8 | 提示词治理、纠正与事故记录 |
+| `svc` | 4 | 后台服务生命周期 |
+| `web` | 5 | Web 网关与设备确认 |
+
+合计 83 条。模块自定义类不受这九类约束——九类是 `vulcan` 域内的划分。模块应在自己的域内
+用同样的方式收敛，避免每个功能点单开一类。
+
+#### 3.3.3 单条指令也必须有类
+
+不允许为了「就一条指令」而省略类段。孤立指令应并入语义最接近的既有类，
+而不是退化成两段式：
+
+- 查阅全局快捷键 → `vulcan.app.shortcuts`（不是 `vulcan.listshortcuts`）
+- 日志承压注入 → `vulcan.log.flood`（不是 `debug.logflood`）
+
+理由是目录的「类」列必须永远可筛选。只要存在一条无类指令，类筛选就需要一个
+「无类」特例项，控制台补全、命令集筛选和 MCP schema 三处都要为这个特例分支。
+3.3.2 删除了该特例（`CommandClassNames` 整体退役）。
+
+#### 3.3.4 3.3.1 → 3.3.2 改名速查
+
+`core`→`command`、`frontend`→`app`、`win`/`layout`/`panel`→`ui`，五条无类指令归类，
+`debug.logflood`→`vulcan.log.flood`。完整 32 条改名映射见
+`HistoryVulcan_消费变更摘要.md` 与仓库内 `b-Office/history/3.3.2-vulcan-class-realign.md`。
+未改名的 51 条保持原文本。
 
 ### 3.4 发现
 
@@ -161,8 +245,10 @@ registry.Register(new CommandDescriptor
 
 命令集表格列为：**域 | 类 | 方法 | MCP | 参数 | 说明**。
 
-双 `/` 由 Mercury 快捷键模块注册，目标命令为 `vulcan.frontend.focusconsole`。
+双 `/` 由 Mercury 注册为 `mercury.shortcut.wakeconsole`，内部组合调用 `vulcan.app.show`、
+`vulcan.ui.max name=console`、`vulcan.log.focus`（前两条在 3.3.2 改名，Mercury 需同步升级）。
 无 Mercury 时：双 `/`、中央命令集与详情不可用；`vulcan.command.*` 等总线命令仍可执行。
+3.3.2 起不存在两段式无类指令，类筛选没有「无类」选项。
 
 ### 3.6 安全与执行位点（简要）
 
@@ -236,9 +322,9 @@ registry.Register(new CommandDescriptor
 顶栏移动按宿主归属区分：普通嵌入页和专注页的空白顶栏只移动整个 HistoryVulcan，独立浮窗的空白顶栏只移动该浮窗。
 主 HistoryVulcan 处于普通状态时，空白顶栏越过系统拖动阈值即开始移动，不增加按住延时。主窗口最大化状态及独立浮窗仍需按住满 120ms；最大化宿主使用两倍阈值，开始移动时按鼠标横向比例恢复。
 一次按下只要越过移动阈值，就不再作为双击的第一次点击；下一次点击必须重新开始双击序列。
-只有真实页签能够把页面拖出：普通页签沿用 AvalonDock 原生流程，专注页签执行 `vulcan.win.restore` → `vulcan.win.float`。
+只有真实页签能够把页面拖出：普通页签沿用 AvalonDock 原生流程，专注页签执行 `vulcan.ui.restore` → `vulcan.ui.float`。
 浮窗使用恢复后嵌入窗格的实际宽高并保持鼠标在原页签抓取点，跨显示器时按目标显示器 DPI 和工作区定位；重新停靠仍须
-拖动真实页签。工具页动作区不提供浮窗最大化/还原按钮；文档浮窗保留自身状态按钮，该按钮不等同于 `vulcan.win.max`，
+拖动真实页签。工具页动作区不提供浮窗最大化/还原按钮；文档浮窗保留自身状态按钮，该按钮不等同于 `vulcan.ui.max`，
 也不会改变 HistoryVulcan 专注布局。
 
 消费方仍只使用 `ToolWindowDescriptor` 和 `IDockingService`，不得直接依赖内部 AvalonDock 文档类型。枚举值
@@ -276,13 +362,13 @@ registry.Register(new CommandDescriptor
 
 - 名称与参数名不区分大小写；名称在注册时规范为小写。
 - 含空格的值使用双引号，内部引号使用 `\"`。
-- `#` 开始注释；脚本由 `vulcan.core.run` 逐行执行。
+- `#` 开始注释；脚本由 `vulcan.command.run` 逐行执行。
 - 命令日志回显由解析结果重新生成：命令名规范为小写，位置参数与命名参数按解析结果的枚举顺序输出，
   并用标准引号规则重新转义。因此回显用于表达实际执行语义，不保证保留用户输入的原始大小写、空白或参数排列；
   敏感参数值会替换为 `[REDACTED]`；敏感命令返回的非字符串结构化 `Data` 不对外透传。
 - `CommandHistory.Add` 是低层公开入口，只能接收已经脱敏的命令回显；框架控制台只把总线生成的
   `cmd:手动` 脱敏回显写入历史。3.0 历史文件带 `# HistoryVulcan.CommandHistory.v2:redacted` 头，首次启动时会清空
-  没有该头的旧格式历史，避免 3.0 以前可能保存的明文再由 `vulcan.core.history` 返回。
+  没有该头的旧格式历史，避免 3.0 以前可能保存的明文再由 `vulcan.command.history` 返回。
 - 所有 UI、脚本、Web 和 MCP 调用最终都进入 `CommandBus.ExecuteAsync`。
 - `ExecutionSite=Local` 在当前宿主执行；`Frontend` 由服务转发给在线 Shell。
 - `Readonly`、`Dangerous` 和 `AllowMcpExecution` 是安全合同。前端/UI 命令默认不进入 MCP。
@@ -296,46 +382,44 @@ registry.Register(new CommandDescriptor
 - 3.3.0 起命令工作台（目录会话、补全引擎、命令集/详情视图）与全局快捷键由 HistoryMercury 4.1.0 拥有；
   目录数据仍来自 `vulcan.command.list` / `vulcan.command.domains`，参数详情由 `vulcan.command.show` 延迟加载。
   Shell 仅保留控制台日志面。无 Mercury 时双 `/` 与命令集/详情不可用；有 Mercury 时，控制台聚焦态
-  （如 `vulcan.win.max name=console`）仍可弹出候选，`Shift+W`/`Shift+S`/`Tab`/`Enter` 行为不变。
+  （如 `vulcan.ui.max name=console`）仍可弹出候选，`Shift+W`/`Shift+S`/`Tab`/`Enter` 行为不变。
 
 ## 6. 基础命令目录
 
-以下是 HistoryVulcan **3.3.0 正式**框架命令快照。宿主只注册已启用能力对应的组；运行时 `vulcan.command.list` 是最终权威目录。
-旧名→新名映射见 `../history/3.3.0-vulcan-command-rename.md`。
+以下是 HistoryVulcan **3.3.2 正式**框架命令快照（83 条）。宿主只注册已启用能力对应的组；
+运行时 `vulcan.command.list` 是最终权威目录。
+3.3.1→3.3.2 的 32 条改名映射见 `../history/3.3.2-vulcan-class-realign.md`；
+更早的 3.3.0 硬切见 `../history/3.3.0-vulcan-command-rename.md`。
 
-HistoryVulcan 自身只有一个域 `vulcan`，内置命令分类如下；新增内置命令必须显式归类，名称为 `vulcan.<类>.<方法>`：
+HistoryVulcan 自身只有一个域 `vulcan`，内置命令分为九类；新增内置命令必须归入其一，
+名称恒为 `vulcan.<类>.<方法>`——不存在无类指令，也不存在第二个内置域：
 
-| 域 | 类 | 方法（命令范围） |
-|---|---|---|
-| `vulcan` | `core` | `help`、`history`、`run` → `vulcan.core.*` |
-| `vulcan` | `app` | `vulcan.app.*`（含 `theme`；不含 frontend） |
-| `vulcan` | `frontend` | `vulcan.frontend.*` |
-| `vulcan` | `log` | `vulcan.log.*`（无 `cls` 别名） |
-| `vulcan` | `win` | `vulcan.win.*` |
-| `vulcan` | `layout` | `vulcan.layout.*` |
-| `vulcan` | `panel` | `vulcan.panel.*` |
-| `vulcan` | `module` | `vulcan.module.*` |
-| `vulcan` | `command` | `vulcan.command.*` |
-| `vulcan` | `mcp` | `vulcan.mcp.*` |
-| `vulcan` | `prompt` | `vulcan.prompt.*` |
-| `vulcan` | `correction` | `vulcan.correction.*` |
-| `vulcan` | `incident` | `vulcan.incident.*` |
-| `vulcan` | `web` | `vulcan.web.*` |
-| `vulcan` | `svc` | `vulcan.svc.*` |
-| `vulcan` | `shortcut` | `vulcan.shortcut.list` |
-| `vulcan` | `debug` | `vulcan.debug.*` |
+| 域 | 类 | 条数 | 方法（命令范围） |
+|---|---|---|---|
+| `vulcan` | `app` | 11 | `vulcan.app.*`：身份、主题、设置、数据目录、前端生命周期、快捷键查阅 |
+| `vulcan` | `command` | 8 | `vulcan.command.*`：目录、详情、手册、示例、`help`/`run`/`history` |
+| `vulcan` | `ui` | 21 | `vulcan.ui.*`：停靠窗口、命名布局、面板、文件对话框 |
+| `vulcan` | `log` | 11 | `vulcan.log.*`（无 `cls` 别名；含承压 `flood`） |
+| `vulcan` | `mcp` | 11 | `vulcan.mcp.*` |
+| `vulcan` | `module` | 4 | `vulcan.module.*` |
+| `vulcan` | `prompt` | 8 | `vulcan.prompt.*`：描述治理、勘误与事故 |
+| `vulcan` | `svc` | 4 | `vulcan.svc.*` |
+| `vulcan` | `web` | 5 | `vulcan.web.*` |
+| `mercury` | `shortcut` | — | `mercury.shortcut.*`（由 HistoryMercury 注册，不属本手册合同） |
+
+3.3.1 的 `core`、`frontend`、`win`、`layout`、`panel` 五个类与影子域 `debug` 已退役。
 
 ### 6.1 基础、应用与日志
 
 | 命令 | 用途 / 关键参数 |
 |---|---|
-| `vulcan.core.help [command]` | 列出命令或显示详情 |
-| `vulcan.core.history [count]` | 查看命令历史 |
-| `vulcan.core.run file= [continue=false]` | 执行命令脚本；失败时默认停止 |
-| `vulcan.app.exit` | 正常关闭桌面应用 |
-| `vulcan.frontend.show`、`vulcan.frontend.hide` | 显示/隐藏前端窗口并保持后台服务连接 |
-| `vulcan.frontend.focusconsole` | 唤出前端、将主窗口提升到 Windows 前台、切换控制台聚焦布局并聚焦命令框；控制台已显示时仍重复上浮和聚焦；无前端时由后台启动；双 `/` 由 Mercury 注册并触发本命令 |
-| `vulcan.frontend.exit` | 只退出前端进程；`vulcan.app.exit` 才协调前后台一起退出 |
+| `vulcan.command.help [command]` | 列出命令或显示详情 |
+| `vulcan.command.history [count]` | 查看命令历史 |
+| `vulcan.command.run file= [continue=false]` | 执行命令脚本；失败时默认停止 |
+| `vulcan.app.quit` | 正常关闭桌面应用（协调前后台一起退出） |
+| `vulcan.app.show`、`vulcan.app.hide` | 显示/隐藏前端**进程窗口**并保持后台服务连接；与 `vulcan.ui.show`/`hide`（停靠窗口）不同 |
+| `vulcan.app.close` | 只关闭前端进程，后台服务继续运行 |
+| `vulcan.app.shortcuts` | 查看已注册全局快捷键的 owner、手势和目标命令；不返回原始键盘事件 |
 | `vulcan.app.about` | 显示应用身份与版本 |
 | `vulcan.app.get [key]` | 读取一个或全部设置；`code`、token、password/passwd、secret、private key 与 connection string 类设置只返回 `(已配置)`，不返回明文 |
 | `vulcan.app.set key= value=` | 写设置；上述敏感键的结果同样只返回 `(已配置)` |
@@ -348,34 +432,46 @@ HistoryVulcan 自身只有一个域 `vulcan`，内置命令分类如下；新增
 | `vulcan.log.keyword [text=...]` | 查询或设置关键字过滤 |
 | `vulcan.log.mute [layout=true|false]` | 查询或设置 layout 来源屏蔽 |
 | `vulcan.log.autoscroll [enabled=true|false]` | 查询或设置自动滚动（默认开启） |
-| `vulcan.log.clear`、`vulcan.log.export [path=]`、`vulcan.log.copy` | 清屏、导出或复制当前控制台内容 |
+| `vulcan.log.clear`、`vulcan.log.copy` | 清屏或复制当前控制台内容 |
+| `vulcan.log.export [path=]` | 导出当前控制台可见内容。**省略 `path` 时不弹对话框**：写入应用数据目录 `exports/console-<时间戳>.txt` 并在结果中返回绝对路径（3.3.2 起） |
 | `vulcan.log.focus [errors=true|false]` | 聚焦控制台，可选切换错误过滤 |
+| `vulcan.log.flood rate= seconds=` | 按指定速率注入日志做承压验证（3.3.1 的 `debug.logflood`） |
 
-### 6.2 窗口与布局
+### 6.2 窗口、布局与面板（`ui`）
 
-| 命令 | 用途 / 关键参数 |
-|---|---|
-| `vulcan.win.list` | 列出窗口状态、位置与比例 |
-| `vulcan.win.show name=`、`vulcan.win.hide name=`、`vulcan.win.float name=`、`vulcan.win.autohide name=`、`vulcan.win.reset name=` | 显示、隐藏、浮动、切换自动隐藏或复位窗口；固定命令集主文档拒绝隐藏/浮动 |
-| `vulcan.win.max name=`、`vulcan.win.restore` | 最大化单窗或恢复整体布局 |
-| `vulcan.win.floatstate name= [state=maximized|normal|toggle]` | 设置独立浮窗宿主状态；页面按钮与浮窗标题双击使用同一命令 |
-| `vulcan.win.dock name= pos=left|right|top|bottom|center|tab [target=] [ratio=]` | 停靠窗口；Center 进入主文档区，tab 需要目标；命令集只允许 Center；提供 ratio 时须满足 `0 < ratio < 1` |
-| `vulcan.win.ratio name= value=` | 设置四边窗口占主窗体比例，须满足 `0 < value < 1`；中央页不支持比例调整 |
-| `vulcan.layout.save name=`、`vulcan.layout.load name=` | 保存或载入命名布局 |
-| `vulcan.layout.list`、`vulcan.layout.reset` | 列出方案或恢复默认布局 |
+`ui` 是 3.3.2 合并 `win` / `layout` / `panel` 后的类，共 21 条。三个列表命令使用复数名词，
+布局与面板动作使用 `layout*` / `panel*` 复合方法段，避免 `list` / `show` / `reset` 碰撞。
 
-### 6.3 面板
-
-面板能力存在时注册 `vulcan.panel.*`。文件/目录选择也通过命令总线执行，视图按钮不得直接调用对话框服务。
+停靠窗口（11 条）：
 
 | 命令 | 用途 / 关键参数 |
 |---|---|
-| `vulcan.panel.list` | 列出面板 |
-| `vulcan.panel.show id=` | 显示面板窗口 |
-| `vulcan.panel.set panel= control= value=` | 更新面板控件值 |
-| `vulcan.panel.reload` | 重载已有面板定义 |
-| `vulcan.panel.selectfile` | 打开文件选择器并返回选中的路径 |
-| `vulcan.panel.selectdirectory` | 打开目录选择器并返回选中的路径 |
+| `vulcan.ui.windows` | 列出窗口状态、位置与比例 |
+| `vulcan.ui.show name=`、`vulcan.ui.hide name=`、`vulcan.ui.float name=`、`vulcan.ui.autohide name=`、`vulcan.ui.reset name=` | 显示、隐藏、浮动、切换自动隐藏或复位停靠窗口；固定命令集主文档拒绝隐藏/浮动 |
+| `vulcan.ui.max name=`、`vulcan.ui.restore` | 最大化单窗或恢复整体布局 |
+| `vulcan.ui.floatstate name= [state=maximized|normal|toggle]` | 设置独立浮窗宿主状态；页面按钮与浮窗标题双击使用同一命令 |
+| `vulcan.ui.dock name= pos=left|right|top|bottom|center|tab [target=] [ratio=]` | 停靠窗口；Center 进入主文档区，tab 需要目标；命令集只允许 Center；提供 ratio 时须满足 `0 < ratio < 1` |
+| `vulcan.ui.ratio name= value=` | 设置四边窗口占主窗体比例，须满足 `0 < value < 1`；中央页不支持比例调整 |
+
+命名布局（4 条）：
+
+| 命令 | 用途 / 关键参数 |
+|---|---|
+| `vulcan.ui.layouts` | 列出已保存的布局方案 |
+| `vulcan.ui.layoutsave name=`、`vulcan.ui.layoutload name=` | 保存或载入命名布局 |
+| `vulcan.ui.layoutreset` | 恢复默认布局 |
+
+面板与文件对话框（6 条）：面板能力存在时注册。文件/目录选择也通过命令总线执行，
+视图按钮不得直接调用对话框服务。
+
+| 命令 | 用途 / 关键参数 |
+|---|---|
+| `vulcan.ui.panels` | 列出面板及其窗口状态 |
+| `vulcan.ui.panelshow id=` | 显示面板窗口（等价 `vulcan.ui.show`） |
+| `vulcan.ui.panelset panel= control= value=` | 更新面板控件值 |
+| `vulcan.ui.panelreload` | 重载已有面板定义 |
+| `vulcan.ui.selectfile` | 打开文件选择器并返回选中的路径 |
+| `vulcan.ui.selectdirectory` | 打开目录选择器并返回选中的路径 |
 
 ### 6.4 模块
 
@@ -391,7 +487,8 @@ HistoryVulcan 自身只有一个域 `vulcan`，内置命令分类如下；新增
 | `vulcan.module.roots [paths=<绝对根1;绝对根2>|auto]` | 查询/设置 Z 模块发现根；`auto` 恢复向上识别 `HistoryVesta.git` |
 | `vulcan.module.open` | 在资源管理器中打开模块目录 |
 
-模块公开方法另外注册为 `<模块名>.<方法名>`，不属于固定基础命令。
+模块公开方法另外注册为 `<模块域>.<类>.<方法>`，模块域按 §3.3.1 去掉 `History` 前缀
+（`HistoryJanus` → `janus.*`），不属于固定基础命令。
 
 ### 6.5 命令目录与 MCP
 
@@ -415,16 +512,17 @@ HistoryVulcan 自身只有一个域 `vulcan`，内置命令分类如下；新增
 |---|---|
 | `vulcan.mcp.desc` | 本地直接修订工具描述 |
 | `vulcan.prompt.get`、`vulcan.prompt.history`、`vulcan.prompt.diff`、`vulcan.prompt.propose` | 查看描述、历史、差异和提交提案 |
-| `vulcan.correction.list`、`vulcan.correction.propose` | 查看或提交描述勘误 |
-| `vulcan.incident.list`、`vulcan.incident.record` | 查看或记录调用/描述事故 |
+| `vulcan.prompt.corrections`、`vulcan.prompt.correct` | 查看或提交描述勘误 |
+| `vulcan.prompt.incidents`、`vulcan.prompt.record` | 查看或记录调用/描述事故 |
 | `vulcan.mcp.pending`、`vulcan.mcp.approve`、`vulcan.mcp.reject`、`vulcan.mcp.apply`、`vulcan.mcp.revert` | 审核、应用或回退治理记录 |
 
 治理命令的 id、reviewer、reason、evidence 等完整参数以 `vulcan.command.show <name>` 为准，避免客户端复制一套可漂移参数表。
 
 ### 6.7 Web、服务生命周期与快捷键
 
-Web 组合注册 `vulcan.web.*`；`ServiceHost.Run` 注册 `vulcan.svc.*`。全局快捷键基础设施由 HistoryMercury 4.1.0 拥有；
-宿主仍注册 `vulcan.shortcut.list` 供查阅。
+Web 组合注册 `vulcan.web.*`；`ServiceHost.Run` 注册 `vulcan.svc.*`。全局快捷键由 HistoryMercury 拥有；
+双 `/` 触发 `mercury.shortcut.wakeconsole`，再组合 Vulcan 窗口指令。
+查阅快捷键用 `vulcan.app.shortcuts`（3.3.1 的无类 `vulcan.listshortcuts`）。
 
 | 命令 | 用途 / 关键参数 |
 |---|---|
@@ -434,7 +532,8 @@ Web 组合注册 `vulcan.web.*`；`ServiceHost.Run` 注册 `vulcan.svc.*`。全�
 | `vulcan.svc.status` | 查看服务、MCP、Web 和模块状态 |
 | `vulcan.svc.stop`、`vulcan.svc.restart` | 请求停止或重启服务 |
 | `vulcan.svc.autostart [mode=on|off]` | 无参数时查看状态；`on` / `off` 修改登录自启 |
-| `vulcan.shortcut.list` | 查看 owner、手势和目标命令；不返回原始键盘事件 |
+| `vulcan.app.shortcuts` | 查看 owner、手势和目标命令；不返回原始键盘事件（属 `app` 类，见 §6.1） |
+| `mercury.shortcut.wakeconsole` | Mercury 编排：组合 `vulcan.app.show` + `vulcan.ui.max` + `vulcan.log.focus`（Mercury 侧需随 3.3.2 同步升级） |
 
 ## 7. MCP 暴露规则
 

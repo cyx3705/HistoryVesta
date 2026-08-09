@@ -20,16 +20,16 @@ public static partial class BuiltinCommands
         var nameParam = new ParameterSpec
         {
             Name = "name",
-            Description = "窗口名(vulcan.win.list 可查)",
+            Description = "窗口名(vulcan.ui.windows 可查)",
             Required = true,
             Position = 0,
         };
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "vulcan.win.list",
+            Name = "vulcan.ui.windows",
             Domain = "vulcan",
-            CommandClass = "win",
+            CommandClass = "ui",
             Summary = "列出全部窗口及状态",
             Readonly = true,
             RequiresUiThread = true,
@@ -60,19 +60,19 @@ public static partial class BuiltinCommands
             }),
         });
 
-        RegisterWindowVerb(r, s, "vulcan.win.show", "显示窗口(隐藏则唤出,已显示则激活)",
+        RegisterWindowVerb(r, s, "vulcan.ui.show", "显示窗口(隐藏则唤出,已显示则激活)",
             (d, id) => { d.Show(id); return $"{id} 已显示"; });
-        RegisterWindowVerb(r, s, "vulcan.win.hide", "隐藏窗口(状态保留,可再唤出)",
+        RegisterWindowVerb(r, s, "vulcan.ui.hide", "隐藏窗口(状态保留,可再唤出)",
             (d, id) => { d.Hide(id); return $"{id} 已隐藏"; });
-        RegisterWindowVerb(r, s, "vulcan.win.float", "把窗口浮动为独立顶层窗口",
+        RegisterWindowVerb(r, s, "vulcan.ui.float", "把窗口浮动为独立顶层窗口",
             (d, id) => { d.Float(id); return $"{id} 已浮动"; });
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "vulcan.win.autohide",
+            Name = "vulcan.ui.autohide",
             Domain = "vulcan",
-            CommandClass = "win",
+            CommandClass = "ui",
             Summary = "切换工具窗口的自动隐藏状态",
-            Example = $"vulcan.win.autohide name={StandardWindowIds.Console}",
+            Example = $"vulcan.ui.autohide name={StandardWindowIds.Console}",
             RequiresUiThread = true,
             Parameters = [nameParam],
             Handler = CommandDescriptor.Sync(ctx =>
@@ -95,16 +95,16 @@ public static partial class BuiltinCommands
                 }
             }),
         });
-        RegisterWindowVerb(r, s, "vulcan.win.reset", "把窗口复位到注册时的默认位置",
+        RegisterWindowVerb(r, s, "vulcan.ui.reset", "把窗口复位到注册时的默认位置",
             (d, id) => { d.ResetWindow(id); return $"{id} 已复位到默认位置"; });
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "vulcan.win.max",
+            Name = "vulcan.ui.max",
             Domain = "vulcan",
-            CommandClass = "win",
+            CommandClass = "ui",
             Summary = "最大化指定工具窗口",
-            Example = "vulcan.win.max name=se2sw",
+            Example = "vulcan.ui.max name=se2sw",
             RequiresUiThread = true,
             Parameters = [nameParam],
             Handler = CommandDescriptor.Sync(ctx =>
@@ -121,11 +121,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "vulcan.win.floatstate",
+            Name = "vulcan.ui.floatstate",
             Domain = "vulcan",
-            CommandClass = "win",
+            CommandClass = "ui",
             Summary = "设置独立浮窗宿主的最大化状态",
-            Example = $"vulcan.win.floatstate name={StandardWindowIds.Console} state=toggle",
+            Example = $"vulcan.ui.floatstate name={StandardWindowIds.Console} state=toggle",
             RequiresUiThread = true,
             Parameters =
             [
@@ -150,9 +150,9 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "vulcan.win.restore",
+            Name = "vulcan.ui.restore",
             Domain = "vulcan",
-            CommandClass = "win",
+            CommandClass = "ui",
             Summary = "退出窗口最大化并恢复原布局",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -164,11 +164,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "vulcan.win.dock",
+            Name = "vulcan.ui.dock",
             Domain = "vulcan",
-            CommandClass = "win",
+            CommandClass = "ui",
             Summary = "停靠窗口到指定方位(pos=center 占中央区，pos=tab 并入目标标签组)",
-            Example = $"vulcan.win.dock name={StandardWindowIds.Console} pos=bottom ratio=0.3",
+            Example = $"vulcan.ui.dock name={StandardWindowIds.Console} pos=bottom ratio=0.3",
             RequiresUiThread = true,
             Parameters =
             [
@@ -221,11 +221,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "vulcan.win.ratio",
+            Name = "vulcan.ui.ratio",
             Domain = "vulcan",
-            CommandClass = "win",
+            CommandClass = "ui",
             Summary = "调整窗口占主窗体的比例",
-            Example = $"vulcan.win.ratio name={StandardWindowIds.Console} value=0.3",
+            Example = $"vulcan.ui.ratio name={StandardWindowIds.Console} value=0.3",
             RequiresUiThread = true,
             Parameters =
             [
@@ -266,7 +266,7 @@ public static partial class BuiltinCommands
         {
             Name = name,
             Domain = "vulcan",
-            CommandClass = "win",
+            CommandClass = "ui",
             Summary = summary,
             Example = $"{name} name={StandardWindowIds.Console}",
             RequiresUiThread = true,
@@ -275,7 +275,7 @@ public static partial class BuiltinCommands
                 new ParameterSpec
                 {
                     Name = "name",
-                    Description = "窗口名(vulcan.win.list 可查)",
+                    Description = "窗口名(vulcan.ui.windows 可查)",
                     Required = true,
                     Position = 0,
                 },
@@ -286,7 +286,7 @@ public static partial class BuiltinCommands
                     return error;
                 var id = ctx.RequireString("name");
                 var message = action(s.Docking, id);
-                if (name.Equals("vulcan.win.show", StringComparison.OrdinalIgnoreCase))
+                if (name.Equals("vulcan.ui.show", StringComparison.OrdinalIgnoreCase))
                     s.Window.ActivateToolContent(id);
                 return CommandResult.Ok(message);
             }),

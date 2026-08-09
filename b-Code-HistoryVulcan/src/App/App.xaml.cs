@@ -21,7 +21,7 @@ namespace HistoryVulcan.App;
 /// <summary>
 /// HistoryVulcan 独立演示宿主(§9):用于验证框架脱离 Janus 仍可构建和运行。
 /// M2:控制台窗口由 Shell 提供真实实现;本层注册自定义指令示范
-/// (debug.logflood,兼作验收 8 的承压测试入口)。
+/// (vulcan.log.flood,兼作验收 8 的承压测试入口)。
 /// 控制面板与资源窗口由 Shell 提供，派生应用可继续注册自己的业务窗口。
 /// </summary>
 public partial class App : Application
@@ -135,7 +135,7 @@ public partial class App : Application
             {
                 if (source.Equals("Service:Relay", StringComparison.OrdinalIgnoreCase))
                     return false;
-                if (text.TrimStart().StartsWith("vulcan.frontend.", StringComparison.OrdinalIgnoreCase))
+                if (text.TrimStart().StartsWith("vulcan.app.", StringComparison.OrdinalIgnoreCase))
                     return false;
 
                 // 本机已登记且需 UI 线程的页面状态命令（如 HistoryMinerva.convert）就地执行，
@@ -176,7 +176,13 @@ public partial class App : Application
         }
 
         if (e.Args.Any(arg => arg.Equals("--focus-console", StringComparison.OrdinalIgnoreCase)))
-            startupCommands.Add("vulcan.frontend.focusconsole");
+        {
+            // Mercury 热键冷启动入口：组合 Vulcan 窗口指令，不引入 mercury.* 耦合命令。
+            startupCommands.Add("vulcan.app.show");
+            startupCommands.Add($"vulcan.ui.show name={HistoryVulcan.Core.Docking.StandardWindowIds.Console}");
+            startupCommands.Add("vulcan.log.focus");
+            startupCommands.Add($"vulcan.ui.max name={HistoryVulcan.Core.Docking.StandardWindowIds.Console}");
+        }
 
         if (startupCommands.Count > 0)
             _ = RunStartupCommandsAsync(window, startupCommands);
@@ -243,83 +249,78 @@ public partial class App : Application
         };
     }
 
+    /// <summary>
+    /// 按合同发现全局快捷键宿主(DEC-023)。3.3.1 之前这里硬编码了 "HistoryMercury.dll" 与
+    /// "Mercury.Input.GlobalShortcutService" 两个字符串,并额外探测兄弟仓库的 bin 目录——
+    /// 框架点名具体模块,换实现或改命名空间就静默失效。
+    /// 现在只在已发现的模块目录里找实现了 <see cref="IGlobalShortcutHost"/> 的公开类型,
+    /// 谁提供实现由部署决定,框架不认识任何具体模块名。
+    /// </summary>
     private static IGlobalShortcutHost? TryCreateGlobalShortcutHost(
         CommandBus bus,
         IShellLog log,
         IReadOnlyList<string> discoveryRoots)
     {
-        var dllPath = FindHistoryMercuryAssembly(discoveryRoots);
-        if (dllPath == null)
+        foreach (var candidate in EnumerateModuleAssemblies(discoveryRoots))
         {
-            log.Warn("hotkey", "未找到 HistoryMercury.dll，全局快捷键宿主未启用。");
-            return null;
-        }
-
-        try
-        {
-            var assembly = Assembly.LoadFrom(dllPath);
-            var type = assembly.GetType("Mercury.Input.GlobalShortcutService", throwOnError: false);
-            if (type == null)
+            Type[] types;
+            try
             {
-                log.Warn("hotkey", $"HistoryMercury.dll 中未找到 Mercury.Input.GlobalShortcutService: {dllPath}");
-                return null;
+                types = Assembly.LoadFrom(candidate).GetTypes();
+            }
+            catch (Exception ex) when (ex is BadImageFormatException
+                                           or FileLoadException
+                                           or ReflectionTypeLoadException)
+            {
+                continue;
             }
 
-            return (IGlobalShortcutHost)Activator.CreateInstance(type, bus, log)!;
+            var implementation = types.FirstOrDefault(type =>
+                type is { IsAbstract: false, IsPublic: true }
+                && typeof(IGlobalShortcutHost).IsAssignableFrom(type));
+            if (implementation == null)
+                continue;
+
+            try
+            {
+                // 合同构造签名:(CommandBus, IShellLog);缺失时退回无参构造。
+                var host = implementation.GetConstructor([typeof(CommandBus), typeof(IShellLog)]) != null
+                    ? (IGlobalShortcutHost)Activator.CreateInstance(implementation, bus, log)!
+                    : (IGlobalShortcutHost)Activator.CreateInstance(implementation)!;
+                log.Info("hotkey", $"全局快捷键宿主: {implementation.FullName}({Path.GetFileName(candidate)})");
+                return host;
+            }
+            catch (Exception ex)
+            {
+                log.Warn("hotkey", $"构造全局快捷键宿主 {implementation.FullName} 失败: {ex.Message}");
+            }
         }
-        catch (Exception ex)
-        {
-            log.Warn("hotkey", $"加载 HistoryMercury 快捷键宿主失败: {ex.Message}");
-            return null;
-        }
+
+        log.Info("hotkey", "未发现 IGlobalShortcutHost 实现，全局快捷键未启用。");
+        return null;
     }
 
-    private static string? FindHistoryMercuryAssembly(IReadOnlyList<string> discoveryRoots)
+    /// <summary>枚举模块发现根下的候选程序集;不认识任何具体模块名。</summary>
+    private static IEnumerable<string> EnumerateModuleAssemblies(IReadOnlyList<string> discoveryRoots)
     {
         foreach (var root in discoveryRoots)
         {
             if (!Directory.Exists(root))
                 continue;
+
+            string[] files;
             try
             {
-                var hit = Directory.EnumerateFiles(root, "HistoryMercury.dll", SearchOption.AllDirectories)
-                    .OrderByDescending(File.GetLastWriteTimeUtc)
-                    .FirstOrDefault();
-                if (hit != null)
-                    return hit;
+                files = Directory.GetFiles(root, "*.dll", SearchOption.AllDirectories);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-            }
-        }
-
-        // Dev convenience: sibling Mercury repo build output under HistoryVesta.
-        foreach (var anchor in new[] { AppContext.BaseDirectory, Environment.CurrentDirectory })
-        {
-            var vesta = ZModuleDiscoverySource.FindAutomaticRoot(anchor);
-            if (vesta == null)
                 continue;
-            var binRoot = Path.Combine(
-                vesta,
-                "2026-021-HistoryMercury",
-                "b-Code-MercuryDock",
-                "bin");
-            if (!Directory.Exists(binRoot))
-                continue;
-            try
-            {
-                var hit = Directory.EnumerateFiles(binRoot, "HistoryMercury.dll", SearchOption.AllDirectories)
-                    .OrderByDescending(File.GetLastWriteTimeUtc)
-                    .FirstOrDefault();
-                if (hit != null)
-                    return hit;
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-            }
-        }
 
-        return null;
+            foreach (var file in files.OrderByDescending(File.GetLastWriteTimeUtc))
+                yield return file;
+        }
     }
 
     private static void RegisterServiceModuleCommands(
@@ -621,16 +622,16 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// debug.logflood:按指定速率注入日志(验收 8 / N-03 承压验证)。
+    /// vulcan.log.flood:按指定速率注入日志(验收 8 / N-03 承压验证)。
     /// 异步长任务示范:后台线程产出、经 Progress 上报进度、全程不阻塞 UI(§5.2)。
     /// </summary>
     private static CommandDescriptor BuildLogFloodCommand(ShellLog log) => new()
     {
-        Name = "debug.logflood",
+        Name = "vulcan.log.flood",
         Domain = "vulcan",
-        CommandClass = "debug",
+        CommandClass = "log",
         Summary = "日志承压测试:按指定速率注入日志",
-        Example = "debug.logflood rate=1000 seconds=30",
+        Example = "vulcan.log.flood rate=1000 seconds=30",
         Parameters =
         [
             new ParameterSpec

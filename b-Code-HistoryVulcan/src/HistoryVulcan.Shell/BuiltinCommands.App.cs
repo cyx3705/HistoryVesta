@@ -19,7 +19,7 @@ public static partial class BuiltinCommands
     {
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "vulcan.app.exit",
+            Name = "vulcan.app.quit",
             Domain = "vulcan",
             CommandClass = "app",
             Summary = "退出程序",

@@ -50,7 +50,7 @@ public static class ServiceCommands
 
         registry.Register(new CommandDescriptor
         {
-            Name = "vulcan.app.exit",
+            Name = "vulcan.app.quit",
             Domain = "vulcan",
             CommandClass = "app",
             Summary = "退出 HistoryVulcan 前端与后台服务",
@@ -59,7 +59,7 @@ public static class ServiceCommands
             {
                 var frontend = composition.Web?.ConnectedShells > 0
                     ? await composition.Web.RelayFrontendCommandAsync(
-                        "vulcan.frontend.exit", ctx.Source, ctx.Cancellation).ConfigureAwait(false)
+                        "vulcan.app.close", ctx.Source, ctx.Cancellation).ConfigureAwait(false)
                     : CommandResult.Ok("前端未连接");
                 _ = Application.Current.Dispatcher.BeginInvoke(requestStop);
                 return frontend.Success
@@ -72,10 +72,10 @@ public static class ServiceCommands
 
         registry.Register(new CommandDescriptor
         {
-            Name = "vulcan.shortcut.list",
+            Name = "vulcan.app.shortcuts",
             Domain = "vulcan",
-            CommandClass = "shortcut",
-            Summary = "列出已注册的全局快捷键",
+            CommandClass = "app",
+            Summary = "列出已注册的全局快捷键（注册与派发归 HistoryMercury）",
             Readonly = true,
             Handler = CommandDescriptor.Sync(_ =>
             {
@@ -156,37 +156,47 @@ public static class ServiceCommands
     {
         registry.Register(new CommandDescriptor
         {
-            Name = "vulcan.frontend.show",
+            Name = "vulcan.app.show",
             Domain = "vulcan",
-            CommandClass = "frontend",
+            CommandClass = "app",
             Summary = "显示并激活前端窗口",
-            Handler = ctx => RelayOrStartAsync(composition, executablePath, "vulcan.frontend.show", "--show", ctx),
+            Parameters =
+            [
+                new ParameterSpec
+                {
+                    Name = "startup",
+                    Description = "冷启动参数：--show（默认）或 --focus-console",
+                    Required = false,
+                },
+            ],
+            Handler = ctx =>
+            {
+                if (!TryNormalizeFrontendStartup(ctx.GetString("startup"), out var startup, out var error))
+                    return Task.FromResult(CommandResult.Fail(error));
+                // 已连接时只中继裸指令，避免把 startup 传到前端（前端 show 无此参数）。
+                return RelayOrStartAsync(
+                    composition,
+                    executablePath,
+                    "vulcan.app.show",
+                    startup,
+                    ctx);
+            },
         }, source);
 
         registry.Register(new CommandDescriptor
         {
-            Name = "vulcan.frontend.focusconsole",
+            Name = "vulcan.app.hide",
             Domain = "vulcan",
-            CommandClass = "frontend",
-            Summary = "唤出并聚焦前端控制台",
-            Handler = ctx => RelayOrStartAsync(
-                composition, executablePath, "vulcan.frontend.focusconsole", "--focus-console", ctx),
-        }, source);
-
-        registry.Register(new CommandDescriptor
-        {
-            Name = "vulcan.frontend.hide",
-            Domain = "vulcan",
-            CommandClass = "frontend",
+            CommandClass = "app",
             Summary = "隐藏前端窗口并保持后台运行",
-            Handler = ctx => RelayOrStartAsync(composition, executablePath, "vulcan.frontend.hide", null, ctx),
+            Handler = ctx => RelayOrStartAsync(composition, executablePath, "vulcan.app.hide", null, ctx),
         }, source);
 
         registry.Register(new CommandDescriptor
         {
-            Name = "vulcan.frontend.exit",
+            Name = "vulcan.app.close",
             Domain = "vulcan",
-            CommandClass = "frontend",
+            CommandClass = "app",
             Summary = "退出前端进程",
             Handler = async ctx =>
             {
@@ -194,7 +204,7 @@ public static class ServiceCommands
                 if (web == null || web.ConnectedShells <= 0)
                     return CommandResult.Ok("前端未连接");
                 return await web.RelayFrontendCommandAsync(
-                    "vulcan.frontend.exit", ctx.Source, ctx.Cancellation).ConfigureAwait(false);
+                    "vulcan.app.close", ctx.Source, ctx.Cancellation).ConfigureAwait(false);
             },
         }, source);
     }
@@ -227,5 +237,30 @@ public static class ServiceCommands
         {
             return CommandResult.Fail($"前端启动失败: {ex.Message}");
         }
+    }
+
+    private static bool TryNormalizeFrontendStartup(
+        string? startup,
+        out string normalized,
+        out string error)
+    {
+        if (string.IsNullOrWhiteSpace(startup)
+            || startup.Equals("--show", StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = "--show";
+            error = "";
+            return true;
+        }
+
+        if (startup.Equals("--focus-console", StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = "--focus-console";
+            error = "";
+            return true;
+        }
+
+        normalized = "--show";
+        error = "startup 仅允许 --show 或 --focus-console。";
+        return false;
     }
 }

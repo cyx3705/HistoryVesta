@@ -5,7 +5,7 @@ namespace HistoryVulcan.Core.Docking;
 /// </summary>
 public sealed class ShellCommandEventArgs : EventArgs
 {
-    /// <summary>指令文本,如 "vulcan.win.dock name=console pos=bottom ratio=0.28"。</summary>
+    /// <summary>指令文本,如 "vulcan.ui.dock name=console pos=bottom ratio=0.28"。</summary>
     public required string CommandText { get; init; }
 
     /// <summary>来源类别:"layout"(拖拽手势)、"UI"(菜单/按钮)等。</summary>

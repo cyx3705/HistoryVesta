@@ -844,19 +844,19 @@ public sealed partial class DockingHost : IDockingService
 
             if (was.Visible && !cur.Visible)
             {
-                Emit($"vulcan.win.hide name={d.Id}");
+                Emit($"vulcan.ui.hide name={d.Id}");
                 continue;
             }
 
             if (!was.Visible && cur.Visible)
-                Emit($"vulcan.win.show name={d.Id}");
+                Emit($"vulcan.ui.show name={d.Id}");
 
             if (!cur.Visible)
                 continue;
 
             if (!was.Floating && cur.Floating)
             {
-                Emit($"vulcan.win.float name={d.Id}");
+                Emit($"vulcan.ui.float name={d.Id}");
                 continue;
             }
 
@@ -868,15 +868,15 @@ public sealed partial class DockingHost : IDockingService
             if (dockChanged)
             {
                 Emit(cur.TabTarget != null
-                    ? $"vulcan.win.dock name={d.Id} pos=tab target={cur.TabTarget}"
+                    ? $"vulcan.ui.dock name={d.Id} pos=tab target={cur.TabTarget}"
                     : cur.Side == DockSide.Center
-                        ? $"vulcan.win.dock name={d.Id} pos=center"
-                        : $"vulcan.win.dock name={d.Id} pos={SideText(cur.Side.Value)} ratio={FormatRatio(cur.Ratio)}");
+                        ? $"vulcan.ui.dock name={d.Id} pos=center"
+                        : $"vulcan.ui.dock name={d.Id} pos={SideText(cur.Side.Value)} ratio={FormatRatio(cur.Ratio)}");
             }
             else if (was.Ratio > 0 && cur.Ratio > 0 && Math.Abs(was.Ratio - cur.Ratio) > RatioEpsilon)
             {
                 // was.Ratio == 0 说明基线建立时尚未完成渲染(尺寸未知),不视为用户手势
-                Emit($"vulcan.win.ratio name={d.Id} value={FormatRatio(cur.Ratio)}");
+                Emit($"vulcan.ui.ratio name={d.Id} value={FormatRatio(cur.Ratio)}");
             }
         }
 

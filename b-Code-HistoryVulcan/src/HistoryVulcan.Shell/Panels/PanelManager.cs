@@ -12,7 +12,7 @@ namespace HistoryVulcan.Shell.Panels;
 /// 从 &lt;数据目录&gt;/panels/*.json 加载面板声明(P-01,JSON 为主),
 /// 与 C# 注册通道(ShellConfig.Panels)合并;每个面板注册为一个独立
 /// 可停靠工具窗口(P-05,窗口名 = 面板 id),随布局一起持久化。
-/// vulcan.panel.reload 重读 JSON 并原地重建既有面板内容(P-08;新增面板需重启)。
+/// vulcan.ui.panelreload 重读 JSON 并原地重建既有面板内容(P-08;新增面板需重启)。
 /// </summary>
 public sealed class PanelManager
 {
@@ -75,7 +75,7 @@ public sealed class PanelManager
         }
     }
 
-    /// <summary>vulcan.panel.set 落点(P-07)。</summary>
+    /// <summary>vulcan.ui.panelset 落点(P-07)。</summary>
     public bool TrySetValue(string panelId, string controlId, string value, out string error)
     {
         error = "";
@@ -95,7 +95,7 @@ public sealed class PanelManager
         return true;
     }
 
-    /// <summary>vulcan.panel.reload(P-08):重读 JSON,重建既有面板内容;新增面板提示重启。</summary>
+    /// <summary>vulcan.ui.panelreload(P-08):重读 JSON,重建既有面板内容;新增面板提示重启。</summary>
     public string Reload()
     {
         var before = _definitions.Select(d => d.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);

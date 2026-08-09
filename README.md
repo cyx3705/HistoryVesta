@@ -1,9 +1,13 @@
-# HistoryVulcan 3.3.0
+# HistoryVulcan 3.3.2
 
 本仓库是 OneHistory HistoryVulcan（原 AppShell，3.2.0 起改名）的独立源码、合同与发布资产真值。
 `3.0.3` 是 V3 冻结基线，冻结标签为 `v3.0.3`；版本线不再与 HistoryJanus 对齐，`0.7.x` 仅保留用于回滚。
 
-当前源码目标为 `3.3.0`（DEC-022）：内置命令硬切为 `vulcan.<类>.<方法>`（Domain=`vulcan`），命令集列为域|类|方法；
+当前源码与正式部署版本为 `3.3.2`（DEC-023）：指令类从 13 个收敛为 **9 类**
+（`app`/`command`/`ui`/`log`/`mcp`/`module`/`prompt`/`svc`/`web`），废止「无类」与影子域 `debug`；
+**模块指令域去掉 `History` 品牌前缀**（模块名仍叫 `HistoryJanus`，指令域是 `janus`）；
+测试项目不再跨仓库引用 HistoryMercury，CI 冻结门禁恢复可通过。
+3.3.0（DEC-022）建立三段式 `vulcan.<类>.<方法>`（Domain=`vulcan`），命令集列为域|类|方法；
 全局快捷键与命令工作台由 HistoryMercury 4.1.0 拥有。3.2.2 完成严格域/类共享状态与 Z manifest 模块发现。
 `3.1.8` 仅是内部过渡版本，不作为稳定支持版本；`3.1.9` 是旧名 AppShell 的最后快照。
 3.1.10 对“轻松指令”和中央命令集做了内部高内聚重构：
@@ -67,28 +71,24 @@ dotnet format .\HistoryVulcan.sln --verify-no-changes --no-restore
 
 ```powershell
 # 生成 b-Publish/current 下的宿主 + 文档完整候选
-.\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.3.0
+.\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.3.2
 
 # 候选审核通过后，将同一完整快照一次性部署到 z-HistoryVulcan
-.\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.3.0 -DeployToZ
+.\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.3.2 -DeployToZ
 
 # 从正式 Z 快照生成 Windows 安装包与便携压缩包
-.\b-Code-HistoryVulcan\eng\Pack-HistoryVulcanInstaller.ps1 -Version 3.3.1
+.\b-Code-HistoryVulcan\eng\Pack-HistoryVulcanInstaller.ps1 -Version 3.3.2
 ```
 
 当前交付物是可直接运行的 HistoryVulcan 宿主，不是 NuGet 包。安装包位于
-`z-HistoryVulcan/installer/`（`*-Setup.exe` 与 `*-win-x64.7z`）。历史四包发布脚本只保留用于库消费兼容、
-历史验证和回滚，不是 3.2.0 宿主部署入口：
+`z-HistoryVulcan/installer/`（`*-Setup.exe` 与 `*-win-x64.7z`）。
 
-```powershell
-# 使用 b-Publish/history 中的历史包验证发布生成链，只更新 b-Publish/virtual
-.\b-Code-HistoryVulcan\eng\Publish-AppShell.ps1 -Version 0.7.2 -VirtualPublish
+3.3.2 起旧名四包发布脚本 `Publish-AppShell.ps1` 与 `b-Publish/history/0.5.0`、`0.7.2` 两个
+0.7 线归档一并退役（DEC-023）：版本线已明确不再与 HistoryJanus 对齐，0.7.x 回滚路径两年内
+未被使用，保留一套指向旧包 ID 的生成链只会让发布入口有两个真值。需要回溯 0.7 线时从
+Git 历史取回。现行回滚仍由 `b-Publish/history/<版本>/` 的 3.x 同构副本承担。
 
-# 测试/回滚时将已验证快照的内部内容整体替换到 z 根目录
-.\b-Code-HistoryVulcan\eng\Publish-AppShell.ps1 -Version 0.7.2 -VirtualPublish -DeployToZ
-```
-
-宿主候选位于 `b-Publish/current`。当前正式快照为 3.2.0：运行入口 `z-HistoryVulcan/host/HistoryVulcan.exe`，
+宿主候选位于 `b-Publish/current`。当前正式快照为 3.3.2：运行入口 `z-HistoryVulcan/host/HistoryVulcan.exe`，
 UI 风格合同 `z-HistoryVulcan/docs/HistoryVulcan_UI风格与嵌入页面规范.md`。
 旧名 `z-Package-AppShell/` 的 3.1.9 快照已随 3.2.0 发布退役删除（同构副本入库于 `b-Publish/history/3.1.9/`）。
 旧候选整体归档到 `b-Publish/history/<版本>/`。宿主部署脚本不会执行 Git commit、tag、push，

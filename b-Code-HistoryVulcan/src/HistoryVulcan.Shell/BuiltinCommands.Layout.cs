@@ -19,11 +19,11 @@ public static partial class BuiltinCommands
     {
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "vulcan.layout.save",
+            Name = "vulcan.ui.layoutsave",
             Domain = "vulcan",
-            CommandClass = "layout",
+            CommandClass = "ui",
             Summary = "把当前布局保存为命名方案",
-            Example = "vulcan.layout.save name=调试布局",
+            Example = "vulcan.ui.layoutsave name=调试布局",
             RequiresUiThread = true,
             Parameters =
             [
@@ -39,15 +39,15 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "vulcan.layout.load",
+            Name = "vulcan.ui.layoutload",
             Domain = "vulcan",
-            CommandClass = "layout",
+            CommandClass = "ui",
             Summary = "加载命名布局方案",
-            Example = "vulcan.layout.load name=调试布局",
+            Example = "vulcan.ui.layoutload name=调试布局",
             RequiresUiThread = true,
             Parameters =
             [
-                new ParameterSpec { Name = "name", Description = "方案名(vulcan.layout.list 可查)", Required = true, Position = 0 },
+                new ParameterSpec { Name = "name", Description = "方案名(vulcan.ui.layouts 可查)", Required = true, Position = 0 },
             ],
             Handler = CommandDescriptor.Sync(ctx =>
             {
@@ -60,9 +60,9 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "vulcan.layout.list",
+            Name = "vulcan.ui.layouts",
             Domain = "vulcan",
-            CommandClass = "layout",
+            CommandClass = "ui",
             Summary = "列出全部命名布局方案",
             Readonly = true,
             RequiresUiThread = true,
@@ -70,16 +70,16 @@ public static partial class BuiltinCommands
             {
                 var names = s.Docking.ListLayouts();
                 return names.Count == 0
-                    ? CommandResult.Ok("(暂无命名布局方案,vulcan.layout.save name=xxx 可保存)")
+                    ? CommandResult.Ok("(暂无命名布局方案,vulcan.ui.layoutsave name=xxx 可保存)")
                     : CommandResult.Ok($"共 {names.Count} 个方案:" + string.Concat(names.Select(n => $"\n  {n}")));
             }),
         });
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "vulcan.layout.reset",
+            Name = "vulcan.ui.layoutreset",
             Domain = "vulcan",
-            CommandClass = "layout",
+            CommandClass = "ui",
             Summary = "重置为默认布局",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>

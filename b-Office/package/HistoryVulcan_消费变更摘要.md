@@ -1,8 +1,44 @@
 # HistoryVulcan 消费变更摘要
 
-适用版本：HistoryVulcan **3.3.0** 正式（已部署于 `z-HistoryVulcan`；在 3.2.2 严格筛选/Z 发现基础上完成 DEC-022 指令硬切与 Mercury 外置）。
+适用版本：HistoryVulcan **3.3.2** 正式（已部署于 `z-HistoryVulcan`；在 3.3.0 三段式硬切基础上完成 DEC-023 九类对齐与模块域去品牌前缀）。
 
 本文只记录会影响消费应用、模块作者和部署者的变化；源码施工、冻结审查、完整测试证据和发布操作不属于本文。
+
+## 3.3.2 破坏性变更（升级必读）
+
+**一、83 条内置指令中 32 条改名，必须逐条替换。** 类从 13 个收敛为 9 个：
+
+| 变化 | 旧 | 新 |
+|---|---|---|
+| 整类并入 | `vulcan.core.*` | `vulcan.command.*`（`help` / `run` / `history`） |
+| 整类并入 | `vulcan.frontend.*` | `vulcan.app.*`（`show` / `hide`；`frontend.exit` → `app.close`） |
+| 改名避歧义 | `vulcan.app.exit` | `vulcan.app.quit` |
+| 三类合并 | `vulcan.win.*` / `vulcan.layout.*` / `vulcan.panel.*` | `vulcan.ui.*` |
+| 列表命令 | `win.list` / `layout.list` / `panel.list` | `ui.windows` / `ui.layouts` / `ui.panels` |
+| 复合方法段 | `layout.save` / `panel.show` … | `ui.layoutsave` / `ui.panelshow` … |
+| 无类归类 | `vulcan.listshortcuts` | `vulcan.app.shortcuts` |
+| 无类归类 | `vulcan.listcorrections` / `listincidents` | `vulcan.prompt.corrections` / `prompt.incidents` |
+| 无类归类 | `vulcan.proposecorrection` / `recordincident` | `vulcan.prompt.correct` / `prompt.record` |
+| 影子域收回 | `debug.logflood` | `vulcan.log.flood` |
+
+其余 51 条命令文本不变。完整逐条映射见 `../history/3.3.2-vulcan-class-realign.md`。
+**不留别名**，旧名一律「未知指令」。
+
+> 注意 `vulcan.app.show`/`hide`（前端**进程窗口**）与 `vulcan.ui.show`/`hide`（Shell **停靠窗口**）
+> 是两组不同指令，仅靠类段区分。3.3.1 里前者叫 `frontend.show`、后者叫 `win.show`，
+> 合并后请按类段确认调用的是哪一组。
+
+**二、模块注册名不再与指令域对齐——域去掉 `History` 前缀。**
+模块名继续叫 `HistoryJanus`，但它的指令域是 `janus`，命令写作 `janus.<类>.<方法>`。
+品牌前缀留在模块名、程序集、目录和 `z-*` 快照里，不进指令域。
+归一化由 `ModuleDomainNaming.ToDomain` 统一执行，`ModuleHost` 强制 owner 时调用同一函数，
+模块无需也无法自行声明域。详见 API 手册 §3.3.1。
+
+**三、类不可省略。** 未声明 `CommandClass` 且命令名不足三段的注册将失败，不再回退 `core`。
+「无类」筛选项从目录、控制台补全和命令集中移除。
+
+**四、`vulcan.log.export` 省略 `path` 时不再弹保存对话框**，改为写入应用数据目录
+`exports/console-<时间戳>.txt` 并返回绝对路径。经 MCP、Web 或前端转发调用不再阻塞等待人工点击。
 
 ## 部署与引用方式
 
@@ -11,7 +47,7 @@
 - 3.3.0（DEC-022）内置命令一次硬切为 `vulcan.<类>.<方法>`（全小写、无连字符、不留别名；旧别名 `cls` 已删除），Domain=`vulcan`；
   命令集表格列为域|类|方法。全局快捷键（含 `GlobalShortcutService`）与命令工作台（目录会话、补全、命令集/详情）迁至 HistoryMercury 4.1.0；
   Shell 保留控制台日志面，Mercury 未挂接前仅为 `DeferredCommandCatalogSession`。无 Mercury 时双 `/` 与命令集/详情不可用；
-  本地 `vulcan.command.*` 仍可用，`vulcan.shortcut.list` 可能为空。
+  本地 `vulcan.command.*` 仍可用，`vulcan.app.shortcuts`（3.3.1 为 `vulcan.listshortcuts`）可能为空。
   旧→新映射见 `../history/3.3.0-vulcan-command-rename.md`。
 - 3.2.2 的域和类是严格两级筛选：选择具体域后类列表只来自该域，域为“全部”时类固定为“全部”且禁用；控制台新增
   `vulcan.log.class`，命令集和控制台共享同一目录会话合同（3.3.0 起由 Mercury 实现并挂接，见上）。

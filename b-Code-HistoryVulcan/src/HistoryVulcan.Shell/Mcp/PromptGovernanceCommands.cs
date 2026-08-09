@@ -200,12 +200,12 @@ public static class PromptGovernanceCommands
 
     private static CommandDescriptor BuildCorrectionList(PromptGovernanceStore store) => new()
     {
-        Name = "vulcan.correction.list",
+        Name = "vulcan.prompt.corrections",
         Domain = "vulcan",
-        CommandClass = "correction",
+        CommandClass = "prompt",
         Summary = "列出 MCP 工具描述勘误记录",
         Readonly = true,
-        Example = "vulcan.correction.list name=vulcan.command.list limit=20",
+        Example = "vulcan.prompt.corrections name=vulcan.command.list limit=20",
         Parameters =
         [
             StringParam("name", "可选指令名"),
@@ -225,11 +225,11 @@ public static class PromptGovernanceCommands
     private static CommandDescriptor BuildCorrectionPropose(
         CommandSchemaExporter exporter, PromptGovernanceStore store) => new()
         {
-            Name = "vulcan.correction.propose",
+            Name = "vulcan.prompt.correct",
             Domain = "vulcan",
-            CommandClass = "correction",
+            CommandClass = "prompt",
             Summary = "提交工具描述勘误，不直接修改生效描述",
-            Example = "vulcan.correction.propose name=vulcan.command.list claim=\"只返回框架指令\" correction=\"返回权威目录中的全部指令\"",
+            Example = "vulcan.prompt.correct name=vulcan.command.list claim=\"只返回框架指令\" correction=\"返回权威目录中的全部指令\"",
             Parameters =
         [
             StringParam("name", "指令名或工具名", required: true, position: 0),
@@ -254,12 +254,12 @@ public static class PromptGovernanceCommands
 
     private static CommandDescriptor BuildIncidentList(PromptGovernanceStore store) => new()
     {
-        Name = "vulcan.incident.list",
+        Name = "vulcan.prompt.incidents",
         Domain = "vulcan",
-        CommandClass = "incident",
+        CommandClass = "prompt",
         Summary = "列出 MCP 工具调用或描述事故记录",
         Readonly = true,
-        Example = "vulcan.incident.list name=vulcan.command.list limit=20",
+        Example = "vulcan.prompt.incidents name=vulcan.command.list limit=20",
         Parameters =
         [
             StringParam("name", "可选指令名"),
@@ -279,11 +279,11 @@ public static class PromptGovernanceCommands
     private static CommandDescriptor BuildIncidentRecord(
         CommandSchemaExporter exporter, PromptGovernanceStore store) => new()
         {
-            Name = "vulcan.incident.record",
+            Name = "vulcan.prompt.record",
             Domain = "vulcan",
-            CommandClass = "incident",
+            CommandClass = "prompt",
             Summary = "记录工具调用或描述事故；保留预期、实际和证据",
-            Example = "vulcan.incident.record name=vulcan.command.list symptom=遗漏前端指令 expected=返回权威目录 actual=只返回后端指令",
+            Example = "vulcan.prompt.record name=vulcan.command.list symptom=遗漏前端指令 expected=返回权威目录 actual=只返回后端指令",
             Parameters =
         [
             StringParam("name", "指令名或工具名", required: true, position: 0),
