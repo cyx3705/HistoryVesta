@@ -1173,6 +1173,15 @@
         <member name="M:HistoryVulcan.Core.Mcp.McpExposurePolicy.IsReadonlyAllowed(System.String)">
             <summary>Provides this HistoryVulcan public contract member.</summary>
         </member>
+        <member name="F:HistoryVulcan.Core.Mcp.McpExposurePolicy.DiagnosticCommands">
+            <summary>
+            收编进正式域但仍属诊断性质的指令:永不对 MCP/Web 暴露。
+            影子域 <c>debug</c> 退役后,这类指令不再能靠名称前缀识别(DEC-023)。
+            </summary>
+        </member>
+        <member name="P:HistoryVulcan.Core.Mcp.McpExposurePolicy.DiagnosticCommandNames">
+            <summary>诊断指令名单,供自检与文档核对。</summary>
+        </member>
         <member name="M:HistoryVulcan.Core.Mcp.McpExposurePolicy.HardExclusionReason(System.String)">
             <summary>Provides this HistoryVulcan public contract member.</summary>
         </member>

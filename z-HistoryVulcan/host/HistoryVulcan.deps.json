@@ -9,10 +9,10 @@
     ".NETCoreApp,Version=v8.0/win-x64": {
       "HistoryVulcan/3.3.2": {
         "dependencies": {
-          "OneHistory.HistoryVulcan.Core": "3.3.1",
-          "OneHistory.HistoryVulcan.ServiceHost": "3.3.1",
-          "OneHistory.HistoryVulcan.Services": "3.3.1",
-          "OneHistory.HistoryVulcan.Shell": "3.3.1",
+          "OneHistory.HistoryVulcan.Core": "3.3.2",
+          "OneHistory.HistoryVulcan.ServiceHost": "3.3.2",
+          "OneHistory.HistoryVulcan.Services": "3.3.2",
+          "OneHistory.HistoryVulcan.Shell": "3.3.2",
           "HistoryVulcan.Core": "3.3.2.0",
           "HistoryVulcan.ServiceHost": "3.3.2.0",
           "HistoryVulcan.Services": "3.3.2.0",
@@ -94,7 +94,7 @@
           }
         }
       },
-      "OneHistory.HistoryVulcan.Core/3.3.1": {
+      "OneHistory.HistoryVulcan.Core/3.3.2": {
         "runtime": {
           "HistoryVulcan.Core.dll": {
             "assemblyVersion": "3.3.2.0",
@@ -102,10 +102,10 @@
           }
         }
       },
-      "OneHistory.HistoryVulcan.ServiceHost/3.3.1": {
+      "OneHistory.HistoryVulcan.ServiceHost/3.3.2": {
         "dependencies": {
-          "OneHistory.HistoryVulcan.Core": "3.3.1",
-          "OneHistory.HistoryVulcan.Services": "3.3.1"
+          "OneHistory.HistoryVulcan.Core": "3.3.2",
+          "OneHistory.HistoryVulcan.Services": "3.3.2"
         },
         "runtime": {
           "HistoryVulcan.ServiceHost.dll": {
@@ -114,9 +114,9 @@
           }
         }
       },
-      "OneHistory.HistoryVulcan.Services/3.3.1": {
+      "OneHistory.HistoryVulcan.Services/3.3.2": {
         "dependencies": {
-          "OneHistory.HistoryVulcan.Core": "3.3.1"
+          "OneHistory.HistoryVulcan.Core": "3.3.2"
         },
         "runtime": {
           "HistoryVulcan.Services.dll": {
@@ -125,12 +125,12 @@
           }
         }
       },
-      "OneHistory.HistoryVulcan.Shell/3.3.1": {
+      "OneHistory.HistoryVulcan.Shell/3.3.2": {
         "dependencies": {
           "Dirkster.AvalonDock": "4.72.1",
           "Dirkster.AvalonDock.Themes.VS2013": "4.72.1",
-          "OneHistory.HistoryVulcan.Core": "3.3.1",
-          "OneHistory.HistoryVulcan.Services": "3.3.1"
+          "OneHistory.HistoryVulcan.Core": "3.3.2",
+          "OneHistory.HistoryVulcan.Services": "3.3.2"
         },
         "runtime": {
           "HistoryVulcan.Shell.dll": {
@@ -193,22 +193,22 @@
       "path": "dirkster.avalondock.themes.vs2013/4.72.1",
       "hashPath": "dirkster.avalondock.themes.vs2013.4.72.1.nupkg.sha512"
     },
-    "OneHistory.HistoryVulcan.Core/3.3.1": {
+    "OneHistory.HistoryVulcan.Core/3.3.2": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
     },
-    "OneHistory.HistoryVulcan.ServiceHost/3.3.1": {
+    "OneHistory.HistoryVulcan.ServiceHost/3.3.2": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
     },
-    "OneHistory.HistoryVulcan.Services/3.3.1": {
+    "OneHistory.HistoryVulcan.Services/3.3.2": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
     },
-    "OneHistory.HistoryVulcan.Shell/3.3.1": {
+    "OneHistory.HistoryVulcan.Shell/3.3.2": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
