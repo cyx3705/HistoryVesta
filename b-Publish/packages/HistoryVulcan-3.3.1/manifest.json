@@ -1,0 +1,27 @@
+{
+    "schemaVersion":  1,
+    "product":  "HistoryVulcan",
+    "version":  "3.3.1",
+    "channel":  "installer",
+    "runtime":  "win-x64-framework-dependent",
+    "selfContained":  false,
+    "sourceSnapshot":  "z-HistoryVulcan",
+    "sourceCommit":  "bf1fe2350eafeadc82e9fce0123dc2a7807ab04f",
+    "artifacts":  [
+                      {
+                          "file":  "HistoryVulcan-3.3.1-Setup.exe",
+                          "bytes":  2451928,
+                          "sha256":  "11DEA36C76EC1B3307DB7B81DF47D3C6C6E7AD0EE3C45E45371DD7ADFF3928AD"
+                      },
+                      {
+                          "file":  "HistoryVulcan-3.3.1-win-x64.7z",
+                          "bytes":  592723,
+                          "sha256":  "551B3EC7A1DD014BD6E09CAFBF60B824637ADA0C35C0A82359CF836DFAE507CC"
+                      },
+                      {
+                          "file":  "README.md",
+                          "bytes":  777,
+                          "sha256":  "466C7667CE591E7EA0B1F52CC2DB332D97F236029686EED067F2A833D0A99D11"
+                      }
+                  ]
+}

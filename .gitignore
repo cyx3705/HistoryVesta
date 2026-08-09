@@ -49,3 +49,6 @@ b-Office/evidence/**/*.db
 b-Office/evidence/**/*.zip
 
 # b-Publish archives formal release evidence; rebuildable candidate and virtual workspaces are ignored.
+
+# Local Inno Setup bootstrap download (not a release artifact)
+b-Code-HistoryVulcan/eng/tools/
