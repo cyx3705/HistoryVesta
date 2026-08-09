@@ -28,7 +28,7 @@ public static class BuiltinCommandDefinitions
         return new CommandDescriptor
         {
             Name = definition.Name,
-            Domain = "HistoryVulcan",
+            Domain = "vulcan",
             CommandClass = definition.CommandClass,
             Summary = definition.Summary,
             Example = definition.Example,
@@ -47,30 +47,30 @@ public static class BuiltinCommandDefinitions
         var definitions = new[]
         {
             new Definition(
-                "help",
+                "vulcan.core.help",
                 "core",
                 "列出全部指令 / 显示某指令详情与示例",
-                "help win.dock",
+                "vulcan.core.help vulcan.win.dock",
                 [Parameter("command", "指令名;省略时列出全部指令", position: 0)],
                 Readonly: true),
             new Definition(
-                "app.get",
+                "vulcan.app.get",
                 "app",
                 "读应用配置项;不带参数列出全部",
-                "app.get key=console.history",
+                "vulcan.app.get key=console.history",
                 [Parameter("key", "配置键;省略列出全部", position: 0)],
                 Readonly: true),
             new Definition(
-                "app.set",
+                "vulcan.app.set",
                 "app",
                 "写应用配置项",
-                "app.set key=console.history value=1000",
+                "vulcan.app.set key=console.history value=1000",
                 [
                     Parameter("key", "配置键", required: true, position: 0),
                     Parameter("value", "配置值", required: true, position: 1),
                 ]),
             new Definition(
-                "app.opendata",
+                "vulcan.app.opendata",
                 "app",
                 "在系统资源管理器中打开应用数据目录"),
         };

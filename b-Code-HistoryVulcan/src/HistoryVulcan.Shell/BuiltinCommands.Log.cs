@@ -19,11 +19,11 @@ public static partial class BuiltinCommands
     {
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "log.level",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.log.level",
+            Domain = "vulcan",
             CommandClass = "log",
             Summary = "设置控制台显示级别",
-            Example = "log.level level=warn",
+            Example = "vulcan.log.level level=warn",
             RequiresUiThread = true,
             Parameters = [new ParameterSpec { Name = "level", Description = "trace/debug/info/warn/error/fatal；省略时查询当前值", Position = 0, AllowedValues = ["trace", "debug", "info", "warn", "error", "fatal"] }],
             Handler = CommandDescriptor.Sync(ctx =>
@@ -40,11 +40,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "app.window",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.app.window",
+            Domain = "vulcan",
             CommandClass = "app",
             Summary = "设置主窗口状态",
-            Example = "app.window state=toggle",
+            Example = "vulcan.app.window state=toggle",
             RequiresUiThread = true,
             Parameters =
             [
@@ -77,11 +77,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "log.source",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.log.source",
+            Domain = "vulcan",
             CommandClass = "log",
             Summary = "设置控制台日志域过滤（兼容命令名）",
-            Example = "log.source source=app",
+            Example = "vulcan.log.source source=app",
             RequiresUiThread = true,
             Parameters = [new ParameterSpec { Name = "source", Description = "命令总线当前已注册的域；省略时查询当前值", Position = 0 }],
             Handler = CommandDescriptor.Sync(ctx =>
@@ -97,11 +97,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "log.class",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.log.class",
+            Domain = "vulcan",
             CommandClass = "log",
             Summary = "设置控制台和命令集的命令类过滤",
-            Example = "log.class class=win",
+            Example = "vulcan.log.class class=win",
             RequiresUiThread = true,
             Parameters = [new ParameterSpec { Name = "class", Description = "当前域内的命令类；省略时查询当前值", Position = 0 }],
             Handler = CommandDescriptor.Sync(ctx =>
@@ -117,11 +117,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "log.keyword",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.log.keyword",
+            Domain = "vulcan",
             CommandClass = "log",
             Summary = "设置控制台关键字过滤",
-            Example = "log.keyword text=timeout",
+            Example = "vulcan.log.keyword text=timeout",
             RequiresUiThread = true,
             Parameters = [new ParameterSpec { Name = "text", Description = "关键字；省略时查询当前值", Position = 0 }],
             Handler = CommandDescriptor.Sync(ctx =>
@@ -136,11 +136,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "log.mute",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.log.mute",
+            Domain = "vulcan",
             CommandClass = "log",
             Summary = "屏蔽或恢复 layout 来源",
-            Example = "log.mute layout=true",
+            Example = "vulcan.log.mute layout=true",
             RequiresUiThread = true,
             Parameters = [new ParameterSpec { Name = "layout", Description = "true/false；省略时查询当前值", Type = ParamType.Bool, Position = 0 }],
             Handler = CommandDescriptor.Sync(ctx =>
@@ -155,11 +155,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "log.autoscroll",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.log.autoscroll",
+            Domain = "vulcan",
             CommandClass = "log",
             Summary = "设置控制台自动滚动",
-            Example = "log.autoscroll enabled=false",
+            Example = "vulcan.log.autoscroll enabled=false",
             RequiresUiThread = true,
             Parameters = [new ParameterSpec { Name = "enabled", Description = "true/false；省略时查询当前值", Type = ParamType.Bool, Position = 0 }],
             Handler = CommandDescriptor.Sync(ctx =>
@@ -174,8 +174,8 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "log.clear",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.log.clear",
+            Domain = "vulcan",
             CommandClass = "log",
             Summary = "清空控制台可见缓冲",
             RequiresUiThread = true,
@@ -188,25 +188,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "cls",
-            Domain = "HistoryVulcan",
-            CommandClass = "log",
-            Summary = "兼容别名，转发到 log.clear",
-            RequiresUiThread = true,
-            Handler = CommandDescriptor.Sync(_ =>
-            {
-                s.Console.Cls();
-                return CommandResult.Ok("控制台已清空");
-            }),
-        });
-
-        RegisterFrontend(r, new CommandDescriptor
-        {
-            Name = "log.export",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.log.export",
+            Domain = "vulcan",
             CommandClass = "log",
             Summary = "导出控制台当前可见内容",
-            Example = "log.export path=console.txt",
+            Example = "vulcan.log.export path=console.txt",
             RequiresUiThread = true,
             Parameters = [new ParameterSpec { Name = "path", Description = "目标文件路径；省略时打开保存对话框", Position = 0 }],
             Handler = CommandDescriptor.Sync(ctx => CommandResult.Ok(s.Console.ExportVisible(ctx.GetString("path")))),
@@ -214,8 +200,8 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "log.copy",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.log.copy",
+            Domain = "vulcan",
             CommandClass = "log",
             Summary = "复制控制台选中行",
             RequiresUiThread = true,
@@ -224,11 +210,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "log.focus",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.log.focus",
+            Domain = "vulcan",
             CommandClass = "log",
             Summary = "聚焦控制台，可选仅显示错误",
-            Example = "log.focus errors=true",
+            Example = "vulcan.log.focus errors=true",
             RequiresUiThread = true,
             Parameters = [new ParameterSpec { Name = "errors", Description = "true 时切换到错误过滤", Type = ParamType.Bool, Default = "false", Position = 0 }],
             Handler = CommandDescriptor.Sync(ctx =>

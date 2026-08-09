@@ -20,15 +20,15 @@ public static partial class BuiltinCommands
         var nameParam = new ParameterSpec
         {
             Name = "name",
-            Description = "窗口名(win.list 可查)",
+            Description = "窗口名(vulcan.win.list 可查)",
             Required = true,
             Position = 0,
         };
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "win.list",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.win.list",
+            Domain = "vulcan",
             CommandClass = "win",
             Summary = "列出全部窗口及状态",
             Readonly = true,
@@ -60,19 +60,19 @@ public static partial class BuiltinCommands
             }),
         });
 
-        RegisterWindowVerb(r, s, "win.show", "显示窗口(隐藏则唤出,已显示则激活)",
+        RegisterWindowVerb(r, s, "vulcan.win.show", "显示窗口(隐藏则唤出,已显示则激活)",
             (d, id) => { d.Show(id); return $"{id} 已显示"; });
-        RegisterWindowVerb(r, s, "win.hide", "隐藏窗口(状态保留,可再唤出)",
+        RegisterWindowVerb(r, s, "vulcan.win.hide", "隐藏窗口(状态保留,可再唤出)",
             (d, id) => { d.Hide(id); return $"{id} 已隐藏"; });
-        RegisterWindowVerb(r, s, "win.float", "把窗口浮动为独立顶层窗口",
+        RegisterWindowVerb(r, s, "vulcan.win.float", "把窗口浮动为独立顶层窗口",
             (d, id) => { d.Float(id); return $"{id} 已浮动"; });
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "win.autohide",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.win.autohide",
+            Domain = "vulcan",
             CommandClass = "win",
             Summary = "切换工具窗口的自动隐藏状态",
-            Example = $"win.autohide name={StandardWindowIds.Console}",
+            Example = $"vulcan.win.autohide name={StandardWindowIds.Console}",
             RequiresUiThread = true,
             Parameters = [nameParam],
             Handler = CommandDescriptor.Sync(ctx =>
@@ -95,16 +95,16 @@ public static partial class BuiltinCommands
                 }
             }),
         });
-        RegisterWindowVerb(r, s, "win.reset", "把窗口复位到注册时的默认位置",
+        RegisterWindowVerb(r, s, "vulcan.win.reset", "把窗口复位到注册时的默认位置",
             (d, id) => { d.ResetWindow(id); return $"{id} 已复位到默认位置"; });
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "win.max",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.win.max",
+            Domain = "vulcan",
             CommandClass = "win",
             Summary = "最大化指定工具窗口",
-            Example = "win.max name=se2sw",
+            Example = "vulcan.win.max name=se2sw",
             RequiresUiThread = true,
             Parameters = [nameParam],
             Handler = CommandDescriptor.Sync(ctx =>
@@ -121,11 +121,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "win.float-state",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.win.floatstate",
+            Domain = "vulcan",
             CommandClass = "win",
             Summary = "设置独立浮窗宿主的最大化状态",
-            Example = $"win.float-state name={StandardWindowIds.Console} state=toggle",
+            Example = $"vulcan.win.floatstate name={StandardWindowIds.Console} state=toggle",
             RequiresUiThread = true,
             Parameters =
             [
@@ -150,8 +150,8 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "win.restore",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.win.restore",
+            Domain = "vulcan",
             CommandClass = "win",
             Summary = "退出窗口最大化并恢复原布局",
             RequiresUiThread = true,
@@ -164,11 +164,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "win.dock",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.win.dock",
+            Domain = "vulcan",
             CommandClass = "win",
             Summary = "停靠窗口到指定方位(pos=center 占中央区，pos=tab 并入目标标签组)",
-            Example = $"win.dock name={StandardWindowIds.Console} pos=bottom ratio=0.3",
+            Example = $"vulcan.win.dock name={StandardWindowIds.Console} pos=bottom ratio=0.3",
             RequiresUiThread = true,
             Parameters =
             [
@@ -221,11 +221,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "win.ratio",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.win.ratio",
+            Domain = "vulcan",
             CommandClass = "win",
             Summary = "调整窗口占主窗体的比例",
-            Example = $"win.ratio name={StandardWindowIds.Console} value=0.3",
+            Example = $"vulcan.win.ratio name={StandardWindowIds.Console} value=0.3",
             RequiresUiThread = true,
             Parameters =
             [
@@ -265,7 +265,7 @@ public static partial class BuiltinCommands
         RegisterFrontend(r, new CommandDescriptor
         {
             Name = name,
-            Domain = "HistoryVulcan",
+            Domain = "vulcan",
             CommandClass = "win",
             Summary = summary,
             Example = $"{name} name={StandardWindowIds.Console}",
@@ -275,7 +275,7 @@ public static partial class BuiltinCommands
                 new ParameterSpec
                 {
                     Name = "name",
-                    Description = "窗口名(win.list 可查)",
+                    Description = "窗口名(vulcan.win.list 可查)",
                     Required = true,
                     Position = 0,
                 },
@@ -286,7 +286,7 @@ public static partial class BuiltinCommands
                     return error;
                 var id = ctx.RequireString("name");
                 var message = action(s.Docking, id);
-                if (name.Equals("win.show", StringComparison.OrdinalIgnoreCase))
+                if (name.Equals("vulcan.win.show", StringComparison.OrdinalIgnoreCase))
                     s.Window.ActivateToolContent(id);
                 return CommandResult.Ok(message);
             }),

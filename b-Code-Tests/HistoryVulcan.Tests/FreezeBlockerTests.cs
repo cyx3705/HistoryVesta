@@ -1,3 +1,5 @@
+extern alias mercury;
+
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -29,7 +31,7 @@ public sealed class FreezeBlockerTests
         registry.Register(SecretDescriptor("secure.position", "clientSecret", position: 0));
         registry.Register(new CommandDescriptor
         {
-            Name = "app.set",
+            Name = "vulcan.app.set",
             Summary = "set",
             Parameters =
             [
@@ -39,7 +41,7 @@ public sealed class FreezeBlockerTests
             Handler = CommandDescriptor.Sync(context => CommandResult.Ok(
                 $"{context.RequireString("key")} = {context.RequireString("value")}")),
         });
-        registry.Register(SecretDescriptor("web.token", "value", position: 0));
+        registry.Register(SecretDescriptor("vulcan.web.token", "value", position: 0));
         var log = new MemoryLog();
         var bus = new CommandBus(registry, log);
 
@@ -48,14 +50,14 @@ public sealed class FreezeBlockerTests
         var connection = await bus.ExecuteAsync(
             "secure.connect connectionString=connection-string-secret", "Test");
         var genericPositional = await bus.ExecuteAsync("secure.position positional-secret", "Test");
-        var setting = await bus.ExecuteAsync("app.set key=mcp.token value=bravo-secret", "Test");
-        var positional = await bus.ExecuteAsync("web.token charlie-secret", "Test");
+        var setting = await bus.ExecuteAsync("vulcan.app.set key=mcp.token value=bravo-secret", "Test");
+        var positional = await bus.ExecuteAsync("vulcan.web.token charlie-secret", "Test");
         var malformed = await bus.ExecuteAsync("secure.set token=\"fallback-secret", "Test");
         var malformedPositional = await bus.ExecuteAsync(
             "secure.position \"positional-fallback-secret", "Test");
-        var malformedToken = await bus.ExecuteAsync("web.token \"token-fallback-secret", "Test");
+        var malformedToken = await bus.ExecuteAsync("vulcan.web.token \"token-fallback-secret", "Test");
         var malformedSetting = await bus.ExecuteAsync(
-            "app.set mcp.token \"setting-fallback-secret", "Test");
+            "vulcan.app.set mcp.token \"setting-fallback-secret", "Test");
 
         var written = string.Join('\n', log.Snapshot().Select(entry => entry.Message));
         Assert.DoesNotContain("alpha-secret", named.Message, StringComparison.Ordinal);
@@ -89,7 +91,7 @@ public sealed class FreezeBlockerTests
     [Fact]
     public async Task SecretSettingValuesAreMaskedInCommandResultsNotOnlyInLogs()
     {
-        // 回归 FZR-01 的读路径:app.get 声明 Readonly,对 scope=read 的远程设备放行,
+        // 回归 FZR-01 的读路径:vulcan.app.get 声明 Readonly,对 scope=read 的远程设备放行,
         // 并在默认 readonly 策略下作为 MCP 工具可见。结果对象会原样序列化进 HTTP 响应体
         // 与 tools/call 载荷,因此断言必须落在 CommandResult.Message 上,而不只是日志。
         var settings = new MemorySettings();
@@ -113,10 +115,10 @@ public sealed class FreezeBlockerTests
             DataDirectory = "",
         });
 
-        var single = await bus.ExecuteAsync("app.get key=web.token", "Test");
-        var code = await bus.ExecuteAsync("app.get key=code", "Test");
-        var listing = await bus.ExecuteAsync("app.get", "Test");
-        var write = await bus.ExecuteAsync("app.set key=web.token value=echo-secret", "Test");
+        var single = await bus.ExecuteAsync("vulcan.app.get key=web.token", "Test");
+        var code = await bus.ExecuteAsync("vulcan.app.get key=code", "Test");
+        var listing = await bus.ExecuteAsync("vulcan.app.get", "Test");
+        var write = await bus.ExecuteAsync("vulcan.app.set key=web.token value=echo-secret", "Test");
 
         Assert.DoesNotContain("delta-secret", single.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("code-setting-secret", code.Message, StringComparison.Ordinal);
@@ -128,7 +130,7 @@ public sealed class FreezeBlockerTests
         Assert.Contains("(已配置)", single.Message, StringComparison.Ordinal);
         Assert.Contains("(已配置)", code.Message, StringComparison.Ordinal);
 
-        // 非敏感键不受影响,app.get 仍是可用的排查工具
+        // 非敏感键不受影响,vulcan.app.get 仍是可用的排查工具
         Assert.Contains("console.history = 500", listing.Message, StringComparison.Ordinal);
 
         var written = string.Join('\n', log.Snapshot().Select(entry => entry.Message));
@@ -384,7 +386,7 @@ public sealed class FreezeBlockerTests
         var historyPath = Path.Combine(root, "history.txt");
         try
         {
-            File.WriteAllText(historyPath, "web.token legacy-history-secret\n");
+            File.WriteAllText(historyPath, "vulcan.web.token legacy-history-secret\n");
             var history = new CommandHistory(historyPath);
             Assert.Empty(history.Snapshot());
             Assert.DoesNotContain(
@@ -397,11 +399,11 @@ public sealed class FreezeBlockerTests
                 try
                 {
                     var registry = new CommandRegistry();
-                    registry.Register(SecretDescriptor("web.token", "value", position: 0));
+                    registry.Register(SecretDescriptor("vulcan.web.token", "value", position: 0));
                     registry.Register(SecretDescriptor("secure.position", "clientSecret", position: 0));
                     registry.Register(new CommandDescriptor
                     {
-                        Name = "app.set",
+                        Name = "vulcan.app.set",
                         Summary = "set",
                         Parameters =
                         [
@@ -440,14 +442,20 @@ public sealed class FreezeBlockerTests
                     });
                     var log = new MemoryLog();
                     var bus = new CommandBus(registry, log);
-                    _ = new HistoryVulcan.Shell.Console.ConsoleView(log, bus, history);
+                    _ = new HistoryVulcan.Shell.Console.ConsoleView(
+                        log,
+                        bus,
+                        history,
+                        new mercury::Mercury.CommandSurface.CommandCatalogSession(
+                            bus,
+                            new CommandSelectionState()));
 
-                    bus.ExecuteAsync("web.token console-history-secret", "手动").GetAwaiter().GetResult();
-                    bus.ExecuteAsync("app.set mcp.token setting-history-secret", "手动")
+                    bus.ExecuteAsync("vulcan.web.token console-history-secret", "手动").GetAwaiter().GetResult();
+                    bus.ExecuteAsync("vulcan.app.set mcp.token setting-history-secret", "手动")
                         .GetAwaiter().GetResult();
-                    bus.ExecuteAsync("web.token \"malformed-token-history-secret", "手动")
+                    bus.ExecuteAsync("vulcan.web.token \"malformed-token-history-secret", "手动")
                         .GetAwaiter().GetResult();
-                    bus.ExecuteAsync("app.set mcp.token \"malformed-setting-history-secret", "手动")
+                    bus.ExecuteAsync("vulcan.app.set mcp.token \"malformed-setting-history-secret", "手动")
                         .GetAwaiter().GetResult();
                     bus.ExecuteAsync("secure.position \"derived-history-secret", "手动")
                         .GetAwaiter().GetResult();
@@ -467,7 +475,7 @@ public sealed class FreezeBlockerTests
                         Bus = historyBus,
                         DataDirectory = root,
                     });
-                    var historyResult = historyBus.ExecuteAsync("history count=20", "Web:read")
+                    var historyResult = historyBus.ExecuteAsync("vulcan.core.history count=20", "Web:read")
                         .GetAwaiter().GetResult();
                     Assert.True(historyResult.Success, historyResult.Message);
                     Assert.DoesNotContain("console-history-secret", historyResult.Message, StringComparison.Ordinal);
@@ -494,10 +502,10 @@ public sealed class FreezeBlockerTests
 
             Assert.Equal(
                 [
-                    "web.token [REDACTED]",
-                    "app.set mcp.token [REDACTED]",
-                    "web.token [REDACTED]",
-                    "app.set [REDACTED]",
+                    "vulcan.web.token [REDACTED]",
+                    "vulcan.app.set mcp.token [REDACTED]",
+                    "vulcan.web.token [REDACTED]",
+                    "vulcan.app.set [REDACTED]",
                     "secure.position [REDACTED]",
                     "safe.read visible-value",
                 ],

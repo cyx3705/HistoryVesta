@@ -35,7 +35,7 @@ public sealed class ConsoleRow
         string domainKey;
         string commandClassKey;
 
-        // 指令回显(cmd:来源):附录 C 样式 "[10:21:03] [手动] > help command.list"
+        // 指令回显(cmd:来源):附录 C 样式 "[10:21:03] [手动] > vulcan.core.help vulcan.command.list"
         if (e.Category.StartsWith(CommandBus.EchoCategoryPrefix, StringComparison.Ordinal))
         {
             var source = e.Category[CommandBus.EchoCategoryPrefix.Length..];

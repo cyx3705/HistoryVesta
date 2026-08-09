@@ -99,7 +99,7 @@ public sealed class McpSecurityTests
         registry.Register(Frontend("audit.hidden", allowMcp: false, readOnly: true, Parameter("password")));
         registry.Register(new CommandDescriptor
         {
-            Name = "app.set",
+            Name = "vulcan.app.set",
             Summary = "set",
             Parameters = [Parameter("key"), Parameter("value")],
             Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("set")),
@@ -120,7 +120,7 @@ public sealed class McpSecurityTests
                 code = "code-secret",
             }))
                 Assert.False(IsToolError(success));
-            using (var setting = await CallToolAsync(client, 2, "app_set", new
+            using (var setting = await CallToolAsync(client, 2, "vulcan_app_set", new
             {
                 key = "service.token",
                 value = "setting-secret",
@@ -133,7 +133,7 @@ public sealed class McpSecurityTests
                 Assert.True(IsToolError(rejected));
             using (var duplicateSettingKey = await PostRawRpcAsync(client,
                        """
-                       {"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"app_set","arguments":{"key":"safe.setting","KEY":"mcp.token","value":"duplicate-key-secret"}}}
+                       {"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"vulcan_app_set","arguments":{"key":"safe.setting","KEY":"mcp.token","value":"duplicate-key-secret"}}}
                        """))
                 Assert.True(IsToolError(duplicateSettingKey));
         });
@@ -152,7 +152,7 @@ public sealed class McpSecurityTests
                  })
             Assert.DoesNotContain(secret, recorded, StringComparison.Ordinal);
         Assert.All(audit.Entries, entry => Assert.Contains("[REDACTED]", entry.Arguments));
-        Assert.Contains(audit.Entries, entry => entry.Tool == "app_set"
+        Assert.Contains(audit.Entries, entry => entry.Tool == "vulcan_app_set"
                                                 && entry.Arguments.Contains(
                                                     "service.token", StringComparison.Ordinal));
         Assert.Contains(audit.Entries, entry => entry.Tool == "audit_hidden" && entry.Result == "拒绝");

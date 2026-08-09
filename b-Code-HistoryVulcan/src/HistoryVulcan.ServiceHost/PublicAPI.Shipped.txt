@@ -1,5 +1,5 @@
 #nullable enable
-HistoryVulcan.ServiceHost.ServiceComposition.GlobalShortcuts.get -> HistoryVulcan.Services.Input.GlobalShortcutService?
+HistoryVulcan.ServiceHost.ServiceComposition.GlobalShortcuts.get -> HistoryVulcan.Core.Input.IGlobalShortcutHost?
 HistoryVulcan.ServiceHost.ServiceComposition.GlobalShortcuts.init -> void
 HistoryVulcan.ServiceHost.ServiceComposition.EndpointFile.get -> string?
 HistoryVulcan.ServiceHost.ServiceComposition.EndpointFile.init -> void

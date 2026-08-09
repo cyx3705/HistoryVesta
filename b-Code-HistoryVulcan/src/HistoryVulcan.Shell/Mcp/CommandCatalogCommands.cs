@@ -28,6 +28,9 @@ public sealed record CommandCatalogRow(
 {
     /// <summary>指令在所属域内的功能类；附加属性保持旧位置构造函数兼容。</summary>
     public string CommandClass { get; init; } = "core";
+
+    /// <summary>三段式命令名的末段方法名。</summary>
+    public string Method { get; init; } = "";
 }
 
 public sealed record CommandParameterInfo(
@@ -140,6 +143,7 @@ public static class CommandCatalogCommands
                 McpExposurePolicy.HardExclusionReason(descriptor.Name))
             {
                 CommandClass = registry.GetCommandClass(descriptor.Name),
+                Method = CommandRegistry.GetMethod(descriptor.Name),
             };
         }).ToList();
     }
@@ -150,12 +154,12 @@ public static class CommandCatalogCommands
         PromptGovernanceStore? prompts,
         Func<McpGateway?> gateway) => new()
         {
-            Name = "command.list",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.command.list",
+            Domain = "vulcan",
             CommandClass = "command",
             Summary = "结构化列出全部注册指令及其来源、风险和 MCP 投影",
             Readonly = true,
-            Example = "command.list domain=HistoryVulcan class=win mcp=visible filter=dock",
+            Example = "vulcan.command.list domain=vulcan class=win mcp=visible filter=dock",
             Parameters =
         [
             StringParam("domain", "可选指令域，如 proj / attr / command"),
@@ -215,12 +219,12 @@ public static class CommandCatalogCommands
         PromptGovernanceStore? prompts,
         Func<McpGateway?> gateway) => new()
         {
-            Name = "command.show",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.command.show",
+            Domain = "vulcan",
             CommandClass = "command",
             Summary = "查看单条指令的 Help 参数、来源、风险和 MCP 映射",
             Readonly = true,
-            Example = "command.show name=mcp.apply",
+            Example = "vulcan.command.show name=vulcan.mcp.apply",
             Parameters = [StringParam("name", "完整指令名", required: true, position: 0)],
             Handler = CommandDescriptor.Sync(ctx =>
             {
@@ -254,12 +258,12 @@ public static class CommandCatalogCommands
 
     private static CommandDescriptor BuildDomains(CommandRegistry registry) => new()
     {
-        Name = "command.domains",
-        Domain = "HistoryVulcan",
+        Name = "vulcan.command.domains",
+        Domain = "vulcan",
         CommandClass = "command",
         Summary = "列出全部指令域及注册数量",
         Readonly = true,
-        Example = "command.domains",
+        Example = "vulcan.command.domains",
         Handler = CommandDescriptor.Sync(_ =>
         {
             var rows = registry.All()
@@ -277,11 +281,11 @@ public static class CommandCatalogCommands
         CommandSchemaExporter exporter,
         Func<McpGateway?> gateway) => new()
         {
-            Name = "command.manual",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.command.manual",
+            Domain = "vulcan",
             CommandClass = "command",
             Summary = "从运行时注册表和 MCP 投影预览或生成 Markdown 命令手册",
-            Example = "command.manual file=command-manual.md apply=false",
+            Example = "vulcan.command.manual file=command-manual.md apply=false",
             Parameters =
         [
             new ParameterSpec

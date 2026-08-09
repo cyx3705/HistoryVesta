@@ -5,6 +5,7 @@ using HistoryVulcan.Core.Logging;
 using HistoryVulcan.Core.Mcp;
 using HistoryVulcan.Core.Storage;
 using HistoryVulcan.Services.Web;
+using HistoryVulcan.Shell.Mcp;
 using Xunit;
 
 namespace HistoryVulcan.Tests;
@@ -119,6 +120,36 @@ public sealed class FrontendCommandCatalogTests
     }
 
     [Fact]
+    public async Task ServiceCommandCatalogIncludesModuleAndFrontendCapabilities()
+    {
+        using var fixture = GatewayFixture.Start(withCatalog: true);
+        fixture.ServiceRegistry.Register(new CommandDescriptor
+        {
+            Name = "sample.inspect",
+            Domain = "SampleModule",
+            CommandClass = "diagnostic",
+            Summary = "Inspect a sample module",
+            Readonly = true,
+            Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("module")),
+        }, "module:SampleModule");
+
+        using var client = fixture.Connect("CatalogApp", "catalog.dynamic", "from-catalog");
+        await WaitUntilAsync(() => fixture.ServiceRegistry.TryGet("catalog.dynamic", out _));
+
+        var combined = await fixture.ServiceBus.ExecuteAsync("vulcan.command.list", "Test");
+
+        Assert.True(combined.Success, combined.Message);
+        Assert.Contains("sample.inspect", combined.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("catalog.dynamic", combined.Message, StringComparison.OrdinalIgnoreCase);
+
+        var moduleOnly = await fixture.ServiceBus.ExecuteAsync(
+            "vulcan.command.list domain=SampleModule class=diagnostic", "Test");
+        Assert.True(moduleOnly.Success, moduleOnly.Message);
+        Assert.Contains("sample.inspect", moduleOnly.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("catalog.dynamic", moduleOnly.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task MultipleFrontendsRequireDeterministicTarget()
     {
         using var fixture = GatewayFixture.Start();
@@ -218,11 +249,20 @@ public sealed class FrontendCommandCatalogTests
         public CommandBus ServiceBus { get; }
         public WebGateway Gateway { get; }
 
-        public static GatewayFixture Start()
+        public static GatewayFixture Start(bool withCatalog = false)
         {
             var registry = new CommandRegistry();
             var log = new NullLog();
             var bus = new CommandBus(registry, log);
+            if (withCatalog)
+            {
+                CommandCatalogCommands.RegisterAll(
+                    registry,
+                    new CommandSchemaExporter(registry),
+                    prompts: null!,
+                    gateway: static () => null,
+                    source: "framework:service");
+            }
             var gateway = new WebGateway(() => bus, new MemorySettings(), log);
             bus.FrontendExecutor = gateway.RelayFrontendCommandAsync;
             var result = gateway.Start(FreePort());

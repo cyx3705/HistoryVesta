@@ -13,11 +13,11 @@ WPF shell and docking UI, local services, module hosting, and an MCP gateway.
 ## Install
 
 ```xml
-<PackageReference Include="OneHistory.HistoryVulcan.Shell" Version="3.2.2" />
-<PackageReference Include="OneHistory.HistoryVulcan.ServiceHost" Version="3.2.2" />
+<PackageReference Include="OneHistory.HistoryVulcan.Shell" Version="3.3.0" />
+<PackageReference Include="OneHistory.HistoryVulcan.ServiceHost" Version="3.3.0" />
 ```
 
-The references above describe the 3.2.2 source contract. The supported delivery is the formal
+The references above describe the 3.3.0 source contract. The supported delivery is the formal
 `z-HistoryVulcan/host` application snapshot; NuGet generation remains a compatibility-only workflow.
 HistoryVulcan targets .NET 8.
 The Shell and ServiceHost packages require Windows and WPF. Packages in this

@@ -1,8 +1,6 @@
 #nullable enable
 HistoryVulcan.Shell.Console.ConsoleView.InitializeComponent() -> void
 HistoryVulcan.Shell.ShellWindow.InitializeComponent() -> void
-HistoryVulcan.Shell.Views.CommandDetailView.InitializeComponent() -> void
-HistoryVulcan.Shell.Views.McpToolsView.InitializeComponent() -> void
 HistoryVulcan.Shell.Views.ModulesView.InitializeComponent() -> void
 HistoryVulcan.Shell.BuiltinCommands
 HistoryVulcan.Shell.Console.ConsoleRow
@@ -17,7 +15,7 @@ HistoryVulcan.Shell.Console.ConsoleRow.Text.get -> string!
 HistoryVulcan.Shell.Console.ConsoleRow.Text.init -> void
 HistoryVulcan.Shell.Console.ConsoleView
 HistoryVulcan.Shell.Console.ConsoleView.Cls() -> void
-HistoryVulcan.Shell.Console.ConsoleView.ConsoleView(HistoryVulcan.Core.Logging.IShellLog! log, HistoryVulcan.Core.Commands.CommandBus! bus, HistoryVulcan.Core.Commands.CommandHistory! history, int bufferLimit = 50000) -> void
+HistoryVulcan.Shell.Console.ConsoleView.ConsoleView(HistoryVulcan.Core.Logging.IShellLog! log, HistoryVulcan.Core.Commands.CommandBus! bus, HistoryVulcan.Core.Commands.CommandHistory! history, HistoryVulcan.Core.CommandSurface.ICommandCatalogSession! catalogSession, int bufferLimit = 50000) -> void
 HistoryVulcan.Shell.Console.ConsoleView.FilterErrorsOnly() -> void
 HistoryVulcan.Shell.Console.ConsoleView.FocusInput() -> void
 HistoryVulcan.Shell.Console.ConsoleView.MinLevel.get -> HistoryVulcan.Core.Logging.ShellLogLevel
@@ -245,10 +243,6 @@ HistoryVulcan.Shell.ShellWindow.Prompts.get -> HistoryVulcan.Services.Mcp.Prompt
 HistoryVulcan.Shell.ShellWindow.ShellWindow(HistoryVulcan.Shell.ShellConfig! config, HistoryVulcan.Core.Storage.ILayoutStore! layoutStore, HistoryVulcan.Core.Logging.IShellLog! log, HistoryVulcan.Core.Storage.ISettingsService! settings, string! dataDirectory) -> void
 HistoryVulcan.Shell.Themes.HistoryVulcanTheme
 HistoryVulcan.Shell.Themes.HistoryVulcanTheme.HistoryVulcanTheme() -> void
-HistoryVulcan.Shell.Views.CommandDetailView
-HistoryVulcan.Shell.Views.CommandDetailView.CommandDetailView(System.Func<HistoryVulcan.Core.Commands.CommandBus?>! busAccessor, HistoryVulcan.Core.Commands.CommandSelectionState! selection) -> void
-HistoryVulcan.Shell.Views.McpToolsView
-HistoryVulcan.Shell.Views.McpToolsView.McpToolsView(System.Func<HistoryVulcan.Core.Commands.CommandBus?>! busAccessor, HistoryVulcan.Core.Commands.CommandSelectionState! selection) -> void
 HistoryVulcan.Shell.Views.ModuleCatalogLoadResult
 HistoryVulcan.Shell.Views.ModuleCatalogLoadResult.Message.get -> string!
 HistoryVulcan.Shell.Views.ModuleCatalogLoadResult.Message.init -> void

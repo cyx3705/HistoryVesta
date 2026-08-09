@@ -19,8 +19,8 @@ public static partial class BuiltinCommands
     {
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "app.exit",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.app.exit",
+            Domain = "vulcan",
             CommandClass = "app",
             Summary = "退出程序",
             RequiresUiThread = true,
@@ -33,8 +33,8 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "app.about",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.app.about",
+            Domain = "vulcan",
             CommandClass = "app",
             Summary = "显示关于对话框",
             RequiresUiThread = true,
@@ -47,7 +47,7 @@ public static partial class BuiltinCommands
         });
 
         r.Register(BuiltinCommandDefinitions.Bind(
-            "app.opendata",
+            "vulcan.app.opendata",
             CommandDescriptor.Sync(_ =>
             {
                 Process.Start(new ProcessStartInfo("explorer.exe", s.DataDirectory)
@@ -58,7 +58,7 @@ public static partial class BuiltinCommands
             })));
 
         r.Register(BuiltinCommandDefinitions.Bind(
-            "app.set",
+            "vulcan.app.set",
             CommandDescriptor.Sync(ctx =>
             {
                 var key = ctx.RequireString("key");
@@ -68,7 +68,7 @@ public static partial class BuiltinCommands
             })));
 
         r.Register(BuiltinCommandDefinitions.Bind(
-            "app.get",
+            "vulcan.app.get",
             CommandDescriptor.Sync(ctx =>
             {
                 var key = ctx.GetString("key");
@@ -92,7 +92,7 @@ public static partial class BuiltinCommands
     /// <summary>
     /// 令牌类设置值一律以占位符回报(FZR-01)。
     ///
-    /// 脱敏必须落在指令结果本身,而不是总线的日志回显:`app.get` 声明了 Readonly,
+    /// 脱敏必须落在指令结果本身,而不是总线的日志回显:`vulcan.app.get` 声明了 Readonly,
     /// 因而对 scope=read 的远程设备放行,并在默认 readonly 策略下作为 MCP 工具可见。
     /// 结果对象会原样序列化进 HTTP 响应体与 tools/call 载荷,只脱敏日志挡不住这两条路径。
     ///

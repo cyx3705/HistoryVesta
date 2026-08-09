@@ -198,10 +198,10 @@ public sealed class CommandBus
 
     private static bool IsSecretSettingCommand(ParsedCommand parsed)
     {
-        if (parsed.Name.Equals("web.token", StringComparison.OrdinalIgnoreCase) ||
-            parsed.Name.Equals("mcp.token", StringComparison.OrdinalIgnoreCase))
+        if (parsed.Name.Equals("vulcan.web.token", StringComparison.OrdinalIgnoreCase) ||
+            parsed.Name.Equals("vulcan.mcp.token", StringComparison.OrdinalIgnoreCase))
             return true;
-        if (!parsed.Name.Equals("app.set", StringComparison.OrdinalIgnoreCase))
+        if (!parsed.Name.Equals("vulcan.app.set", StringComparison.OrdinalIgnoreCase))
             return false;
 
         var key = parsed.Named.GetValueOrDefault("key") ?? parsed.Positionals.FirstOrDefault();
@@ -210,10 +210,10 @@ public sealed class CommandBus
 
     private bool IsSensitivePosition(ParsedCommand parsed, int position)
     {
-        if (parsed.Name.Equals("app.set", StringComparison.OrdinalIgnoreCase))
+        if (parsed.Name.Equals("vulcan.app.set", StringComparison.OrdinalIgnoreCase))
             return IsSecretSettingCommand(parsed) && position == 1;
-        if (parsed.Name.Equals("web.token", StringComparison.OrdinalIgnoreCase)
-            || parsed.Name.Equals("mcp.token", StringComparison.OrdinalIgnoreCase))
+        if (parsed.Name.Equals("vulcan.web.token", StringComparison.OrdinalIgnoreCase)
+            || parsed.Name.Equals("vulcan.mcp.token", StringComparison.OrdinalIgnoreCase))
             return position == 0;
         return Registry.TryGet(parsed.Name, out var descriptor)
                && descriptor.Parameters.Any(parameter =>
@@ -258,7 +258,7 @@ public sealed class CommandBus
             return redacted;
 
         var commandName = commandMatch.Groups["name"].Value;
-        var mayContainSensitiveArguments = commandName.Equals("app.set", StringComparison.OrdinalIgnoreCase)
+        var mayContainSensitiveArguments = commandName.Equals("vulcan.app.set", StringComparison.OrdinalIgnoreCase)
                                            || IsSensitiveArgument(commandName)
                                            || Registry.TryGet(commandName, out var descriptor)
                                            && descriptor.Parameters.Any(parameter =>
@@ -425,7 +425,7 @@ public sealed class CommandBus
             var parsed = CommandParser.Parse(commandText);
             if (SensitiveValues(parsed).Any(value => !string.IsNullOrEmpty(value)))
                 return true;
-            if (!parsed.Name.Equals("app.get", StringComparison.OrdinalIgnoreCase))
+            if (!parsed.Name.Equals("vulcan.app.get", StringComparison.OrdinalIgnoreCase))
                 return false;
             var key = parsed.Named.GetValueOrDefault("key") ?? parsed.Positionals.FirstOrDefault();
             return key != null && IsSensitiveSettingKey(key);
@@ -540,7 +540,7 @@ public sealed class CommandBus
            || value.Equals("on", StringComparison.OrdinalIgnoreCase)
            || value.Equals("off", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>用法行,如 "用法: win.dock name= pos=left/right/top/bottom/tab [target=] [ratio=]"。</summary>
+    /// <summary>用法行,如 "用法: vulcan.win.dock name= pos=left/right/top/bottom/tab [target=] [ratio=]"。</summary>
     public static string FormatUsage(CommandDescriptor d)
     {
         var parts = d.Parameters.Select(p =>

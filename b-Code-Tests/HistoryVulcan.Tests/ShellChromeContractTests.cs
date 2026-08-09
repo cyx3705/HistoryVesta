@@ -1,3 +1,5 @@
+extern alias mercury;
+
 using System.Runtime.ExceptionServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,13 +19,17 @@ using HistoryVulcan.Shell.Console;
 using HistoryVulcan.Shell.Mcp;
 using AvalonDock.Controls;
 using Xunit;
+using McpToolsView = mercury::Mercury.CommandSurface.McpToolsView;
+using CommandDetailView = mercury::Mercury.CommandSurface.CommandDetailView;
+using CommandCatalogSession = mercury::Mercury.CommandSurface.CommandCatalogSession;
+using CommandSurfaceFeature = mercury::Mercury.CommandSurface.CommandSurfaceFeature;
 
 namespace HistoryVulcan.Tests;
 
 /// <summary>
-/// 3.1 外壳合同(UI-02 / UI-03 / UI-04 / UI-05 / UI-09):
-/// 常驻菜单行与状态栏已取消,顶栏按钮组恒定,页面最大化为无壳专注态。
-/// 这些断言针对真实可视树,不是对 XAML 文本的检查。
+/// 3.1 ????(UI-02 / UI-03 / UI-04 / UI-05 / UI-09):
+/// ????????????,???????,????????????
+/// ???????????,??? XAML ??????
 /// </summary>
 public sealed class ShellChromeContractTests
 {
@@ -32,12 +38,12 @@ public sealed class ShellChromeContractTests
     {
         RunShell(window =>
         {
-            // UI-03 / UI-05.1:两条常驻横带都不复存在
+            // UI-03 / UI-05.1:???????????
             Assert.Empty(FindVisualDescendants<Menu>(window));
             Assert.Empty(FindVisualDescendants<System.Windows.Controls.Primitives.StatusBar>(window));
 
-            // 3.1 修订:独立标题栏那一层也没有了 —— 停靠区必须从窗体顶端起算,
-            // 按钮组与最上一排页签同处一行。
+            // 3.1 ??:???????????? ?? ????????????,
+            // ???????????????
             var chromeBar = RequireElement<FrameworkElement>(window, "ChromeBar");
             var manager = Assert.Single(FindVisualDescendants<AvalonDock.DockingManager>(window));
             var managerTop = manager.TransformToAncestor(window).Transform(new Point(0, 0)).Y;
@@ -58,7 +64,7 @@ public sealed class ShellChromeContractTests
             var panel = FindVisualDescendants<AvalonDock.Controls.DocumentPaneTabPanel>(window)
                 .Single(item => item.IsVisible);
 
-            // 页签面板落在按钮组正下方时,右边距必须把按钮宽度让出来
+            // ?????????????,?????????????
             var panelRight = panel.TransformToAncestor(window).Transform(new Point(panel.ActualWidth, 0)).X;
             var chromeLeft = chromeBar.TransformToAncestor(window).Transform(new Point(0, 0)).X;
             Assert.True(panelRight <= chromeLeft + 0.5,
@@ -208,7 +214,7 @@ public sealed class ShellChromeContractTests
         RunShell(window =>
         {
             var maximize = window.Commands.ExecuteAsync(
-                $"win.max name={StandardWindowIds.Console}", "test").GetAwaiter().GetResult();
+                $"vulcan.win.max name={StandardWindowIds.Console}", "test").GetAwaiter().GetResult();
             Assert.True(maximize.Success, maximize.Message);
             PumpDispatcher();
             Assert.Equal(StandardWindowIds.Console, window.Docking.MaximizedId);
@@ -237,12 +243,12 @@ public sealed class ShellChromeContractTests
     {
         RunShell(window =>
         {
-            Assert.True(window.Commands.ExecuteAsync("app.frontend.hide", "test")
+            Assert.True(window.Commands.ExecuteAsync("vulcan.frontend.hide", "test")
                 .GetAwaiter().GetResult().Success);
             PumpDispatcher();
             Assert.False(window.IsVisible);
 
-            Assert.True(window.Commands.ExecuteAsync("app.frontend.focus-console", "test")
+            Assert.True(window.Commands.ExecuteAsync("vulcan.frontend.focusconsole", "test")
                 .GetAwaiter().GetResult().Success);
             PumpDispatcher(500);
 
@@ -256,7 +262,7 @@ public sealed class ShellChromeContractTests
             var layoutChanges = 0;
             window.Docking.WindowsChanged += (_, _) => layoutChanges++;
             RequireButton(window, "MenuButton").Focus();
-            Assert.True(window.Commands.ExecuteAsync("app.frontend.focus-console", "test")
+            Assert.True(window.Commands.ExecuteAsync("vulcan.frontend.focusconsole", "test")
                 .GetAwaiter().GetResult().Success);
             PumpDispatcher(500);
 
@@ -273,7 +279,7 @@ public sealed class ShellChromeContractTests
         RunShell(
             window =>
             {
-                window.Commands.ExecuteAsync("app.theme mode=dark", "test")
+                window.Commands.ExecuteAsync("vulcan.app.theme mode=dark", "test")
                     .GetAwaiter().GetResult();
                 PumpDispatcher();
 
@@ -281,7 +287,7 @@ public sealed class ShellChromeContractTests
                 window.Docking.Show(StandardWindowIds.Mcp);
                 PumpDispatcher(600);
                 var catalog = Assert.Single(
-                    FindVisualDescendants<HistoryVulcan.Shell.Views.McpToolsView>(window));
+                    FindVisualDescendants<McpToolsView>(window));
                 foreach (var name in new[] { "DomainFilterBox", "ClassFilterBox", "McpFilterBox" })
                 {
                     var combo = Assert.IsType<ComboBox>(catalog.FindName(name));
@@ -325,16 +331,16 @@ public sealed class ShellChromeContractTests
     {
         RunShell(window =>
         {
-            // R3-1:工具页原来的「蓝条」标题栏(标题 + 虚线 + ▼📌✕)已取消。
-            // 判据是它不再占据布局高度 —— 内容必须从工具页顶端开始。
+            // R3-1:?????????????(?? + ?? + ????)????
+            // ???????????? ?? ?????????????
             var host = FindVisualDescendants<LayoutAnchorableControl>(window).First(item => item.IsVisible);
             var content = FindVisualDescendants<ContentPresenter>(host).First();
             var hostTop = host.TransformToAncestor(window).Transform(new Point(0, 0)).Y;
             var contentTop = content.TransformToAncestor(window).Transform(new Point(0, 0)).Y;
             Assert.True(contentTop - hostTop < 2,
-                $"tool page content is pushed down by {contentTop - hostTop}px — a caption bar is back");
+                $"tool page content is pushed down by {contentTop - hostTop}px ? a caption bar is back");
 
-            // R4-1:内容宿主里不得再有任何标题条部件 —— 动作已搬到页签行
+            // R4-1:???????????????? ?? ????????
             Assert.Empty(FindVisualDescendants<AnchorablePaneTitle>(host));
         });
     }
@@ -344,11 +350,11 @@ public sealed class ShellChromeContractTests
     {
         RunShell(window =>
         {
-            window.Commands.ExecuteAsync("app.theme mode=dark", "test").GetAwaiter().GetResult();
+            window.Commands.ExecuteAsync("vulcan.app.theme mode=dark", "test").GetAwaiter().GetResult();
             PumpDispatcher();
 
-            // R3-3:表格必须跟着深色走 —— GridView 会给表头显式指定容器样式,
-            // 隐式样式命不中,历史上这里留了一条系统渐变的浅色表头。
+            // R3-3:????????? ?? GridView ????????????,
+            // ???????,???????????????????
             var surfaceAlt = ((SolidColorBrush)window.FindResource("Shell.Brush.SurfaceAlt")).Color;
             var headers = FindVisualDescendants<GridViewColumnHeader>(window)
                 .Where(header => header.IsVisible && header.Content != null)
@@ -362,14 +368,14 @@ public sealed class ShellChromeContractTests
                     $"grid header '{header.Content}' is not painted with the dark surface");
             }
 
-            // R3-4 / R4-4:正文偏暖(淡黄向)但低饱和 —— 太艳会有玩具感
+            // R3-4 / R4-4:????(???)???? ?? ???????
             var text = ((SolidColorBrush)window.FindResource("Shell.Brush.TextPrimary")).Color;
             Assert.True(text.R > 0xD0 && text.B < text.G && text.G < text.R,
                 $"dark text should lean warm/pale yellow, got {text}");
             Assert.True(text.R - text.B <= 0x30,
                 $"dark text is oversaturated (R-B={text.R - text.B:X}), got {text}");
 
-            // R3-4 / R4-4:底色偏墨绿但同样低饱和,不是偏蓝的中性灰
+            // R3-4 / R4-4:???????????,????????
             var canvas = ((SolidColorBrush)window.FindResource("Shell.Brush.Canvas")).Color;
             Assert.True(canvas.G > canvas.B && canvas.G > canvas.R,
                 $"dark canvas should lean ink-green, got {canvas}");
@@ -383,11 +389,11 @@ public sealed class ShellChromeContractTests
     {
         RunShell(window =>
         {
-            window.Commands.ExecuteAsync("app.theme mode=dark", "test").GetAwaiter().GetResult();
+            window.Commands.ExecuteAsync("vulcan.app.theme mode=dark", "test").GetAwaiter().GetResult();
             PumpDispatcher();
 
-            // R4-5:按属性看颜色会骗人 —— 表格那块浅灰来自 WPF 默认模板的
-            // 「禁用态」触发器,只有真正渲染出来采样才抓得住。
+            // R4-5:????????? ?? ???????? WPF ?????
+            // ????????,???????????????
             foreach (var list in FindVisualDescendants<ListView>(window)
                          .Where(item => item.IsVisible && item.ActualWidth > 100 && item.ActualHeight > 60))
             {
@@ -399,9 +405,9 @@ public sealed class ShellChromeContractTests
                     var luminance = (pixel.R + pixel.G + pixel.B) / 3;
                     var spread = Math.Max(pixel.R, Math.Max(pixel.G, pixel.B))
                                  - Math.Min(pixel.R, Math.Min(pixel.G, pixel.B));
-                    // 亮且中性 = 系统那块浅灰(#F4F4F4);淡黄文字同样亮但偏暖,不算
+                    // ???? = ??????(#F4F4F4);??????????,??
                     Assert.False(luminance > 0x60 && spread < 0x14,
-                        $"table pixel @{x},{y} is neutral light ({pixel}) — dark theme did not reach the table body");
+                        $"table pixel @{x},{y} is neutral light ({pixel}) ? dark theme did not reach the table body");
                 }
             }
         });
@@ -416,7 +422,7 @@ public sealed class ShellChromeContractTests
             window.Docking.Float(StandardWindowIds.Console);
             PumpDispatcher(900);
 
-            // R4-3:浮动窗口自带一份主题字典,不单独换就一直是白的
+            // R4-3:????????????,??????????
             var floating = Assert.Single(manager.FloatingWindows.ToList());
             Assert.Equal(
                 Assert.IsType<SolidColorBrush>(window.FindResource("Shell.Brush.Surface")).Color,
@@ -426,7 +432,7 @@ public sealed class ShellChromeContractTests
                 Assert.IsType<SolidColorBrush>(floating.BorderBrush).Color);
             Assert.Equal(new Thickness(1), floating.BorderThickness);
 
-            window.Commands.ExecuteAsync("app.theme mode=dark", "test").GetAwaiter().GetResult();
+            window.Commands.ExecuteAsync("vulcan.app.theme mode=dark", "test").GetAwaiter().GetResult();
             PumpDispatcher();
 
             Assert.Equal(
@@ -484,7 +490,7 @@ public sealed class ShellChromeContractTests
         RunShell(
             window =>
             {
-                var result = window.Commands.ExecuteAsync("win.max name=focus.tool", "test")
+                var result = window.Commands.ExecuteAsync("vulcan.win.max name=focus.tool", "test")
                     .GetAwaiter().GetResult();
                 Assert.True(result.Success, result.Message);
                 PumpDispatcher();
@@ -521,7 +527,7 @@ public sealed class ShellChromeContractTests
         RunShell(
             window =>
             {
-                var result = window.Commands.ExecuteAsync("win.max name=focus.tool", "test")
+                var result = window.Commands.ExecuteAsync("vulcan.win.max name=focus.tool", "test")
                     .GetAwaiter().GetResult();
                 Assert.True(result.Success, result.Message);
                 PumpDispatcher();
@@ -583,8 +589,8 @@ public sealed class ShellChromeContractTests
             Assert.NotNull(PresentationSource.FromVisual(content));
             Assert.NotSame(PresentationSource.FromVisual(floating), PresentationSource.FromVisual(content));
 
-            // 浮窗内容位于独立 PresentationSource，拖动事件必须随 Pane Style 下发，
-            // 不能依赖主 DockingManager 的视觉树扫描。
+            // ???????? PresentationSource???????? Pane Style ???
+            // ????? DockingManager ???????
             var floatingPane = FindAncestor<LayoutAnchorablePaneControl>(content, _ => true);
             Assert.NotNull(floatingPane);
             Assert.Contains(
@@ -634,7 +640,7 @@ public sealed class ShellChromeContractTests
                 Assert.Contains(documentEvents, setter => setter.Event == UIElement.PreviewMouseLeftButtonUpEvent);
                 Assert.Contains(documentEvents, setter => setter.Event == Mouse.LostMouseCaptureEvent);
 
-                var result = window.Commands.ExecuteAsync("win.max name=focus.tool", "test")
+                var result = window.Commands.ExecuteAsync("vulcan.win.max name=focus.tool", "test")
                     .GetAwaiter().GetResult();
                 Assert.True(result.Success, result.Message);
                 PumpDispatcher();
@@ -730,14 +736,14 @@ public sealed class ShellChromeContractTests
             var manager = Assert.Single(FindVisualDescendants<AvalonDock.DockingManager>(window));
             var floating = Assert.Single(manager.FloatingWindows.ToList());
             var maximize = window.Commands.ExecuteAsync(
-                "win.float-state name=center.state state=maximized", "Test").GetAwaiter().GetResult();
+                "vulcan.win.floatstate name=center.state state=maximized", "Test").GetAwaiter().GetResult();
             Assert.True(maximize.Success, maximize.Message);
             PumpDispatcher();
             floating = Assert.Single(manager.FloatingWindows.ToList());
             Assert.Equal(WindowState.Maximized, floating.WindowState);
 
             var restore = window.Commands.ExecuteAsync(
-                "win.float-state name=center.state state=toggle", "Test").GetAwaiter().GetResult();
+                "vulcan.win.floatstate name=center.state state=toggle", "Test").GetAwaiter().GetResult();
             Assert.True(restore.Success, restore.Message);
             PumpDispatcher();
             floating = Assert.Single(manager.FloatingWindows.ToList());
@@ -759,23 +765,23 @@ public sealed class ShellChromeContractTests
         {
             var actions = FindVisualDescendants<AnchorablePaneTitle>(window).First(item => item.IsVisible);
 
-            // R4-1:动作图标属于页签行,不再浮在内容之上
+            // R4-1:?????????,????????
             var header = FindAncestor<Grid>(actions, grid => grid.Tag as string == "ShellPaneHeader");
             Assert.NotNull(header);
 
-            // R4-2:📌 单独成键已取消,同一动作仍在 ▼ 菜单里。
-            // 菜单挂在 Popup 上,只有真打开才进可视树 —— 顺带验证 ▼ 确实能弹出菜单。
+            // R4-2:?? ???????,?????? ? ????
+            // ???? Popup ?,?????????? ?? ???? ? ????????
             var buttons = FindVisualDescendants<ButtonBase>(actions).ToList();
-            Assert.DoesNotContain(buttons, button => Equals(button.ToolTip, "自动隐藏"));
+            Assert.DoesNotContain(buttons, button => Equals(button.ToolTip, "\u81ea\u52a8\u9690\u85cf"));
 
             Assert.Single(buttons.OfType<ToggleButton>());
 
-            // 菜单项住在 Popup 里,活体可视树要等弹出才有,且是否弹出受焦点影响;
-            // 直接把模板实例化一份来查,结果稳定且与运行顺序无关。
+            // ????? Popup ?,???????????,??????????;
+            // ????????????,?????????????
             var declared = (FrameworkElement)actions.Template.LoadContent();
             var menuItems = FindLogicalDescendants<MenuItem>(declared).ToList();
-            Assert.Contains(menuItems, item => Equals(item.Header, "自动隐藏"));
-            Assert.Contains(menuItems, item => Equals(item.Header, "浮动"));
+            Assert.Contains(menuItems, item => Equals(item.Header, "\u81ea\u52a8\u9690\u85cf"));
+            Assert.Contains(menuItems, item => Equals(item.Header, "\u6d6e\u52a8"));
         });
     }
 
@@ -786,11 +792,11 @@ public sealed class ShellChromeContractTests
         RunShell(
             window =>
             {
-                // UI-08:浅色是默认,深色经指令切换并落设置
+                // UI-08:?????,???????????
                 var light = (SolidColorBrush)window.FindResource("Shell.Brush.Canvas");
                 Assert.Equal(Colors.White, ((SolidColorBrush)window.FindResource("Shell.Brush.Surface")).Color);
 
-                window.Commands.ExecuteAsync("app.theme mode=dark", "test").GetAwaiter().GetResult();
+                window.Commands.ExecuteAsync("vulcan.app.theme mode=dark", "test").GetAwaiter().GetResult();
                 PumpDispatcher();
 
                 var dark = (SolidColorBrush)window.FindResource("Shell.Brush.Canvas");
@@ -799,11 +805,11 @@ public sealed class ShellChromeContractTests
                     $"dark canvas should be dark, got {dark.Color}");
                 Assert.Equal("dark", settings.Get("ui.theme"));
 
-                // 主题色是暗黄:R > B 且明显偏暖
+                // ??????:R > B ?????
                 var accent = ((SolidColorBrush)window.FindResource("Shell.Brush.Accent")).Color;
                 Assert.True(accent.R > accent.B + 0x40, $"accent should be amber, got {accent}");
 
-                window.Commands.ExecuteAsync("app.theme mode=light", "test").GetAwaiter().GetResult();
+                window.Commands.ExecuteAsync("vulcan.app.theme mode=light", "test").GetAwaiter().GetResult();
                 PumpDispatcher();
                 Assert.Equal(light.Color, ((SolidColorBrush)window.FindResource("Shell.Brush.Canvas")).Color);
                 Assert.Equal("light", settings.Get("ui.theme"));
@@ -816,7 +822,7 @@ public sealed class ShellChromeContractTests
     {
         RunShell(window =>
         {
-            var detail = Assert.Single(FindVisualDescendants<HistoryVulcan.Shell.Views.CommandDetailView>(window));
+            var detail = Assert.Single(FindVisualDescendants<CommandDetailView>(window));
             Assert.Null(detail.FindName("DetailTitle"));
         });
     }
@@ -832,7 +838,7 @@ public sealed class ShellChromeContractTests
             RunShell(
                 window =>
                 {
-                    var result = window.Commands.ExecuteAsync("app.theme mode=dark", "test")
+                    var result = window.Commands.ExecuteAsync("vulcan.app.theme mode=dark", "test")
                         .GetAwaiter().GetResult();
                     Assert.True(result.Success, result.Message);
                 },
@@ -860,7 +866,7 @@ public sealed class ShellChromeContractTests
     {
         RunShell(window =>
         {
-            // UI-02.3:菜单 + 最小化 + 最大化还原 + 关闭,次序固定且都可命中
+            // UI-02.3:?? + ??? + ????? + ??,?????????
             var menu = RequireButton(window, "MenuButton");
             var minimize = RequireButton(window, "MinimizeButton");
             var maximize = RequireButton(window, "MaximizeButton");
@@ -874,7 +880,7 @@ public sealed class ShellChromeContractTests
                 Assert.True(button.ActualWidth > 0, $"{button.Name} width={button.ActualWidth}");
             }
 
-            // 次序:菜单紧贴最小化左侧,三个窗口按钮依次在右
+            // ??:?????????,??????????
             var bar = RequireElement<Panel>(window, "ChromeBar");
             var order = bar.Children.OfType<Button>().ToList();
             var menuIndex = order.IndexOf(menu);
@@ -891,18 +897,18 @@ public sealed class ShellChromeContractTests
         RunShell(
             window =>
             {
-                // UI-03.2:折叠后的菜单内容与 3.0.3 菜单栏一致
+                // UI-03.2:????????? 3.0.3 ?????
                 var menu = RequireButton(window, "MenuButton").ContextMenu;
                 Assert.NotNull(menu);
                 var headers = menu!.Items.OfType<MenuItem>().Select(item => item.Header.ToString()).ToList();
-                Assert.Equal(["文件(_F)", "编辑(_E)", "视图(_V)", "工具(_T)", "帮助(_H)"], headers);
+                Assert.Equal(["\u6587\u4ef6(_F)", "\u7f16\u8f91(_E)", "\u89c6\u56fe(_V)", "\u5de5\u5177(_T)", "\u5e2e\u52a9(_H)"], headers);
 
-                var tools = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "工具(_T)"));
+                var tools = menu.Items.OfType<MenuItem>().Single(item => Equals(item.Header, "\u5de5\u5177(_T)"));
                 Assert.Contains(
                     tools.Items.OfType<MenuItem>(),
-                    item => Equals(item.Header, "消费方入口"));
+                    item => Equals(item.Header, "\u6d4b\u8bd5\u52a8\u4f5c"));
             },
-            configure: config => config.ToolMenuActions.Add(new ShellMenuAction("消费方入口", "app.about")));
+            configure: config => config.ToolMenuActions.Add(new ShellMenuAction("\u6d4b\u8bd5\u52a8\u4f5c", "vulcan.app.about")));
     }
 
     [Fact]
@@ -932,7 +938,7 @@ public sealed class ShellChromeContractTests
                 new[] { "MenuButton", "MinimizeButton", "MaximizeButton", "CloseButton" },
                 name => Assert.Equal(Visibility.Visible, RequireButton(window, name).Visibility));
 
-            Assert.True(window.Commands.ExecuteAsync("win.restore", "Test").GetAwaiter().GetResult().Success);
+            Assert.True(window.Commands.ExecuteAsync("vulcan.win.restore", "Test").GetAwaiter().GetResult().Success);
             PumpDispatcher();
 
             Assert.Null(window.Docking.MaximizedId);
@@ -946,7 +952,7 @@ public sealed class ShellChromeContractTests
     [Fact]
     public void NonStandardWindowStyleStillKeepsMenuAndWindowButtons()
     {
-        // UI-09.1:宿主改过 WindowStyle 时只降级非客户区接管,顶栏内容不降级
+        // UI-09.1:???? WindowStyle ??????????,???????
         RunShell(
             window =>
             {
@@ -971,12 +977,12 @@ public sealed class ShellChromeContractTests
                 var badge = RequireButton(window, "ErrorBadge");
                 Assert.Equal(Visibility.Collapsed, badge.Visibility);
 
-                log.Raise(ShellLogLevel.Error, "test", "界面升级验证用错误");
+                log.Raise(ShellLogLevel.Error, "test", "\u754c\u9762\u5347\u7ea7\u9a8c\u8bc1\u7528\u9519\u8bef");
                 PumpDispatcher();
 
-                // UI-05.3:计数与点击跳转从状态栏迁到顶栏徽章
+                // UI-05.3: count moves to title-bar badge
                 Assert.Equal(Visibility.Visible, badge.Visibility);
-                Assert.Equal("错误 1", badge.Content);
+                Assert.Equal("\u9519\u8bef 1", badge.Content);
             },
             log: log);
     }
@@ -996,7 +1002,7 @@ public sealed class ShellChromeContractTests
             Assert.Equal(Visibility.Collapsed, Assert.IsType<CheckBox>(console.FindName("MuteLayout")).Visibility);
             Assert.Equal(Visibility.Collapsed, Assert.IsType<CheckBox>(console.FindName("AutoScroll")).Visibility);
 
-            var status = window.Commands.ExecuteAsync("log.autoscroll", "Test").GetAwaiter().GetResult();
+            var status = window.Commands.ExecuteAsync("vulcan.log.autoscroll", "Test").GetAwaiter().GetResult();
             Assert.True(status.Success, status.Message);
             Assert.Contains("True", status.Message, StringComparison.Ordinal);
         });
@@ -1013,13 +1019,13 @@ public sealed class ShellChromeContractTests
                 var consoleFilter = Assert.IsType<ComboBox>(console.FindName("DomainFilter"));
                 window.Docking.Show(StandardWindowIds.Mcp);
                 PumpDispatcher(600);
-                var catalog = Assert.Single(FindVisualDescendants<HistoryVulcan.Shell.Views.McpToolsView>(window));
+                var catalog = Assert.Single(FindVisualDescendants<McpToolsView>(window));
                 var catalogFilter = Assert.IsType<ComboBox>(catalog.FindName("DomainFilterBox"));
 
                 var consoleDomains = consoleFilter.Items.Cast<string>().ToList();
                 var catalogDomains = catalogFilter.Items.Cast<string>().ToList();
                 Assert.Equal(catalogDomains, consoleDomains);
-                Assert.Contains("HistoryVulcan", consoleDomains);
+                Assert.Contains("vulcan", consoleDomains);
                 Assert.Equal(consoleDomains.Skip(1).OrderBy(value => value, StringComparer.Ordinal),
                     consoleDomains.Skip(1));
                 Assert.Equal(consoleDomains.Count,
@@ -1033,36 +1039,36 @@ public sealed class ShellChromeContractTests
                 Assert.Contains(output.Items.Cast<ConsoleRow>(), row =>
                     row.Text.Contains("private-log", StringComparison.Ordinal));
 
-                Assert.True(console.TrySetSource("HistoryVulcan", out _));
-                catalogFilter.SelectedItem = "HistoryVulcan";
+                Assert.True(console.TrySetSource("vulcan", out _));
+                catalogFilter.SelectedItem = "vulcan";
                 window.Commands.Registry.Register(new CommandDescriptor
                 {
                     Name = "zeta.sample",
                     Domain = "Fixture",
                     CommandClass = "sample",
-                    Summary = "动态域同步测试",
+                    Summary = "\u52a8\u6001\u57df\u540c\u6b65\u6d4b\u8bd5",
                     Handler = CommandDescriptor.Sync(_ => CommandResult.Ok("ok")),
                 }, "test");
                 PumpDispatcher(600);
                 Assert.Contains("Fixture", consoleFilter.Items.Cast<string>());
                 Assert.Contains("Fixture", catalogFilter.Items.Cast<string>());
-                Assert.Equal("HistoryVulcan", consoleFilter.SelectedItem);
-                Assert.Equal("HistoryVulcan", catalogFilter.SelectedItem);
+                Assert.Equal("vulcan", consoleFilter.SelectedItem);
+                Assert.Equal("vulcan", catalogFilter.SelectedItem);
 
                 Assert.True(window.Commands.Registry.Unregister("zeta.sample"));
                 PumpDispatcher(600);
                 Assert.DoesNotContain("Fixture", consoleFilter.Items.Cast<string>());
                 Assert.DoesNotContain("Fixture", catalogFilter.Items.Cast<string>());
-                Assert.Equal("HistoryVulcan", consoleFilter.SelectedItem);
-                Assert.Equal("HistoryVulcan", catalogFilter.SelectedItem);
+                Assert.Equal("vulcan", consoleFilter.SelectedItem);
+                Assert.Equal("vulcan", catalogFilter.SelectedItem);
                 Assert.Equal(catalogFilter.Items.Cast<string>(), consoleFilter.Items.Cast<string>());
 
-                var rejected = window.Commands.ExecuteAsync("log.source source=missing-domain", "Test")
+                var rejected = window.Commands.ExecuteAsync("vulcan.log.source source=missing-domain", "Test")
                     .GetAwaiter().GetResult();
                 Assert.False(rejected.Success);
-                Assert.Contains("可用域", rejected.Message, StringComparison.Ordinal);
+                Assert.Contains("\u53ef\u7528\u57df", rejected.Message, StringComparison.Ordinal);
                 var parameter = window.Commands.Registry.All()
-                    .Single(command => command.Name == "log.source").Parameters.Single();
+                    .Single(command => command.Name == "vulcan.log.source").Parameters.Single();
                 Assert.Null(parameter.AllowedValues);
             },
             log: log);
@@ -1090,10 +1096,10 @@ public sealed class ShellChromeContractTests
 
             var console = Assert.Single(FindVisualDescendants<HistoryVulcan.Shell.Console.ConsoleView>(window));
             var input = Assert.Single(FindVisualDescendants<TextBox>(console), item => item.Name == "Input");
-            var catalog = Assert.Single(FindVisualDescendants<HistoryVulcan.Shell.Views.McpToolsView>(window));
+            var catalog = Assert.Single(FindVisualDescendants<McpToolsView>(window));
             var list = Assert.IsType<ListView>(catalog.FindName("ToolList"));
             Assert.Null(catalog.FindName("SearchBox"));
-            Assert.DoesNotContain(FindVisualDescendants<TextBlock>(catalog), item => item.Text == "搜索");
+            Assert.DoesNotContain(FindVisualDescendants<TextBlock>(catalog), item => item.Text == "\u6765\u6e90");
 
             Keyboard.Focus(input);
             input.Text = "summary-needle";
@@ -1146,7 +1152,7 @@ public sealed class ShellChromeContractTests
         {
             window.Docking.Show(StandardWindowIds.Mcp);
             PumpDispatcher(600);
-            var view = Assert.Single(FindVisualDescendants<HistoryVulcan.Shell.Views.McpToolsView>(window));
+            var view = Assert.Single(FindVisualDescendants<McpToolsView>(window));
             Assert.NotNull(view.FindName("DomainFilterBox"));
             Assert.NotNull(view.FindName("ClassFilterBox"));
             Assert.Null(view.FindName("SourceFilterBox"));
@@ -1157,17 +1163,18 @@ public sealed class ShellChromeContractTests
 
             var list = Assert.IsType<ListView>(view.FindName("ToolList"));
             var grid = Assert.IsType<GridView>(list.View);
-            Assert.Equal(new[] { "指令", "域", "类", "MCP", "参数", "说明" },
+            Assert.Equal(
+                new[] { "\u57df", "\u7c7b", "\u65b9\u6cd5", "MCP", "\u53c2\u6570", "\u8bf4\u660e" },
                 grid.Columns.Select(column => column.Header?.ToString()));
 
             var domainFilter = Assert.IsType<ComboBox>(view.FindName("DomainFilterBox"));
             var classFilter = Assert.IsType<ComboBox>(view.FindName("ClassFilterBox"));
             Assert.False(classFilter.IsEnabled);
-            Assert.Equal(["全部"], classFilter.Items.Cast<string>());
+            Assert.Equal(["\u5168\u90e8"], classFilter.Items.Cast<string>());
             var domains = domainFilter.Items.Cast<string>().ToList();
-            Assert.Contains("HistoryVulcan", domains);
+            Assert.Contains("vulcan", domains);
             Assert.Equal(domains.Count, domains.Distinct(StringComparer.OrdinalIgnoreCase).Count());
-            domainFilter.SelectedItem = "HistoryVulcan";
+            domainFilter.SelectedItem = "vulcan";
             PumpDispatcher();
             Assert.True(classFilter.IsEnabled);
             Assert.Contains("win", classFilter.Items.Cast<string>());
@@ -1176,7 +1183,7 @@ public sealed class ShellChromeContractTests
             Assert.NotEmpty(list.Items);
             Assert.All(list.Items.Cast<HistoryVulcan.Shell.Mcp.CommandCatalogRow>(), row =>
             {
-                Assert.Equal("HistoryVulcan", row.Domain, ignoreCase: true);
+                Assert.Equal("vulcan", row.Domain, ignoreCase: true);
                 Assert.Equal("win", row.CommandClass, ignoreCase: true);
             });
         });
@@ -1190,10 +1197,12 @@ public sealed class ShellChromeContractTests
             var log = new RelayLog();
             var logicalText = new string('W', 320);
             log.Raise(ShellLogLevel.Info, "wrap.test", logicalText);
+            var bus = new CommandBus(new CommandRegistry(), log);
             var console = new ConsoleView(
                 log,
-                new CommandBus(new CommandRegistry(), log),
-                new CommandHistory(Path.Combine(Path.GetTempPath(), $"HistoryVulcan-history-{Guid.NewGuid():N}.txt")));
+                bus,
+                new CommandHistory(Path.Combine(Path.GetTempPath(), $"HistoryVulcan-history-{Guid.NewGuid():N}.txt")),
+                new CommandCatalogSession(bus, new CommandSelectionState()));
             var host = new Window
             {
                 Content = console,
@@ -1242,11 +1251,11 @@ public sealed class ShellChromeContractTests
 
                 output.SelectedItem = row;
                 var copy = console.CopySelected();
-                Assert.Contains("已复制", copy, StringComparison.Ordinal);
+                Assert.Contains("\u5df2\u590d\u5236", copy, StringComparison.Ordinal);
                 Assert.Equal(row.Text, Clipboard.GetText());
 
                 var export = console.ExportVisible(exportPath);
-                Assert.Contains("已导出", export, StringComparison.Ordinal);
+                Assert.Contains("\u5df2\u5bfc\u51fa", export, StringComparison.Ordinal);
                 var exported = Assert.Single(File.ReadAllLines(exportPath));
                 Assert.Contains(logicalText, exported, StringComparison.Ordinal);
             }
@@ -1268,25 +1277,26 @@ public sealed class ShellChromeContractTests
             Assert.All(
                 new[]
                 {
-                    "log.level", "log.source", "log.keyword", "log.mute", "log.autoscroll",
-                    "log.clear", "log.export", "log.copy", "log.focus", "cls",
-                    "app.frontend.hide", "app.frontend.show", "app.frontend.focus-console", "app.frontend.exit",
-                    "app.window", "win.autohide", "win.float-state", "command.copy-example",
-                    "panel.select-file", "panel.select-directory",
+                    "vulcan.log.level", "vulcan.log.source", "vulcan.log.keyword", "vulcan.log.mute", "vulcan.log.autoscroll",
+                    "vulcan.log.clear", "vulcan.log.export", "vulcan.log.copy", "vulcan.log.focus",
+                    "vulcan.frontend.hide", "vulcan.frontend.show", "vulcan.frontend.focusconsole", "vulcan.frontend.exit",
+                    "vulcan.app.window", "vulcan.win.autohide", "vulcan.win.floatstate", "vulcan.command.copyexample",
+                    "vulcan.panel.selectfile", "vulcan.panel.selectdirectory",
                 },
                 name => Assert.Contains(name, names));
             Assert.DoesNotContain(names, name => name.StartsWith("res.", StringComparison.OrdinalIgnoreCase));
             Assert.DoesNotContain(names, name => name.StartsWith("motor.", StringComparison.OrdinalIgnoreCase));
 
-            Assert.True(window.Commands.ExecuteAsync("log.level level=error", "Test").GetAwaiter().GetResult().Success);
-            Assert.True(window.Commands.ExecuteAsync("log.source source=全部", "Test").GetAwaiter().GetResult().Success);
-            Assert.True(window.Commands.ExecuteAsync("log.keyword text=timeout", "Test").GetAwaiter().GetResult().Success);
-            Assert.True(window.Commands.ExecuteAsync("log.mute layout=true", "Test").GetAwaiter().GetResult().Success);
-            Assert.True(window.Commands.ExecuteAsync("log.autoscroll enabled=false", "Test").GetAwaiter().GetResult().Success);
-            Assert.True(window.Commands.ExecuteAsync("log.focus errors=true", "Test").GetAwaiter().GetResult().Success);
-            Assert.True(window.Commands.ExecuteAsync("log.clear", "Test").GetAwaiter().GetResult().Success);
-            Assert.True(window.Commands.ExecuteAsync("cls", "Test").GetAwaiter().GetResult().Success);
-            Assert.True(window.Commands.ExecuteAsync($"win.autohide name={StandardWindowIds.Console}", "Test")
+            Assert.True(window.Commands.ExecuteAsync("vulcan.log.level level=error", "Test").GetAwaiter().GetResult().Success);
+            Assert.True(window.Commands.ExecuteAsync("vulcan.log.source source=vulcan", "Test").GetAwaiter().GetResult().Success);
+            Assert.True(window.Commands.ExecuteAsync("vulcan.log.keyword text=timeout", "Test").GetAwaiter().GetResult().Success);
+            Assert.True(window.Commands.ExecuteAsync("vulcan.log.mute layout=true", "Test").GetAwaiter().GetResult().Success);
+            Assert.True(window.Commands.ExecuteAsync("vulcan.log.autoscroll enabled=false", "Test").GetAwaiter().GetResult().Success);
+            Assert.True(window.Commands.ExecuteAsync("vulcan.log.focus errors=true", "Test").GetAwaiter().GetResult().Success);
+            Assert.True(window.Commands.ExecuteAsync("vulcan.log.clear", "Test").GetAwaiter().GetResult().Success);
+            Assert.True(window.Commands.ExecuteAsync("vulcan.log.export", "Test").GetAwaiter().GetResult().Success);
+            Assert.True(window.Commands.ExecuteAsync("vulcan.log.copy", "Test").GetAwaiter().GetResult().Success);
+            Assert.True(window.Commands.ExecuteAsync($"vulcan.win.autohide name={StandardWindowIds.Console}", "Test")
                 .GetAwaiter().GetResult().Success);
         });
     }
@@ -1299,7 +1309,7 @@ public sealed class ShellChromeContractTests
             configure: config => config.EnableModules = true);
     }
 
-    // ---------------------------------------------------------------- 宿主
+    // ---------------------------------------------------------------- ??
 
     private static void RunShell(
         Action<ShellWindow> assert,
@@ -1331,6 +1341,12 @@ public sealed class ShellChromeContractTests
                 ShowInTaskbar = false,
                 WindowStyle = windowStyle,
             };
+            using var commandSurface = CommandSurfaceFeature.TryAttach(
+                window,
+                new HistoryVulcan.Shell.Modules.ShellUiRegistrar(
+                    window.Docking,
+                    window.Dispatcher,
+                    log ?? new NullLog()));
 
             try
             {
@@ -1476,7 +1492,7 @@ public sealed class ShellChromeContractTests
         public IReadOnlyList<ShellLogEntry> Snapshot() => [];
     }
 
-    /// <summary>可主动触发 EntryAdded 的日志,用于验证错误徽章。</summary>
+    /// <summary>????? EntryAdded ???,?????????</summary>
     private sealed class RelayLog : IShellLog
     {
         private readonly List<ShellLogEntry> _entries = new();

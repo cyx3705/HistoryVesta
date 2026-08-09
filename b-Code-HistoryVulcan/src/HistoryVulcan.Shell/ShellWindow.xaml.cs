@@ -9,11 +9,13 @@ using System.Windows.Media;
 using System.Windows.Shell;
 using System.Windows.Threading;
 using HistoryVulcan.Core.Commands;
+using HistoryVulcan.Core.CommandSurface;
 using HistoryVulcan.Core.Docking;
 using HistoryVulcan.Core.Logging;
 using HistoryVulcan.Core.Storage;
 using HistoryVulcan.Core.Modules;
 using HistoryVulcan.Shell.CommandSurface;
+using HistoryVulcan.Shell.Console;
 using HistoryVulcan.Shell.Docking;
 using HistoryVulcan.Shell.Themes;
 using AvalonDock.Controls;
@@ -28,14 +30,17 @@ namespace HistoryVulcan.Shell;
 /// M2 起指令总线为一切操作的汇聚点:菜单项点击同样是发指令(S-02),
 /// 控制台手输、脚本、布局手势与派生应用共用同一张指令注册表。
 /// </summary>
-public partial class ShellWindow : Window
+public partial class ShellWindow : Window, IShellCommandWorkbenchHost
 {
     private readonly ShellConfig _config;
     private readonly IShellLog _log;
     private readonly DockingHost _docking;
     private readonly string _dataDirectory;
     private readonly CommandBus _bus;
-    private readonly CommandSurfaceFeature _commandSurface;
+    private readonly CommandSelectionState _commandSelection;
+    private readonly CommandHistory _history;
+    private readonly DeferredCommandCatalogSession _catalogSession;
+    private readonly ConsoleView _console;
     private readonly Panels.PanelManager _panels;
 
     // 0.4.4 反哺能力:由 Shell 自行装配,派生应用经下方只读属性取用
@@ -66,7 +71,7 @@ public partial class ShellWindow : Window
     // 主题字典副本:窗格基底样式与 3.1 卡片/专注模板都从这里取
     private ResourceDictionary? _themeResources;
 
-    // UI-08:浅色/深色令牌整份切换(app.theme),设置项持久化
+    // UI-08:浅色/深色令牌整份切换(vulcan.app.theme),设置项持久化
     private readonly ISettingsService _settings;
     private string _theme = ThemeLight;
 
@@ -121,29 +126,30 @@ public partial class ShellWindow : Window
         LoadThemeResources();
         ApplyPaneStyles(chromeless: false);
 
-        // ---- 指令核心(§5):注册表 + 总线 + 历史 + 控制台
+        // ---- 指令核心(§5):注册表 + 总线 + 历史 + 控制台（命令集/详情由 Mercury 挂载）
         var registry = new CommandRegistry();
         _bus = new CommandBus(registry, log)
         {
             UiContext = SynchronizationContext.Current,
             Confirmation = new MessageBoxConfirmation(this),
         };
-        _commandSurface = new CommandSurfaceFeature(
-            _bus,
+        _commandSelection = config.CommandSelection ?? new CommandSelectionState();
+        _history = new CommandHistory(
+            Path.Combine(dataDirectory, "history.txt"),
+            settings.GetInt(ConsoleView.KeyHistory, 500));
+        _catalogSession = new DeferredCommandCatalogSession();
+        _console = new ConsoleView(
             log,
-            settings,
-            dataDirectory,
-            config.CommandSelection);
-        foreach (var window in _commandSurface.Windows)
-        {
-            TakeOverDescriptor(
-                window.Id,
-                window.Title,
-                window.Side,
-                window.Ratio,
-                window.ContentFactory,
-                window.ForcePlacement);
-        }
+            _bus,
+            _history,
+            _catalogSession,
+            settings.GetInt(ConsoleView.KeyBuffer, 50_000));
+        TakeOverDescriptor(
+            StandardWindowIds.Console,
+            "控制台",
+            DockSide.Bottom,
+            0.25,
+            () => _console);
 
         if (config.EnableModules || config.EnableRemoteManagementViews)
         {
@@ -160,7 +166,7 @@ public partial class ShellWindow : Window
         _docking.CommandGenerated += (_, e) =>
             Dispatcher.BeginInvoke(() => ShowToast($"[{e.Source}] {e.CommandText}", success: true));
         _docking.Initialize();
-        _commandSurface.ConfigureRouting(
+        ConfigureCommandCompletionRouting(
             () => string.Equals(
                 _docking.MaximizedId,
                 StandardWindowIds.Console,
@@ -219,8 +225,8 @@ public partial class ShellWindow : Window
         {
             Window = this,
             Docking = _docking,
-            Console = _commandSurface.Console,
-            History = _commandSurface.History,
+            Console = _console,
+            History = _history,
             Settings = settings,
             Log = log,
             Bus = _bus,
@@ -233,11 +239,11 @@ public partial class ShellWindow : Window
         // UI-08:主题切换也是一条指令(S-02),菜单项与控制台走同一条路径
         registry.Register(new CommandDescriptor
         {
-            Name = "app.theme",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.app.theme",
+            Domain = "vulcan",
             CommandClass = "app",
             Summary = "切换界面主题(浅色 / 深色)",
-            Example = "app.theme mode=dark",
+            Example = "vulcan.app.theme mode=dark",
             RequiresUiThread = true,
             Parameters =
             [
@@ -276,6 +282,7 @@ public partial class ShellWindow : Window
             _modules.RequireConfirmedSources = config.RequireConfirmedModuleSources;
             _modules.UiContext = SynchronizationContext.Current;
             _modules.ShellUi = _shellUi;
+            _modules.CommandWorkbench = this;
 
             // MD-08:窗口成型前先做一次文件级面板同步,上一会话遗留的模块旁面板本次即成窗口
             if (config.ModuleDiscoveryRoots.Count == 0)
@@ -303,7 +310,7 @@ public partial class ShellWindow : Window
 
             // McpCommands.RegisterAll 是聚合入口:内部级联注册 prompt.*(提示词治理)与
             // command.*(命令目录),不可在此重复调用 CommandCatalogCommands/PromptGovernanceCommands,
-            // 否则 command.list 等会二次注册,CommandRegistry 冲突即抛(§5.3)。
+            // 否则 vulcan.command.list 等会二次注册,CommandRegistry 冲突即抛(§5.3)。
             // 全限定:本类的 Mcp 只读属性会遮蔽 HistoryVulcan.Shell.Mcp 命名空间。
             HistoryVulcan.Shell.Mcp.McpCommands.RegisterAll(registry, () => _bus, () => _mcp, settings, _prompts);
 
@@ -366,7 +373,7 @@ public partial class ShellWindow : Window
         var focusConsole = new RoutedCommand();
         CommandBindings.Add(new CommandBinding(
             focusConsole,
-            (_, _) => _ = _bus.ExecuteAsync("log.focus", "UI")));
+            (_, _) => _ = _bus.ExecuteAsync("vulcan.log.focus", "UI")));
         InputBindings.Add(new KeyBinding(focusConsole, Key.Oem3, ModifierKeys.Control));
 
         if (config.EnableMaximizeOnDoubleClick)
@@ -438,7 +445,7 @@ public partial class ShellWindow : Window
             return;
         }
 
-        _commandSurface.AddTransientEntry(entry);
+        _console.AddTransientEntry(entry);
         if (entry.Level < ShellLogLevel.Error)
             return;
         Interlocked.Increment(ref _errorCount);
@@ -458,9 +465,30 @@ public partial class ShellWindow : Window
     /// 命令集选中状态(0.4.4):框架的命令集窗口写入,派生应用的指令详情窗口读取。
     /// 派生应用应把自己的详情视图接到本实例,避免各建一个导致联动失效。
     /// </summary>
-    public CommandSelectionState CommandSelection => _commandSurface.Selection;
+    public CommandSelectionState CommandSelection => _commandSelection;
 
-    /// <summary>关于对话框文本(app.about)。</summary>
+    CommandBus IShellCommandWorkbenchHost.Bus => _bus;
+
+    CommandSelectionState IShellCommandWorkbenchHost.CommandSelection => _commandSelection;
+
+    ISettingsService IShellCommandWorkbenchHost.Settings => _settings;
+
+    IShellLog IShellCommandWorkbenchHost.Log => _log;
+
+    string IShellCommandWorkbenchHost.DataDirectory => _dataDirectory;
+
+    /// <inheritdoc />
+    public void AttachCommandCatalogSession(ICommandCatalogSession session)
+        => _catalogSession.Attach(session);
+
+    /// <inheritdoc />
+    public void ConfigureCommandCompletionRouting(Func<bool> isConsoleFocused, Action showCommandCatalog)
+        => _console.ConfigureCompletionRouting(isConsoleFocused, showCommandCatalog);
+
+    /// <inheritdoc />
+    public void RefreshCommandCompletionFocus() => _console.RefreshCompletionFocus();
+
+    /// <summary>关于对话框文本(vulcan.app.about)。</summary>
     public string AboutText =>
         $"{_config.AppName} v{_config.AppVersion}\n\n基于 HistoryVulcan 通用窗口框架模板\n.NET 8 + WPF + AvalonDock 4.72.1";
 
@@ -510,7 +538,7 @@ public partial class ShellWindow : Window
     private void FocusConsole(bool resetFilters = false, bool preserveMaximizedLayout = false)
     {
         if (resetFilters)
-            _commandSurface.ResetFilters();
+            _console.ResetFilters();
         if (preserveMaximizedLayout && _docking.MaximizedId != null)
         {
             if (_docking.MaximizedId.Equals(StandardWindowIds.Console, StringComparison.OrdinalIgnoreCase))
@@ -532,7 +560,7 @@ public partial class ShellWindow : Window
         try
         {
             var result = await _bus.ExecuteAsync(
-                $"win.show name={StandardWindowIds.Mcp}",
+                $"vulcan.win.show name={StandardWindowIds.Mcp}",
                 "UI");
             if (!result.Success)
                 _log.Error("console", $"切换命令集失败: {result.Message}");
@@ -556,7 +584,7 @@ public partial class ShellWindow : Window
     }
 
     private void OnErrorBadgeClick(object sender, RoutedEventArgs e)
-        => _ = _bus.ExecuteAsync("log.focus errors=true", "UI");
+        => _ = _bus.ExecuteAsync("vulcan.log.focus errors=true", "UI");
 
     /// <summary>UI-05.2:指令结果瞬时回执;失败停留更久,点击跳控制台看全文。</summary>
     private void ShowToast(string text, bool success)
@@ -574,19 +602,19 @@ public partial class ShellWindow : Window
     {
         Toast.Visibility = Visibility.Collapsed;
         _toastTimer.Stop();
-        _ = _bus.ExecuteAsync("log.focus", "UI");
+        _ = _bus.ExecuteAsync("vulcan.log.focus", "UI");
     }
 
     // ---------------------------------------------------------------- 顶栏窗口控件(UI-02)
 
     private void OnMinimizeClick(object sender, RoutedEventArgs e)
-        => _ = _bus.ExecuteAsync("app.window state=minimized", "UI");
+        => _ = _bus.ExecuteAsync("vulcan.app.window state=minimized", "UI");
 
     private void OnMaximizeRestoreClick(object sender, RoutedEventArgs e)
-        => _ = _bus.ExecuteAsync("app.window state=toggle", "UI");
+        => _ = _bus.ExecuteAsync("vulcan.app.window state=toggle", "UI");
 
     private void OnCloseClick(object sender, RoutedEventArgs e)
-        => _ = _bus.ExecuteAsync("app.frontend.hide", "UI");
+        => _ = _bus.ExecuteAsync("vulcan.frontend.hide", "UI");
 
     internal CommandResult SetFloatingWindowState(string id, string state)
         => _topBar.SetFloatingWindowState(id, state);
@@ -611,7 +639,7 @@ public partial class ShellWindow : Window
         if (_config.CloseBehavior == ShellCloseBehavior.Hide && !_allowClose)
         {
             e.Cancel = true;
-            _ = _bus.ExecuteAsync("app.frontend.hide", "UI");
+            _ = _bus.ExecuteAsync("vulcan.frontend.hide", "UI");
             _closing = false;
             return;
         }
@@ -626,7 +654,8 @@ public partial class ShellWindow : Window
         // 派生应用不再需要(也不应该)重复 Dispose 这两件。
         _mcp?.Dispose();
         _modules?.Dispose();
-        _commandSurface.Dispose();
+        _history.Save();
+        _catalogSession.Dispose();
     }
 
     private void OnShellClosed(object? sender, EventArgs e)
@@ -636,9 +665,9 @@ public partial class ShellWindow : Window
     {
         registry.Register(new CommandDescriptor
         {
-            Name = "app.frontend.hide",
-            Domain = "HistoryVulcan",
-            CommandClass = "app",
+            Name = "vulcan.frontend.hide",
+            Domain = "vulcan",
+            CommandClass = "frontend",
             Summary = "隐藏 HistoryVulcan 前端窗口并保持后台连接",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -650,9 +679,9 @@ public partial class ShellWindow : Window
 
         registry.Register(new CommandDescriptor
         {
-            Name = "app.frontend.show",
-            Domain = "HistoryVulcan",
-            CommandClass = "app",
+            Name = "vulcan.frontend.show",
+            Domain = "vulcan",
+            CommandClass = "frontend",
             Summary = "显示并激活 HistoryVulcan 前端窗口",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -667,9 +696,9 @@ public partial class ShellWindow : Window
 
         registry.Register(new CommandDescriptor
         {
-            Name = "app.frontend.focus-console",
-            Domain = "HistoryVulcan",
-            CommandClass = "app",
+            Name = "vulcan.frontend.focusconsole",
+            Domain = "vulcan",
+            CommandClass = "frontend",
             Summary = "显示并聚焦控制台",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -700,9 +729,9 @@ public partial class ShellWindow : Window
 
         registry.Register(new CommandDescriptor
         {
-            Name = "app.frontend.exit",
-            Domain = "HistoryVulcan",
-            CommandClass = "app",
+            Name = "vulcan.frontend.exit",
+            Domain = "vulcan",
+            CommandClass = "frontend",
             Summary = "退出 HistoryVulcan 前端进程",
             RequiresUiThread = true,
             Handler = CommandDescriptor.Sync(_ =>
@@ -770,223 +799,4 @@ public partial class ShellWindow : Window
             _log.Warn("shell", $"保存主窗体位置失败: {ex.Message}");
         }
     }
-
-    // ---------------------------------------------------------------- 主题(UI-08)
-
-    private const string ThemeSettingsKey = "ui.theme";
-    private const string ThemeLight = "light";
-    private const string ThemeDark = "dark";
-
-    private static readonly Uri LightTokensUri =
-        new("/HistoryVulcan.Shell;component/Themes/ShellTokens.xaml", UriKind.Relative);
-
-    private static readonly Uri DarkTokensUri =
-        new("/HistoryVulcan.Shell;component/Themes/ShellTokens.Dark.xaml", UriKind.Relative);
-
-    /// <summary>
-    /// 令牌字典整份替换:应用色与 AvalonDock 主题画刷键都在同一份令牌里,
-    /// 因此不会出现「界面已深色、页签仍浅色」。三处都要换:
-    /// 窗体(视图)、DockingManager(停靠区,压过 VS2013 主题)、应用级(浮动窗口是独立 Window)。
-    /// </summary>
-    private void ApplyFocusChrome()
-    {
-        var focused = _docking.MaximizedId != null;
-
-        ExitFocusButton.Visibility = focused ? Visibility.Visible : Visibility.Collapsed;
-        ExitFocusButton.ToolTip = focused ? "退出聚焦" : null;
-        ChromeBar.Visibility = Visibility.Visible;
-
-        // CaptionHeight 永久为零，避免隐藏命中区覆盖任意工具窗格顶部。
-        // 文档页头显式拖动主窗口；工具页头由协调器显式拖出工具浮窗。
-        if (WindowChrome.GetWindowChrome(this) is { } chrome)
-            chrome.CaptionHeight = 0;
-
-        ApplyPaneStyles(chromeless: focused);
-        ScheduleChromeReserve();
-        _commandSurface.RefreshFocusState();
-        _topBar.Refresh();
-    }
-
-    private string FindTitle(string id)
-        => _docking.Descriptors
-               .FirstOrDefault(d => d.Id.Equals(id, StringComparison.OrdinalIgnoreCase))?.Title
-           ?? id;
-
-    private void OnExitFocusClick(object sender, RoutedEventArgs e)
-        => _ = _bus.ExecuteAsync("win.restore", "UI");
-
-    /// <summary>F11:在当前活动页的专注态与常规态之间切换。</summary>
-    private void ToggleFocusMode()
-    {
-        if (_docking.MaximizedId != null)
-        {
-            _ = _bus.ExecuteAsync("win.restore", "UI");
-            return;
-        }
-
-        var id = DockManager.Layout?.ActiveContent?.ContentId;
-        if (!string.IsNullOrWhiteSpace(id))
-            _ = _bus.ExecuteAsync($"win.max name={id}", "UI");
-    }
-
-    // ---------------------------------------------------------------- 键盘(UI-03.4 / UI-04.4)
-
-    private void OnShellPreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        var alt = e.Key == Key.System && e.SystemKey is Key.LeftAlt or Key.RightAlt;
-        _altPressedAlone = alt && !_menu.IsOpen;
-
-        if (e.Key == Key.F10 && Keyboard.Modifiers == ModifierKeys.None)
-        {
-            OpenShellMenu();
-            e.Handled = true;
-        }
-        else if (e.Key == Key.F11 && Keyboard.Modifiers == ModifierKeys.None)
-        {
-            ToggleFocusMode();
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Escape && _docking.MaximizedId != null && !IsTextInputFocused())
-        {
-            _ = _bus.ExecuteAsync("win.restore", "UI");
-            e.Handled = true;
-        }
-    }
-
-    private void OnShellPreviewKeyUp(object sender, KeyEventArgs e)
-    {
-        // Alt 单独按下抬起才呼出菜单;与其他键组合(Alt+Tab、Alt+F4、助记符)一律放行
-        if (_altPressedAlone && e.Key == Key.System && e.SystemKey is Key.LeftAlt or Key.RightAlt)
-        {
-            _altPressedAlone = false;
-            OpenShellMenu();
-            e.Handled = true;
-        }
-    }
-
-    /// <summary>Esc 退出专注不得抢走控制台等输入控件的 Esc(UI-04.4)。</summary>
-    private static bool IsTextInputFocused()
-        => Keyboard.FocusedElement is TextBoxBase or ComboBox or PasswordBox;
-
-    private static object? FindInDictionary(ResourceDictionary dict, object key)
-    {
-        if (dict.Contains(key))
-            return dict[key];
-        foreach (var merged in dict.MergedDictionaries)
-        {
-            if (FindInDictionary(merged, key) is { } found)
-                return found;
-        }
-
-        return null;
-    }
-
-    // ---------------------------------------------------------------- 菜单(S-01,3.1 折叠为顶栏弹出层 UI-03)
-
-    private void OnMenuButtonClick(object sender, RoutedEventArgs e) => OpenShellMenu();
-
-    private void OpenShellMenu()
-    {
-        if (_menu.Items.Count == 0)
-            return;
-        _menu.PlacementTarget = MenuButton;
-        _menu.Placement = PlacementMode.Bottom;
-        _menu.IsOpen = true;
-    }
-
-    private void BuildMenus()
-    {
-        var rebuilt = new List<object>();
-
-        // 文件
-        var file = new MenuItem { Header = "文件(_F)" };
-        file.Items.Add(Item("退出(_X)", "app.exit"));
-        rebuilt.Add(file);
-
-        // 编辑(预留)
-        var edit = new MenuItem { Header = "编辑(_E)", IsEnabled = false };
-        rebuilt.Add(edit);
-
-        // 视图:全部窗口开关 + 重置布局(W-02)
-        var view = new MenuItem { Header = "视图(_V)" };
-        foreach (var d in _docking.Descriptors)
-        {
-            var sub = new MenuItem { Header = d.Title };
-            sub.Items.Add(Item("显示", $"win.show name={d.Id}"));
-            sub.Items.Add(Item("隐藏", $"win.hide name={d.Id}"));
-            sub.Items.Add(Item("浮动", $"win.float name={d.Id}"));
-            sub.Items.Add(Item("复位到默认位置", $"win.reset name={d.Id}"));
-            view.Items.Add(sub);
-        }
-
-        view.Items.Add(new Separator());
-        var restore = Item("退出窗口最大化", "win.restore");
-        restore.IsEnabled = _docking.MaximizedId != null;
-        view.Items.Add(restore);
-        view.Items.Add(Item("重置默认布局", "layout.reset"));
-        // UI-08:主题切换(S-02,同样是发指令)
-        view.Items.Add(new Separator());
-        view.Items.Add(_theme == ThemeDark
-            ? Item("切换到浅色模式", $"app.theme mode={ThemeLight}")
-            : Item("切换到深色模式", $"app.theme mode={ThemeDark}"));
-        rebuilt.Add(view);
-
-        // 工具
-        var tools = new MenuItem { Header = "工具(_T)" };
-        tools.Items.Add(Item("打开数据目录", "app.opendata"));
-        if (_config.ToolMenuActions.Count > 0)
-            tools.Items.Add(new Separator());
-        foreach (var action in _config.ToolMenuActions)
-            tools.Items.Add(Item(action.Header, action.CommandText));
-        rebuilt.Add(tools);
-
-        // 帮助:指令手册 = help 的图形化版本(S-01)
-        var help = new MenuItem { Header = "帮助(_H)" };
-        var manual = new MenuItem { Header = "指令手册(_M)" };
-        var helpError = _bus.Validate("help");
-        if (helpError != null && !_menusInitialized)
-            throw InvalidMenuCommand("help", helpError);
-        manual.IsEnabled = helpError == null;
-        manual.ToolTip = helpError == null ? null : $"指令当前不可用: {helpError}";
-        manual.Click += async (_, _) =>
-        {
-            await _bus.ExecuteAsync("log.focus", "UI");
-            await _bus.ExecuteAsync("help", "UI");
-        };
-        help.Items.Add(manual);
-        help.Items.Add(Item("关于(_A)", "app.about"));
-        rebuilt.Add(help);
-
-        _menu.Items.Clear();
-        foreach (var item in rebuilt)
-            _menu.Items.Add(item);
-        _menusInitialized = true;
-    }
-
-    /// <summary>菜单项点击同样是发指令(S-02):统一经总线分发、回显、留痕。</summary>
-    private MenuItem Item(string header, string commandText)
-    {
-        var mi = new MenuItem { Header = header };
-        var validationError = _bus.Validate(commandText);
-        if (validationError != null)
-        {
-            if (!_menusInitialized)
-                throw InvalidMenuCommand(commandText, validationError);
-            mi.IsEnabled = false;
-            mi.ToolTip = $"指令当前不可用: {validationError}";
-            return mi;
-        }
-        mi.Click += (_, _) => _ = _bus.ExecuteAsync(commandText, "UI");
-        return mi;
-    }
-
-    private static InvalidOperationException InvalidMenuCommand(string commandText, string validationError)
-        => new($"菜单引用了无效指令 [{commandText}]: {validationError}");
-
-    /// <summary>
-    /// UI-05.4:原状态栏右侧的布局名。3.1 取消独立标题栏后没有常驻文本位,
-    /// 改挂菜单按钮提示 —— 需要时一悬停就能看到,不占任何常驻像素。
-    /// </summary>
-    private void UpdateLayoutIndicator()
-        => MenuButton.ToolTip = $"菜单 (Alt) · 布局 {_docking.CurrentLayoutName}";
 }

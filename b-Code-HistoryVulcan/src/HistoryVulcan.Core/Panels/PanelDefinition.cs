@@ -6,7 +6,7 @@ namespace HistoryVulcan.Core.Panels;
 /// </summary>
 public sealed class PanelDefinition
 {
-    /// <summary>面板 id,同时是窗口名(win.show name=&lt;id&gt;);小写、进程内唯一。</summary>
+    /// <summary>面板 id,同时是窗口名(vulcan.win.show name=&lt;id&gt;);小写、进程内唯一。</summary>
     public required string Id { get; set; }
 
     /// <summary>标题栏显示名。</summary>

@@ -15,8 +15,8 @@ public static class WebCommands
     {
         registry.Register(new CommandDescriptor
         {
-            Name = "web.status",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.web.status",
+            Domain = "vulcan",
             CommandClass = "web",
             Summary = "查看 Web 服务状态",
             Readonly = true,
@@ -35,25 +35,25 @@ public static class WebCommands
         }, source);
 
         registry.Register(SettingCommand(
-            "web.token",
+            "vulcan.web.token",
             "设置 Web Bearer token(不带参数只查看是否已配置)",
             WebGateway.KeyToken,
             settings,
             secret: true), source);
         registry.Register(SettingCommand(
-            "web.bind",
+            "vulcan.web.bind",
             "设置 Web 绑定地址(重启服务后生效)",
             WebGateway.KeyBind,
             settings), source);
         registry.Register(SettingCommand(
-            "web.cors",
+            "vulcan.web.cors",
             "设置 CORS 来源白名单(逗号分隔)",
             WebGateway.KeyCors,
             settings), source);
         registry.Register(new CommandDescriptor
         {
-            Name = "web.confirm",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.web.confirm",
+            Domain = "vulcan",
             CommandClass = "web",
             Summary = "设置远程确认模式(local/web；缺省 local)",
             Parameters =
@@ -86,7 +86,7 @@ public static class WebCommands
         => new()
         {
             Name = name,
-            Domain = "HistoryVulcan",
+            Domain = "vulcan",
             CommandClass = "web",
             Summary = summary,
             Parameters = [new ParameterSpec { Name = "value", Description = "新的设置值", Position = 0 }],

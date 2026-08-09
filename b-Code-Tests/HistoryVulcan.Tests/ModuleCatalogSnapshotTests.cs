@@ -49,7 +49,7 @@ public sealed class ModuleCatalogSnapshotTests
             RemoteExecutor = (text, _, _) =>
             {
                 calls.Add(text);
-                return Task.FromResult(text == "module.list"
+                return Task.FromResult(text == "vulcan.module.list"
                     ? CommandResult.Ok("modules", new List<ModuleMeta> { Module("Math", 1) })
                     : CommandResult.Ok("commands", new List<CommandCatalogRow>
                     {
@@ -61,7 +61,7 @@ public sealed class ModuleCatalogSnapshotTests
         var result = await ModuleCatalogReader.LoadAsync(bus);
 
         Assert.True(result.Success, result.Message);
-        Assert.Equal(["module.list", "command.list"], calls);
+        Assert.Equal(["vulcan.module.list", "vulcan.command.list"], calls);
         Assert.Equal("calc.add", Assert.Single(result.Snapshot!.CommandsFor("Math")).Name);
     }
 
@@ -72,7 +72,7 @@ public sealed class ModuleCatalogSnapshotTests
         var commands = new List<CommandCatalogRow> { CatalogRow("calc.add", "Math") };
         var bus = new CommandBus(new CommandRegistry(), new TestLog())
         {
-            RemoteExecutor = (text, _, _) => Task.FromResult(text == "module.list"
+            RemoteExecutor = (text, _, _) => Task.FromResult(text == "vulcan.module.list"
                 ? CommandResult.Ok("modules", JsonSerializer.SerializeToElement(modules))
                 : CommandResult.Ok("commands", JsonSerializer.SerializeToElement(commands))),
         };
@@ -93,7 +93,7 @@ public sealed class ModuleCatalogSnapshotTests
             RemoteExecutor = (text, _, _) =>
             {
                 calls.Add(text);
-                return Task.FromResult(text == "module.list"
+                return Task.FromResult(text == "vulcan.module.list"
                     ? CommandResult.Ok("modules", JsonSerializer.SerializeToElement(modules))
                     : CommandResult.Fail("command catalog is intentionally unavailable"));
             },
@@ -102,7 +102,7 @@ public sealed class ModuleCatalogSnapshotTests
         var result = await ModuleCatalogReader.LoadModulesAsync(bus);
 
         Assert.True(result.Success, result.Message);
-        Assert.Equal(["module.list"], calls);
+        Assert.Equal(["vulcan.module.list"], calls);
         Assert.Equal("HistoryJanus", Assert.Single(result.Snapshot!.Modules).ModuleName);
         Assert.Empty(result.Snapshot.Commands);
     }
@@ -128,6 +128,7 @@ public sealed class ModuleCatalogSnapshotTests
         Assert.DoesNotContain(buttons, button => (string?)button.Attribute("Click") == "OnRefreshClick");
         Assert.DoesNotContain(elements, element => (string?)element.Attribute(x + "Name") == "CommandList");
         Assert.DoesNotContain(elements, element => (string?)element.Attribute(x + "Name") == "CommandsTitle");
+        Assert.Contains(buttons, button => (string?)button.Attribute(x + "Name") == "OpenDirButton");
     }
 
     private static string RepositoryRoot()

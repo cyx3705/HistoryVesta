@@ -117,7 +117,7 @@ public sealed record ModuleCatalogLoadResult(
 public static class ModuleCatalogReader
 {
     /// <summary>
-    /// 只读取模块清单供模块管理页使用。模块页不依赖 command.list，避免命令目录修订期间
+    /// 只读取模块清单供模块管理页使用。模块页不依赖 vulcan.command.list，避免命令目录修订期间
     /// 因计数短暂不一致而隐藏已经成功装载的模块。
     /// </summary>
     internal static async Task<ModuleCatalogLoadResult> LoadModulesAsync(
@@ -126,7 +126,7 @@ public static class ModuleCatalogReader
     {
         ArgumentNullException.ThrowIfNull(bus);
 
-        var moduleResult = await bus.ExecuteAsync("module.list", "UI", cancellationToken);
+        var moduleResult = await bus.ExecuteAsync("vulcan.module.list", "UI", cancellationToken);
         if (!moduleResult.Success)
             return new(false, $"模块清单加载失败: {FirstLine(moduleResult.Message)}", null);
         if (!CommandResultData.TryRead<IReadOnlyList<ModuleMeta>>(moduleResult.Data, out var modules))
@@ -148,20 +148,20 @@ public static class ModuleCatalogReader
     {
         ArgumentNullException.ThrowIfNull(bus);
 
-        var moduleResult = await bus.ExecuteAsync("module.list", "UI", cancellationToken);
+        var moduleResult = await bus.ExecuteAsync("vulcan.module.list", "UI", cancellationToken);
         if (!moduleResult.Success)
             return new(false, $"模块清单加载失败: {FirstLine(moduleResult.Message)}", null);
         if (!CommandResultData.TryRead<IReadOnlyList<ModuleMeta>>(moduleResult.Data, out var modules))
             return new(false, "模块清单返回了无法识别的数据", null);
 
         IReadOnlyList<ModuleCommandInfo> commands;
-        if (bus.RemoteExecutor == null && !bus.Registry.TryGet("command.list", out _))
+        if (bus.RemoteExecutor == null && !bus.Registry.TryGet("vulcan.command.list", out _))
         {
             commands = ReadLocalCommands(bus.Registry);
         }
         else
         {
-            var commandResult = await bus.ExecuteAsync("command.list", "UI", cancellationToken);
+            var commandResult = await bus.ExecuteAsync("vulcan.command.list", "UI", cancellationToken);
             if (!commandResult.Success)
                 return new(false, $"命令目录加载失败: {FirstLine(commandResult.Message)}", null);
             if (!CommandResultData.TryRead<IReadOnlyList<CommandCatalogRow>>(commandResult.Data, out var rows))

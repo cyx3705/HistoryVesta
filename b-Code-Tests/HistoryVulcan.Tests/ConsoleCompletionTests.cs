@@ -1,3 +1,5 @@
+extern alias mercury;
+
 using System.Runtime.ExceptionServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -6,9 +8,12 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using HistoryVulcan.Core.Commands;
+using HistoryVulcan.Core.CommandSurface;
 using HistoryVulcan.Core.Logging;
 using HistoryVulcan.Shell.Console;
-using HistoryVulcan.Shell.Views;
+using CommandCatalogSession = mercury::Mercury.CommandSurface.CommandCatalogSession;
+using CommandCompletionDefinition = mercury::Mercury.CommandSurface.CommandCompletionDefinition;
+using CommandCompletionEngine = mercury::Mercury.CommandSurface.CommandCompletionEngine;
 using Xunit;
 
 namespace HistoryVulcan.Tests;
@@ -19,13 +24,13 @@ public sealed class ConsoleCompletionTests
     public void CommandPrefixReturnsStableCommandCandidates()
     {
         var registry = Registry(
-            Command("win.restore", "Restore the layout"),
-            Command("win.reset", "Reset the layout"),
+            Command("vulcan.win.restore", "Restore the layout"),
+            Command("vulcan.win.reset", "Reset the layout"),
             Command("app.show", "Show the frontend"));
 
         var result = Complete(registry, "win.", 4);
 
-        Assert.Equal(new[] { "win.reset", "win.restore" },
+        Assert.Equal(new[] { "vulcan.win.reset", "vulcan.win.restore" },
             result.Candidates.Select(item => item.InsertText));
         Assert.Equal(ConsoleCompletionKind.Command, result.Candidates[0].Kind);
         Assert.Equal(0, result.ReplaceStart);
@@ -36,18 +41,18 @@ public sealed class ConsoleCompletionTests
     public void ParameterPrefixReturnsKeyCandidatesAndSkipsUsedNames()
     {
         var registry = Registry(Command(
-            "win.dock",
+            "vulcan.win.dock",
             "Dock a window",
             new ParameterSpec { Name = "name", Description = "Window name" },
             new ParameterSpec { Name = "pos", Description = "Dock position" },
             new ParameterSpec { Name = "ratio", Description = "Dock ratio" }));
 
-        var result = Complete(registry, "win.dock name=console p", 23);
+        var result = Complete(registry, "vulcan.win.dock name=console p", 30);
 
         var candidate = Assert.Single(result.Candidates);
         Assert.Equal("pos=", candidate.InsertText);
         Assert.Equal(ConsoleCompletionKind.Parameter, candidate.Kind);
-        Assert.Equal(22, result.ReplaceStart);
+        Assert.Equal(29, result.ReplaceStart);
         Assert.Equal(1, result.ReplaceLength);
     }
 
@@ -55,7 +60,7 @@ public sealed class ConsoleCompletionTests
     public void NamedAllowedValuesSupportPartialAndQuotedInput()
     {
         var registry = Registry(Command(
-            "win.dock",
+            "vulcan.win.dock",
             "Dock a window",
             new ParameterSpec
             {
@@ -64,12 +69,12 @@ public sealed class ConsoleCompletionTests
                 AllowedValues = ["left", "right", "top", "bottom"],
             }));
 
-        var result = Complete(registry, "win.dock pos=\"t", 15);
+        var result = Complete(registry, "vulcan.win.dock pos=\"t", 22);
 
         var candidate = Assert.Single(result.Candidates);
         Assert.Equal("\"top\"", candidate.InsertText);
         Assert.Equal(ConsoleCompletionKind.Value, candidate.Kind);
-        Assert.Equal(13, result.ReplaceStart);
+        Assert.Equal(20, result.ReplaceStart);
         Assert.Equal(2, result.ReplaceLength);
     }
 
@@ -77,7 +82,7 @@ public sealed class ConsoleCompletionTests
     public void PositionalAllowedValuesAreSuggestedAfterCommand()
     {
         var registry = Registry(Command(
-            "log.level",
+            "vulcan.log.level",
             "Set log level",
             new ParameterSpec
             {
@@ -87,7 +92,7 @@ public sealed class ConsoleCompletionTests
                 AllowedValues = ["trace", "debug", "info", "warn", "error", "fatal"],
             }));
 
-        var result = Complete(registry, "log.level er", 12);
+        var result = Complete(registry, "vulcan.log.level er", 19);
 
         var candidate = Assert.Single(result.Candidates);
         Assert.Equal("error", candidate.InsertText);
@@ -97,16 +102,16 @@ public sealed class ConsoleCompletionTests
     [Fact]
     public void CompletionReplacesOnlyTheCurrentTokenWhenCaretIsInTheMiddle()
     {
-        var registry = Registry(Command("app.frontend.focus-console", "Focus the console"));
+        var registry = Registry(Command("vulcan.frontend.focusconsole", "Focus the console"));
 
-        var result = Complete(registry, "app.frontend.fo trailing", 15);
+        var result = Complete(registry, "vulcan.frontend.fo trailing", 18);
 
         var candidate = Assert.Single(result.Candidates);
-        var completed = "app.frontend.fo trailing"
+        var completed = "vulcan.frontend.fo trailing"
             .Remove(result.ReplaceStart, result.ReplaceLength)
             .Insert(result.ReplaceStart, candidate.InsertText);
 
-        Assert.Equal("app.frontend.focus-console trailing", completed);
+        Assert.Equal("vulcan.frontend.focusconsole trailing", completed);
     }
 
     [Fact]
@@ -124,8 +129,8 @@ public sealed class ConsoleCompletionTests
         RunSta(() =>
         {
             var registry = Registry(
-                Command("win.restore", "Restore the layout"),
-                Command("win.reset", "Reset the layout"));
+                Command("vulcan.win.restore", "Restore the layout"),
+                Command("vulcan.win.reset", "Reset the layout"));
             var log = new NullLog();
             var path = Path.Combine(Path.GetTempPath(), $"HistoryVulcan-completion-{Guid.NewGuid():N}.txt");
             var bus = new CommandBus(registry, log);
@@ -182,7 +187,7 @@ public sealed class ConsoleCompletionTests
                 Assert.Equal(1, list.SelectedIndex);
 
                 Assert.True(view.HandleCompletionKey(Key.Tab, ModifierKeys.None));
-                Assert.Equal("win.restore", input.Text);
+                Assert.Equal("vulcan.win.restore", input.Text);
                 Assert.False(popup.IsOpen);
                 Assert.True(input.IsKeyboardFocusWithin);
             }
@@ -201,8 +206,8 @@ public sealed class ConsoleCompletionTests
         RunSta(() =>
         {
             var registry = Registry(
-                Command("win.restore", "Restore the layout"),
-                Command("win.reset", "Reset the layout"));
+                Command("vulcan.win.restore", "Restore the layout"),
+                Command("vulcan.win.reset", "Reset the layout"));
             var log = new NullLog();
             var path = Path.Combine(Path.GetTempPath(), $"HistoryVulcan-completion-{Guid.NewGuid():N}.txt");
             var bus = new CommandBus(registry, log);
@@ -249,14 +254,14 @@ public sealed class ConsoleCompletionTests
                 Assert.False(popup.IsOpen);
 
                 Assert.True(view.HandleCompletionKey(Key.S, ModifierKeys.Shift));
-                Assert.Equal("win.restore", selection.CurrentCommandName);
+                Assert.Equal("vulcan.win.restore", selection.CurrentCommandName);
                 Assert.True(view.HandleCompletionKey(Key.W, ModifierKeys.Shift));
-                Assert.Equal("win.reset", selection.CurrentCommandName);
+                Assert.Equal("vulcan.win.reset", selection.CurrentCommandName);
                 Assert.True(view.HandleCompletionKey(Key.S, ModifierKeys.Shift));
-                Assert.Equal("win.restore", selection.CurrentCommandName);
+                Assert.Equal("vulcan.win.restore", selection.CurrentCommandName);
                 Assert.True(view.HandleCompletionKey(Key.Tab, ModifierKeys.None));
-                Assert.Equal("win.restore", input.Text);
-                Assert.Equal("win.restore", session.CurrentFilter.Query);
+                Assert.Equal("vulcan.win.restore", input.Text);
+                Assert.Equal("vulcan.win.restore", session.CurrentFilter.Query);
 
                 input.Text = "win.";
                 input.CaretIndex = input.Text.Length;
@@ -298,7 +303,12 @@ public sealed class ConsoleCompletionTests
             var registry = Registry(Command("zeta.one", "First command"));
             var log = new NullLog();
             var path = Path.Combine(Path.GetTempPath(), $"HistoryVulcan-completion-{Guid.NewGuid():N}.txt");
-            var view = new ConsoleView(log, new CommandBus(registry, log), new CommandHistory(path));
+            var bus = new CommandBus(registry, log);
+            var view = new ConsoleView(
+                log,
+                bus,
+                new CommandHistory(path),
+                new CommandCatalogSession(bus, new CommandSelectionState()));
             var host = new Window { Content = view, Width = 640, Height = 360, ShowInTaskbar = false };
             try
             {

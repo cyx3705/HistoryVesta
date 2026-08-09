@@ -7,7 +7,7 @@ namespace HistoryVulcan.Services.Modules;
 /// MD-08 模块旁面板自动发现(MP-01/02):
 /// Modules 目录中的 `&lt;模块名&gt;.panel.json` 自动并入 panels 目录
 /// (副本名 module-&lt;模块名&gt;.json,前缀便于识别与回收),模块下线时副本移除。
-/// 语义遵循框架 P-08 约定:已有面板 panel.reload 原地刷新即时生效;
+/// 语义遵循框架 P-08 约定:已有面板 vulcan.panel.reload 原地刷新即时生效;
 /// **全新面板窗口重启后出现**(窗口注册先于停靠系统初始化,框架文档明示)。
 /// 面板 id 冲突由 PanelManager 既有校验拒绝并告警(MP-01 后半)。
 /// </summary>
@@ -16,7 +16,7 @@ public static class ModulePanelSync
     private const string CopyPrefix = "module-";
 
     /// <summary>
-    /// 把模块旁 *.panel.json 同步到 panels 目录;返回是否有变化(调用方据此触发 panel.reload)。
+    /// 把模块旁 *.panel.json 同步到 panels 目录;返回是否有变化(调用方据此触发 vulcan.panel.reload)。
     /// 纯文件级操作,不加载任何 DLL——启动期(窗口创建前)与热重载后均可调用。
     /// </summary>
     public static bool SyncFiles(string modulesDir, string panelsDir, IShellLog log)

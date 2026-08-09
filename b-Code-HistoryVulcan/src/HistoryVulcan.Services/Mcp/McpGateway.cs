@@ -18,7 +18,7 @@ namespace HistoryVulcan.Services.Mcp;
 /// MCP 网关(V2.1 §4/§6):HttpListener + JSON-RPC 2.0(Streamable HTTP 无状态子集),
 /// 仅监听 127.0.0.1。铁律 1:唯一上游是指令总线——本类只认识
 /// CommandSchemaExporter / CommandBus,不 import ModuleHost、不反射模块类型。
-/// 消费方显式装配网关后可调用 TryAutostart；mcp.autostart=false 可关闭自动监听，mcp.start 仍可手动恢复。
+/// 消费方显式装配网关后可调用 TryAutostart；mcp.autostart=false 可关闭自动监听，vulcan.mcp.start 仍可手动恢复。
 /// 每次调用/拒绝均追加写入 state/mcp-history.jsonl(铁律 2 / MS-05)。
 /// </summary>
 public sealed partial class McpGateway : IDisposable
@@ -211,7 +211,7 @@ public sealed partial class McpGateway : IDisposable
         lock (_lifecycleLock)
         {
             if (IsRunning)
-                return (false, $"MCP 服务已在运行(端口 {Port}),先 mcp.stop");
+                return (false, $"MCP 服务已在运行(端口 {Port}),先 vulcan.mcp.stop");
 
             var configured = int.TryParse(
                 _settings.Get(KeyPort), System.Globalization.NumberStyles.Integer,
@@ -615,7 +615,7 @@ public sealed partial class McpGateway : IDisposable
                     _log.Warn("mcp", $"拒绝危险工具调用: {tool.ToolName}(mcp.confirm=deny)");
                     return RpcResult(id, ToolText(
                         $"已拒绝: {tool.CommandName} 是需二次确认的危险指令。当前 mcp.confirm=deny;" +
-                        "宿主执行 app.set key=mcp.confirm value=host 后,远程请求将弹框由人工裁决。",
+                        "宿主执行 vulcan.app.set key=mcp.confirm value=host 后,远程请求将弹框由人工裁决。",
                         isError: true));
                 }
 
@@ -665,7 +665,7 @@ public sealed partial class McpGateway : IDisposable
                 Audit(tool.ToolName, argsText, "拒绝");
                 _log.Warn("mcp", $"拒绝调用(策略 readonly 未暴露): {tool.ToolName}");
                 return RpcResult(id, ToolText(
-                    $"已拒绝: 当前暴露策略为 readonly,{tool.CommandName} 未开放;宿主执行 app.set key=mcp.policy value=standard 可放开动作类指令",
+                    $"已拒绝: 当前暴露策略为 readonly,{tool.CommandName} 未开放;宿主执行 vulcan.app.set key=mcp.policy value=standard 可放开动作类指令",
                     isError: true));
             }
 
@@ -692,9 +692,9 @@ public sealed partial class McpGateway : IDisposable
 
             var node = JsonNode.Parse(arguments.Value.GetRawText());
 
-            var tokenCommand = commandName.Equals("web.token", StringComparison.OrdinalIgnoreCase)
-                               || commandName.Equals("mcp.token", StringComparison.OrdinalIgnoreCase);
-            var settingCommand = commandName.Equals("app.set", StringComparison.OrdinalIgnoreCase);
+            var tokenCommand = commandName.Equals("vulcan.web.token", StringComparison.OrdinalIgnoreCase)
+                               || commandName.Equals("vulcan.mcp.token", StringComparison.OrdinalIgnoreCase);
+            var settingCommand = commandName.Equals("vulcan.app.set", StringComparison.OrdinalIgnoreCase);
             string? settingKey = null;
             var hasUniqueSettingKey = settingCommand
                                       && TryGetUniqueStringProperty(arguments.Value, "key", out settingKey);

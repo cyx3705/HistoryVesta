@@ -17,8 +17,8 @@ public static class ServiceCommands
         serviceArguments ??= [];
         registry.Register(new CommandDescriptor
         {
-            Name = "svc.status",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.svc.status",
+            Domain = "vulcan",
             CommandClass = "svc",
             Summary = "查看服务进程状态",
             Readonly = true,
@@ -36,8 +36,8 @@ public static class ServiceCommands
 
         registry.Register(new CommandDescriptor
         {
-            Name = "svc.stop",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.svc.stop",
+            Domain = "vulcan",
             CommandClass = "svc",
             Summary = "停止服务进程",
             ConfirmPrompt = _ => "确认停止后台服务？前端和远程客户端会断开。",
@@ -50,8 +50,8 @@ public static class ServiceCommands
 
         registry.Register(new CommandDescriptor
         {
-            Name = "app.exit",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.app.exit",
+            Domain = "vulcan",
             CommandClass = "app",
             Summary = "退出 HistoryVulcan 前端与后台服务",
             ConfirmPrompt = _ => "确认退出 HistoryVulcan 前端和后台服务？",
@@ -59,7 +59,7 @@ public static class ServiceCommands
             {
                 var frontend = composition.Web?.ConnectedShells > 0
                     ? await composition.Web.RelayFrontendCommandAsync(
-                        "app.frontend.exit", ctx.Source, ctx.Cancellation).ConfigureAwait(false)
+                        "vulcan.frontend.exit", ctx.Source, ctx.Cancellation).ConfigureAwait(false)
                     : CommandResult.Ok("前端未连接");
                 _ = Application.Current.Dispatcher.BeginInvoke(requestStop);
                 return frontend.Success
@@ -72,8 +72,8 @@ public static class ServiceCommands
 
         registry.Register(new CommandDescriptor
         {
-            Name = "shortcut.list",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.shortcut.list",
+            Domain = "vulcan",
             CommandClass = "shortcut",
             Summary = "列出已注册的全局快捷键",
             Readonly = true,
@@ -91,8 +91,8 @@ public static class ServiceCommands
 
         registry.Register(new CommandDescriptor
         {
-            Name = "svc.restart",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.svc.restart",
+            Domain = "vulcan",
             CommandClass = "svc",
             Summary = "重启服务进程",
             ConfirmPrompt = _ => "确认重启后台服务？客户端会短暂断开。",
@@ -109,8 +109,8 @@ public static class ServiceCommands
 
         registry.Register(new CommandDescriptor
         {
-            Name = "svc.autostart",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.svc.autostart",
+            Domain = "vulcan",
             CommandClass = "svc",
             Summary = "查看或设置用户级登录启动",
             Parameters =
@@ -156,37 +156,37 @@ public static class ServiceCommands
     {
         registry.Register(new CommandDescriptor
         {
-            Name = "app.frontend.show",
-            Domain = "HistoryVulcan",
-            CommandClass = "app",
+            Name = "vulcan.frontend.show",
+            Domain = "vulcan",
+            CommandClass = "frontend",
             Summary = "显示并激活前端窗口",
-            Handler = ctx => RelayOrStartAsync(composition, executablePath, "app.frontend.show", "--show", ctx),
+            Handler = ctx => RelayOrStartAsync(composition, executablePath, "vulcan.frontend.show", "--show", ctx),
         }, source);
 
         registry.Register(new CommandDescriptor
         {
-            Name = "app.frontend.focus-console",
-            Domain = "HistoryVulcan",
-            CommandClass = "app",
+            Name = "vulcan.frontend.focusconsole",
+            Domain = "vulcan",
+            CommandClass = "frontend",
             Summary = "唤出并聚焦前端控制台",
             Handler = ctx => RelayOrStartAsync(
-                composition, executablePath, "app.frontend.focus-console", "--focus-console", ctx),
+                composition, executablePath, "vulcan.frontend.focusconsole", "--focus-console", ctx),
         }, source);
 
         registry.Register(new CommandDescriptor
         {
-            Name = "app.frontend.hide",
-            Domain = "HistoryVulcan",
-            CommandClass = "app",
+            Name = "vulcan.frontend.hide",
+            Domain = "vulcan",
+            CommandClass = "frontend",
             Summary = "隐藏前端窗口并保持后台运行",
-            Handler = ctx => RelayOrStartAsync(composition, executablePath, "app.frontend.hide", null, ctx),
+            Handler = ctx => RelayOrStartAsync(composition, executablePath, "vulcan.frontend.hide", null, ctx),
         }, source);
 
         registry.Register(new CommandDescriptor
         {
-            Name = "app.frontend.exit",
-            Domain = "HistoryVulcan",
-            CommandClass = "app",
+            Name = "vulcan.frontend.exit",
+            Domain = "vulcan",
+            CommandClass = "frontend",
             Summary = "退出前端进程",
             Handler = async ctx =>
             {
@@ -194,7 +194,7 @@ public static class ServiceCommands
                 if (web == null || web.ConnectedShells <= 0)
                     return CommandResult.Ok("前端未连接");
                 return await web.RelayFrontendCommandAsync(
-                    "app.frontend.exit", ctx.Source, ctx.Cancellation).ConfigureAwait(false);
+                    "vulcan.frontend.exit", ctx.Source, ctx.Cancellation).ConfigureAwait(false);
             },
         }, source);
     }

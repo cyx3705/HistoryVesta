@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Windows;
@@ -11,7 +12,6 @@ using HistoryVulcan.Core.Input;
 using HistoryVulcan.Core.Storage;
 using HistoryVulcan.ServiceHost;
 using HistoryVulcan.Services;
-using HistoryVulcan.Services.Input;
 using HistoryVulcan.Services.Modules;
 using HistoryVulcan.Services.Web;
 using HistoryVulcan.Shell;
@@ -132,7 +132,7 @@ public partial class App : Application
             };
             window.Commands.RemoteExecutor = service.ExecuteAsync;
             window.Commands.ShouldUseRemoteCommand = (text, source) =>
-                !text.TrimStart().StartsWith("app.frontend.", StringComparison.OrdinalIgnoreCase)
+                !text.TrimStart().StartsWith("vulcan.frontend.", StringComparison.OrdinalIgnoreCase)
                 && !source.Equals("Service:Relay", StringComparison.OrdinalIgnoreCase);
             _ = service.RunEventLoopAsync(window.Commands);
             _ = ReloadUiModulesFromServiceAsync(service, window.Modules, log);
@@ -156,7 +156,7 @@ public partial class App : Application
         }
 
         if (e.Args.Any(arg => arg.Equals("--focus-console", StringComparison.OrdinalIgnoreCase)))
-            startupCommands.Add("app.frontend.focus-console");
+            startupCommands.Add("vulcan.frontend.focusconsole");
 
         if (startupCommands.Count > 0)
             _ = RunStartupCommandsAsync(window, startupCommands);
@@ -178,9 +178,10 @@ public partial class App : Application
         var settings = new SettingsService(servicePaths);
         var registry = new CommandRegistry();
         var bus = new CommandBus(registry, log);
-        var shortcuts = new GlobalShortcutService(bus, log);
+        var discoveryRoots = ResolveModuleDiscoveryRoots(settings);
+        var shortcuts = TryCreateGlobalShortcutHost(bus, log, discoveryRoots);
         var modules = new ModuleHost(
-            new ZModuleDiscoverySource(ResolveModuleDiscoveryRoots(settings)), log)
+            new ZModuleDiscoverySource(discoveryRoots), log)
         {
             EnableCommands = true,
             EnableUiModules = false,
@@ -196,16 +197,16 @@ public partial class App : Application
 
         modules.Attach(registry, bus, settings, servicePaths.Root);
         RegisterServiceModuleCommands(registry, modules, settings);
+        // The backend owns the authoritative catalog. Register its read-only catalog
+        // commands before the frontend publishes UI capabilities so vulcan.command.list and
+        // vulcan.command.domains can expose the eventual combined registry.
+        HistoryVulcan.Shell.Mcp.CommandCatalogCommands.RegisterAll(
+            registry,
+            new Core.Mcp.CommandSchemaExporter(registry),
+            prompts: null!,
+            gateway: static () => null,
+            source: "framework:service");
 
-        // Two physical presses on the slash key are intentionally non-suppressing.
-        shortcuts.Register(new GlobalShortcutDescriptor(
-            "focus-console",
-            [
-                new GlobalShortcutStroke(0xBF),
-                new GlobalShortcutStroke(0xBF),
-            ],
-            "app.frontend.focus-console"),
-            "CommandSurface");
         return new ServiceComposition
         {
             ServiceName = identity.Name + ".Backend",
@@ -222,6 +223,85 @@ public partial class App : Application
         };
     }
 
+    private static IGlobalShortcutHost? TryCreateGlobalShortcutHost(
+        CommandBus bus,
+        IShellLog log,
+        IReadOnlyList<string> discoveryRoots)
+    {
+        var dllPath = FindHistoryMercuryAssembly(discoveryRoots);
+        if (dllPath == null)
+        {
+            log.Warn("hotkey", "未找到 HistoryMercury.dll，全局快捷键宿主未启用。");
+            return null;
+        }
+
+        try
+        {
+            var assembly = Assembly.LoadFrom(dllPath);
+            var type = assembly.GetType("Mercury.Input.GlobalShortcutService", throwOnError: false);
+            if (type == null)
+            {
+                log.Warn("hotkey", $"HistoryMercury.dll 中未找到 Mercury.Input.GlobalShortcutService: {dllPath}");
+                return null;
+            }
+
+            return (IGlobalShortcutHost)Activator.CreateInstance(type, bus, log)!;
+        }
+        catch (Exception ex)
+        {
+            log.Warn("hotkey", $"加载 HistoryMercury 快捷键宿主失败: {ex.Message}");
+            return null;
+        }
+    }
+
+    private static string? FindHistoryMercuryAssembly(IReadOnlyList<string> discoveryRoots)
+    {
+        foreach (var root in discoveryRoots)
+        {
+            if (!Directory.Exists(root))
+                continue;
+            try
+            {
+                var hit = Directory.EnumerateFiles(root, "HistoryMercury.dll", SearchOption.AllDirectories)
+                    .OrderByDescending(File.GetLastWriteTimeUtc)
+                    .FirstOrDefault();
+                if (hit != null)
+                    return hit;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
+
+        // Dev convenience: sibling Mercury repo build output under HistoryVesta.
+        foreach (var anchor in new[] { AppContext.BaseDirectory, Environment.CurrentDirectory })
+        {
+            var vesta = ZModuleDiscoverySource.FindAutomaticRoot(anchor);
+            if (vesta == null)
+                continue;
+            var binRoot = Path.Combine(
+                vesta,
+                "2026-021-HistoryMercury",
+                "b-Code-MercuryDock",
+                "bin");
+            if (!Directory.Exists(binRoot))
+                continue;
+            try
+            {
+                var hit = Directory.EnumerateFiles(binRoot, "HistoryMercury.dll", SearchOption.AllDirectories)
+                    .OrderByDescending(File.GetLastWriteTimeUtc)
+                    .FirstOrDefault();
+                if (hit != null)
+                    return hit;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
+
+        return null;
+    }
+
     private static void RegisterServiceModuleCommands(
         CommandRegistry registry,
         ModuleHost host,
@@ -229,15 +309,15 @@ public partial class App : Application
     {
         registry.Register(new CommandDescriptor
         {
-            Name = "module.list",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.module.list",
+            Domain = "vulcan",
             CommandClass = "module",
             Summary = "列出已加载模块",
             Readonly = true,
             Handler = CommandDescriptor.Sync(_ =>
                 CommandResult.Ok(
                     host.Modules.Count == 0
-                        ? "当前无已加载模块。请检查 module.roots 与发现诊断。"
+                        ? "当前无已加载模块。请检查 vulcan.module.roots 与发现诊断。"
                         : string.Join('\n', host.Modules.Select(module =>
                             $"{module.ModuleName} {module.Version} ({module.CommandCount} 条指令)")),
                     host.Modules)),
@@ -245,8 +325,8 @@ public partial class App : Application
 
         registry.Register(new CommandDescriptor
         {
-            Name = "module.reload",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.module.reload",
+            Domain = "vulcan",
             CommandClass = "module",
             Summary = "重载全部后台模块",
             Handler = async _ =>
@@ -258,8 +338,8 @@ public partial class App : Application
 
         registry.Register(new CommandDescriptor
         {
-            Name = "module.roots",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.module.roots",
+            Domain = "vulcan",
             CommandClass = "module",
             Summary = "查看或设置后台 Z 模块发现根",
             Parameters = [new ParameterSpec
@@ -276,7 +356,7 @@ public partial class App : Application
                 if (!paths.Equals("auto", StringComparison.OrdinalIgnoreCase)
                     && paths.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                         .Any(path => !Path.IsPathFullyQualified(path)))
-                    return CommandResult.Fail("module.roots 只接受分号分隔的绝对路径或 auto。");
+                    return CommandResult.Fail("vulcan.module.roots 只接受分号分隔的绝对路径或 auto。");
                 settings.Set("module.roots", paths.Equals("auto", StringComparison.OrdinalIgnoreCase)
                     ? "auto"
                     : paths);
@@ -284,6 +364,28 @@ public partial class App : Application
                 await Task.Run(() => host.ChangeDiscoveryRoots(roots)).ConfigureAwait(false);
                 return CommandResult.Ok($"模块发现根已切换并重载: {string.Join(";", roots)}");
             },
+        }, "framework:service");
+
+        registry.Register(new CommandDescriptor
+        {
+            Name = "vulcan.module.open",
+            Domain = "vulcan",
+            CommandClass = "module",
+            Summary = "打开模块发现根",
+            Example = "vulcan.module.open",
+            Readonly = true,
+            Handler = CommandDescriptor.Sync(_ =>
+            {
+                var root = host.DiscoveryRoots.FirstOrDefault();
+                if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
+                    return CommandResult.Fail("当前没有可打开的模块发现根");
+
+                Process.Start(new ProcessStartInfo("explorer.exe", $"\"{root}\"")
+                {
+                    UseShellExecute = true,
+                });
+                return CommandResult.Ok($"已打开模块发现根: {root}");
+            }),
         }, "framework:service");
     }
 
@@ -317,7 +419,7 @@ public partial class App : Application
     {
         if (host == null)
             return;
-        var result = await service.ExecuteAsync("module.list", "UI", CancellationToken.None)
+        var result = await service.ExecuteAsync("vulcan.module.list", "UI", CancellationToken.None)
             .ConfigureAwait(false);
         IReadOnlyList<ModuleMeta>? modules = result.Data switch
         {
@@ -505,7 +607,7 @@ public partial class App : Application
     private static CommandDescriptor BuildLogFloodCommand(ShellLog log) => new()
     {
         Name = "debug.logflood",
-        Domain = "HistoryVulcan",
+        Domain = "vulcan",
         CommandClass = "debug",
         Summary = "日志承压测试:按指定速率注入日志",
         Example = "debug.logflood rate=1000 seconds=30",

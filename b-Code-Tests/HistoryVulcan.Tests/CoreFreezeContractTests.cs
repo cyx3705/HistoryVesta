@@ -160,7 +160,7 @@ public sealed class CoreFreezeContractTests
         registry.Register(new CommandDescriptor
         {
             Name = "window.inspect",
-            Domain = "HistoryVulcan",
+            Domain = "vulcan",
             CommandClass = "WIN",
             Summary = "inspect",
             Handler = CommandDescriptor.Sync(_ => CommandResult.Ok()),
@@ -173,7 +173,7 @@ public sealed class CoreFreezeContractTests
             Handler = CommandDescriptor.Sync(_ => CommandResult.Ok()),
         }, "module:FixtureModule");
 
-        Assert.Equal("HistoryVulcan", registry.GetDomain("window.inspect"));
+        Assert.Equal("vulcan", registry.GetDomain("window.inspect"));
         Assert.Equal("win", registry.GetCommandClass("window.inspect"));
         Assert.Equal("FixtureModule", registry.GetDomain("fixture.run"));
         Assert.Equal("core", registry.GetCommandClass("fixture.run"));
@@ -204,9 +204,9 @@ public sealed class CoreFreezeContractTests
             var bus = new CommandBus(registry, new NullLog());
 
             var proposal = await bus.ExecuteAsync(
-                "prompt.propose name=sample.run text=???????? reason=encoding", "MCP:test");
+                "vulcan.prompt.propose name=sample.run text=???????? reason=encoding", "MCP:test");
             var direct = await bus.ExecuteAsync(
-                "mcp.desc name=sample.run text=???????? reason=encoding", "UI");
+                "vulcan.mcp.desc name=sample.run text=???????? reason=encoding", "UI");
 
             Assert.False(proposal.Success);
             Assert.Contains("编码损坏", proposal.Message, StringComparison.Ordinal);

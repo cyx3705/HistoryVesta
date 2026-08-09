@@ -21,17 +21,17 @@ public static class ModuleCommands
     {
         registry.Register(new CommandDescriptor
         {
-            Name = "module.list",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.module.list",
+            Domain = "vulcan",
             CommandClass = "module",
             Summary = "列出已加载模块(名称/版本/描述/指令数)",
             Readonly = true,
-            Example = "module.list",
+            Example = "vulcan.module.list",
             Handler = CommandDescriptor.Sync(_ =>
             {
                 var modules = host.Modules;
                 if (modules.Count == 0)
-                    return CommandResult.Ok("当前无已加载模块。请检查 Z manifest 与 module.roots 诊断。");
+                    return CommandResult.Ok("当前无已加载模块。请检查 Z manifest 与 vulcan.module.roots 诊断。");
 
                 var sb = new StringBuilder();
                 sb.Append($"已加载 {modules.Count} 个模块:");
@@ -50,11 +50,11 @@ public static class ModuleCommands
 
         registry.Register(new CommandDescriptor
         {
-            Name = "module.reload",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.module.reload",
+            Domain = "vulcan",
             CommandClass = "module",
             Summary = "手动整体重载全部模块(文件变化会自动热重载,通常无需手动)",
-            Example = "module.reload",
+            Example = "vulcan.module.reload",
             Handler = async _ =>
             {
                 await Task.Run(host.Reload);
@@ -65,11 +65,11 @@ public static class ModuleCommands
 
         registry.Register(new CommandDescriptor
         {
-            Name = "module.roots",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.module.roots",
+            Domain = "vulcan",
             CommandClass = "module",
             Summary = "查看或设置 Z 模块发现根",
-            Example = "module.roots paths=auto",
+            Example = "vulcan.module.roots paths=auto",
             Parameters =
             [
                 new ParameterSpec
@@ -95,11 +95,11 @@ public static class ModuleCommands
 
         registry.Register(new CommandDescriptor
         {
-            Name = "module.open",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.module.open",
+            Domain = "vulcan",
             CommandClass = "module",
             Summary = "在系统资源管理器中打开模块目录(UI-12 面板按钮落点)",
-            Example = "module.open",
+            Example = "vulcan.module.open",
             Handler = CommandDescriptor.Sync(_ =>
             {
                 var root = host.DiscoveryRoots.FirstOrDefault();
@@ -126,7 +126,7 @@ public static class ModuleCommands
 
         var values = paths.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (values.Length == 0 || values.Any(path => !Path.IsPathFullyQualified(path)))
-            throw new ArgumentException("module.roots 只接受分号分隔的绝对路径或 auto。");
+            throw new ArgumentException("vulcan.module.roots 只接受分号分隔的绝对路径或 auto。");
         var roots = values
             .Select(Path.GetFullPath)
             .Distinct(StringComparer.OrdinalIgnoreCase)

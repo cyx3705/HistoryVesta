@@ -7,7 +7,7 @@ using HistoryVulcan.Core.Commands;
 namespace HistoryVulcan.Core.Mcp;
 
 /// <summary>
-/// 一条指令的 MCP 工具形态(MC-01):tools/list 条目与本地 mcp.schema 共用。
+/// 一条指令的 MCP 工具形态(MC-01):tools/list 条目与本地 vulcan.mcp.schema 共用。
 /// Dangerous = 带 ConfirmPrompt(总线确认闸口),网关侧按 MS-04 对 MCP 一律拒绝执行。
 /// </summary>
 public sealed record McpToolInfo(
@@ -40,7 +40,7 @@ public sealed partial class CommandSchemaExporter
 
     /// <summary>
     /// 硬排除清单(MS-03,任何策略下都不暴露):
-    /// app.exit(远端不得杀宿主)、debug.*(承压/注水等自测工具)、
+    /// vulcan.app.exit(远端不得杀宿主)、debug.*(承压/注水等自测工具)、
     /// mcp.*(防远端自锁与递归启停)。代码内常量,不走配置。
     /// </summary>
     public static bool IsHardExcluded(string commandName)
@@ -85,7 +85,7 @@ public sealed partial class CommandSchemaExporter
         return tools;
     }
 
-    /// <summary>按工具名或指令名找一条(mcp.schema name= 与 tools/call 共用)。</summary>
+    /// <summary>按工具名或指令名找一条(vulcan.mcp.schema name= 与 tools/call 共用)。</summary>
     public McpToolInfo? Find(string nameOrTool)
         => ExportTools().FirstOrDefault(t =>
             t.ToolName.Equals(nameOrTool, StringComparison.OrdinalIgnoreCase)

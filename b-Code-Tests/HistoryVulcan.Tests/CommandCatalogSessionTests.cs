@@ -1,9 +1,11 @@
+extern alias mercury;
+
 using HistoryVulcan.Core.Commands;
+using HistoryVulcan.Core.CommandSurface;
 using HistoryVulcan.Core.Logging;
 using HistoryVulcan.Shell;
-using HistoryVulcan.Shell.Console;
 using HistoryVulcan.Shell.Mcp;
-using HistoryVulcan.Shell.Views;
+using CommandCatalogSession = mercury::Mercury.CommandSurface.CommandCatalogSession;
 using Xunit;
 
 namespace HistoryVulcan.Tests;
@@ -36,11 +38,11 @@ public sealed class CommandCatalogSessionTests
             calls.Add(text);
             return Task.FromResult(text switch
             {
-                "command.list" => CommandResult.Ok("commands", new List<CommandCatalogRow> { row }),
-                "command.domains" => CommandResult.Ok(
+                "vulcan.command.list" => CommandResult.Ok("commands", new List<CommandCatalogRow> { row }),
+                "vulcan.command.domains" => CommandResult.Ok(
                     "domains",
                     new List<CommandDomainInfo> { new("module", 1) }),
-                _ when text.StartsWith("command.show ", StringComparison.Ordinal) =>
+                _ when text.StartsWith("vulcan.command.show ", StringComparison.Ordinal) =>
                     CommandResult.Ok("detail", detail),
                 _ => CommandResult.Fail("unexpected command"),
             });
@@ -60,7 +62,7 @@ public sealed class CommandCatalogSessionTests
 
         var value = await session.CompleteAsync("module.deploy mode=f", 20);
         Assert.Equal("fast", Assert.Single(value.Candidates).InsertText);
-        Assert.Equal(1, calls.Count(call => call.StartsWith("command.show ", StringComparison.Ordinal)));
+        Assert.Equal(1, calls.Count(call => call.StartsWith("vulcan.command.show ", StringComparison.Ordinal)));
         Assert.False(registry.TryGet("module.deploy", out _));
     }
 
@@ -91,7 +93,7 @@ public sealed class CommandCatalogSessionTests
         registry.Register(Command("app.show", "Show frontend"));
         registry.Register(new CommandDescriptor
         {
-            Name = "app.theme",
+            Name = "vulcan.app.theme",
             Domain = "app",
             CommandClass = "theme",
             Summary = "Theme frontend",
@@ -99,7 +101,7 @@ public sealed class CommandCatalogSessionTests
         });
         registry.Register(new CommandDescriptor
         {
-            Name = "module.reload",
+            Name = "vulcan.module.reload",
             Domain = "module",
             CommandClass = "lifecycle",
             Summary = "Reload modules",
@@ -118,7 +120,7 @@ public sealed class CommandCatalogSessionTests
         Assert.Equal(["app", "theme"], session.Classes);
         Assert.True(session.TrySetCommandClass("theme", out _));
         Assert.Single(session.VisibleRows);
-        Assert.Equal("app.theme", session.VisibleRows[0].CommandName);
+        Assert.Equal("vulcan.app.theme", session.VisibleRows[0].CommandName);
 
         Assert.True(session.TrySetDomain("module", out _));
         Assert.Equal("全部", session.CurrentFilter.CommandClass);
@@ -135,7 +137,7 @@ public sealed class CommandCatalogSessionTests
         registry.Register(new CommandDescriptor
         {
             Name = "win.sample",
-            Domain = "HistoryVulcan",
+            Domain = "vulcan",
             CommandClass = "win",
             Summary = "Sample window command",
             Handler = CommandDescriptor.Sync(_ => CommandResult.Ok()),
@@ -144,7 +146,7 @@ public sealed class CommandCatalogSessionTests
         var bus = new CommandBus(registry, new NullLog());
 
         var result = await bus.ExecuteAsync(
-            "command.list domain=HistoryVulcan class=win",
+            "vulcan.command.list domain=vulcan class=win",
             "Test");
 
         Assert.True(result.Success, result.Message);
@@ -153,7 +155,7 @@ public sealed class CommandCatalogSessionTests
             out var rows));
         var row = Assert.Single(rows);
         Assert.Equal("win.sample", row.CommandName);
-        Assert.Equal("HistoryVulcan", row.Domain);
+        Assert.Equal("vulcan", row.Domain);
         Assert.Equal("win", row.CommandClass);
     }
 

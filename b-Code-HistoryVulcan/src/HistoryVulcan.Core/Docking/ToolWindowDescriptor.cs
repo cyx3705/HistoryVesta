@@ -6,7 +6,7 @@ namespace HistoryVulcan.Core.Docking;
 /// </summary>
 public sealed class ToolWindowDescriptor
 {
-    /// <summary>指令可寻址的窗口名(win.show name=...),要求小写、无空格、进程内唯一。</summary>
+    /// <summary>指令可寻址的窗口名(vulcan.win.show name=...),要求小写、无空格、进程内唯一。</summary>
     public required string Id { get; init; }
 
     /// <summary>标题栏与「视图」菜单显示的标题。</summary>

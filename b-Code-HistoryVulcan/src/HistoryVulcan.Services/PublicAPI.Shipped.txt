@@ -1,14 +1,4 @@
 #nullable enable
-HistoryVulcan.Services.Input.GlobalShortcutService
-HistoryVulcan.Services.Input.GlobalShortcutService.CreateOwnerRegistrar(string! owner) -> HistoryVulcan.Core.Input.IGlobalShortcutRegistrar!
-HistoryVulcan.Services.Input.GlobalShortcutService.Dispose() -> void
-HistoryVulcan.Services.Input.GlobalShortcutService.GlobalShortcutService(HistoryVulcan.Core.Commands.CommandBus! bus, HistoryVulcan.Core.Logging.IShellLog! log) -> void
-HistoryVulcan.Services.Input.GlobalShortcutService.IsEnabled.get -> bool
-HistoryVulcan.Services.Input.GlobalShortcutService.Register(HistoryVulcan.Core.Input.GlobalShortcutDescriptor! descriptor, string! owner) -> System.IDisposable!
-HistoryVulcan.Services.Input.GlobalShortcutService.Registrations.get -> System.Collections.Generic.IReadOnlyList<HistoryVulcan.Core.Input.GlobalShortcutRegistrationInfo!>!
-HistoryVulcan.Services.Input.GlobalShortcutService.Start() -> void
-HistoryVulcan.Services.Input.GlobalShortcutService.Stop() -> void
-HistoryVulcan.Services.Input.GlobalShortcutService.UnregisterOwner(string! owner) -> void
 HistoryVulcan.Services.AppPaths
 HistoryVulcan.Services.AppPaths.AppPaths(string! appName, bool createBusinessDirectories = true) -> void
 HistoryVulcan.Services.AppPaths.AppPaths(string! appName, string! rootDirectory, bool createBusinessDirectories = true) -> void
@@ -168,7 +158,7 @@ HistoryVulcan.Services.Modules.ModuleHost.EnableFileWatching.get -> bool
 HistoryVulcan.Services.Modules.ModuleHost.EnableFileWatching.set -> void
 HistoryVulcan.Services.Modules.ModuleHost.EnableUiModules.get -> bool
 HistoryVulcan.Services.Modules.ModuleHost.EnableUiModules.set -> void
-HistoryVulcan.Services.Modules.ModuleHost.GlobalShortcuts.get -> HistoryVulcan.Services.Input.GlobalShortcutService?
+HistoryVulcan.Services.Modules.ModuleHost.GlobalShortcuts.get -> HistoryVulcan.Core.Input.IGlobalShortcutHost?
 HistoryVulcan.Services.Modules.ModuleHost.GlobalShortcuts.set -> void
 HistoryVulcan.Services.Modules.ModuleHost.ModuleHost(string! modulesDir, HistoryVulcan.Core.Logging.IShellLog! log) -> void
 HistoryVulcan.Services.Modules.ModuleHost.Modules.get -> System.Collections.Generic.IReadOnlyList<HistoryVulcan.Services.Modules.ModuleMeta!>!

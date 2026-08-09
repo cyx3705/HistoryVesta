@@ -140,14 +140,37 @@ public sealed class CommandRegistry
             : LegacyClass(descriptor.Name);
     }
 
-    private static string LegacyDomain(string name)
+    /// <summary>从命令名推导域：首段；无点则 <c>core</c>。</summary>
+    public static string LegacyDomain(string name)
     {
         var trimmed = name.Trim();
         var dot = trimmed.IndexOf('.');
         return dot > 0 ? trimmed[..dot] : "core";
     }
 
-    private static string LegacyClass(string name) => LegacyDomain(name).ToLowerInvariant();
+    /// <summary>
+    /// 从命令名推导功能类：两段名用首段；三段及以上用第二段（不把域段如 <c>vulcan</c> 当 class）。
+    /// </summary>
+    public static string LegacyClass(string name)
+    {
+        var parts = name.Trim().Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length >= 3)
+            return parts[1].ToLowerInvariant();
+        if (parts.Length == 2)
+            return parts[0].ToLowerInvariant();
+        return "core";
+    }
+
+    /// <summary>从命令名推导方法段：末段；无点则整名。</summary>
+    public static string LegacyMethod(string name)
+    {
+        var trimmed = name.Trim();
+        var dot = trimmed.LastIndexOf('.');
+        return (dot >= 0 ? trimmed[(dot + 1)..] : trimmed).ToLowerInvariant();
+    }
+
+    /// <summary>同 <see cref="LegacyMethod"/>。</summary>
+    public static string GetMethod(string name) => LegacyMethod(name);
 
     private static bool IsValidCommandClass(string value)
     {

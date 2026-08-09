@@ -7,8 +7,8 @@ namespace HistoryVulcan.Shell.Views;
 
 /// <summary>
 /// 模块管理页(V2.1.1):已装载模块清单。
-/// 数据经 module.list 消费(Data = ModuleMeta 列表);动作按钮全部经总线
-/// (module.reload / module.open)。命令详情统一由命令集页面提供。
+/// 数据经 vulcan.module.list 消费(Data = ModuleMeta 列表);动作按钮全部经总线
+/// (vulcan.module.reload / vulcan.module.open)。命令详情统一由命令集页面提供。
 /// </summary>
 public partial class ModulesView : UserControl
 {
@@ -43,7 +43,7 @@ public partial class ModulesView : UserControl
         RefreshButton.IsEnabled = false;
         try
         {
-            var result = await bus.ExecuteAsync("module.reload", "UI");
+            var result = await bus.ExecuteAsync("vulcan.module.reload", "UI");
             if (!result.Success)
             {
                 ClearModules("模块重载失败: " + FirstLine(result.Message));
@@ -57,8 +57,27 @@ public partial class ModulesView : UserControl
         }
     }
 
-    private void OnOpenDirClick(object sender, System.Windows.RoutedEventArgs e)
-        => _ = _busAccessor()?.ExecuteAsync("module.open", "UI");
+    private async void OnOpenDirClick(object sender, System.Windows.RoutedEventArgs e)
+    {
+        var bus = _busAccessor();
+        if (bus == null)
+        {
+            StatusText.Text = "命令总线尚未就绪";
+            return;
+        }
+
+        OpenDirButton.IsEnabled = false;
+        try
+        {
+            var result = await bus.ExecuteAsync("vulcan.module.open", "UI");
+            if (!result.Success)
+                StatusText.Text = FirstLine(result.Message);
+        }
+        finally
+        {
+            OpenDirButton.IsEnabled = true;
+        }
+    }
 
     private async Task RefreshAsync()
     {
@@ -82,7 +101,7 @@ public partial class ModulesView : UserControl
                     .ToList();
                 ModuleList.ItemsSource = rows;
                 StatusText.Text = rows.Count == 0
-                    ? "当前无已装载模块；请检查 module.roots 与 Z manifest 诊断"
+                    ? "当前无已装载模块；请检查 vulcan.module.roots 与 Z manifest 诊断"
                     : $"已装载 {rows.Count} 个模块,共 {snapshot.Modules.Sum(module => module.CommandCount)} 条模块指令";
             }
             else

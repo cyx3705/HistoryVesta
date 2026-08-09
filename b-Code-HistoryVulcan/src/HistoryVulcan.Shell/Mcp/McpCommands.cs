@@ -35,15 +35,15 @@ public static class McpCommands
         CommandCatalogCommands.RegisterAll(registry, exporter, prompts, gateway, source);
     }
 
-    // ---------------------------------------------------------------- mcp.start / stop / status(MG-05)
+    // ---------------------------------------------------------------- vulcan.mcp.start / stop / status(MG-05)
 
     private static CommandDescriptor BuildStart(Func<McpGateway?> gateway) => new()
     {
-        Name = "mcp.start",
-        Domain = "HistoryVulcan",
+        Name = "vulcan.mcp.start",
+        Domain = "vulcan",
         CommandClass = "mcp",
-        Summary = "启动 MCP 服务(仅 127.0.0.1;策略/令牌经 app.set mcp.policy / mcp.token 配置)",
-        Example = "mcp.start port=8737",
+        Summary = "启动 MCP 服务(仅 127.0.0.1;策略/令牌经 vulcan.app.set mcp.policy / mcp.token 配置)",
+        Example = "vulcan.mcp.start port=8737",
         Parameters =
         [
             new ParameterSpec
@@ -67,11 +67,11 @@ public static class McpCommands
 
     private static CommandDescriptor BuildStop(Func<McpGateway?> gateway) => new()
     {
-        Name = "mcp.stop",
-        Domain = "HistoryVulcan",
+        Name = "vulcan.mcp.stop",
+        Domain = "vulcan",
         CommandClass = "mcp",
         Summary = "停止 MCP 服务并释放端口",
-        Example = "mcp.stop",
+        Example = "vulcan.mcp.stop",
         Handler = CommandDescriptor.Sync(_ =>
         {
             var g = gateway();
@@ -85,11 +85,11 @@ public static class McpCommands
     private static CommandDescriptor BuildStatus(
         Func<McpGateway?> gateway, HistoryVulcan.Core.Storage.ISettingsService settings) => new()
         {
-            Name = "mcp.status",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.mcp.status",
+            Domain = "vulcan",
             CommandClass = "mcp",
             Summary = "查看 MCP 服务状态(运行/端口/策略/暴露工具数/累计调用/最近一次调用)",
-            Example = "mcp.status",
+            Example = "vulcan.mcp.status",
             Handler = CommandDescriptor.Sync(_ =>
             {
                 var g = gateway();
@@ -97,9 +97,9 @@ public static class McpCommands
                     return CommandResult.Fail("网关未装配");
 
                 var sb = new StringBuilder();
-                sb.Append($"MCP 服务: {(g.IsRunning ? $"运行中 http://127.0.0.1:{g.Port}/mcp" : "未启动(mcp.start 开启)")}");
-                sb.Append($"\n  策略   : {g.Policy}(app.set key=mcp.policy value=readonly|standard)");
-                sb.Append($"\n  暴露   : {g.VisibleTools().Count} 个工具(mcp.schema 看全量形态)");
+                sb.Append($"MCP 服务: {(g.IsRunning ? $"运行中 http://127.0.0.1:{g.Port}/mcp" : "未启动(vulcan.mcp.start 开启)")}");
+                sb.Append($"\n  策略   : {g.Policy}(vulcan.app.set key=mcp.policy value=readonly|standard)");
+                sb.Append($"\n  暴露   : {g.VisibleTools().Count} 个工具(vulcan.mcp.schema 看全量形态)");
                 sb.Append($"\n  令牌   : {(string.IsNullOrEmpty(settings.Get(McpGateway.KeyToken)) ? "未设置(本机回环可信)" : "已设置(Bearer 必需)")}");
                 sb.Append($"\n  自启动 : mcp.autostart = {(g.AutostartEnabled ? "true" : "false")}");
                 sb.Append($"\n  危险指令: mcp.confirm = {g.ConfirmMode}" +
@@ -109,21 +109,21 @@ public static class McpCommands
             }),
         };
 
-    // ---------------------------------------------------------------- mcp.schema(MC-05)
+    // ---------------------------------------------------------------- vulcan.mcp.schema(MC-05)
 
     private static CommandDescriptor BuildSchema(CommandSchemaExporter exporter, CommandRegistry registry) => new()
     {
-        Name = "mcp.schema",
-        Domain = "HistoryVulcan",
+        Name = "vulcan.mcp.schema",
+        Domain = "vulcan",
         CommandClass = "mcp",
         Summary = "查看指令的 MCP 工具形态(不带参列全部;带 name 输出单条完整 JSON Schema)",
-        Example = "mcp.schema name=command.list",
+        Example = "vulcan.mcp.schema name=vulcan.command.list",
         Parameters =
         [
             new ParameterSpec
             {
                 Name = "name",
-                Description = "指令名或工具名(如 command.list / command_list);省略列出全部",
+                Description = "指令名或工具名(如 vulcan.command.list / command_list);省略列出全部",
                 Position = 0,
             },
         ],
@@ -135,7 +135,7 @@ public static class McpCommands
             {
                 var tool = exporter.Find(name.Trim());
                 if (tool == null)
-                    return CommandResult.Fail($"未找到指令/工具: {name}(或被硬排除,见 mcp.schema 全量清单)");
+                    return CommandResult.Fail($"未找到指令/工具: {name}(或被硬排除,见 vulcan.mcp.schema 全量清单)");
 
                 var json = JsonSerializer.Serialize(new
                 {
@@ -162,20 +162,20 @@ public static class McpCommands
                     sb.Append("  ⚠危险(MCP 拒绝执行)");
             }
 
-            sb.Append("\nmcp.schema name=<指令名> 查看单条完整 JSON Schema");
+            sb.Append("\nvulcan.mcp.schema name=<指令名> 查看单条完整 JSON Schema");
             return CommandResult.Ok(sb.ToString(), tools);
         }),
     };
 
-    // ---------------------------------------------------------------- mcp.parse(MC-06 验收入口)
+    // ---------------------------------------------------------------- vulcan.mcp.parse(MC-06 验收入口)
 
     private static CommandDescriptor BuildParse(Func<CommandBus?> busAccessor) => new()
     {
-        Name = "mcp.parse",
-        Domain = "HistoryVulcan",
+        Name = "vulcan.mcp.parse",
+        Domain = "vulcan",
         CommandClass = "mcp",
         Summary = "调试:模拟 tools/call 反向解析——JSON arguments 组装为指令文本,exec=true 随即经总线执行",
-        Example = "mcp.parse command=command.list args=\"{}\" exec=true",
+        Example = "vulcan.mcp.parse command=vulcan.command.list args=\"{}\" exec=true",
         Parameters =
         [
             new ParameterSpec

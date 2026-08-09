@@ -27,7 +27,7 @@ public static class CommandManualGenerator
         builder.AppendLine();
         builder.AppendLine("> [!IMPORTANT]");
         builder.AppendLine("> 本文件由运行时指令注册表自动生成。禁止手工增删或改写下方指令条目；");
-        builder.AppendLine("> 需要更新时，请在程序控制台执行 `command.manual file=<相对 Markdown 路径> apply=true`。");
+        builder.AppendLine("> 需要更新时，请在程序控制台执行 `vulcan.command.manual file=<相对 Markdown 路径> apply=true`。");
         builder.AppendLine();
         builder.AppendLine($"> 版本：{AppIdentity.Current.Version}");
         builder.AppendLine("> 来源：运行时 `CommandRegistry` 与 MCP 投影自动生成；请勿手工维护指令条目。");

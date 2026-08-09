@@ -1,6 +1,7 @@
 # HistoryVulcan 模块与 MCP 接入
 
-> 适用版本：HistoryVulcan 3.2.2 源码候选；3.1.8 不受支持
+> 适用版本：HistoryVulcan 3.3.0 源码候选；3.1.8 不受支持
+> 3.3.0（DEC-022）：内置命令硬切为 `vulcan.<类>.<方法>`（Domain=`vulcan`）；全局快捷键与命令工作台由 HistoryMercury 4.1.0 拥有。
 > 边界：本文只描述框架能力。项目库、外部账号、工具同步等消费产品业务不属于 HistoryVulcan。
 > 常用公开方法和基础命令见 [HistoryVulcan API 与指令手册](HistoryVulcan_API与指令手册.md)。
 

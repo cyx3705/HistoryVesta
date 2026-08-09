@@ -1,11 +1,11 @@
 using HistoryVulcan.Core.Commands;
+using HistoryVulcan.Core.Input;
 using HistoryVulcan.Core.Logging;
 using HistoryVulcan.Core.Modules;
 using HistoryVulcan.Core.Storage;
 using HistoryVulcan.Services.Mcp;
 using HistoryVulcan.Services.Modules;
 using HistoryVulcan.Services.Web;
-using HistoryVulcan.Services.Input;
 
 namespace HistoryVulcan.ServiceHost;
 
@@ -24,7 +24,7 @@ public sealed class ServiceComposition : IDisposable
 
     public ModuleHost? Modules { get; init; }
 
-    public GlobalShortcutService? GlobalShortcuts { get; init; }
+    public IGlobalShortcutHost? GlobalShortcuts { get; init; }
 
     public McpGateway? Mcp { get; init; }
 

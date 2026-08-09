@@ -1,3 +1,5 @@
+extern alias mercury;
+
 using System.Runtime.ExceptionServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -14,6 +16,7 @@ using AvalonDock.Controls;
 using AvalonDock.Layout;
 using AvalonDock.Layout.Serialization;
 using Xunit;
+using CommandSurfaceFeature = mercury::Mercury.CommandSurface.CommandSurfaceFeature;
 
 namespace HistoryVulcan.Tests;
 
@@ -74,7 +77,7 @@ public sealed class DockingContractTests
                 manager.Layout.Descendents().OfType<LayoutAnchorable>(),
                 item => item.ContentId == "stage");
             Assert.Equal(GridUnitType.Star, pane.DockWidth.GridUnitType);
-            var dock = FrontendCommandCatalog.FrameworkSourceDescriptors.Single(item => item.Name == "win.dock");
+            var dock = FrontendCommandCatalog.FrameworkSourceDescriptors.Single(item => item.Name == "vulcan.win.dock");
             Assert.Contains("center", dock.Parameters.Single(item => item.Name == "pos").AllowedValues!);
         });
     }
@@ -267,14 +270,20 @@ public sealed class DockingContractTests
                 ShowInTaskbar = false,
                 WindowStyle = WindowStyle.ToolWindow,
             };
+            using var commandSurface = CommandSurfaceFeature.TryAttach(
+                window,
+                new HistoryVulcan.Shell.Modules.ShellUiRegistrar(
+                    window.Docking,
+                    window.Dispatcher,
+                    new NullLog()));
 
             try
             {
                 Assert.Null(window.Mcp);
                 Assert.Null(window.Modules);
-                Assert.True(window.Commands.Registry.TryGet("command.list", out _));
-                Assert.False(window.Commands.Registry.TryGet("mcp.start", out _));
-                Assert.False(window.Commands.Registry.TryGet("module.list", out _));
+                Assert.True(window.Commands.Registry.TryGet("vulcan.command.list", out _));
+                Assert.False(window.Commands.Registry.TryGet("vulcan.mcp.start", out _));
+                Assert.False(window.Commands.Registry.TryGet("vulcan.module.list", out _));
                 window.Show();
                 PumpDispatcher();
                 var single = Assert.Single(FindVisualDescendants<LayoutDocumentPaneControl>(window));
@@ -737,10 +746,10 @@ public sealed class DockingContractTests
             foreach (var value in new[] { "NaN", "Infinity", "-Infinity" })
             {
                 var dock = bus.ExecuteAsync(
-                    $"win.dock name=details pos=right ratio={value}",
+                    $"vulcan.win.dock name=details pos=right ratio={value}",
                     "Test").GetAwaiter().GetResult();
                 var ratio = bus.ExecuteAsync(
-                    $"win.ratio name=details value={value}",
+                    $"vulcan.win.ratio name=details value={value}",
                     "Test").GetAwaiter().GetResult();
                 Assert.False(dock.Success);
                 Assert.False(ratio.Success);

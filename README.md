@@ -1,11 +1,10 @@
-# HistoryVulcan 3.2.2
+# HistoryVulcan 3.3.0
 
 本仓库是 OneHistory HistoryVulcan（原 AppShell，3.2.0 起改名）的独立源码、合同与发布资产真值。
 `3.0.3` 是 V3 冻结基线，冻结标签为 `v3.0.3`；版本线不再与 HistoryJanus 对齐，`0.7.x` 仅保留用于回滚。
 
-当前源码目标为 `3.2.2`：域与类采用严格两级筛选，控制台与命令集共享分类和选择状态；正式宿主从
-`HistoryVesta\\*\\z-*` 的显式 `HistoryVulcan.Module` manifest 发现模块，不再扫描 AppData Modules。
-控制台、轻松指令、命令集检索、详情选择与快捷唤醒已收口到内建 `CommandSurfaceFeature`，命令文本和执行语义不变。
+当前源码目标为 `3.3.0`（DEC-022）：内置命令硬切为 `vulcan.<类>.<方法>`（Domain=`vulcan`），命令集列为域|类|方法；
+全局快捷键与命令工作台由 HistoryMercury 4.1.0 拥有。3.2.2 完成严格域/类共享状态与 Z manifest 模块发现。
 `3.1.8` 仅是内部过渡版本，不作为稳定支持版本；`3.1.9` 是旧名 AppShell 的最后快照。
 3.1.10 对“轻松指令”和中央命令集做了内部高内聚重构：
 两种交互共享由 `CommandBus` 驱动的目录快照、详情缓存、检索和选择状态，不新增公开 API 或改变命令语义。
@@ -13,7 +12,7 @@
 `Shift+W`/`Shift+S` 上下选择、`Tab` 写入当前候选而不执行；普通布局由控制台输入直接检索中央命令集，
 命令集不再保留独立搜索框；3.1.7 建立的 UI 风格合同继续统一嵌入页面的色板、字体、字号、
 圆角、间距、控件尺寸、顶栏归属和响应式验收规则。HistoryVulcan 采用单 EXE 双进程运行模型，后台服务承载
-命令、模块、日志和全局快捷键，WPF 前端只负责窗口与 UI 模块。双 `/` 唤出并聚焦控制台；前端关闭默认隐藏而不停止后台。
+命令、模块和日志；全局快捷键与命令工作台由 Mercury 提供。双 `/` 唤出并聚焦控制台（需 Mercury）；前端关闭默认隐藏而不停止后台。
 删除 HistoryVulcan
 内置资源/Workspace 与演示电机页，并保留 `ModulesView` 作为唯一模块管理页面。资源浏览未来由独立模块提供；
 HistoryVulcan 独立可执行宿主显式启用模块生命周期与模块管理页；
@@ -67,10 +66,10 @@ dotnet format .\HistoryVulcan.sln --verify-no-changes --no-restore
 
 ```powershell
 # 生成 b-Publish/current 下的宿主 + 文档完整候选
-.\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.2.2
+.\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.3.0
 
 # 候选审核通过后，将同一完整快照一次性部署到 z-HistoryVulcan
-.\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.2.2 -DeployToZ
+.\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.3.0 -DeployToZ
 ```
 
 当前交付物是可直接运行的 HistoryVulcan 宿主，不是 NuGet 包。历史四包发布脚本只保留用于库消费兼容、

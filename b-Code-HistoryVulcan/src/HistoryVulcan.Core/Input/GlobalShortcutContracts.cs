@@ -55,3 +55,31 @@ public interface IGlobalShortcutModule
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
     void RegisterShortcuts(IGlobalShortcutRegistrar registrar);
 }
+
+/// <summary>
+/// Process-wide global shortcut host. Implementations live in modules (e.g. HistoryMercury);
+/// the Vulcan host only holds this Core contract.
+/// </summary>
+public interface IGlobalShortcutHost : IDisposable
+{
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    bool IsEnabled { get; }
+
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    IReadOnlyList<GlobalShortcutRegistrationInfo> Registrations { get; }
+
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    void Start();
+
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    void Stop();
+
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    IDisposable Register(GlobalShortcutDescriptor descriptor, string owner);
+
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    IGlobalShortcutRegistrar CreateOwnerRegistrar(string owner);
+
+    /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    void UnregisterOwner(string owner);
+}

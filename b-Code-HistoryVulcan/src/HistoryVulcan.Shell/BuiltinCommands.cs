@@ -37,7 +37,7 @@ public sealed class ShellCommandServices
 }
 /// <summary>
 /// 框架内置指令组(§5.3 / 附录 B):help / history / run /
-/// app.* / log.* / win.* / layout.* 与 panel.*；cls 仅为 log.clear 的兼容别名。
+/// app.* / log.* / win.* / layout.* 与 panel.*；cls 仅为 vulcan.log.clear 的兼容别名。
 /// </summary>
 public static partial class BuiltinCommands
 {

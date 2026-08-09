@@ -5,7 +5,7 @@ namespace HistoryVulcan.Services;
 
 /// <summary>
 /// 应用设置(F-01/F-03):%AppData%/&lt;应用名&gt;/settings.json,扁平键值对。
-/// app.set / app.get 指令与派生应用共用;写入即落盘。
+/// vulcan.app.set / vulcan.app.get 指令与派生应用共用;写入即落盘。
 /// </summary>
 public sealed class SettingsService : ISettingsService
 {
@@ -74,7 +74,7 @@ public sealed class SettingsService : ISettingsService
         }
     }
 
-    /// <summary>全部键(app.get 不带参数时列出)。</summary>
+    /// <summary>全部键(vulcan.app.get 不带参数时列出)。</summary>
     public IReadOnlyList<KeyValuePair<string, string>> All()
     {
         lock (_gate)

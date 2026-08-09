@@ -6,7 +6,7 @@ namespace HistoryVulcan.Core.Commands;
 /// </summary>
 public sealed class CommandDescriptor
 {
-    /// <summary>完整指令名,小写,如 "win.dock"、"help"。</summary>
+    /// <summary>完整指令名,小写,如 "vulcan.win.dock"、"vulcan.core.help"。</summary>
     public required string Name { get; init; }
 
     /// <summary>
@@ -24,7 +24,7 @@ public sealed class CommandDescriptor
     /// <summary>一句话说明(help 列表用)。</summary>
     public required string Summary { get; init; }
 
-    /// <summary>示例行(help 详情用),如 "win.dock name=console pos=bottom ratio=0.25"。</summary>
+    /// <summary>示例行(help 详情用),如 "vulcan.win.dock name=console pos=bottom ratio=0.25"。</summary>
     public string? Example { get; init; }
 
     /// <summary>Provides this HistoryVulcan public contract member.</summary>

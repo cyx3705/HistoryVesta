@@ -74,11 +74,11 @@ public static class McpExposurePolicy
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
     public static string? HardExclusionReason(string commandName)
     {
-        if (commandName.Equals("app.exit", StringComparison.OrdinalIgnoreCase))
+        if (commandName.Equals("vulcan.app.exit", StringComparison.OrdinalIgnoreCase))
             return "远程客户端不得退出宿主";
         if (commandName.StartsWith("debug.", StringComparison.OrdinalIgnoreCase))
             return "调试与承压指令不对远程暴露";
-        if (commandName.StartsWith("mcp.", StringComparison.OrdinalIgnoreCase))
+        if (commandName.StartsWith("vulcan.mcp.", StringComparison.OrdinalIgnoreCase))
             return "防止远程递归管理或关闭 MCP 服务";
         if (string.Equals(ExposureOf(commandName), "hidden", StringComparison.OrdinalIgnoreCase))
             return "模块清单声明 mcpExposure=hidden,不对 MCP 暴露(Q211-2)";

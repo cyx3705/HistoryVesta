@@ -8,8 +8,8 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using HistoryVulcan.Core;
 using HistoryVulcan.Core.Commands;
+using HistoryVulcan.Core.CommandSurface;
 using HistoryVulcan.Core.Logging;
-using HistoryVulcan.Shell.Views;
 
 namespace HistoryVulcan.Shell.Console;
 
@@ -28,7 +28,7 @@ public partial class ConsoleView : UserControl, Core.Modules.IActivatableToolCon
     private readonly IShellLog _log;
     private readonly CommandBus _bus;
     private readonly CommandHistory _history;
-    private readonly CommandCatalogSession _catalogSession;
+    private readonly ICommandCatalogSession _catalogSession;
     private readonly int _bufferLimit;
 
     private readonly ConcurrentQueue<ShellLogEntry> _incoming = new();
@@ -62,21 +62,11 @@ public partial class ConsoleView : UserControl, Core.Modules.IActivatableToolCon
     private bool _catalogShownForInput;
     private CancellationTokenSource? _completionRefresh;
 
-    public ConsoleView(IShellLog log, CommandBus bus, CommandHistory history, int bufferLimit = 50_000)
-        : this(
-            log,
-            bus,
-            history,
-            new CommandCatalogSession(bus, new CommandSelectionState()),
-            bufferLimit)
-    {
-    }
-
-    internal ConsoleView(
+    public ConsoleView(
         IShellLog log,
         CommandBus bus,
         CommandHistory history,
-        CommandCatalogSession catalogSession,
+        ICommandCatalogSession catalogSession,
         int bufferLimit = 50_000)
     {
         InitializeComponent();
@@ -133,10 +123,10 @@ public partial class ConsoleView : UserControl, Core.Modules.IActivatableToolCon
         };
     }
 
-    /// <summary>当前控制台显示级别(log.level,L-04;文件始终全量)。</summary>
+    /// <summary>当前控制台显示级别(vulcan.log.level,L-04;文件始终全量)。</summary>
     public ShellLogLevel MinLevel { get; private set; } = ShellLogLevel.Trace;
 
-    /// <summary>log.level 指令入口:调整显示级别过滤。</summary>
+    /// <summary>vulcan.log.level 指令入口:调整显示级别过滤。</summary>
     public void SetMinLevel(ShellLogLevel level)
     {
         MinLevel = level;
@@ -417,21 +407,21 @@ public partial class ConsoleView : UserControl, Core.Modules.IActivatableToolCon
         if (!IsLoaded || _suppressFilterEvents || LevelFilter.SelectedIndex < 0)
             return;
         var level = LevelFilter.SelectedIndex == 0 ? "trace" : ((ShellLogLevel)(LevelFilter.SelectedIndex - 1)).ToString().ToLowerInvariant();
-        _ = _bus.ExecuteAsync($"log.level level={level}", "UI");
+        _ = _bus.ExecuteAsync($"vulcan.log.level level={level}", "UI");
     }
 
     private void OnSourceChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!IsLoaded || _suppressFilterEvents || DomainFilter.SelectedItem is not string source)
             return;
-        _ = _bus.ExecuteAsync($"log.source source={CommandParser.QuoteArg(source)}", "UI");
+        _ = _bus.ExecuteAsync($"vulcan.log.source source={CommandParser.QuoteArg(source)}", "UI");
     }
 
     private void OnClassChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!IsLoaded || _suppressFilterEvents || ClassFilter.SelectedItem is not string commandClass)
             return;
-        _ = _bus.ExecuteAsync($"log.class class={CommandParser.QuoteArg(commandClass)}", "UI");
+        _ = _bus.ExecuteAsync($"vulcan.log.class class={CommandParser.QuoteArg(commandClass)}", "UI");
     }
 
     private void OnCatalogChanged(object? sender, CommandCatalogChangedEventArgs e)
@@ -496,13 +486,13 @@ public partial class ConsoleView : UserControl, Core.Modules.IActivatableToolCon
         => _registeredDomains.Contains(row.DomainKey) ? row.DomainKey : "core";
 
     private void OnClearClick(object sender, RoutedEventArgs e)
-        => _ = _bus.ExecuteAsync("log.clear", "UI");
+        => _ = _bus.ExecuteAsync("vulcan.log.clear", "UI");
 
     private void OnCopyClick(object sender, RoutedEventArgs e)
-        => _ = _bus.ExecuteAsync("log.copy", "UI");
+        => _ = _bus.ExecuteAsync("vulcan.log.copy", "UI");
 
     private void OnExportClick(object sender, RoutedEventArgs e)
-        => _ = _bus.ExecuteAsync("log.export", "UI");
+        => _ = _bus.ExecuteAsync("vulcan.log.export", "UI");
 
     // ---------------------------------------------------------------- 输入区
 

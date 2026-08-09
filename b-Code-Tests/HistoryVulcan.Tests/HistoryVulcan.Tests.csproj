@@ -17,6 +17,9 @@
     <ProjectReference Include="..\..\b-Code-HistoryVulcan\src\HistoryVulcan.ServiceHost\HistoryVulcan.ServiceHost.csproj" />
     <ProjectReference Include="..\..\b-Code-HistoryVulcan\src\HistoryVulcan.Services\HistoryVulcan.Services.csproj" />
     <ProjectReference Include="..\..\b-Code-HistoryVulcan\src\HistoryVulcan.Shell\HistoryVulcan.Shell.csproj" />
+    <ProjectReference Include="..\..\..\2026-021-HistoryMercury\b-Code-MercuryDock\HistoryMercury.csproj">
+      <Aliases>mercury</Aliases>
+    </ProjectReference>
   </ItemGroup>
 
 </Project>

@@ -18,7 +18,7 @@ public static partial class BuiltinCommands
     private static void RegisterBasics(CommandRegistry r, ShellCommandServices s)
     {
         r.Register(BuiltinCommandDefinitions.Bind(
-            "help",
+            "vulcan.core.help",
             CommandDescriptor.Sync(ctx =>
             {
                 var name = ctx.GetString("command");
@@ -27,11 +27,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "command.copy-example",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.command.copyexample",
+            Domain = "vulcan",
             CommandClass = "command",
             Summary = "复制指定命令的示例",
-            Example = "command.copy-example name=log.level",
+            Example = "vulcan.command.copyexample name=vulcan.log.level",
             RequiresUiThread = true,
             Parameters =
             [
@@ -58,12 +58,12 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "history",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.core.history",
+            Domain = "vulcan",
             CommandClass = "core",
             Summary = "查看指令历史",
             Readonly = true,
-            Example = "history count=10",
+            Example = "vulcan.core.history count=10",
             Parameters =
             [
                 new ParameterSpec
@@ -92,11 +92,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "run",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.core.run",
+            Domain = "vulcan",
             CommandClass = "core",
             Summary = "逐行执行指令脚本文件(# 注释与空行忽略)",
-            Example = "run file=每日巡检.txt continue=true",
+            Example = "vulcan.core.run file=每日巡检.txt continue=true",
             Parameters =
             [
                 new ParameterSpec
@@ -157,7 +157,7 @@ public static partial class BuiltinCommands
     private static CommandResult HelpList(CommandRegistry registry)
     {
         var all = registry.All();
-        var sb = new StringBuilder($"共 {all.Count} 条指令,help <指令名> 查看详情:");
+        var sb = new StringBuilder($"共 {all.Count} 条指令,vulcan.core.help <指令名> 查看详情:");
         foreach (var group in all.GroupBy(d =>
                  {
                      var dot = d.Name.IndexOf('.');

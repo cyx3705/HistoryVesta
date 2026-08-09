@@ -19,8 +19,8 @@ public static partial class BuiltinCommands
     {
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "panel.select-file",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.panel.selectfile",
+            Domain = "vulcan",
             CommandClass = "panel",
             Summary = "选择本地文件",
             RequiresUiThread = true,
@@ -35,8 +35,8 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "panel.select-directory",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.panel.selectdirectory",
+            Domain = "vulcan",
             CommandClass = "panel",
             Summary = "选择本地目录",
             RequiresUiThread = true,
@@ -51,8 +51,8 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "panel.list",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.panel.list",
+            Domain = "vulcan",
             CommandClass = "panel",
             Summary = "列出全部控制面板及其窗口状态",
             Readonly = true,
@@ -79,15 +79,15 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "panel.show",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.panel.show",
+            Domain = "vulcan",
             CommandClass = "panel",
-            Summary = "显示控制面板(等价 win.show)",
-            Example = "panel.show id=my-panel",
+            Summary = "显示控制面板(等价 vulcan.win.show)",
+            Example = "vulcan.panel.show id=my-panel",
             RequiresUiThread = true,
             Parameters =
             [
-                new ParameterSpec { Name = "id", Description = "面板 id(panel.list 可查)", Required = true, Position = 0 },
+                new ParameterSpec { Name = "id", Description = "面板 id(vulcan.panel.list 可查)", Required = true, Position = 0 },
             ],
             Handler = CommandDescriptor.Sync(ctx =>
             {
@@ -106,11 +106,11 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "panel.set",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.panel.set",
+            Domain = "vulcan",
             CommandClass = "panel",
             Summary = "程序向面板控件回写值(P-07)",
-            Example = "panel.set panel=my-panel control=speed value=800",
+            Example = "vulcan.panel.set panel=my-panel control=speed value=800",
             RequiresUiThread = true,
             Parameters =
             [
@@ -134,8 +134,8 @@ public static partial class BuiltinCommands
 
         RegisterFrontend(r, new CommandDescriptor
         {
-            Name = "panel.reload",
-            Domain = "HistoryVulcan",
+            Name = "vulcan.panel.reload",
+            Domain = "vulcan",
             CommandClass = "panel",
             Summary = "重读面板 JSON 配置并原地重建(新增面板需重启)",
             RequiresUiThread = true,
