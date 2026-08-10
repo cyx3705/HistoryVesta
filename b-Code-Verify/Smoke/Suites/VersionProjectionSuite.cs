@@ -32,7 +32,6 @@ internal static class VersionProjectionSuite
         AssertPackageConsumers();
         AssertCurrentSourceAndDocumentation();
         await AssertPublishAreaGovernanceAsync();
-        await AssertPublishTransactionAsync(studioRoot);
         Console.WriteLine($"version projection: Janus module {studioVersion}");
     }
 
@@ -167,44 +166,23 @@ internal static class VersionProjectionSuite
         True(!Directory.Exists(Path.Combine(ParentDir, "z-HistoryVulcan")),
             "repository boundary: HistoryVulcan package repository is not duplicated in Janus");
 
-        var publish = File.ReadAllText(Path.Combine(
-            ParentDir, "b-Code-Studio", "eng", "Publish-Janus.ps1"));
-        True(!publish.Contains("Publish-HistoryVulcan", StringComparison.OrdinalIgnoreCase)
-             && !publish.Contains("b-Code-HistoryVulcan", StringComparison.OrdinalIgnoreCase),
-            "publish boundary: Janus publish does not build or publish HistoryVulcan");
-        Contains(publish, "sourceDirty", "publish governance: Janus records source state");
-        Contains(publish, "sourcePaths", "publish governance: source and documents must all be clean");
-        Contains(publish, "Invoke-DirectoryPromotion",
-            "publish governance: Janus uses the tested promotion transaction");
-        Contains(publish, "'b-Publish'", "publish governance: b-Publish is the local build and history root");
-        Contains(publish, "'current\\HistoryJanus'",
-            "publish governance: b-Publish/current/HistoryJanus is the replaceable release candidate");
-        Contains(publish, "Join-Path $PublishRoot 'history'",
-            "publish governance: formal package history is flat under b-Publish/history");
-        True(!publish.Contains("history/candidate", StringComparison.OrdinalIgnoreCase)
-             && !publish.Contains("Join-Path $HistoryRoot \"candidate", StringComparison.Ordinal),
-            "publish governance: release candidates are never archived as history");
-        True(!publish.Contains("Join-Path $RepoRoot \"stage\"", StringComparison.Ordinal),
-            "publish governance: the removed stage root is not recreated");
-        Contains(publish, "z-HistoryJanus",
-            "publish governance: named z-level directory is the formal package root");
-        Contains(publish, "Assert-ModulePackage",
-            "publish governance: module package uses an exact file-set gate");
-        Contains(publish, "ModuleSmoke",
-            "publish governance: UI and headless module lifecycle are release gates");
+        var build = File.ReadAllText(Path.Combine(
+            ParentDir, "b-Code-Studio", "eng", "Build-HistoryJanusPackage.ps1"));
+        True(!File.Exists(Path.Combine(ParentDir, "b-Code-Studio", "eng", "Publish-Janus.ps1"))
+             && !File.Exists(Path.Combine(ParentDir, "b-Code-Studio", "eng", "Publish-Transaction.ps1")),
+            "publish boundary: Janus has no project-owned formal publisher");
+        Contains(build, "OutputRoot", "candidate build accepts Diana output root");
+        Contains(build, "HistoryJanus.dll", "candidate build packages the module artifact");
+        Contains(build, "Assert-ModulePackage",
+            "candidate build uses an exact file-set and checksum gate");
+        True(!build.Contains("DeployToZ", StringComparison.OrdinalIgnoreCase)
+             && !Regex.IsMatch(build, @"(?m)^\s*\[switch\]\$Publish\b|\bif\s*\(\s*\$Publish\b",
+                 RegexOptions.CultureInvariant),
+            "candidate build cannot promote a formal snapshot");
         // 宿主契约版本的唯一真源是 JanusVersion.props；这里断言脚本从那里读取，
         // 而不是断言某个具体版本字面量——否则每次宿主升级都要同时改脚本和用例。
-        Contains(publish, "RequiredHistoryVulcanVersion",
-            "publish governance: the host contract version comes from JanusVersion.props");
-        True(!Regex.IsMatch(publish, @"'\d+\.\d+\.\d+(\.\d+)?'", RegexOptions.CultureInvariant),
-            "publish governance: no hard-coded host version literal remains");
-        Equal(1, Regex.Matches(
-                publish,
-                @"^\s*\$PackageRoot\s*=",
-                RegexOptions.Multiline | RegexOptions.IgnoreCase).Count,
-            "publish governance: formal PackageRoot is assigned exactly once");
-        Contains(publish, "$ApiDocumentSource",
-            "publish governance: the single consumer API document has an explicit source");
+        Contains(build, "RequiredHistoryVulcanVersion",
+            "candidate build host contract version comes from JanusVersion.props");
 
         True(!File.Exists(Path.Combine(ParentDir, "b-Code-Studio", "eng", "Test-Deploy-Janus.ps1")),
             "legacy development deployment entry is removed");
@@ -338,35 +316,4 @@ internal static class VersionProjectionSuite
             "version projection: b-Publish contains no tracked files");
     }
 
-    private static async Task AssertPublishTransactionAsync(string studioRoot)
-    {
-        var script = Path.Combine(studioRoot, "eng", "tests", "Publish-Transaction.Smoke.ps1");
-        True(File.Exists(script), "version projection: publish transaction smoke exists");
-        var start = new ProcessStartInfo("powershell.exe")
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-        foreach (var argument in new[]
-                 {
-                     "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script,
-                 })
-        {
-            start.ArgumentList.Add(argument);
-        }
-
-        using var process = Process.Start(start)
-                            ?? throw new InvalidOperationException("Unable to start publish transaction smoke");
-        var stdoutTask = process.StandardOutput.ReadToEndAsync();
-        var stderrTask = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        var stdout = await stdoutTask;
-        var stderr = await stderrTask;
-        True(process.ExitCode == 0,
-            $"version projection: publish transaction smoke exits successfully: {stderr}\n{stdout}");
-        Contains(stdout, "PublishTransactionSmoke: PASS",
-            "version projection: publish transaction state machine passes");
-    }
 }

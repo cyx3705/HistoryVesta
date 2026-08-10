@@ -6,7 +6,7 @@ HistoryJanus V3 是运行在 HistoryVulcan 中的项目与 Git 治理模块。Hi
 
 | 目录 | 职责 |
 | --- | --- |
-| `b-Code-Studio` | Janus 业务源码、模块入口与发布脚本 |
+| `b-Code-Studio` | Janus 业务源码、模块入口与候选构建脚本 |
 | `b-Code-Verify` | Contracts、功能 Smoke 与 ModuleSmoke |
 | `b-Office/current` | 四份现行元文档 |
 | `b-Office/package` | 唯一跨项目模块 API 文档 |
@@ -30,11 +30,12 @@ dotnet run --project .\b-Code-Verify\ModuleSmoke\ModuleSmoke.csproj -c Debug -- 
 把抑制标记、千行文件、版本链一致性、模块 API 投影、正式树边界和宿主合同六项漂移检查日常化（代码管道化条件 4：
 漂移由检查自动阻断，不积累到发布）。推送到 `2026-020-HistoryJanus` 分支时，GitHub Actions 门禁
 （`.github/workflows/historyjanus-gate.yml`）并行复验锁定还原、双配置构建、Contracts、格式与同一门禁脚本。
-正式发布才执行 Debug/Release 全量门禁、正式包、双槽部署和回滚验证。
+正式发布才执行 Debug/Release 全量门禁、正式包、双槽部署和回滚验证；正式提升由
+`2026-019-HistoryDiana/b-Code/Publish-OneHistoryModule.ps1` 统一执行。
 
 ```powershell
-.\b-Code-Studio\eng\Publish-Janus.ps1
-.\b-Code-Studio\eng\Publish-Janus.ps1 -Publish
+.\b-Code-Studio\eng\Build-HistoryJanusPackage.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ..\2026-019-HistoryDiana\b-Code\Publish-OneHistoryModule.ps1 -Module HistoryJanus -Publish
 ```
 
 正式包只含 `HistoryJanus.dll`、XML、module manifest、checksum 和 `package/模块API.md`，不含 Janus EXE 或 HistoryVulcan 运行库。脚本不测试开机自启动，也不启动 HistoryVulcan。
@@ -45,4 +46,4 @@ dotnet run --project .\b-Code-Verify\ModuleSmoke\ModuleSmoke.csproj -c Debug -- 
 - 默认不列举、搜索或读取 `b-Office/history`；只有用户明确追溯版本时才读取指定文件。
 - HistoryVulcan 合同只从平级 `2026-023-HistoryVulcan/z-HistoryVulcan` 消费，不复制其源码或文档。
 - 不提交 `bin`、`obj`、`.vs` 或 `b-Publish`；z 级正式快照进入 Git。
-- 不新建独立 `AGENTS.md`；本节与文档中心共同承担仓库 AI 边界。
+- 根目录 `AGENTS.md` 是仓库 AI 工作合同；本节保留 Janus 特有的事实边界。

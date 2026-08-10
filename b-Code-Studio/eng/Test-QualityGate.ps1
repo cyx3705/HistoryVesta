@@ -18,6 +18,16 @@ $excluded = '\\(bin|obj|Unused|b-Publish|z-HistoryJanus)\\'
 
 $violations = [System.Collections.Generic.List[string]]::new()
 
+# --- 0. 根项目合同：AI 入口、项目身份和版本必须可执行 -------------------------------
+$projectManifestPath = Join-Path $root 'project.manifest.json'
+$agentsPath = Join-Path $root 'AGENTS.md'
+if (-not (Test-Path -LiteralPath $projectManifestPath -PathType Leaf)) {
+    $violations.Add('Root project.manifest.json is missing')
+}
+if (-not (Test-Path -LiteralPath $agentsPath -PathType Leaf)) {
+    $violations.Add('Root AGENTS.md is missing')
+}
+
 # --- 1. 抑制标记零容忍：NoWarn/SuppressMessage/#pragma disable 一律不得入库。
 #        唯一豁免：工程文件中仅抑制 XML 文档警告 CS1573/CS1591 的 NoWarn 行 -------------
 $suppressionPattern = 'NoWarn|SuppressMessage|#pragma\s+warning\s+disable'
@@ -63,6 +73,17 @@ if ([string]::IsNullOrWhiteSpace($sourceVersion)) {
 $requiredVulcan = [string]$versionProps.Project.PropertyGroup.RequiredHistoryVulcanVersion
 if ([string]::IsNullOrWhiteSpace($requiredVulcan)) {
     $violations.Add("JanusVersion.props does not declare RequiredHistoryVulcanVersion")
+}
+
+if (Test-Path -LiteralPath $projectManifestPath -PathType Leaf) {
+    $projectManifest = [IO.File]::ReadAllText($projectManifestPath) | ConvertFrom-Json
+    if ([string]$projectManifest.project.id -ne '2026-020' -or
+        [string]$projectManifest.project.name -ne 'HistoryJanus') {
+        $violations.Add('project.manifest.json identity must be 2026-020/HistoryJanus')
+    }
+    if ([string]$projectManifest.project.version -ne $sourceVersion) {
+        $violations.Add("project.manifest.json version $($projectManifest.project.version) != JanusVersion.props $sourceVersion")
+    }
 }
 
 $manifestPath = Join-Path $componentRoot 'Module\module.manifest.json'
