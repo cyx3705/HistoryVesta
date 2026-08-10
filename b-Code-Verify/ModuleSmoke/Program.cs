@@ -60,14 +60,24 @@ if (host.Modules.Count != 1)
     throw new InvalidOperationException($"expected one module, got {host.Modules.Count}");
 }
 
+// 期望版本取自被测目录的 module.manifest.json，而不是写死字面量：
+// 装载出的模块身份必须与包自己声明的版本一致，且升版本时无需再改这个用例。
+var manifestPath = Path.Combine(moduleDirectory, "module.manifest.json");
+if (!File.Exists(manifestPath))
+    throw new InvalidOperationException($"module manifest not found: {manifestPath}");
+
+using var manifestJson = System.Text.Json.JsonDocument.Parse(File.ReadAllText(manifestPath));
+var expectedVersion = manifestJson.RootElement.GetProperty("version").GetString();
+
 var meta = host.Modules[0];
 if (!meta.ModuleName.Equals("HistoryJanus", StringComparison.Ordinal)
-    || !meta.Version.Equals("3.6.0", StringComparison.Ordinal)
+    || !meta.Version.Equals(expectedVersion, StringComparison.Ordinal)
     || !meta.Ui
     || meta.CommandCount < 29)
 {
     throw new InvalidOperationException(
-        $"unexpected module metadata: {meta.ModuleName} {meta.Version} ui={meta.Ui} commands={meta.CommandCount}");
+        $"unexpected module metadata: {meta.ModuleName} {meta.Version} " +
+        $"(manifest declares {expectedVersion}) ui={meta.Ui} commands={meta.CommandCount}");
 }
 
 if (!registry.TryGet("janus.status", out var descriptor)
