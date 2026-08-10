@@ -137,7 +137,7 @@ if (!expectedWindows.SequenceEqual(actualWindows, StringComparer.Ordinal))
 
 var windowsById = shellUi.Descriptors.ToDictionary(item => item.Id, StringComparer.Ordinal);
 AssertOverviewCenterTool(windowsById["overview"]);
-AssertPlacement(windowsById["projops"], DockSide.Right, 0.28);
+AssertPlacement(windowsById["projops"], DockSide.Left, 0.38);
 
 if (shellUi.Descriptors.Any(item => item.Title.Equals("HistoryJanus", StringComparison.Ordinal)))
     throw new InvalidOperationException("placeholder main window is still registered");
@@ -277,11 +277,13 @@ static IReadOnlyList<string> ConstructPages(
 
 static void AssertOverviewCenterTool(ToolWindowDescriptor descriptor)
 {
-    if (descriptor.DefaultSide != DockSide.Tab
-        || !string.Equals(descriptor.DefaultTabTarget, StandardWindowIds.Mcp, StringComparison.Ordinal))
+    // 总览占中央工作区，且不得再依赖别的模块的标签组：DefaultTabTarget 必须为空，
+    // 否则落位又会取决于模块装载顺序。
+    if (descriptor.DefaultSide != DockSide.Center
+        || !string.IsNullOrEmpty(descriptor.DefaultTabTarget))
     {
         throw new InvalidOperationException(
-            $"overview must be a center tool tab targeting mcp, got {descriptor.DefaultSide} target={descriptor.DefaultTabTarget}");
+            $"overview must dock to the center with no tab target, got {descriptor.DefaultSide} target={descriptor.DefaultTabTarget}");
     }
 }
 
