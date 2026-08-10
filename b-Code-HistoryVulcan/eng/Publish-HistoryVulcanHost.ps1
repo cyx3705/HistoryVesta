@@ -1,7 +1,25 @@
+﻿<#
+.SYNOPSIS
+    构建 HistoryVulcan 宿主快照；可作为 Diana 集中发布合同里的候选构建步骤。
+.DESCRIPTION
+    两种调用方式：
+
+      本仓直接发布   -Version 3.4.0 [-DeployToZ]
+      Diana 集中发布 -Configuration Release -OutputRoot <候选目录>
+
+    后者是 Publish-OneHistoryModule.ps1 对 BuildScript 的统一调用形状：只产候选、
+    不提升正式区，版本从 VulcanVersion.props 现读而不由调用方传入。
+    宿主与模块的快照形状不同（host/ 与 docs/ 多层目录、manifest.json 而非
+    module.manifest.json、SHA256SUMS 用带 / 的相对路径），差异在 Diana 侧按 Kind 区分。
+#>
 param(
-    [Parameter(Mandatory = $true)]
     [string]$Version,
-    [switch]$DeployToZ
+    [switch]$DeployToZ,
+
+    # 统一候选构建契约。指定 -OutputRoot 时只产候选，忽略 -DeployToZ。
+    [ValidateSet('Release')]
+    [string]$Configuration,
+    [string]$OutputRoot
 )
 
 $ErrorActionPreference = 'Stop'
@@ -10,7 +28,11 @@ Set-StrictMode -Version Latest
 $componentRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $componentRoot '..'))
 $publishRoot = Join-Path $repoRoot 'b-Publish'
-$candidateRoot = Join-Path $publishRoot 'current'
+$candidateRoot = if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
+    Join-Path $publishRoot 'current'
+} else {
+    [IO.Path]::GetFullPath($OutputRoot)
+}
 $formalRoot = Join-Path $repoRoot 'z-HistoryVulcan'
 $project = Join-Path $componentRoot 'src\App\App.csproj'
 $documentRoot = Join-Path $repoRoot 'b-Office\package'
@@ -24,7 +46,11 @@ if ($LASTEXITCODE -ne 0) {
 $versionProperties = (($versionOutput -join "`n") | ConvertFrom-Json).Properties
 $sourceVersion = [string]$versionProperties.VulcanVersion
 $expectedFileVersion = [string]$versionProperties.FileVersion
-if ($sourceVersion -ne $Version) {
+if ([string]::IsNullOrWhiteSpace($Version)) {
+    # 集中发布不传版本：版本源是 VulcanVersion.props，调用方不该也持有一份。
+    $Version = $sourceVersion
+}
+elseif ($sourceVersion -ne $Version) {
     throw "VulcanVersion.props declares $sourceVersion; requested $Version"
 }
 if ($Version -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') {
@@ -226,6 +252,11 @@ Run `host/HistoryVulcan.exe`. Historical releases are stored under `b-Publish/hi
         throw
     }
     Write-Host "Prepared HistoryVulcan $Version host snapshot at $candidateRoot"
+
+    if ($DeployToZ -and -not [string]::IsNullOrWhiteSpace($OutputRoot)) {
+        # 候选构建步骤不得提升正式区：提升由 Diana 的事务统一做，才能和文档镜像一起回滚。
+        throw 'Do not combine -OutputRoot with -DeployToZ; centralized publishing promotes the candidate itself.'
+    }
 
     if ($DeployToZ) {
         Assert-Snapshot $candidateRoot
