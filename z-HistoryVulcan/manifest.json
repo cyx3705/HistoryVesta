@@ -6,7 +6,7 @@
     "runtime":  "win-x64-framework-dependent",
     "executable":  "host/HistoryVulcan.exe",
     "selfContained":  false,
-    "sourceCommit":  "8044cb5e39ca2e28c6797e09c79ebf08bb5104e0",
+    "sourceCommit":  "b1fe81c4c6484f2861d3f343e6210edb447d24ca",
     "sourceDirty":  false,
     "documents":  [
                       "docs/HistoryVulcan_API与指令手册.md",
@@ -84,12 +84,12 @@
                   {
                       "file":  "host/HistoryVulcan.Core.dll",
                       "bytes":  121344,
-                      "sha256":  "2D075E4CD531CF78A650BB289A6099536153FE0192C722603AB673C96D5EA92C"
+                      "sha256":  "D5E678CFD50568D2EA894A00E1F6B6DF011630AC817159CD15D7ABADE9D294CB"
                   },
                   {
                       "file":  "host/HistoryVulcan.Core.pdb",
                       "bytes":  42668,
-                      "sha256":  "3E78F33F5967DC6D52B91C1F2E218BF8C2FE547AFFDB762EDC90F096DD832FD6"
+                      "sha256":  "06CB7DAB5B72F1F7741CB44FDAE14E99ACFA70C1DCF648E15BE8C5EA2E2B637D"
                   },
                   {
                       "file":  "host/HistoryVulcan.Core.xml",
@@ -104,7 +104,7 @@
                   {
                       "file":  "host/HistoryVulcan.dll",
                       "bytes":  44544,
-                      "sha256":  "DE4FD86BA7C4EB71A774F238E3CA29276B75CE65B5E2AE2AC469802B80FECD2C"
+                      "sha256":  "17B4BAF4F7800CA69F23F3B6D3A040CD1C51DA7BA08969879E4116445A742A3D"
                   },
                   {
                       "file":  "host/HistoryVulcan.exe",
@@ -114,7 +114,7 @@
                   {
                       "file":  "host/HistoryVulcan.pdb",
                       "bytes":  21080,
-                      "sha256":  "534E56BF2410B5556D7FDF551DBAADDF4A51598C4B84510E99F2A1930D69A62E"
+                      "sha256":  "BA3A5417E7A679902179B69ECE9F0E142B159794B521810A7ADB1301CA6B954D"
                   },
                   {
                       "file":  "host/HistoryVulcan.runtimeconfig.json",
@@ -124,22 +124,22 @@
                   {
                       "file":  "host/HistoryVulcan.ServiceHost.dll",
                       "bytes":  36352,
-                      "sha256":  "86D780DFB922939E41D43D12F600078678C765461EAEBFFEDDE11BC175CB26E6"
+                      "sha256":  "FACFCB20A58F36DFC16010F23150F89FE8F9FF156DA2DC05DDEB752B2C3D78B1"
                   },
                   {
                       "file":  "host/HistoryVulcan.ServiceHost.pdb",
                       "bytes":  17628,
-                      "sha256":  "D9D524FE9FC8083057541B49A393CFFF7348B1A723739FA815976CF30BC3E18B"
+                      "sha256":  "975363661CCB30359F4F3B83AB0C24F6A39740FCE06B334CF6D0FF44A7C8538D"
                   },
                   {
                       "file":  "host/HistoryVulcan.Services.dll",
                       "bytes":  231424,
-                      "sha256":  "541550F9EF7DCB2A5618549BE53041EE6A69DD72881A176373F86B57174BE7F7"
+                      "sha256":  "9D3A5EB2B35ECDC71FE4430813F78734FFB0D8AAD139830D8AA0F47A368AD22D"
                   },
                   {
                       "file":  "host/HistoryVulcan.Services.pdb",
                       "bytes":  57728,
-                      "sha256":  "B614E58F3177130F70B9C08A7ED80640748D870FB75424036B3EB7851713185D"
+                      "sha256":  "1F1AE03A6BC6100C0608D9DFBF07ED6BC59D91C2385384FDDC2B5AE68D9B59EA"
                   },
                   {
                       "file":  "host/HistoryVulcan.Services.xml",
@@ -149,12 +149,12 @@
                   {
                       "file":  "host/HistoryVulcan.Shell.dll",
                       "bytes":  349696,
-                      "sha256":  "D8AB77B4F279A89DAF2467EA323B1111C0531E03ACB1F3504AEFA146290F6890"
+                      "sha256":  "08F053EDC47149177D5408B1CEA44A2E11B8E0C3F16884C8658182E4FF7BBC4C"
                   },
                   {
                       "file":  "host/HistoryVulcan.Shell.pdb",
                       "bytes":  86656,
-                      "sha256":  "1C245D8AC92092478B8DAF2025F0CACFA9E5CDF347FBE24129073A90BEC32108"
+                      "sha256":  "5F2955C3C75DDCF91C3D717F9DE1E26FA52F2CC51CF2D28C9000108695CC91CE"
                   },
                   {
                       "file":  "host/hu/AvalonDock.resources.dll",
