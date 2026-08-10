@@ -208,7 +208,9 @@ public static class CommandCatalogCommands
                 var list = rows.ToList();
                 var text = new StringBuilder($"命令集: {list.Count} / {registry.All().Count} 条");
                 foreach (var row in list)
-                    text.Append($"\n  {row.CommandName,-28} [{row.Domain}/{row.CommandClass}/{row.McpState}] {row.Summary}");
+                    text.Append($"\n  {row.CommandName,-28} "
+                                + $"[{row.Domain}/{CommandClassLabels.Display(row.CommandClass)}/{row.McpState}] "
+                                + row.Summary);
                 return CommandResult.Ok(text.ToString(), list);
             }),
         };
@@ -247,7 +249,9 @@ public static class CommandCatalogCommands
                 var detail = new CommandCatalogDetail(row, parameters, schema);
 
                 var text = new StringBuilder(
-                    $"{descriptor.Name} [{row.Domain}/{row.CommandClass}/{row.McpState}]\n{descriptor.Summary}");
+                    $"{descriptor.Name} "
+                    + $"[{row.Domain}/{CommandClassLabels.Display(row.CommandClass)}/{row.McpState}]\n"
+                    + descriptor.Summary);
                 if (!string.IsNullOrWhiteSpace(descriptor.Example))
                     text.Append($"\n示例: {descriptor.Example}");
                 if (row.HardExclusionReason != null)
