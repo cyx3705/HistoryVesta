@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [switch]$Instantiation
 )
@@ -188,14 +188,16 @@ if ($null -ne $manifest) {
     }
 }
 
+# 归档目录不参与链接检查。Diana 把文档区拆成 b-Office-Diana 与 b-Office-OneHistory，
+# 因此按后缀匹配 *\history\*，不再硬编码单一 b-Office 路径。
 $markdownFiles = Get-ChildItem -LiteralPath $projectRoot -Filter '*.md' -File -Recurse |
-    Where-Object {
-        $_.FullName -notlike (Join-Path $projectRoot 'b-Office\history\*')
-    }
+    Where-Object { $_.FullName -notlike '*\history\*' -and $_.FullName -notlike '*-References\*' }
 
 $linkPattern = [regex]'\[[^\]]+\]\((?<target>[^)]+)\)'
 foreach ($file in $markdownFiles) {
+    # 空文件 -Raw 返回 $null，Matches($null) 会抛 ArgumentNullException。
     $content = Get-Content -LiteralPath $file.FullName -Raw -Encoding UTF8
+    if ([string]::IsNullOrEmpty($content)) { continue }
     foreach ($match in $linkPattern.Matches($content)) {
         $target = $match.Groups['target'].Value.Trim().Trim('<', '>')
         if ($target.StartsWith('#') -or $target -match '^[a-zA-Z][a-zA-Z0-9+.-]*:') {

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "template": {
+    "isTemplate": false,
+    "source": "0000-000-Template",
+    "strictValidationArgument": "-Instantiation"
+  },
+  "project": {
+    "id": "2026-019",
+    "name": "HistoryDiana",
+    "title": "HistoryDiana AI 工作区",
+    "kind": [
+      "software",
+      "tooling",
+      "documentation"
+    ],
+    "status": "active",
+    "version": "1.0.0",
+    "branch": "2026-019-HistoryDiana"
+  },
+  "paths": {
+    "activeRoots": [
+      "b-Office-Diana/current",
+      "b-Office-Diana/package",
+      "b-Office-OneHistory",
+      "b-Code",
+      "b-Code-HistoryDiana"
+    ],
+    "sourceRoots": [
+      "b-Code",
+      "b-Code-HistoryDiana"
+    ],
+    "generatedRoots": [
+      "b-Code-HistoryDiana/bin",
+      "b-Code-HistoryDiana/obj",
+      "b-Publish/current"
+    ],
+    "archiveRoots": [
+      "b-Office-Diana/history",
+      "b-Publish"
+    ],
+    "releaseRoots": [
+      "z-HistoryDiana"
+    ],
+    "allowedRootDirectoryPrefixes": [
+      "a-",
+      "b-",
+      "z-"
+    ]
+  },
+  "documents": {
+    "center": "b-Office-Diana/文档中心.md",
+    "package": "b-Office-Diana/package/复用说明.md",
+    "overview": "b-Office-Diana/current/项目概览.md",
+    "technicalContract": "b-Office-Diana/current/技术合同.md",
+    "decisions": "b-Office-Diana/current/有效决策.md",
+    "verification": "b-Office-Diana/current/验证合同.md",
+    "oneHistoryIndex": "b-Office-OneHistory/README.md",
+    "oneHistoryDefinitions": "b-Office-OneHistory/定义/OneHistory总览.md",
+    "oneHistoryNaming": "b-Office-OneHistory/定义/目录与命名规范.md",
+    "consumerIndex": "b-Office-OneHistory/消费文档索引.md"
+  },
+  "commands": {
+    "setup": "dotnet restore .\\b-Code-HistoryDiana\\HistoryDiana.csproj",
+    "build": "dotnet build .\\b-Code-HistoryDiana\\HistoryDiana.csproj -c Release",
+    "test": "dotnet run --project .\\b-Code-HistoryDiana\\tests\\HistoryDiana.Smoke\\HistoryDiana.Smoke.csproj -c Release",
+    "verify": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\b-Code\\Test-ProjectContract.ps1 -Instantiation",
+    "run": null,
+    "package": null
+  },
+  "externalDependencies": [
+    {
+      "name": ".NET SDK",
+      "version": "9.0.315",
+      "purpose": "构建 net8.0-windows 目标"
+    },
+    {
+      "name": "HistoryVulcan",
+      "version": "3.4.0",
+      "purpose": "宿主 Core 契约与指令总线；从 2026-023-HistoryVulcan/z-HistoryVulcan 消费"
+    }
+  ],
+  "contextExclusions": [
+    "b-Office-Diana/history/**",
+    "b-Publish/**",
+    "z-HistoryDiana/**",
+    "b-References/**",
+    "**/bin/**",
+    "**/obj/**",
+    "**/.vs/**"
+  ]
+}

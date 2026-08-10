@@ -1,3 +1,4 @@
+using System.IO;
 using BaseVariable;
 using HistoryDiana;
 using HistoryVulcan.Core.Commands;
@@ -6,6 +7,9 @@ using HistoryVulcan.Core.Modules;
 using HistoryVulcan.Core.Storage;
 
 var temporaryRoot = Path.Combine(Path.GetTempPath(), "HistoryDiana.Smoke", Guid.NewGuid().ToString("N"));
+// 收尾摘要里的数字必须来自实际注册结果，写死会在增删命令后悄悄失真。
+var commandCount = 0;
+var classCount = 0;
 try
 {
     var projectName = "2026-999-HistoryDianaSmoke";
@@ -44,12 +48,31 @@ try
         .OrderBy(descriptor => descriptor.Name, StringComparer.Ordinal)
         .ToList();
     SequenceEqual(
-        new[] { "diana.project.largest", "diana.project.recent", "diana.project.summary" },
+        new[]
+        {
+            "diana.kit.base64", "diana.kit.guid", "diana.kit.now", "diana.kit.sha256",
+            "diana.project.largest", "diana.project.recent", "diana.project.summary",
+            "diana.relay.call", "diana.relay.describe", "diana.relay.list",
+        },
         descriptors.Select(descriptor => descriptor.Name).ToArray(),
         "命令必须使用 Diana 三段式命名");
     True(descriptors.All(descriptor => descriptor.Domain == "HistoryDiana"), "命令域必须归属 HistoryDiana");
-    True(descriptors.All(descriptor => descriptor.CommandClass == "project"), "命令类必须为 project");
-    True(descriptors.All(descriptor => descriptor.Readonly), "所有 Diana 命令必须声明为只读");
+    SequenceEqual(
+        new[] { "kit", "project", "relay" },
+        descriptors.Select(descriptor => descriptor.CommandClass!)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray(),
+        "Diana 只有 kit / project / relay 三个类");
+    commandCount = descriptors.Count;
+    classCount = descriptors.Select(descriptor => descriptor.CommandClass!)
+        .Distinct(StringComparer.Ordinal)
+        .Count();
+    // relay.call 会真的调用外部工具，是唯一的写操作；其余一律只读。
+    True(
+        descriptors.Where(descriptor => descriptor.Name != "diana.relay.call")
+            .All(descriptor => descriptor.Readonly),
+        "除 diana.relay.call 外所有 Diana 命令必须声明为只读");
     True(descriptors.All(descriptor => descriptor.Name.StartsWith("diana.", StringComparison.Ordinal)),
         "不得保留 StudioTools 或 ProjectPulse 命令前缀");
 
@@ -77,7 +100,7 @@ finally
         Directory.Delete(temporaryRoot, recursive: true);
 }
 
-Console.WriteLine("HistoryDiana.Smoke: PASS (1 module, 3 commands, explicit HistoryVulcan command registration)");
+Console.WriteLine($"HistoryDiana.Smoke: PASS (1 module, {commandCount} commands in {classCount} classes, explicit HistoryVulcan command registration)");
 
 static void True(bool condition, string message)
 {
