@@ -87,6 +87,9 @@ public partial class App : Application
             AppVersion = identity.Version,
             EnableModules = false,
             EnableUiModules = true,
+            // 装配 MCP 网关，使 vulcan.mcp.* 指令可用。装配不等于监听：
+            // 端口只在显式执行 vulcan.mcp.start（或 mcp.autostart=true）时才打开。
+            EnableMcp = true,
             RequireConfirmedModuleSources = true,
             EnableRemoteManagementViews = true,
             CloseBehavior = ShellCloseBehavior.Hide,

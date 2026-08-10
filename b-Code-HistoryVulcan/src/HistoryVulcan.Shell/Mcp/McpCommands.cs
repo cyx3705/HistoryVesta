@@ -32,6 +32,7 @@ public static class McpCommands
         registry.Register(BuildStart(gateway), source);
         registry.Register(BuildStop(gateway), source);
         registry.Register(BuildStatus(gateway, settings), source);
+        registry.Register(BuildAutostart(gateway, settings), source);
         CommandCatalogCommands.RegisterAll(registry, exporter, prompts, gateway, source);
     }
 
@@ -106,6 +107,49 @@ public static class McpCommands
                           $"{(g.ConfirmMode == "host" ? $"(远程请求宿主弹框确认,{g.ConfirmTimeout}s 超时拒绝)" : "(一律拒绝;host 档开启中继确认)")}");
                 sb.Append($"\n  调用   : 累计 {g.CallCount} 次,最近 {g.LastCall}");
                 return CommandResult.Ok(sb.ToString());
+            }),
+        };
+
+    /// <summary>
+    /// 持久开关：是否随宿主启动自动监听。与 start/stop 的区别是本命令写设置、跨会话生效。
+    /// </summary>
+    private static CommandDescriptor BuildAutostart(
+        Func<McpGateway?> gateway, HistoryVulcan.Core.Storage.ISettingsService settings) => new()
+        {
+            Name = "vulcan.mcp.autostart",
+            Domain = "vulcan",
+            CommandClass = "mcp",
+            Summary = "查看或设置 MCP 随宿主自动监听(持久;省略 enabled 只查看)",
+            Example = "vulcan.mcp.autostart enabled=true",
+            Parameters =
+            [
+                new ParameterSpec
+                {
+                    Name = "enabled",
+                    Description = "true 随宿主自动监听；false 只能手动 vulcan.mcp.start。省略则只报告当前值。",
+                    Type = ParamType.Bool,
+                    Position = 0,
+                },
+            ],
+            Handler = CommandDescriptor.Sync(ctx =>
+            {
+                var g = gateway();
+                if (g == null)
+                    return CommandResult.Fail("网关未装配");
+
+                if (!ctx.Has("enabled"))
+                {
+                    return CommandResult.Ok(
+                        $"mcp.autostart = {(g.AutostartEnabled ? "true" : "false")}"
+                        + $"；当前{(g.IsRunning ? $"运行中 http://127.0.0.1:{g.Port}/mcp" : "未监听")}");
+                }
+
+                var enabled = ctx.GetBool("enabled", false);
+                settings.Set(McpGateway.KeyAutostart, enabled ? "true" : "false");
+                return CommandResult.Ok(
+                    enabled
+                        ? "已开启 MCP 自动监听；下次启动宿主即监听，本次可用 vulcan.mcp.start 立即开启。"
+                        : "已关闭 MCP 自动监听；本次若在运行用 vulcan.mcp.stop 释放端口。");
             }),
         };
 

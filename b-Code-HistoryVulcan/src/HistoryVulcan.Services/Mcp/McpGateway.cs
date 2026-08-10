@@ -116,8 +116,13 @@ public sealed partial class McpGateway : IDisposable
             : 60;
 
     /// <summary>缺省启用；仅显式配置 false 时关闭宿主启动自动监听。</summary>
+    /// <summary>
+    /// 是否随宿主启动自动监听。**缺省为 false**：网关会对外开一个回环端口，
+    /// 开不开必须由人显式决定，不能因为装配了就默默监听。
+    /// 用 <c>vulcan.mcp.autostart enabled=true</c> 打开持久自启动。
+    /// </summary>
     public bool AutostartEnabled
-        => !bool.TryParse(_settings.Get(KeyAutostart), out var enabled) || enabled;
+        => bool.TryParse(_settings.Get(KeyAutostart), out var enabled) && enabled;
 
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
     public bool IsRunning => _listener is { IsListening: true };

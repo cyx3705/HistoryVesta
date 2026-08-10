@@ -13,6 +13,37 @@ namespace HistoryVulcan.Tests;
 public sealed class McpGatewayPortTests
 {
     [Fact]
+    public void AutostartIsOffUntilExplicitlyEnabled()
+    {
+        using var fixture = Fixture.Create("AutostartDefault");
+
+        // 装配网关不等于监听：没有显式开关时不得自动开端口。
+        Assert.False(fixture.Gateway.AutostartEnabled);
+        var (success, message) = fixture.Gateway.TryAutostart();
+        Assert.True(success);
+        Assert.False(fixture.Gateway.IsRunning);
+        Assert.Contains("mcp.autostart=false", message, StringComparison.Ordinal);
+
+        // 显式打开后才随宿主监听。
+        fixture.Settings.Set(McpGateway.KeyAutostart, "true");
+        Assert.True(fixture.Gateway.AutostartEnabled);
+        Assert.True(fixture.Gateway.TryAutostart().Success);
+        Assert.True(fixture.Gateway.IsRunning);
+    }
+
+    [Fact]
+    public void ExplicitStartOpensThePortWithoutTouchingAutostart()
+    {
+        using var fixture = Fixture.Create("AutostartExplicitStart");
+
+        Assert.True(fixture.Gateway.Start(null).Success);
+        Assert.True(fixture.Gateway.IsRunning);
+        // start 是本次会话的开关，不得偷偷把持久自启动也打开。
+        Assert.False(fixture.Gateway.AutostartEnabled);
+        Assert.Null(fixture.Settings.Get(McpGateway.KeyAutostart));
+    }
+
+    [Fact]
     public void DefaultPortIsDerivedPerApplication()
     {
         using var first = Fixture.Create("PortAppAlpha");
