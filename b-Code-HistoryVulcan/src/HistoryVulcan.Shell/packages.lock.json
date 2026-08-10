@@ -52,7 +52,6 @@
           "OneHistory.HistoryVulcan.Core": "[3.4.1, )"
         }
       }
-    },
-    "net8.0-windows7.0/win-x64": {}
+    }
   }
 }
