@@ -13,14 +13,19 @@ namespace HistoryJanus.Contracts;
 /// </summary>
 public sealed class CommandCatalogContractTests
 {
-    // 组合根注册的 33 条业务命令；第 34 条 janus.status 由模块宿主从
-    // [ModuleCommand] 投影，不在组合根内（QA-001 的 34 = 33 + Status）。
+    // 组合根注册的 31 条业务命令；第 32 条 janus.status 由模块宿主从
+    // [ModuleCommand] 投影，不在组合根内（QA-001 的 32 = 31 + Status）。
     // 3.5.0 全部指令改为 janus.<类>.<方法> 三段式全小写命名。
-    private const int ExpectedCommandCount = 33;
+    // 3.7.0（DEC-008）debug 类整体退役、meta 类并入 proj，33 → 31。
+    private const int ExpectedCommandCount = 31;
+
+    // DEC-008：janus 域内只有这四个类，新增类需同级决策。
+    private static readonly string[] ExpectedClasses =
+        ["github", "gitrule", "history", "proj"];
 
     private static readonly string[] ReadOnlyCommands =
     [
-        "janus.proj.list", "janus.proj.tree", "janus.proj.scan", "janus.proj.config", "janus.meta.list",
+        "janus.proj.list", "janus.proj.tree", "janus.proj.scan", "janus.proj.config", "janus.proj.metas",
         "janus.history.list", "janus.history.show", "janus.history.diff",
         "janus.gitrule.scan", "janus.gitrule.review", "janus.gitrule.list",
         "janus.github.status", "janus.github.accounts", "janus.github.test",
@@ -39,6 +44,37 @@ public sealed class CommandCatalogContractTests
         using var fixture = new CompositionFixture();
 
         Assert.Equal(ExpectedCommandCount, fixture.Registry.All().Count);
+    }
+
+    // DEC-008：类清单是合同的一部分。业务模块不注册诊断/自动化辅助类（如 debug），
+    // 也不为两条命令单开一个类（meta 已并入 proj）。
+    [Fact]
+    public void CommandsUseOnlyTheAgreedClasses()
+    {
+        using var fixture = new CompositionFixture();
+
+        var actual = fixture.Registry.All()
+            .Select(descriptor => descriptor.Name.Split('.')[1])
+            .Distinct()
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(ExpectedClasses, actual);
+    }
+
+    // 三段式无例外：域恒为 janus，类与方法都不留空段。
+    [Fact]
+    public void CommandNamesAlwaysCarryThreeSegments()
+    {
+        using var fixture = new CompositionFixture();
+
+        foreach (var descriptor in fixture.Registry.All())
+        {
+            var segments = descriptor.Name.Split('.');
+            Assert.Equal(3, segments.Length);
+            Assert.Equal("janus", segments[0]);
+            Assert.All(segments, segment => Assert.NotEmpty(segment));
+        }
     }
 
     [Fact]

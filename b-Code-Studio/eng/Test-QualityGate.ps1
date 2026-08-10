@@ -59,6 +59,11 @@ $sourceVersion = [string]$versionProps.Project.PropertyGroup.HistoryJanusVersion
 if ([string]::IsNullOrWhiteSpace($sourceVersion)) {
     $violations.Add("JanusVersion.props does not declare HistoryJanusVersion")
 }
+# 宿主契约版本的唯一真源同样是 JanusVersion.props，脚本不再各自硬编码字面量。
+$requiredVulcan = [string]$versionProps.Project.PropertyGroup.RequiredHistoryVulcanVersion
+if ([string]::IsNullOrWhiteSpace($requiredVulcan)) {
+    $violations.Add("JanusVersion.props does not declare RequiredHistoryVulcanVersion")
+}
 
 $manifestPath = Join-Path $componentRoot 'Module\module.manifest.json'
 $manifest = [IO.File]::ReadAllText($manifestPath) | ConvertFrom-Json
@@ -106,12 +111,12 @@ if (-not (Test-Path -LiteralPath $vulcanManifestPath -PathType Leaf) -or
 }
 else {
     $vulcanManifest = [IO.File]::ReadAllText($vulcanManifestPath) | ConvertFrom-Json
-    if ([string]$vulcanManifest.product -ne 'HistoryVulcan' -or [string]$vulcanManifest.version -ne '3.2.2') {
-        $violations.Add("Janus requires the HistoryVulcan 3.2.2 formal host; found $($vulcanManifest.version)")
+    if ([string]$vulcanManifest.product -ne 'HistoryVulcan' -or [string]$vulcanManifest.version -ne $requiredVulcan) {
+        $violations.Add("Janus requires the HistoryVulcan $requiredVulcan formal host; found $($vulcanManifest.version)")
     }
     $vulcanCore = [Reflection.AssemblyName]::GetAssemblyName($vulcanCorePath)
-    if ($vulcanCore.Version.ToString() -ne '3.2.2.0') {
-        $violations.Add("HistoryVulcan.Core identity is $($vulcanCore.Version), expected 3.2.2.0")
+    if ($vulcanCore.Version.ToString() -ne "$requiredVulcan.0") {
+        $violations.Add("HistoryVulcan.Core identity is $($vulcanCore.Version), expected $requiredVulcan.0")
     }
 }
 
@@ -119,4 +124,4 @@ if ($violations.Count -gt 0) {
     $violations | ForEach-Object { Write-Error $_ }
     exit 1
 }
-Write-Host ("Quality gate passed: suppressions 0; hotspots {0}; version {1}; host HistoryVulcan 3.2.2." -f $hotspots.Count, $sourceVersion)
+Write-Host ("Quality gate passed: suppressions 0; hotspots {0}; version {1}; host HistoryVulcan {2}." -f $hotspots.Count, $sourceVersion, $requiredVulcan)

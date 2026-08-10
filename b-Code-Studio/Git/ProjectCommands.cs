@@ -141,8 +141,12 @@ public static class ProjectCommands
             {
                 var w = worktrees[i];
                 var time = w.LastCommitTime.Length > 0 ? $"  [{w.LastCommitTime}]" : "";
+                var mismatch = w.HasNameMismatch
+                    ? $"  ⚠目录名={w.FolderName}≠分支名(不合规则)"
+                    : "";
                 var state = Directory.Exists(w.WorktreePath) ? "" : "  ⚠目录缺失(疑似断链,可 janus.proj.repair)";
-                sb.Append($"\n  {i + 1,3}. {w.BranchName}{time}  →  {w.WorktreePath}{state}");
+                var tip = w.LastCommitMessage.Length > 0 ? $"  | {w.LastCommitMessage}" : "";
+                sb.Append($"\n  {i + 1,3}. {w.BranchName}{time}{mismatch}{tip}  →  {w.WorktreePath}{state}");
             }
 
             return CommandResult.Ok(sb.ToString(), worktrees);
@@ -569,15 +573,15 @@ public static class ProjectCommands
         Handler = CommandDescriptor.Sync(_ => CommandResult.Ok(projects.DescribeConfig())),
     };
 
-    // ---------------------------------------------------------------- janus.meta.list
+    // ---------------------------------------------------------------- janus.proj.metas
 
     private static CommandDescriptor BuildMetaList(ProjectService projects) => new()
     {
-        Name = "janus.meta.list",
-        CommandClass = "meta",
+        Name = "janus.proj.metas",
+        CommandClass = "proj",
         Summary = "列出全部项目根下以 z/Z 开头的一级元文件夹",
         Readonly = true,
-        Example = "janus.meta.list filter=AD",
+        Example = "janus.proj.metas filter=AD",
         Parameters =
         [
             new ParameterSpec
@@ -631,14 +635,14 @@ public static class ProjectCommands
         },
     };
 
-    // ---------------------------------------------------------------- janus.meta.open
+    // ---------------------------------------------------------------- janus.proj.metaopen
 
     private static CommandDescriptor BuildMetaOpen(ProjectService projects) => new()
     {
-        Name = "janus.meta.open",
-        CommandClass = "meta",
+        Name = "janus.proj.metaopen",
+        CommandClass = "proj",
         Summary = "在系统资源管理器中打开指定元文件夹(path= 或 name=+meta=)",
-        Example = "janus.meta.open name=2026-016-AD学习 meta=z-AD库文件汇总",
+        Example = "janus.proj.metaopen name=2026-016-AD学习 meta=z-AD库文件汇总",
         Parameters =
         [
             new ParameterSpec

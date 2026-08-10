@@ -8,6 +8,7 @@ public partial class GitHubConnectionView : UserControl
 {
     private readonly Func<GitHubConnectionService?> _serviceAccessor;
     private bool _busy;
+    private IReadOnlyList<GitHubDiagnosticStep> _diagnosticSteps = [];
 
     public GitHubConnectionView(Func<GitHubConnectionService?> serviceAccessor)
     {
@@ -25,12 +26,17 @@ public partial class GitHubConnectionView : UserControl
             ConnectionText.Text = $"{overview.Origin.Transport} · {overview.Connection.State} · Git {overview.GitVersion}";
             OriginText.Text = overview.Origin.FetchUrl;
             CheckedText.Text = overview.LastCheckedAt.ToString("yyyy-MM-dd HH:mm:ss");
-            AccountsGrid.ItemsSource = overview.CredentialAccounts;
-            KeysGrid.ItemsSource = overview.Ssh.PublicKeys;
-            DiagnosticsGrid.ItemsSource = overview.Connection.Steps;
+            AccountsBox.ItemsSource = overview.CredentialAccounts;
+            if (overview.CredentialAccounts.Count > 0)
+                AccountsBox.SelectedIndex = 0;
+            KeysBox.ItemsSource = overview.Ssh.PublicKeys;
+            if (overview.Ssh.PublicKeys.Count > 0)
+                KeysBox.SelectedIndex = 0;
+            UpdateKeyFingerprint();
+            _diagnosticSteps = overview.Connection.Steps;
             IdentityName.Text = overview.EffectiveIdentity.Name;
             IdentityEmail.Text = overview.EffectiveIdentity.Email;
-            IdentitySourceText.Text = $"当前来源：{overview.EffectiveIdentity.Source}";
+            IdentitySourceText.Text = overview.EffectiveIdentity.Source;
             FetchUrl.Text = overview.Origin.FetchUrl;
             PushUrl.Text = overview.Origin.PushUrl;
             RepositoryText.Text = $"{overview.Origin.Owner}/{overview.Origin.Repository}";
@@ -46,8 +52,22 @@ public partial class GitHubConnectionView : UserControl
         {
             var connection = await service.TestAsync("auto", 15);
             ConnectionText.Text = $"{connection.Transport} · {connection.State}";
-            DiagnosticsGrid.ItemsSource = connection.Steps;
+            _diagnosticSteps = connection.Steps;
+            Notify($"检测完成：{connection.Transport} · {connection.State}");
         });
+    }
+
+    private void OnDiagnosticsClick(object sender, RoutedEventArgs e)
+    {
+        if (_diagnosticSteps.Count == 0)
+        {
+            Notify("尚无诊断步骤，请先点击检测。");
+            return;
+        }
+
+        var lines = _diagnosticSteps.Select(step =>
+            $"{step.Step}\t{step.State}\t{step.DurationMs}ms\t{step.Detail}");
+        Notify("诊断步骤\n\n" + string.Join("\n", lines));
     }
 
     private async void OnLoginClick(object sender, RoutedEventArgs e)
@@ -67,7 +87,7 @@ public partial class GitHubConnectionView : UserControl
 
     private async void OnLogoutClick(object sender, RoutedEventArgs e)
     {
-        if (AccountsGrid.SelectedItem is not GitCredentialAccount account)
+        if (AccountsBox.SelectedItem is not GitCredentialAccount account)
         {
             Notify("请先选择要注销的 GCM 账号");
             return;
@@ -81,6 +101,16 @@ public partial class GitHubConnectionView : UserControl
             succeeded = true;
         });
         if (succeeded) await RefreshAsync();
+    }
+
+    private void OnKeySelectionChanged(object sender, SelectionChangedEventArgs e)
+        => UpdateKeyFingerprint();
+
+    private void UpdateKeyFingerprint()
+    {
+        KeyFingerprintText.Text = KeysBox.SelectedItem is SshPublicKeyInfo key
+            ? key.Fingerprint
+            : "-";
     }
 
     private string IdentityScopeValue()
@@ -144,7 +174,6 @@ public partial class GitHubConnectionView : UserControl
         if (succeeded) await RefreshAsync();
     }
 
-    // 操作反馈不设页面状态行：错误与预览经对话框承载，与 Janus 3.3.1 收口决定一致
     private async Task RunAsync(Func<GitHubConnectionService, Task> operation)
     {
         if (_busy || _serviceAccessor() is not { } service)

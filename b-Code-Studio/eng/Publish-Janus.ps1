@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$Version,
     [switch]$Publish
 )
@@ -64,6 +64,11 @@ function New-ModulePackage {
 
 $properties = Get-VersionProperties
 $sourceVersion = [string]$properties.HistoryJanusVersion
+# 宿主契约版本与产品版本同源，都来自 JanusVersion.props，不在脚本内硬编码。
+$requiredVulcan = [string]$properties.RequiredHistoryVulcanVersion
+if ([string]::IsNullOrWhiteSpace($requiredVulcan)) {
+    throw "JanusVersion.props does not declare RequiredHistoryVulcanVersion"
+}
 if ([string]::IsNullOrWhiteSpace($Version)) { $Version = $sourceVersion }
 if ($Version -ne $sourceVersion) { throw "JanusVersion.props declares $sourceVersion; requested $Version" }
 
@@ -82,12 +87,12 @@ if (-not (Test-Path -LiteralPath $historyVulcanManifestPath -PathType Leaf) -or
     throw "HistoryVulcan formal snapshot is incomplete: $HistoryVulcanPackageRoot"
 }
 $historyVulcanManifest = [IO.File]::ReadAllText($historyVulcanManifestPath) | ConvertFrom-Json
-if ([string]$historyVulcanManifest.product -ne 'HistoryVulcan' -or [string]$historyVulcanManifest.version -ne '3.2.2') {
-    throw "Janus $Version requires the HistoryVulcan 3.2.2 formal host; found $($historyVulcanManifest.version)"
+if ([string]$historyVulcanManifest.product -ne 'HistoryVulcan' -or [string]$historyVulcanManifest.version -ne $requiredVulcan) {
+    throw "Janus $Version requires the HistoryVulcan $requiredVulcan formal host; found $($historyVulcanManifest.version)"
 }
 $historyVulcanCore = [Reflection.AssemblyName]::GetAssemblyName($historyVulcanCorePath)
-if ($historyVulcanCore.Version.ToString() -ne '3.2.2.0') {
-    throw "HistoryVulcan.Core identity is $($historyVulcanCore.Version), expected 3.2.2.0"
+if ($historyVulcanCore.Version.ToString() -ne "$requiredVulcan.0") {
+    throw "HistoryVulcan.Core identity is $($historyVulcanCore.Version), expected $requiredVulcan.0"
 }
 
 $sourcePaths = @('b-Code-Studio', 'b-Code-Verify', 'b-Office', 'README.md', '.gitattributes', '.gitignore', 'HistoryJanus.sln')

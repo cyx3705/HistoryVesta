@@ -61,8 +61,16 @@
             <ListView.View>
                 <GridView ColumnHeaderContainerStyle="{DynamicResource Shell.GridHeader}">
                     <GridViewColumn Header="#" Width="44" DisplayMemberBinding="{Binding Index}" />
-                    <GridViewColumn Header="分支 / 项目" Width="210" DisplayMemberBinding="{Binding BranchName}" />
-                    <GridViewColumn Header="元文件夹" Width="220">
+                    <GridViewColumn Header="分支 / 项目" Width="210">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding BranchDisplay}"
+                                           ToolTip="{Binding BranchToolTip}"
+                                           TextTrimming="CharacterEllipsis" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="元文件夹" Width="180">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -91,6 +99,15 @@
                                         </Button.Style>
                                     </Button>
                                 </StackPanel>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="最近提交" Width="240">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding CommitDisplay}"
+                                           ToolTip="{Binding LastCommitMessage}"
+                                           TextTrimming="CharacterEllipsis" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

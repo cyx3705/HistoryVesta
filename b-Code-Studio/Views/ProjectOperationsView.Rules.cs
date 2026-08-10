@@ -25,7 +25,6 @@ public partial class ProjectOperationsView
 
         var generation = ++_ruleLoadGeneration;
         RulePanel.IsEnabled = false;
-        RuleTitle.Text = $"Git 文件规则 · {project}";
         CoverageText.Text = $"正在读取 {project} 的格式台账…";
 
         var quotedProject = CommandParser.QuoteArg(project);
@@ -281,7 +280,6 @@ public partial class ProjectOperationsView
         DetachRuleRows();
         _loadedRuleProject = null;
         RulePanel.IsEnabled = false;
-        RuleTitle.Text = "Git 文件规则";
         CoverageText.Text = "格式覆盖：选择项目后自动读取全部文件格式";
         UpdateRuleActions();
     }

@@ -4,7 +4,27 @@ using HistoryVulcan.Core.Storage;
 
 namespace HistoryJanus.Git;
 
-public sealed record WorktreeInfo(string BranchName, string WorktreePath, string LastCommitTime = "");
+public sealed record WorktreeInfo(
+    string BranchName,
+    string WorktreePath,
+    string LastCommitTime = "",
+    string LastCommitMessage = "")
+{
+    /// <summary>工作树目录名（路径权威侧的文件夹名，可能与分支名不一致）。</summary>
+    public string FolderName
+    {
+        get
+        {
+            var trimmed = WorktreePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            return Path.GetFileName(trimmed);
+        }
+    }
+
+    /// <summary>分支名是唯一身份权威；目录名必须与之相同，否则视为不合规则。</summary>
+    public bool HasNameMismatch
+        => FolderName.Length > 0
+           && !FolderName.Equals(BranchName, StringComparison.OrdinalIgnoreCase);
+}
 
 /// <summary>某项目根下以 z/Z 开头的一级 Meta 文件夹。</summary>
 public sealed record MetaFolderInfo(
@@ -159,20 +179,33 @@ public sealed partial class ProjectService
                         && !w.WorktreePath.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        // 最后提交时间由单次 for-each-ref 补全；失败不影响主流程。
+        // 最后提交时间与主题由单次 for-each-ref 补全；失败不影响主流程。
         var times = await GitRunner.RunAsync(BareRepo,
-            ["for-each-ref", "--format=%(refname:short)|%(committerdate:iso-local)", "refs/heads/"]);
+            ["for-each-ref", "--format=%(refname:short)|%(committerdate:iso-local)|%(subject)", "refs/heads/"]);
         if (times.Success)
         {
-            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var map = new Dictionary<string, (string Time, string Subject)>(StringComparer.OrdinalIgnoreCase);
             foreach (var line in times.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
             {
-                var parts = line.Split('|', 2);
-                if (parts.Length == 2)
-                    map[parts[0].Trim()] = parts[1].Trim();
+                var parts = line.Split('|', 3);
+                if (parts.Length >= 2)
+                {
+                    map[parts[0].Trim()] = (
+                        parts[1].Trim(),
+                        parts.Length >= 3 ? parts[2].Trim() : "");
+                }
             }
 
-            list = list.Select(w => w with { LastCommitTime = map.GetValueOrDefault(w.BranchName, "") }).ToList();
+            list = list.Select(w =>
+            {
+                if (!map.TryGetValue(w.BranchName, out var tip))
+                    return w;
+                return w with
+                {
+                    LastCommitTime = tip.Time,
+                    LastCommitMessage = tip.Subject,
+                };
+            }).ToList();
         }
 
         return (result, list);

@@ -33,23 +33,20 @@ if (selected != null
     return 2;
 }
 
-var failed = 0;
-foreach (var suite in suites)
-{
-    if (selected != null && !suite.Name.Equals(selected, StringComparison.OrdinalIgnoreCase))
-        continue;
+// 套件之间不共享可变状态(各自建 GUID 临时仓库),因此并行执行;
+// 调度、具名超时与耗时汇报都由 SmokeRunner 承担,本文件只保留套件清单。
+var pending = suites
+    .Where(suite => selected == null || suite.Name.Equals(selected, StringComparison.OrdinalIgnoreCase))
+    .ToArray();
 
-    try
-    {
-        await suite.Run(args);
-        Console.WriteLine($"{suite.Name}Smoke: PASS");
-    }
-    catch (Exception ex)
-    {
-        Console.Error.WriteLine(ex);
-        Console.Error.WriteLine($"{suite.Name}Smoke: FAIL");
-        failed++;
-    }
+var outcomes = await SmokeRunner.RunAllAsync(pending, args);
+var failed = SmokeRunner.Report(outcomes);
+
+if (SmokeRunner.AnyTimedOut(outcomes))
+{
+    // 挂住的套件无法回收,直接结束进程,避免整轮卡在退出等待上。
+    Console.Error.Flush();
+    Environment.Exit(1);
 }
 
 return failed == 0 ? 0 : 1;

@@ -25,18 +25,23 @@ public static class OverviewMetaMerge
         return projects.Select((item, index) => new OverviewView.WorktreeRow(
             index + 1,
             item.BranchName,
+            item.WorktreePath,
+            item.LastCommitMessage,
+            item.HasNameMismatch,
+            item.FolderName,
             metasByProject.GetValueOrDefault(item.BranchName) ?? [])).ToList();
     }
 
-    /// <summary>关键字同时匹配项目名、Meta 名和 Meta 路径(包含匹配,忽略大小写)。</summary>
+    /// <summary>关键字同时匹配项目名、Meta 名、Meta 路径和最近提交描述。</summary>
     public static bool MatchesKeyword(OverviewView.WorktreeRow row, string keyword)
         => row.BranchName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+           row.LastCommitMessage.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+           row.FolderName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
            row.MetaFolders.Any(meta =>
                meta.MetaName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
                meta.FullPath.Contains(keyword, StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>点击 Meta 名执行既有的 janus.meta.open 命令,不改变项目选择。</summary>
+    /// <summary>点击 Meta 名用登记路径打开，避免分支名≠目录名时误拼 WorktreeRoot。</summary>
     public static string BuildOpenCommand(MetaFolderInfo meta)
-        => $"janus.meta.open name={CommandParser.QuoteArg(meta.ProjectName)} " +
-           $"meta={CommandParser.QuoteArg(meta.MetaName)}";
+        => $"janus.proj.metaopen path={CommandParser.QuoteArg(meta.FullPath)}";
 }

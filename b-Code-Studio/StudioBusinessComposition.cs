@@ -79,7 +79,8 @@ public static class StudioBusinessCompositionFactory
         BranchHistoryCommands.RegisterAll(registry, branchHistory, history, commandSource);
         GitRuleCommands.RegisterAll(registry, gitRules, formatInventory, projects, commandSource);
         GitHubCommands.RegisterAll(registry, gitHub, commandSource);
-        DebugCommands.RegisterAll(registry, log, commandSource);
+        // 业务模块不注册诊断或自动化辅助指令：日志承压由宿主 vulcan.log.flood 承担，
+        // 不在此重复实现。
 
         return new StudioBusinessComposition(
             projects,

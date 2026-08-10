@@ -62,7 +62,7 @@ if (host.Modules.Count != 1)
 
 var meta = host.Modules[0];
 if (!meta.ModuleName.Equals("HistoryJanus", StringComparison.Ordinal)
-    || !meta.Version.Equals("3.5.1", StringComparison.Ordinal)
+    || !meta.Version.Equals("3.6.0", StringComparison.Ordinal)
     || !meta.Ui
     || meta.CommandCount < 29)
 {
@@ -85,8 +85,8 @@ var businessCommands = new[]
 {
     "janus.proj.list",
     "janus.proj.tree",
-    "janus.meta.list",
-    "janus.meta.open",
+    "janus.proj.metas",
+    "janus.proj.metaopen",
     "janus.proj.commit",
     "janus.proj.push",
     "janus.history.list",
@@ -108,7 +108,7 @@ foreach (var commandName in businessCommands)
     }
 }
 var result = await bus.ExecuteAsync("janus.status", "ModuleSmoke");
-if (!result.Success || !result.Message.Contains("3.5.1", StringComparison.Ordinal))
+if (!result.Success || !result.Message.Contains("3.6.0", StringComparison.Ordinal))
     throw new InvalidOperationException($"module command failed: {result.Message}");
 
 var projectList = await bus.ExecuteAsync("janus.proj.list", "ModuleSmoke");
@@ -124,7 +124,7 @@ if (!expectedWindows.SequenceEqual(actualWindows, StringComparer.Ordinal))
 }
 
 var windowsById = shellUi.Descriptors.ToDictionary(item => item.Id, StringComparer.Ordinal);
-AssertPlacement(windowsById["overview"], DockSide.Left, 0.20);
+AssertOverviewCenterTool(windowsById["overview"]);
 AssertPlacement(windowsById["projops"], DockSide.Right, 0.28);
 AssertPlacement(windowsById["github"], DockSide.Right, 0.28);
 if (!windowsById["github"].Title.Equals("github", StringComparison.Ordinal))
@@ -260,6 +260,16 @@ static IReadOnlyList<string> ConstructPages(
     if (failure != null)
         throw new InvalidOperationException("page construction failed", failure);
     return pageTypes ?? throw new InvalidOperationException("page construction produced no result");
+}
+
+static void AssertOverviewCenterTool(ToolWindowDescriptor descriptor)
+{
+    if (descriptor.DefaultSide != DockSide.Tab
+        || !string.Equals(descriptor.DefaultTabTarget, StandardWindowIds.Mcp, StringComparison.Ordinal))
+    {
+        throw new InvalidOperationException(
+            $"overview must be a center tool tab targeting mcp, got {descriptor.DefaultSide} target={descriptor.DefaultTabTarget}");
+    }
 }
 
 static void AssertPlacement(ToolWindowDescriptor descriptor, DockSide side, double ratio)

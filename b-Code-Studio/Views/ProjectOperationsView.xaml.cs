@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using HistoryVulcan.Core.Commands;
 using HistoryJanus.Git;
+using HistoryJanus.GitHub;
 
 namespace HistoryJanus.Views;
 
@@ -22,12 +23,14 @@ public partial class ProjectOperationsView : UserControl
     private int _ruleLoadGeneration;
 
     public ProjectOperationsView(Func<CommandBus?> busAccessor, ProjectSelectionState selection,
-        Func<string, bool> isProtected)
+        Func<string, bool> isProtected, Func<GitHubConnectionService?> gitHubAccessor)
     {
         InitializeComponent();
         _busAccessor = busAccessor;
         _selection = selection;
         HistoryPanel.Content = new BranchHistoryView(busAccessor, selection, isProtected);
+        // GitHub 连接治理是本页第三个分段，不是宿主级独立窗口。
+        GitHubPanel.Content = new GitHubConnectionView(gitHubAccessor);
         SelectedCommitMessageBox.Text = "一键推送更新";
         RuleGrid.ItemsSource = _rules;
         InitializeRuleAutoSave();
@@ -103,14 +106,18 @@ public partial class ProjectOperationsView : UserControl
     private void OnOperationModeChanged(object sender, System.Windows.RoutedEventArgs e)
         => UpdateProjectActions();
 
+    // 三段同行切换，恰有一个面板可见。
     private void OnBottomPageChanged(object sender, System.Windows.RoutedEventArgs e)
     {
-        if (RulePanel == null || HistoryPanel == null)
+        if (RulePanel == null || HistoryPanel == null || GitHubPanel == null)
             return;
-        var showRules = RulesPageButton.IsChecked == true;
-        RulePanel.Visibility = showRules ? Visibility.Visible : Visibility.Collapsed;
-        HistoryPanel.Visibility = showRules ? Visibility.Collapsed : Visibility.Visible;
+        RulePanel.Visibility = Visible(RulesPageButton);
+        HistoryPanel.Visibility = Visible(HistoryPageButton);
+        GitHubPanel.Visibility = Visible(GitHubPageButton);
     }
+
+    private static Visibility Visible(System.Windows.Controls.Primitives.ToggleButton button)
+        => button.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
 
     private async void OnCreateClick(object sender, System.Windows.RoutedEventArgs e)
     {

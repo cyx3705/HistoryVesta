@@ -61,7 +61,8 @@ internal static class ProjectOperationsSuite
             }),
         });
         var bus = new CommandBus(registry, new MemoryLog());
-        var view = new ProjectOperationsView(() => bus, new ProjectSelectionState(), _ => false);
+        // DEC-008：GitHub 面板并入本页；规则用例不触达 GitHub 服务，传空访问器即可。
+        var view = new ProjectOperationsView(() => bus, new ProjectSelectionState(), _ => false, () => null);
         var rules = (System.Collections.ObjectModel.ObservableCollection<ProjectOperationsView.RuleEditRow>)
             typeof(ProjectOperationsView).GetField("_rules", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .GetValue(view)!;

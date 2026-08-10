@@ -8,191 +8,125 @@
             <Setter Property="Foreground" Value="{DynamicResource Shell.Brush.TextSecondary}" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
-        <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="{DynamicResource Shell.Brush.SurfaceAlt}" />
-            <Setter Property="Foreground" Value="{DynamicResource Shell.Brush.TextSecondary}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource Shell.Brush.Hairline}" />
-            <Setter Property="BorderThickness" Value="0,0,0,1" />
-            <Setter Property="Padding" Value="6,4" />
-        </Style>
-        <Style TargetType="DataGridRow">
-            <Setter Property="Background" Value="{DynamicResource Shell.Brush.Surface}" />
-            <Setter Property="Foreground" Value="{DynamicResource Shell.Brush.TextPrimary}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource Shell.Brush.Hairline}" />
-            <Style.Triggers>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource Shell.Brush.AccentSoft}" />
-                    <Setter Property="Foreground" Value="{DynamicResource Shell.Brush.TextPrimary}" />
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-        <Style TargetType="DataGridCell">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{DynamicResource Shell.Brush.TextPrimary}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource Shell.Brush.Hairline}" />
-        </Style>
     </UserControl.Resources>
-    <DockPanel Margin="8">
-        <Grid DockPanel.Dock="Top">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="服务器 GitHub 连接" FontSize="13" FontWeight="SemiBold"
-                       VerticalAlignment="Center" />
-            <TextBlock x:Name="ConnectionText" Grid.Column="1" Margin="10,0,0,0"
-                       VerticalAlignment="Center"
-                       Foreground="{DynamicResource Shell.Brush.TextSecondary}"
-                       TextTrimming="CharacterEllipsis" />
-            <WrapPanel Grid.Column="2">
-                <Button Content="检测" Click="OnTestClick" ToolTip="只读检测当前 origin 连接" />
-                <Button Content="刷新" Margin="8,0,0,0" Click="OnRefreshClick" />
-            </WrapPanel>
-        </Grid>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8"
+                  BorderBrush="{DynamicResource Shell.Brush.Hairline}"
+                  BorderThickness="0">
+        <StackPanel Background="{DynamicResource Shell.Brush.Surface}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="服务器 GitHub 连接" FontSize="13" FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
+                <TextBlock x:Name="ConnectionText" Grid.Column="1" Margin="10,0,0,0"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource Shell.Brush.TextSecondary}"
+                           TextTrimming="CharacterEllipsis" />
+                <WrapPanel Grid.Column="2">
+                    <Button Content="检测" Click="OnTestClick" ToolTip="只读检测当前 origin 连接" />
+                    <Button Content="诊断" Margin="8,0,0,0" Click="OnDiagnosticsClick"
+                            ToolTip="弹出最近一次检测步骤" />
+                    <Button Content="刷新" Margin="8,0,0,0" Click="OnRefreshClick" />
+                </WrapPanel>
+            </Grid>
 
-        <Grid DockPanel.Dock="Top" Margin="0,8,0,6">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="70" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <TextBlock Text="origin" Style="{StaticResource FieldLabel}" />
-            <TextBlock x:Name="OriginText" Grid.Column="1" Margin="8,0,0,0"
-                       TextTrimming="CharacterEllipsis" />
-            <TextBlock Grid.Row="1" Text="最后检测" Style="{StaticResource FieldLabel}" />
-            <TextBlock x:Name="CheckedText" Grid.Row="1" Grid.Column="1" Margin="8,2,0,0"
-                       Foreground="{DynamicResource Shell.Brush.TextSecondary}" />
-        </Grid>
+            <Grid Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="90" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-        <TabControl>
-            <TabItem Header="凭据与 SSH">
-                <Grid Margin="8">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="130" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <WrapPanel>
-                        <TextBlock Text="GitHub HTTPS 凭据账号" FontWeight="SemiBold"
-                                   VerticalAlignment="Center" />
-                        <Button Content="登录" Margin="12,0,0,0" Click="OnLoginClick" />
+                <TextBlock Text="origin" Style="{StaticResource FieldLabel}" />
+                <TextBlock x:Name="OriginText" Grid.Column="1" Margin="8,0,0,6"
+                           TextTrimming="CharacterEllipsis" />
+
+                <TextBlock Grid.Row="1" Text="最后检测" Style="{StaticResource FieldLabel}" />
+                <TextBlock x:Name="CheckedText" Grid.Row="1" Grid.Column="1" Margin="8,0,0,10"
+                           Foreground="{DynamicResource Shell.Brush.TextSecondary}" />
+
+                <TextBlock Grid.Row="2" Text="GCM 账号" Style="{StaticResource FieldLabel}" />
+                <DockPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,6">
+                    <WrapPanel DockPanel.Dock="Right" Margin="8,0,0,0">
+                        <Button Content="登录" Click="OnLoginClick" />
                         <Button Content="注销所选" Margin="8,0,0,0" Click="OnLogoutClick" />
                     </WrapPanel>
-                    <DataGrid x:Name="AccountsGrid" Grid.Row="1" Margin="0,6,0,8"
-                              Background="{DynamicResource Shell.Brush.Surface}"
-                              Foreground="{DynamicResource Shell.Brush.TextPrimary}"
-                              BorderBrush="{DynamicResource Shell.Brush.Hairline}"
-                              RowBackground="{DynamicResource Shell.Brush.Surface}"
-                              AlternatingRowBackground="{DynamicResource Shell.Brush.SurfaceAlt}"
-                              HorizontalGridLinesBrush="{DynamicResource Shell.Brush.Hairline}"
-                              AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                              SelectionMode="Single" SelectionUnit="FullRow"
-                              HeadersVisibility="Column" GridLinesVisibility="Horizontal">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="GCM 账号" Binding="{Binding Account}" Width="*" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                    <TextBlock Grid.Row="2" Text="SSH 公钥" FontWeight="SemiBold" />
-                    <DataGrid x:Name="KeysGrid" Grid.Row="3" Margin="0,6,0,0"
-                              Background="{DynamicResource Shell.Brush.Surface}"
-                              Foreground="{DynamicResource Shell.Brush.TextPrimary}"
-                              BorderBrush="{DynamicResource Shell.Brush.Hairline}"
-                              RowBackground="{DynamicResource Shell.Brush.Surface}"
-                              AlternatingRowBackground="{DynamicResource Shell.Brush.SurfaceAlt}"
-                              HorizontalGridLinesBrush="{DynamicResource Shell.Brush.Hairline}"
-                              AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                              SelectionMode="Single" SelectionUnit="FullRow"
-                              HeadersVisibility="Column" GridLinesVisibility="Horizontal">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="文件" Binding="{Binding FileName}" Width="2*" />
-                            <DataGridTextColumn Header="算法" Binding="{Binding Algorithm}" Width="*" />
-                            <DataGridTextColumn Header="SHA-256 指纹" Binding="{Binding Fingerprint}" Width="3*" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Grid>
-            </TabItem>
+                    <ComboBox x:Name="AccountsBox" DisplayMemberPath="Account" />
+                </DockPanel>
 
-            <TabItem Header="提交身份">
-                <Grid Margin="8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="90" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <TextBlock Text="user.name" Style="{StaticResource FieldLabel}" />
-                    <TextBox x:Name="IdentityName" Grid.Column="1" Margin="0,0,0,6" />
-                    <TextBlock Grid.Row="1" Text="user.email" Style="{StaticResource FieldLabel}" />
-                    <TextBox x:Name="IdentityEmail" Grid.Row="1" Grid.Column="1" Margin="0,0,0,6" />
-                    <TextBlock Grid.Row="2" Text="作用域" Style="{StaticResource FieldLabel}" />
-                    <ComboBox x:Name="IdentityScope" Grid.Row="2" Grid.Column="1"
-                              SelectedIndex="0" Margin="0,0,0,10">
+                <TextBlock Grid.Row="3" Text="SSH 公钥" Style="{StaticResource FieldLabel}" />
+                <ComboBox x:Name="KeysBox" Grid.Row="3" Grid.Column="1" Margin="0,0,0,10"
+                          SelectionChanged="OnKeySelectionChanged">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock>
+                                <Run Text="{Binding FileName, Mode=OneWay}" />
+                                <Run Text=" · " />
+                                <Run Text="{Binding Algorithm, Mode=OneWay}" />
+                            </TextBlock>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <TextBlock Grid.Row="4" Text="user.name" Style="{StaticResource FieldLabel}" />
+                <TextBox x:Name="IdentityName" Grid.Row="4" Grid.Column="1" Margin="0,0,0,6" />
+
+                <TextBlock Grid.Row="5" Text="user.email" Style="{StaticResource FieldLabel}" />
+                <TextBox x:Name="IdentityEmail" Grid.Row="5" Grid.Column="1" Margin="0,0,0,6" />
+
+                <TextBlock Grid.Row="6" Text="身份作用域" Style="{StaticResource FieldLabel}" />
+                <DockPanel Grid.Row="6" Grid.Column="1" Margin="0,0,0,10">
+                    <WrapPanel DockPanel.Dock="Right" Margin="8,0,0,0">
+                        <Button Content="预览身份" Click="OnIdentityPreviewClick" />
+                        <Button Content="应用身份" Margin="8,0,0,0" Click="OnIdentityApplyClick" />
+                    </WrapPanel>
+                    <ComboBox x:Name="IdentityScope" SelectedIndex="0">
                         <ComboBoxItem Content="repository" />
                         <ComboBoxItem Content="global" />
                     </ComboBox>
-                    <WrapPanel Grid.Row="3" Grid.Column="1">
-                        <Button Content="预览" Click="OnIdentityPreviewClick" />
-                        <Button Content="应用" Margin="8,0,0,0" Click="OnIdentityApplyClick" />
-                        <TextBlock x:Name="IdentitySourceText" Margin="14,0,0,0"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource Shell.Brush.TextSecondary}" />
-                    </WrapPanel>
-                </Grid>
-            </TabItem>
+                </DockPanel>
 
-            <TabItem Header="仓库远端">
-                <Grid Margin="8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="90" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <TextBlock Text="Fetch URL" Style="{StaticResource FieldLabel}" />
-                    <TextBox x:Name="FetchUrl" Grid.Column="1" Margin="0,0,0,6" />
-                    <TextBlock Grid.Row="1" Text="Push URL" Style="{StaticResource FieldLabel}" />
-                    <TextBox x:Name="PushUrl" Grid.Row="1" Grid.Column="1" Margin="0,0,0,10" />
-                    <WrapPanel Grid.Row="2" Grid.Column="1">
-                        <Button Content="预览" Click="OnRemotePreviewClick" />
-                        <Button Content="应用" Margin="8,0,0,0" Click="OnRemoteApplyClick" />
-                        <TextBlock x:Name="RepositoryText" Margin="14,0,0,0"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource Shell.Brush.TextSecondary}" />
-                    </WrapPanel>
-                </Grid>
-            </TabItem>
+                <TextBlock Grid.Row="7" Text="身份来源" Style="{StaticResource FieldLabel}" />
+                <TextBlock x:Name="IdentitySourceText" Grid.Row="7" Grid.Column="1" Margin="8,0,0,10"
+                           Foreground="{DynamicResource Shell.Brush.TextSecondary}" />
 
-            <TabItem Header="诊断">
-                <DataGrid x:Name="DiagnosticsGrid" Margin="8"
-                          Background="{DynamicResource Shell.Brush.Surface}"
-                          Foreground="{DynamicResource Shell.Brush.TextPrimary}"
-                          BorderBrush="{DynamicResource Shell.Brush.Hairline}"
-                          RowBackground="{DynamicResource Shell.Brush.Surface}"
-                          AlternatingRowBackground="{DynamicResource Shell.Brush.SurfaceAlt}"
-                          HorizontalGridLinesBrush="{DynamicResource Shell.Brush.Hairline}"
-                          AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                          SelectionMode="Single" SelectionUnit="FullRow"
-                          HeadersVisibility="Column" GridLinesVisibility="Horizontal">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="步骤" Binding="{Binding Step}" Width="*" />
-                        <DataGridTextColumn Header="状态" Binding="{Binding State}" Width="*" />
-                        <DataGridTextColumn Header="耗时(ms)" Binding="{Binding DurationMs}" Width="*" />
-                        <DataGridTextColumn Header="脱敏信息" Binding="{Binding Detail}" Width="4*" />
-                    </DataGrid.Columns>
-                </DataGrid>
-            </TabItem>
-        </TabControl>
-    </DockPanel>
+                <TextBlock Grid.Row="8" Text="Fetch URL" Style="{StaticResource FieldLabel}" />
+                <TextBox x:Name="FetchUrl" Grid.Row="8" Grid.Column="1" Margin="0,0,0,6" />
+
+                <TextBlock Grid.Row="9" Text="Push URL" Style="{StaticResource FieldLabel}" />
+                <TextBox x:Name="PushUrl" Grid.Row="9" Grid.Column="1" Margin="0,0,0,6" />
+
+                <TextBlock Grid.Row="10" Text="仓库" Style="{StaticResource FieldLabel}" />
+                <DockPanel Grid.Row="10" Grid.Column="1" Margin="0,0,0,0">
+                    <WrapPanel DockPanel.Dock="Right" Margin="8,0,0,0">
+                        <Button Content="预览远端" Click="OnRemotePreviewClick" />
+                        <Button Content="应用远端" Margin="8,0,0,0" Click="OnRemoteApplyClick" />
+                    </WrapPanel>
+                    <TextBlock x:Name="RepositoryText" VerticalAlignment="Center"
+                               Foreground="{DynamicResource Shell.Brush.TextSecondary}" />
+                </DockPanel>
+
+                <TextBlock Grid.Row="11" Text="公钥指纹" Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
+                <TextBlock x:Name="KeyFingerprintText" Grid.Row="11" Grid.Column="1" Margin="8,10,0,0"
+                           Foreground="{DynamicResource Shell.Brush.TextSecondary}"
+                           TextWrapping="Wrap" />
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

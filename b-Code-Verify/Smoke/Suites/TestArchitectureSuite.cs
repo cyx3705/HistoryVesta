@@ -77,6 +77,18 @@ internal static class TestArchitectureSuite
         True(!Regex.IsMatch(program, "\\\"V\\d", RegexOptions.CultureInvariant),
             "test runner exposes no version-named suite");
 
+        // 执行效率与挂死可见性是合同要求(QA-005/QA-006)，不是实现细节：
+        // 运行器必须并行调度并对每个套件设墙钟上限，否则整轮会退回串行或静默挂住。
+        var runner = File.ReadAllText(Path.Combine(smokeRoot, "SmokeRunner.cs"));
+        Contains(runner, "Task.WhenAll",
+            "test runner schedules independent suites concurrently");
+        Contains(runner, "SuiteTimeout",
+            "test runner bounds every suite with a wall-clock timeout");
+        Contains(runner, "TIMEOUT",
+            "test runner names the suite that hangs instead of stalling silently");
+        True(!Regex.IsMatch(program, @"foreach\s*\([^)]*\bsuites\b", RegexOptions.CultureInvariant),
+            "test runner does not fall back to a sequential suite loop");
+
         var project = XDocument.Load(Path.Combine(smokeRoot, "Smoke.csproj"));
         Equal(1, project.Descendants("ProjectReference").Count(),
             "test architecture uses the single module product reference");
@@ -209,11 +221,16 @@ internal static class TestArchitectureSuite
         var windowIds = Regex.Matches(module, @"Id = ""(?<id>[a-z]+)""", RegexOptions.CultureInvariant)
             .Select(match => match.Groups["id"].Value)
             .ToArray();
-        True(windowIds.SequenceEqual(new[] { "overview", "projops", "github" }),
-            "page consolidation: module registers exactly overview, projops and github");
+        // DEC-008：github 窗口退役，GitHub 面板是 projops 的第三个分段。
+        True(windowIds.SequenceEqual(new[] { "overview", "projops" }),
+            "page consolidation: module registers exactly overview and projops");
+        Contains(
+            File.ReadAllText(Path.Combine(RepoRoot, "Views", "ProjectOperationsView.xaml.cs")),
+            "GitHubPanel.Content = new GitHubConnectionView",
+            "page consolidation: GitHub governance is embedded in the project operations page");
 
         var commands = File.ReadAllText(Path.Combine(RepoRoot, "Git", "ProjectCommands.cs"));
-        foreach (var retained in new[] { "\"janus.proj.tree\"", "\"janus.meta.list\"", "\"janus.meta.open\"" })
+        foreach (var retained in new[] { "\"janus.proj.tree\"", "\"janus.proj.metas\"", "\"janus.proj.metaopen\"" })
         {
             Contains(commands, retained,
                 $"merged overview: background command stays registered: {retained}");

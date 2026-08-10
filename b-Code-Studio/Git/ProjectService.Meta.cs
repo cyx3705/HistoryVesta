@@ -75,7 +75,10 @@ public sealed partial class ProjectService
         }
         else if (!string.IsNullOrWhiteSpace(projectName) && !string.IsNullOrWhiteSpace(metaName))
         {
-            target = Path.Combine(WorktreeRoot, projectName.Trim(), metaName.Trim());
+            var (resolved, resolveMessage, worktree) = await ResolveWorktreeAsync(projectName.Trim());
+            if (!resolved || worktree == null)
+                return (false, resolveMessage);
+            target = Path.Combine(worktree.WorktreePath, metaName.Trim());
         }
         else
         {

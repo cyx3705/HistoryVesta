@@ -32,11 +32,10 @@ public sealed partial class ProjectService
         CancellationToken cancellation = default)
     {
         name = name.Trim();
-        var worktreePath = Path.Combine(WorktreeRoot, name);
-        if (!Directory.Exists(worktreePath))
-            return new CommitReport(CommitOutcome.Failed, $"工作树目录不存在: {worktreePath}",
-                Target: target);
-        return await CommitWorktreeAsync(new WorktreeInfo(name, worktreePath), message, progress,
+        var (resolved, resolveMessage, worktree) = await ResolveWorktreeAsync(name);
+        if (!resolved || worktree == null)
+            return new CommitReport(CommitOutcome.Failed, resolveMessage, Target: target);
+        return await CommitWorktreeAsync(worktree, message, progress,
             target, submoduleMessage, cancellation);
     }
 
@@ -333,9 +332,10 @@ public sealed partial class ProjectService
         string name, RepositoryTarget target, CancellationToken cancellation = default)
     {
         name = name.Trim();
-        var worktreePath = Path.Combine(WorktreeRoot, name);
-        if (!Directory.Exists(worktreePath))
-            return new PushReport(false, $"工作树目录不存在: {worktreePath}", Target: target);
+        var (resolved, resolveMessage, worktree) = await ResolveWorktreeAsync(name);
+        if (!resolved || worktree == null)
+            return new PushReport(false, resolveMessage, Target: target);
+        var worktreePath = worktree.WorktreePath;
 
         var entries = new List<SubmoduleOperationEntry>();
         var pendingParentCount = 0;

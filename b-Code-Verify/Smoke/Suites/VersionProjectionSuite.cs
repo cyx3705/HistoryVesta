@@ -192,8 +192,12 @@ internal static class VersionProjectionSuite
             "publish governance: module package uses an exact file-set gate");
         Contains(publish, "ModuleSmoke",
             "publish governance: UI and headless module lifecycle are release gates");
-        Contains(publish, "3.2.2",
-            "publish governance: Janus requires the HistoryVulcan 3.2.2 host contract");
+        // 宿主契约版本的唯一真源是 JanusVersion.props；这里断言脚本从那里读取，
+        // 而不是断言某个具体版本字面量——否则每次宿主升级都要同时改脚本和用例。
+        Contains(publish, "RequiredHistoryVulcanVersion",
+            "publish governance: the host contract version comes from JanusVersion.props");
+        True(!Regex.IsMatch(publish, @"'\d+\.\d+\.\d+(\.\d+)?'", RegexOptions.CultureInvariant),
+            "publish governance: no hard-coded host version literal remains");
         Equal(1, Regex.Matches(
                 publish,
                 @"^\s*\$PackageRoot\s*=",

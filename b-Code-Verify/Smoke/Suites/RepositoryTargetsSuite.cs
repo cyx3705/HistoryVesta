@@ -154,12 +154,12 @@ internal static class RepositoryTargetsSuite
                 True(target.Default == null && target.AllowedValues is ["parent", "submodules", "both"],
                     $"{commandName} target enum schema");
             }
-            True(registry.TryGet("janus.meta.list", out var metaListDescriptor) && metaListDescriptor.Readonly,
-                "janus.meta.list stays a readonly module command");
-            True(registry.TryGet("janus.meta.open", out var metaOpenDescriptor)
+            True(registry.TryGet("janus.proj.metas", out var metaListDescriptor) && metaListDescriptor.Readonly,
+                "janus.proj.metas stays a readonly module command");
+            True(registry.TryGet("janus.proj.metaopen", out var metaOpenDescriptor)
                  && metaOpenDescriptor.Parameters.Any(parameter => parameter.Name == "name")
                  && metaOpenDescriptor.Parameters.Any(parameter => parameter.Name == "meta"),
-                "janus.meta.open keeps its name/meta parameters");
+                "janus.proj.metaopen keeps its name/meta parameters");
 
             await VerifyOverviewMetaMerge(service, parent, noChild);
             VerifyXamlLayout();
@@ -196,23 +196,31 @@ internal static class RepositoryTargetsSuite
         var bottomSegments = project.Descendants().Where(element =>
                 element.Name.LocalName == "RadioButton"
                 && element.Attribute("GroupName")?.Value == "BottomPage").ToArray();
-        Equal(2, bottomSegments.Length, "bottom switcher has two same-level segments");
+        // DEC-008：GitHub 并入同一行分段，宿主不再注册独立 github 窗口。
+        Equal(3, bottomSegments.Length, "bottom switcher has three same-level segments");
         True(bottomSegments.Select(segment => segment.Attribute("Content")?.Value)
-                .SequenceEqual(["Git 文件规则", "分支历史"]),
-            "bottom switcher toggles Git file rules and embedded branch history");
+                .SequenceEqual(["Git 文件规则", "分支历史", "GitHub"]),
+            "bottom switcher toggles Git file rules, embedded branch history and GitHub");
         Equal("True", bottomSegments[0].Attribute("IsChecked")?.Value,
             "bottom switcher defaults to the Git file rules page");
         True(bottomSegments.All(segment => segment.Attribute("MinHeight")?.Value == "26"),
             "bottom switcher stays a slim bar instead of reusing the 46px segment height");
-        var historyPanel = project.Descendants().Single(element =>
-            element.Attribute(x + "Name")?.Value == "HistoryPanel");
-        Equal("ContentControl", historyPanel.Name.LocalName,
-            "history panel is a content host for the embedded component");
-        Equal("Collapsed", historyPanel.Attribute("Visibility")?.Value,
-            "history panel starts collapsed behind the rules page");
+        foreach (var panelName in new[] { "HistoryPanel", "GitHubPanel" })
+        {
+            var panel = project.Descendants().Single(element =>
+                element.Attribute(x + "Name")?.Value == panelName);
+            Equal("ContentControl", panel.Name.LocalName,
+                $"{panelName} is a content host for the embedded component");
+            Equal("Collapsed", panel.Attribute("Visibility")?.Value,
+                $"{panelName} starts collapsed behind the rules page");
+        }
         True(project.Descendants().Any(element =>
                 element.Attribute(x + "Name")?.Value == "RulePanel"),
             "rules panel stays as the default bottom page");
+        // DEC-008：分段按钮与选中项标题已给出面板名和当前项目，规则面板不再重复标题行。
+        True(!project.Descendants().Any(element =>
+                element.Attribute(x + "Name")?.Value == "RuleTitle"),
+            "rules panel carries no redundant title row");
         True(!overview.ToString().Contains("CommitAll", StringComparison.Ordinal)
              && !overview.ToString().Contains("PushAll", StringComparison.Ordinal)
              && !overview.ToString().Contains("Submodule", StringComparison.OrdinalIgnoreCase),
@@ -220,10 +228,10 @@ internal static class RepositoryTargetsSuite
         var overviewColumns = overview.Descendants()
             .Where(element => element.Name.LocalName == "GridViewColumn")
             .ToArray();
-        Equal(3, overviewColumns.Length, "overview is a compact three-column navigator");
+        Equal(4, overviewColumns.Length, "overview is a four-column navigator");
         True(overviewColumns.Select(column => column.Attribute("Header")?.Value)
-                .SequenceEqual(["#", "分支 / 项目", "元文件夹"]),
-            "overview columns are number, branch/project then meta folders");
+                .SequenceEqual(["#", "分支 / 项目", "元文件夹", "最近提交"]),
+            "overview columns are number, branch/project, meta folders, then latest commit");
         var overviewMarkup = overview.ToString();
         foreach (var token in new[]
                  {
@@ -238,7 +246,10 @@ internal static class RepositoryTargetsSuite
         True(!overviewSource.Contains("LastCommitTime", StringComparison.Ordinal)
              && !overviewSource.Contains("WorktreePath", StringComparison.Ordinal)
              && !overviewSource.Contains("OnOpenRootClick", StringComparison.Ordinal),
-            "overview removes commit time, path and root-open entry");
+            "overview removes raw commit time, path and root-open entry");
+        True(overviewMarkup.Contains("CommitDisplay", StringComparison.Ordinal)
+             || overviewMarkup.Contains("LastCommitMessage", StringComparison.Ordinal),
+            "overview shows the latest commit tip");
         foreach (var retained in new[] { "SearchBox", "RefreshButton", "WorktreeList" })
         {
             True(overview.Descendants().Any(element =>
@@ -257,24 +268,20 @@ internal static class RepositoryTargetsSuite
         var githubPath = Path.Combine(RepoRoot, "Views", "GitHubConnectionView.xaml");
         var github = XDocument.Load(githubPath);
         var githubMarkup = github.ToString();
-        var githubTabs = github.Descendants()
-            .Where(element => element.Name.LocalName == "TabItem")
-            .Select(element => element.Attribute("Header")?.Value)
-            .ToArray();
-        True(githubTabs.SequenceEqual(["凭据与 SSH", "提交身份", "仓库远端", "诊断"]),
-            "github page keeps the four governance tabs");
-        Equal(3, github.Descendants().Count(element => element.Name.LocalName == "DataGrid"),
-            "github page keeps accounts, keys and diagnostics grids");
-        True(githubMarkup.Contains("Shell.Brush.AccentSoft", StringComparison.Ordinal),
-            "github grid rows paint selection with the host AccentSoft token");
+        True(!github.Descendants().Any(element => element.Name.LocalName == "TabControl"),
+            "github page is a single flat form without tabs");
+        True(!github.Descendants().Any(element => element.Name.LocalName == "DataGrid"),
+            "github page uses selectors instead of DataGrids");
+        True(github.Descendants().Any(element =>
+                element.Attribute(x + "Name")?.Value == "AccountsBox"),
+            "github page keeps an account ComboBox");
+        True(github.Descendants().Any(element =>
+                element.Attribute(x + "Name")?.Value == "KeysBox"),
+            "github page keeps an SSH key ComboBox");
+        True(githubMarkup.Contains("OnDiagnosticsClick", StringComparison.Ordinal),
+            "github diagnostics open via a popup action");
         True(!githubMarkup.Contains("TargetType=\"Button\"", StringComparison.Ordinal),
             "github page does not override the host implicit Button style");
-        True(github.Descendants().Where(element => element.Name.LocalName == "DataGrid")
-                .All(grid => grid.Attribute("Background")?.Value?
-                    .Contains("Shell.Brush.Surface", StringComparison.Ordinal) == true
-                    && grid.Attribute("AlternatingRowBackground")?.Value?
-                        .Contains("Shell.Brush.SurfaceAlt", StringComparison.Ordinal) == true),
-            "github DataGrids declare Surface and SurfaceAlt backgrounds");
         True(!github.Descendants().Any(element => element.Attribute(x + "Name")?.Value == "StatusText"),
             "github page drops the bottom status strip like the other pages");
 
@@ -364,9 +371,12 @@ internal static class RepositoryTargetsSuite
         True(!OverviewMetaMerge.MatchesKeyword(noChildRow, "beta"),
             "search does not match rows missing the keyword");
 
-        Equal($"janus.meta.open name={parentBranch} meta=z-alpha",
-            OverviewMetaMerge.BuildOpenCommand(parentRow.PrimaryMeta!),
-            "meta click reuses the existing janus.meta.open command");
+        True(OverviewMetaMerge.BuildOpenCommand(parentRow.PrimaryMeta!)
+                .StartsWith("janus.proj.metaopen path=", StringComparison.Ordinal),
+            "meta click opens by registered FullPath, not WorktreeRoot+branch");
+        True(OverviewMetaMerge.BuildOpenCommand(parentRow.PrimaryMeta!)
+                .Contains(parentRow.PrimaryMeta!.FullPath, StringComparison.OrdinalIgnoreCase),
+            "meta open command embeds the scanned FullPath");
     }
 
     private static async Task CreateChild(string path, string branch, string remote)

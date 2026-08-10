@@ -76,8 +76,9 @@ public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleCont
             {
                 Id = "overview",
                 Title = "项目总览",
-                DefaultSide = DockSide.Left,
-                DefaultRatio = 0.20,
+                // 中央文档标签组内的工具页（Anchorable），不是 LayoutDocument 主窗口。
+                DefaultSide = DockSide.Tab,
+                DefaultTabTarget = StandardWindowIds.Mcp,
                 IsSingleton = true,
                 ContentFactory = () => new OverviewView(busAccessor, selection),
             },
@@ -88,21 +89,13 @@ public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleCont
                 DefaultSide = DockSide.Right,
                 DefaultRatio = 0.28,
                 IsSingleton = true,
-                // 底部同级切换 Git 文件规则 / 分支历史(内嵌 BranchHistoryView)。
+                // 底部同一行分段切换 Git 文件规则 / 分支历史 / GitHub，三者都内嵌于本页；
+                // 没有独立 github 窗口。
                 ContentFactory = () => new ProjectOperationsView(
                     busAccessor,
                     selection,
-                    isProtected),
-            },
-            new ToolWindowDescriptor
-            {
-                Id = "github",
-                Title = "github",
-                DefaultSide = DockSide.Right,
-                DefaultRatio = 0.28,
-                IsSingleton = true,
-                // 与项目操作同侧,宿主自动并入右侧标签组。
-                ContentFactory = () => new GitHubConnectionView(gitHubAccessor),
+                    isProtected,
+                    gitHubAccessor),
             },
         ];
     }

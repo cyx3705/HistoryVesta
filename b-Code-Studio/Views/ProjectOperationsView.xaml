@@ -125,19 +125,22 @@
             </UniformGrid>
         </Grid>
 
-        <UniformGrid DockPanel.Dock="Top" Columns="2" Margin="0,0,0,6">
+        <!-- GitHub 面板与 Git 文件规则、分支历史同行切换，不独占宿主窗口。 -->
+        <UniformGrid DockPanel.Dock="Top" Columns="3" Margin="0,0,0,6">
             <RadioButton x:Name="RulesPageButton" GroupName="BottomPage"
                          Content="Git 文件规则" Style="{StaticResource OperationSegment}"
                          MinHeight="26" IsChecked="True" Checked="OnBottomPageChanged" />
             <RadioButton x:Name="HistoryPageButton" GroupName="BottomPage"
                          Content="分支历史" Style="{StaticResource OperationSegment}"
                          MinHeight="26" Checked="OnBottomPageChanged" />
+            <RadioButton x:Name="GitHubPageButton" GroupName="BottomPage"
+                         Content="GitHub" Style="{StaticResource OperationSegment}"
+                         MinHeight="26" Checked="OnBottomPageChanged" />
         </UniformGrid>
 
         <Grid>
+            <!-- 分段按钮已给出面板名，上方选中项标题已给出当前项目，面板内不重复标题行。 -->
             <DockPanel x:Name="RulePanel" IsEnabled="False">
-            <TextBlock DockPanel.Dock="Top" x:Name="RuleTitle" FontWeight="SemiBold"
-                       Text="Git 文件规则" Margin="0,0,0,6" TextWrapping="Wrap" />
             <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -235,6 +238,7 @@
             </DataGrid>
         </DockPanel>
             <ContentControl x:Name="HistoryPanel" Visibility="Collapsed" />
+            <ContentControl x:Name="GitHubPanel" Visibility="Collapsed" />
         </Grid>
     </DockPanel>
 </UserControl>

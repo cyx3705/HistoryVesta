@@ -305,6 +305,12 @@
             单项目枚举失败只计入警告并跳过,不拖垮整次扫描。
             </summary>
         </member>
+        <member name="P:HistoryJanus.Git.WorktreeInfo.FolderName">
+            <summary>工作树目录名（路径权威侧的文件夹名，可能与分支名不一致）。</summary>
+        </member>
+        <member name="P:HistoryJanus.Git.WorktreeInfo.HasNameMismatch">
+            <summary>分支名是唯一身份权威；目录名必须与之相同，否则视为不合规则。</summary>
+        </member>
         <member name="T:HistoryJanus.Git.MetaFolderInfo">
             <summary>某项目根下以 z/Z 开头的一级 Meta 文件夹。</summary>
         </member>
@@ -641,10 +647,10 @@
             <summary>按项目名(忽略大小写)把 Meta 文件夹并入工作树行；组内按 Meta 名不区分大小写排序。</summary>
         </member>
         <member name="M:HistoryJanus.Views.OverviewMetaMerge.MatchesKeyword(HistoryJanus.Views.OverviewView.WorktreeRow,System.String)">
-            <summary>关键字同时匹配项目名、Meta 名和 Meta 路径(包含匹配,忽略大小写)。</summary>
+            <summary>关键字同时匹配项目名、Meta 名、Meta 路径和最近提交描述。</summary>
         </member>
         <member name="M:HistoryJanus.Views.OverviewMetaMerge.BuildOpenCommand(HistoryJanus.Git.MetaFolderInfo)">
-            <summary>点击 Meta 名执行既有的 janus.meta.open 命令,不改变项目选择。</summary>
+            <summary>点击 Meta 名用登记路径打开，避免分支名≠目录名时误拼 WorktreeRoot。</summary>
         </member>
         <member name="T:HistoryJanus.Views.OverviewView">
             <summary>项目工作树、Z 级元文件夹与共享项目选择。</summary>

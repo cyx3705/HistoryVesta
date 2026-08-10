@@ -28,6 +28,10 @@ public partial class OverviewView : UserControl
     public sealed record WorktreeRow(
         int Index,
         string BranchName,
+        string WorktreePath,
+        string LastCommitMessage,
+        bool HasNameMismatch,
+        string FolderName,
         IReadOnlyList<MetaFolderInfo> MetaFolders)
     {
         public MetaFolderInfo? PrimaryMeta => MetaFolders.FirstOrDefault();
@@ -35,6 +39,11 @@ public partial class OverviewView : UserControl
         public bool HasMeta => PrimaryMeta != null;
         public bool HasAdditionalMeta => MetaFolders.Count > 1;
         public string MoreMetaLabel => HasAdditionalMeta ? $"+{MetaFolders.Count - 1}" : "";
+        public string BranchDisplay => HasNameMismatch ? $"{BranchName} ⚠" : BranchName;
+        public string BranchToolTip => HasNameMismatch
+            ? $"分支名是唯一权威值，但目录名为 {FolderName}，不合规则。请将分支改名为与目录一致。\n{WorktreePath}"
+            : WorktreePath;
+        public string CommitDisplay => string.IsNullOrWhiteSpace(LastCommitMessage) ? "-" : LastCommitMessage;
     }
 
     private async void OnLoaded(object sender, System.Windows.RoutedEventArgs e)
@@ -66,7 +75,7 @@ public partial class OverviewView : UserControl
         try
         {
             var projectsTask = bus.ExecuteAsync("janus.proj.list", "UI");
-            var metasTask = bus.ExecuteAsync("janus.meta.list", "UI");
+            var metasTask = bus.ExecuteAsync("janus.proj.metas", "UI");
             await Task.WhenAll(projectsTask, metasTask);
 
             var projectsResult = await projectsTask;

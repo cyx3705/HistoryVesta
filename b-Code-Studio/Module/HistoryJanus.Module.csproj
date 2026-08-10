@@ -30,7 +30,6 @@
        remains outside this project. -->
   <ItemGroup>
     <Compile Include="..\StudioBusinessComposition.cs" Link="StudioBusinessComposition.cs" />
-    <Compile Include="..\DebugCommands.cs" Link="DebugCommands.cs" />
     <Compile Include="..\Git\**\*.cs" Link="Git\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\GitHub\**\*.cs" Link="GitHub\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\Views\**\*.cs"
