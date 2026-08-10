@@ -33,7 +33,8 @@
     "generatedRoots": [
       "b-Code-HistoryDiana/bin",
       "b-Code-HistoryDiana/obj",
-      "b-Publish/current"
+      "b-Publish/current",
+      "b-Office-OneHistory/消费文档"
     ],
     "archiveRoots": [
       "b-Office-Diana/history",
@@ -66,7 +67,7 @@
     "test": "dotnet run --project .\\b-Code-HistoryDiana\\tests\\HistoryDiana.Smoke\\HistoryDiana.Smoke.csproj -c Release",
     "verify": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\b-Code\\Test-ProjectContract.ps1 -Instantiation",
     "run": null,
-    "package": null
+    "package": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\b-Code\\Publish-OneHistoryModule.ps1 -Module HistoryMinerva"
   },
   "externalDependencies": [
     {
@@ -78,6 +79,11 @@
       "name": "HistoryVulcan",
       "version": "3.4.0",
       "purpose": "宿主 Core 契约与指令总线；从 2026-023-HistoryVulcan/z-HistoryVulcan 消费"
+    },
+    {
+      "name": "HistoryMinerva",
+      "version": "4.2.3",
+      "purpose": "集中发布首个登记模块；源码与测试仍由 2026-024-HistoryMinerva 拥有"
     }
   ],
   "contextExclusions": [

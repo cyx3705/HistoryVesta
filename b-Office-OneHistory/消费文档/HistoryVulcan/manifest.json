@@ -1,0 +1,48 @@
+{
+    "schemaVersion":  1,
+    "module":  "HistoryVulcan",
+    "version":  "3.4.0",
+    "sourceProject":  "2026-023-HistoryVulcan",
+    "sourceCommit":  "ff5d39267f0ac7917d069428634448db999f8d14",
+    "sourceDirty":  false,
+    "sourceDocumentRoot":  "b-Office/package",
+    "artifactSnapshot":  "../../../../2026-023-HistoryVulcan/z-HistoryVulcan",
+    "generatedAtUtc":  "2026-08-10T12:57:17.0537800+00:00",
+    "documents":  [
+                      {
+                          "file":  "HistoryVulcan_API与指令手册.md",
+                          "bytes":  38131,
+                          "sha256":  "D1E4CED646291FEE86F3ED2941EB027917FDCBC6A2F489BC3A578F122FBF35E7"
+                      },
+                      {
+                          "file":  "HistoryVulcan_UI风格与嵌入页面规范.md",
+                          "bytes":  9070,
+                          "sha256":  "324C5B4988BBFE23A1F300449C7319589FEFC09E08229DE3B58136298AB97E99"
+                      },
+                      {
+                          "file":  "HistoryVulcan_模块与MCP接入.md",
+                          "bytes":  11547,
+                          "sha256":  "0D70B2148CEF16A4E1DA1B7339D226E06EE6634A8805F3ED3A08A93F5BAC290D"
+                      },
+                      {
+                          "file":  "HistoryVulcan_消费变更摘要.md",
+                          "bytes":  17307,
+                          "sha256":  "3010459CDE8B2D8F38C64A3C0766F9B89E18AE24B76C7AD3B3BFC8385BD9D0EF"
+                      },
+                      {
+                          "file":  "HistoryVulcan_运行时约束与已知限制.md",
+                          "bytes":  7735,
+                          "sha256":  "49847EC6D948F110BFA2AE9EBD05B4F3A3020415345670836A4C93A14EEBF33E"
+                      },
+                      {
+                          "file":  "README.md",
+                          "bytes":  2822,
+                          "sha256":  "0FEAF24738B63DF86FE956D499B3472E7A73DD1B59B78A28B82370EB7CA13A45"
+                      },
+                      {
+                          "file":  "复用说明.md",
+                          "bytes":  3073,
+                          "sha256":  "2636A2FF523948313DB966011E1C148F71AC84C0AB2B83C43586E04C28523457"
+                      }
+                  ]
+}

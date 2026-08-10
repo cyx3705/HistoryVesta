@@ -1,0 +1,18 @@
+{
+    "schemaVersion":  1,
+    "module":  "HistoryMinerva",
+    "version":  "4.2.3",
+    "sourceProject":  "2026-024-HistoryMinerva",
+    "sourceCommit":  "7e6bb316a598efa945c4947b9ace71ce1f47d398",
+    "sourceDirty":  true,
+    "sourceDocumentRoot":  "b-Office/package",
+    "artifactSnapshot":  "../../../../2026-024-HistoryMinerva/z-HistoryMinerva",
+    "generatedAtUtc":  "2026-08-10T12:46:45.2260928+00:00",
+    "documents":  [
+                      {
+                          "file":  "模块API.md",
+                          "bytes":  2429,
+                          "sha256":  "D9280FD952BE3D584B94DC3A4C7DFCC91B9C49224ABDCB197F068A1B355C0FF3"
+                      }
+                  ]
+}

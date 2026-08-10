@@ -16,6 +16,7 @@ Diana 是 AI 的翻译官（公共文档、巡检、工具中继）。Diana 不�
 | [`AGENTS.md`](./AGENTS.md) | AI 工作合同：读取顺序、真值判定、边界 |
 | [`b-Office-OneHistory/`](./b-Office-OneHistory/) | **跨项目公共文档区**：OneHistory 定义、命名规范、消费文档索引 |
 | [`b-Office-Diana/`](./b-Office-Diana/) | Diana 自身的项目合同 |
+| [`b-Code/Publish-OneHistoryModule.ps1`](./b-Code/Publish-OneHistoryModule.ps1) | 集中执行已登记模块的候选构建、测试、正式提升和消费文档镜像 |
 
 两个文档区分开的原因：公共区被**别的项目**消费，Diana 的合同只描述 Diana。
 
@@ -54,8 +55,21 @@ dotnet run --project ./b-Code-HistoryDiana/tests/HistoryDiana.Smoke/HistoryDiana
 宿主的模块发现扫描各项目根下的 `z-*` 目录，因此发布到 [`z-HistoryDiana`](./z-HistoryDiana/)
 即完成部署，无需拷贝到宿主模块槽。部署后重启宿主或执行 `vulcan.module.reload`。
 
+## 集中发布
+
+已登记两类项目：`HistoryMinerva`（Kind=module）与 `HistoryVulcan`（Kind=host）。两类共用同一条
+管线，差异只在快照形状与验证步骤，由定义表里的 `Kind` 区分；候选构建的调用形状统一为
+`-Configuration Release -OutputRoot <候选目录>`。
+
+默认只生成并验证候选；正式提升必须显式加 `-Publish`，脏工作树
+还必须再加 `-AllowDirtySource`，且来源状态会写入 Diana 的消费文档镜像清单。
+
+```powershell
+.\b-Code\Publish-OneHistoryModule.ps1 -Module HistoryMinerva
+.\b-Code\Publish-OneHistoryModule.ps1 -Module HistoryVulcan -Publish
+```
+
 ## 规划中
 
-- 可复用的发布流程（各项目不再各自维护一套发布脚本）
 - 文档查看 MCP
 - 条件成熟后把 AI 工作区整体迁入本项目
