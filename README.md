@@ -27,7 +27,7 @@ dotnet run --project .\b-Code-Verify\ModuleSmoke\ModuleSmoke.csproj -c Debug -- 
 ```
 
 日常开发执行质量门禁、相关 Contracts、Debug 构建、定向功能 Smoke 与 ModuleSmoke；`Test-QualityGate.ps1`
-把抑制标记、千行文件、版本链一致性、正式树边界和宿主合同五项漂移检查日常化（代码管道化条件 4：
+把抑制标记、千行文件、版本链一致性、模块 API 投影、正式树边界和宿主合同六项漂移检查日常化（代码管道化条件 4：
 漂移由检查自动阻断，不积累到发布）。推送到 `2026-020-HistoryJanus` 分支时，GitHub Actions 门禁
 （`.github/workflows/historyjanus-gate.yml`）并行复验锁定还原、双配置构建、Contracts、格式与同一门禁脚本。
 正式发布才执行 Debug/Release 全量门禁、正式包、双槽部署和回滚验证。

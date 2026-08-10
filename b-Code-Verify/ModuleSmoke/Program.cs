@@ -68,12 +68,13 @@ if (!File.Exists(manifestPath))
 
 using var manifestJson = System.Text.Json.JsonDocument.Parse(File.ReadAllText(manifestPath));
 var expectedVersion = manifestJson.RootElement.GetProperty("version").GetString();
+const int expectedRuntimeCommandCount = 32;
 
 var meta = host.Modules[0];
 if (!meta.ModuleName.Equals("HistoryJanus", StringComparison.Ordinal)
     || !meta.Version.Equals(expectedVersion, StringComparison.Ordinal)
     || !meta.Ui
-    || meta.CommandCount < 29)
+    || meta.CommandCount != expectedRuntimeCommandCount)
 {
     throw new InvalidOperationException(
         $"unexpected module metadata: {meta.ModuleName} {meta.Version} " +
@@ -152,6 +153,9 @@ if (!expectedPageTypes.SequenceEqual(pageTypes, StringComparer.Ordinal))
     throw new InvalidOperationException($"unexpected page types: [{string.Join(", ", pageTypes)}]");
 
 var commandCount = registry.All().Count;
+if (commandCount != expectedRuntimeCommandCount)
+    throw new InvalidOperationException($"expected {expectedRuntimeCommandCount} runtime commands, got {commandCount}");
+
 var moduleSource = registry.GetSource(descriptor.Name);
 host.Reload();
 if (registry.All().Count != commandCount
@@ -183,6 +187,7 @@ using (var serviceHost = new ModuleHost(moduleDirectory, log)
     serviceHost.Attach(serviceRegistry, serviceBus, settings, dataDirectory);
     serviceHost.Start();
     if (serviceReloads != 1
+        || serviceRegistry.All().Count != expectedRuntimeCommandCount
         || !serviceRegistry.TryGet("janus.proj.list", out _)
         || !serviceRegistry.TryGet("janus.gitrule.list", out _))
     {

@@ -83,7 +83,61 @@ if ($statusSource -match '"[^"]*\d+\.\d+\.\d+[^"]*"') {
     $violations.Add('HistoryJanusCommands.cs contains a hardcoded version literal; project from the assembly instead')
 }
 
-# --- 4. 正式树边界（QA-004 日常化）：z 级快照只允许五类条目 -----------------------------
+# --- 4. 消费合同投影：API 版本、窗口和命令必须与当前源码事实一致 --------------------------
+$apiPath = Join-Path $root 'b-Office\package\模块API.md'
+$apiText = [IO.File]::ReadAllText($apiPath)
+if ($apiText -notmatch "(?m)^# HistoryJanus $([regex]::Escape($sourceVersion)) 模块 API$") {
+    $violations.Add("模块API.md 标题版本未对齐 $sourceVersion")
+}
+if ($apiText -notmatch "(?m)^- 版本：``$([regex]::Escape($sourceVersion))``。$") {
+    $violations.Add("模块API.md 正式消费版本未对齐 $sourceVersion")
+}
+if ($apiText -notmatch "(?m)^- 宿主基线：HistoryVulcan ``$([regex]::Escape($requiredVulcan))`` ") {
+    $violations.Add("模块API.md 宿主基线未对齐 HistoryVulcan $requiredVulcan")
+}
+
+$uiSource = [IO.File]::ReadAllText((Join-Path $componentRoot 'Module\HistoryJanusUiModule.cs'))
+$sourceWindows = @(
+    [regex]::Matches($uiSource, '(?m)^\s*Id\s*=\s*"(?<id>[a-z][a-z0-9]*)"') |
+        ForEach-Object { $_.Groups['id'].Value }
+)
+if ($sourceWindows.Count -ne 2) {
+    $violations.Add("HistoryJanusUiModule.cs must declare exactly 2 windows; found $($sourceWindows.Count)")
+}
+
+$windowSection = [regex]::Match($apiText, '(?ms)^## UI 窗口\s*(?<body>.*?)(?=^##\s|\z)')
+$apiWindows = @(
+    [regex]::Matches($windowSection.Groups['body'].Value, '(?m)^\|\s*`(?<id>[a-z][a-z0-9]*)`\s*\|') |
+        ForEach-Object { $_.Groups['id'].Value }
+)
+if (($sourceWindows -join ',') -cne ($apiWindows -join ',')) {
+    $violations.Add("模块API.md 窗口清单 [$($apiWindows -join ', ')] != 源码 [$($sourceWindows -join ', ')]")
+}
+
+$businessCommandNames = @(
+    Get-ChildItem -LiteralPath $componentRoot -Recurse -Filter '*.cs' -File |
+        Where-Object { $_.FullName -notmatch $excluded } |
+        ForEach-Object {
+            $sourceText = [IO.File]::ReadAllText($_.FullName)
+            [regex]::Matches($sourceText, '(?m)^\s*Name\s*=\s*"(?<name>janus\.[a-z0-9]+\.[a-z0-9]+)"') |
+                ForEach-Object { $_.Groups['name'].Value }
+        }
+)
+$businessCommandNames = @($businessCommandNames | Sort-Object -Unique)
+$expectedRuntimeCommandNames = @($businessCommandNames + 'janus.status' | Sort-Object -Unique)
+$apiCommandNames = @(
+    [regex]::Matches($apiText, '(?m)^\|\s*`(?<name>janus(?:\.[a-z0-9]+){1,2})`\s*\|') |
+        ForEach-Object { $_.Groups['name'].Value } |
+        Sort-Object -Unique
+)
+if ($businessCommandNames.Count -ne 31 -or $expectedRuntimeCommandNames.Count -ne 32) {
+    $violations.Add("运行时命令总数应为 32（31 条业务命令 + janus.status）；源码为 $($businessCommandNames.Count) + 1")
+}
+if (($expectedRuntimeCommandNames -join ',') -cne ($apiCommandNames -join ',')) {
+    $violations.Add("模块API.md 命令清单与源码不一致：API $($apiCommandNames.Count)，运行时 $($expectedRuntimeCommandNames.Count)")
+}
+
+# --- 5. 正式树边界（QA-004 日常化）：z 级快照只允许五类条目 -----------------------------
 $packageRoot = Join-Path $root 'z-HistoryJanus'
 if (Test-Path -LiteralPath $packageRoot) {
     $allowed = @('HistoryJanus.dll', 'HistoryJanus.xml', 'module.manifest.json', 'SHA256SUMS', 'docs')
@@ -99,9 +153,28 @@ if (Test-Path -LiteralPath $packageRoot) {
         @(Get-ChildItem -LiteralPath $packageDoc -File).Count -ne 1) {
         $violations.Add('z-HistoryJanus/docs must contain exactly one API document')
     }
+    $formalManifestPath = Join-Path $packageRoot 'module.manifest.json'
+    $formalApiPath = Join-Path $packageDoc '模块API.md'
+    if (-not (Test-Path -LiteralPath $formalManifestPath -PathType Leaf)) {
+        $violations.Add('z-HistoryJanus/module.manifest.json is missing')
+    }
+    elseif (-not (Test-Path -LiteralPath $formalApiPath -PathType Leaf)) {
+        $violations.Add('z-HistoryJanus/docs/模块API.md is missing')
+    }
+    else {
+        $formalManifest = [IO.File]::ReadAllText($formalManifestPath) | ConvertFrom-Json
+        $formalVersion = [string]$formalManifest.version
+        $formalApiText = [IO.File]::ReadAllText($formalApiPath)
+        if ($formalApiText -notmatch "(?m)^- 版本：``$([regex]::Escape($formalVersion))``。$") {
+            $violations.Add("z-HistoryJanus 模块 API 版本未对齐其 manifest $formalVersion")
+        }
+        if ($formalVersion -eq $sourceVersion -and $formalApiText -cne $apiText) {
+            $violations.Add('同版本 z-HistoryJanus/docs/模块API.md != b-Office/package/模块API.md')
+        }
+    }
 }
 
-# --- 5. 宿主合同预检：发布脚本同源检查日常化 --------------------------------------------
+# --- 6. 宿主合同预检：发布脚本同源检查日常化 --------------------------------------------
 $vulcanRoot = [IO.Path]::GetFullPath((Join-Path $root '..\2026-023-HistoryVulcan\z-HistoryVulcan'))
 $vulcanManifestPath = Join-Path $vulcanRoot 'manifest.json'
 $vulcanCorePath = Join-Path $vulcanRoot 'host\HistoryVulcan.Core.dll'
@@ -124,4 +197,4 @@ if ($violations.Count -gt 0) {
     $violations | ForEach-Object { Write-Error $_ }
     exit 1
 }
-Write-Host ("Quality gate passed: suppressions 0; hotspots {0}; version {1}; host HistoryVulcan {2}." -f $hotspots.Count, $sourceVersion, $requiredVulcan)
+Write-Host ("Quality gate passed: suppressions 0; hotspots {0}; version {1}; windows {2}; commands {3}; host HistoryVulcan {4}." -f $hotspots.Count, $sourceVersion, $sourceWindows.Count, $expectedRuntimeCommandNames.Count, $requiredVulcan)
