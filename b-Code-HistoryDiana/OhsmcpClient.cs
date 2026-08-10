@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace ToolRelay;
+namespace HistoryDiana;
 
 internal sealed class OhsmcpClient : IDisposable
 {

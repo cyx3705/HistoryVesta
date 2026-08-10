@@ -1,22 +1,116 @@
-﻿using System.IO;
-using System.Text.Json;
+using System.IO;
+using HistoryVulcan.Core.Commands;
 using HistoryVulcan.Core.Modules;
+using HistoryVulcan.Core.Storage;
 
-namespace ProjectPulse;
+namespace HistoryDiana;
 
-public sealed class ProjectPulseCommands
+/// <summary>Registers the HistoryDiana read-only worktree inspection commands.</summary>
+public sealed class HistoryDianaCommands : IModuleContextAware
 {
     private static readonly HashSet<string> GeneratedDirectories = new(StringComparer.OrdinalIgnoreCase)
     {
         ".vs", ".pio", "bin", "obj", "TestResults", "node_modules", "Library", "Temp", "Logs", "UserSettings",
     };
 
-    /// <summary>汇总一个 OHS 工作树的文件数量、体积、格式和一级目录热点</summary>
-    /// <param name="name">已登记工作树名称，例如 2026-020-HistoryJanus</param>
-    /// <param name="includeGenerated">是否包含 bin、obj、.vs、node_modules 等生成目录</param>
-    /// <param name="top">最多返回多少项格式和一级目录统计，范围 1~50</param>
-    [ModuleCommand(Readonly = true, CommandClass = "project-pulse")]
-    public object Summary(string name, bool includeGenerated = false, int top = 10)
+    private ISettingsService? _settings;
+
+    /// <summary>Attaches the host-owned settings store and stages all module commands.</summary>
+    public void Attach(IModuleContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        if (_settings != null)
+            throw new InvalidOperationException("HistoryDiana 命令已附着到宿主上下文。");
+
+        _settings = context.Settings;
+        context.RegisterCommands(RegisterCommands);
+    }
+
+    private void RegisterCommands(CommandRegistry registry)
+    {
+        // 工具箱的另外两类：kit（哈希/编码/标识/时间）与 relay（MCP 工具中继）。
+        // 按类分文件，但注册入口只有这一处。
+        DianaKitCommands.Register(registry);
+        DianaRelayCommands.Register(registry);
+
+        registry.Register(new CommandDescriptor
+        {
+            Name = "diana.project.summary",
+            Domain = "HistoryDiana",
+            CommandClass = "project",
+            Summary = "汇总一个已登记工作树的文件、体积和一级目录热点",
+            Example = "diana.project.summary name=2026-020-HistoryJanus top=10",
+            Parameters =
+            [
+                Text("name", "已登记工作树名称，例如 2026-020-HistoryJanus", required: true, position: 0),
+                Bool("includeGenerated", "是否包含 bin、obj、.vs、node_modules 等生成目录", "false"),
+                Int("top", "格式和一级目录统计最多返回多少项，范围 1~50", "10"),
+            ],
+            Readonly = true,
+            Handler = CommandDescriptor.Sync(context =>
+            {
+                var result = Summary(
+                    context.RequireString("name"),
+                    context.GetBool("includeGenerated"),
+                    context.GetInt("top", 10));
+                return CommandResult.Ok($"已汇总 {result.Project}: {result.Files} 个文件，{result.Size}", result);
+            }),
+        });
+
+        registry.Register(new CommandDescriptor
+        {
+            Name = "diana.project.recent",
+            Domain = "HistoryDiana",
+            CommandClass = "project",
+            Summary = "列出一个已登记工作树最近修改的文件",
+            Example = "diana.project.recent name=2026-020-HistoryJanus days=7 limit=30",
+            Parameters =
+            [
+                Text("name", "已登记工作树名称，例如 2026-020-HistoryJanus", required: true, position: 0),
+                Int("days", "回看天数，范围 1~3650", "7"),
+                Int("limit", "最多返回文件数，范围 1~200", "30"),
+                Bool("includeGenerated", "是否包含 bin、obj、.vs、node_modules 等生成目录", "false"),
+            ],
+            Readonly = true,
+            Handler = CommandDescriptor.Sync(context =>
+            {
+                var result = Recent(
+                    context.RequireString("name"),
+                    context.GetInt("days", 7),
+                    context.GetInt("limit", 30),
+                    context.GetBool("includeGenerated"));
+                return CommandResult.Ok($"已找到 {result.Count} 个最近修改文件", result);
+            }),
+        });
+
+        registry.Register(new CommandDescriptor
+        {
+            Name = "diana.project.largest",
+            Domain = "HistoryDiana",
+            CommandClass = "project",
+            Summary = "列出一个已登记工作树中最大的文件",
+            Example = "diana.project.largest name=2026-020-HistoryJanus limit=20 minMb=1",
+            Parameters =
+            [
+                Text("name", "已登记工作树名称，例如 2026-020-HistoryJanus", required: true, position: 0),
+                Int("limit", "最多返回文件数，范围 1~200", "20"),
+                Double("minMb", "最小体积 MB，范围 0~1048576", "1"),
+                Bool("includeGenerated", "是否包含 bin、obj、.vs、node_modules 等生成目录", "false"),
+            ],
+            Readonly = true,
+            Handler = CommandDescriptor.Sync(context =>
+            {
+                var result = Largest(
+                    context.RequireString("name"),
+                    context.GetInt("limit", 20),
+                    context.GetDouble("minMb", 1),
+                    context.GetBool("includeGenerated"));
+                return CommandResult.Ok($"已找到 {result.Count} 个大文件", result);
+            }),
+        });
+    }
+
+    private SummaryResult Summary(string name, bool includeGenerated, int top)
     {
         RequireRange(top, 1, 50, nameof(top));
         var scan = Scan(name, includeGenerated);
@@ -42,30 +136,22 @@ public sealed class ProjectPulseCommands
             .ToList();
 
         var totalBytes = scan.Files.Sum(file => file.Length);
-        return new
-        {
-            Project = scan.ProjectName,
+        return new SummaryResult(
+            scan.ProjectName,
             scan.ProjectPath,
-            Files = scan.Files.Count,
-            Bytes = totalBytes,
-            Size = FormatBytes(totalBytes),
-            LatestWrite = scan.Files.Count == 0
+            scan.Files.Count,
+            totalBytes,
+            FormatBytes(totalBytes),
+            scan.Files.Count == 0
                 ? null
                 : scan.Files.Max(file => file.LastWriteUtc).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss zzz"),
             scan.SkippedDirectories,
             scan.UnreadableEntries,
-            Extensions = extensions,
-            Directories = directories,
-        };
+            extensions,
+            directories);
     }
 
-    /// <summary>列出一个 OHS 工作树最近修改的文件</summary>
-    /// <param name="name">已登记工作树名称，例如 2026-020-HistoryJanus</param>
-    /// <param name="days">回看天数，范围 1~3650</param>
-    /// <param name="limit">最多返回文件数，范围 1~200</param>
-    /// <param name="includeGenerated">是否包含 bin、obj、.vs、node_modules 等生成目录</param>
-    [ModuleCommand(Readonly = true, CommandClass = "project-pulse")]
-    public object Recent(string name, int days = 7, int limit = 30, bool includeGenerated = false)
+    private RecentResult Recent(string name, int days, int limit, bool includeGenerated)
     {
         RequireRange(days, 1, 3650, nameof(days));
         RequireRange(limit, 1, 200, nameof(limit));
@@ -81,24 +167,16 @@ public sealed class ProjectPulseCommands
                 file.LastWriteUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss zzz")))
             .ToList();
 
-        return new
-        {
-            Project = scan.ProjectName,
-            Since = cutoff.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss zzz"),
-            Count = files.Count,
-            Files = files,
+        return new RecentResult(
+            scan.ProjectName,
+            cutoff.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss zzz"),
+            files.Count,
+            files,
             scan.SkippedDirectories,
-            scan.UnreadableEntries,
-        };
+            scan.UnreadableEntries);
     }
 
-    /// <summary>列出一个 OHS 工作树中最大的文件</summary>
-    /// <param name="name">已登记工作树名称，例如 2026-020-HistoryJanus</param>
-    /// <param name="limit">最多返回文件数，范围 1~200</param>
-    /// <param name="minMb">最小体积 MB，范围 0~1048576</param>
-    /// <param name="includeGenerated">是否包含 bin、obj、.vs、node_modules 等生成目录</param>
-    [ModuleCommand(Readonly = true, CommandClass = "project-pulse")]
-    public object Largest(string name, int limit = 20, double minMb = 1, bool includeGenerated = false)
+    private LargestResult Largest(string name, int limit, double minMb, bool includeGenerated)
     {
         RequireRange(limit, 1, 200, nameof(limit));
         if (double.IsNaN(minMb) || double.IsInfinity(minMb) || minMb < 0 || minMb > 1_048_576)
@@ -115,18 +193,16 @@ public sealed class ProjectPulseCommands
                 file.LastWriteUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss zzz")))
             .ToList();
 
-        return new
-        {
-            Project = scan.ProjectName,
-            MinimumMb = minMb,
-            Count = files.Count,
-            Files = files,
+        return new LargestResult(
+            scan.ProjectName,
+            minMb,
+            files.Count,
+            files,
             scan.SkippedDirectories,
-            scan.UnreadableEntries,
-        };
+            scan.UnreadableEntries);
     }
 
-    private static ScanResult Scan(string name, bool includeGenerated)
+    private ScanResult Scan(string name, bool includeGenerated)
     {
         var projectPath = ResolveProject(name, out var projectName);
         var files = new List<FileSnapshot>();
@@ -145,7 +221,12 @@ public sealed class ProjectPulseCommands
                 childDirectories = Directory.EnumerateDirectories(current).ToArray();
                 childFiles = Directory.EnumerateFiles(current).ToArray();
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            catch (IOException)
+            {
+                unreadableEntries++;
+                continue;
+            }
+            catch (UnauthorizedAccessException)
             {
                 unreadableEntries++;
                 continue;
@@ -169,7 +250,12 @@ public sealed class ProjectPulseCommands
                         continue;
                     }
                 }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                catch (IOException)
+                {
+                    unreadableEntries++;
+                    continue;
+                }
+                catch (UnauthorizedAccessException)
                 {
                     unreadableEntries++;
                     continue;
@@ -194,7 +280,11 @@ public sealed class ProjectPulseCommands
                         : info.Extension.ToLowerInvariant();
                     files.Add(new FileSnapshot(relative, topDirectory, extension, info.Length, info.LastWriteTimeUtc));
                 }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                catch (IOException)
+                {
+                    unreadableEntries++;
+                }
+                catch (UnauthorizedAccessException)
                 {
                     unreadableEntries++;
                 }
@@ -204,7 +294,7 @@ public sealed class ProjectPulseCommands
         return new ScanResult(projectName, projectPath, files, skippedDirectories, unreadableEntries);
     }
 
-    private static string ResolveProject(string name, out string projectName)
+    private string ResolveProject(string name, out string projectName)
     {
         projectName = (name ?? "").Trim();
         if (projectName.Length == 0
@@ -216,38 +306,21 @@ public sealed class ProjectPulseCommands
             throw new ArgumentException("name 必须是已登记工作树的单一目录名", nameof(name));
         }
 
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var settingsPath = Path.Combine(appData, "OneHistoryStudio", "settings.json");
-        if (!File.Exists(settingsPath))
-            throw new InvalidOperationException($"找不到 OHS 配置文件: {settingsPath}");
-
-        string? rootValue;
-        string? bareRepoValue;
-        try
-        {
-            using var document = JsonDocument.Parse(File.ReadAllText(settingsPath));
-            rootValue = document.RootElement.TryGetProperty("proj.worktreeroot", out var rootElement)
-                ? rootElement.GetString()
-                : null;
-            bareRepoValue = document.RootElement.TryGetProperty("proj.barerepo", out var bareRepoElement)
-                ? bareRepoElement.GetString()
-                : null;
-        }
-        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
-        {
-            throw new InvalidOperationException($"读取 OHS 配置失败: {ex.Message}");
-        }
+        var settings = _settings
+            ?? throw new InvalidOperationException("HistoryDiana 尚未附着到 HistoryVulcan 宿主上下文。");
+        var rootValue = settings.Get("proj.worktreeroot");
+        var bareRepoValue = settings.Get("proj.barerepo");
 
         if (string.IsNullOrWhiteSpace(rootValue))
-            throw new InvalidOperationException("OHS 配置缺少 proj.worktreeroot");
+            throw new InvalidOperationException("HistoryVulcan 设置缺少 proj.worktreeroot；请先配置 HistoryJanus 项目库。");
         if (string.IsNullOrWhiteSpace(bareRepoValue))
-            throw new InvalidOperationException("OHS 配置缺少 proj.barerepo");
+            throw new InvalidOperationException("HistoryVulcan 设置缺少 proj.barerepo；请先配置 HistoryJanus 项目库。");
 
         var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(rootValue));
         var candidate = Path.GetFullPath(Path.Combine(root, projectName));
         var parent = Directory.GetParent(candidate)?.FullName;
         if (!string.Equals(parent, root, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("目标越出 OHS 工作树根，已拒绝");
+            throw new InvalidOperationException("目标越出 HistoryVesta 工作树根，已拒绝");
         if (!Directory.Exists(candidate))
             throw new DirectoryNotFoundException($"工作树不存在: {projectName}");
         if ((File.GetAttributes(candidate) & FileAttributes.ReparsePoint) != 0)
@@ -271,7 +344,7 @@ public sealed class ProjectPulseCommands
                 StringComparison.OrdinalIgnoreCase)
             || !Directory.Exists(gitDir))
         {
-            throw new InvalidOperationException($"目录未登记在 OHS 共享裸仓库中: {projectName}");
+            throw new InvalidOperationException($"目录未登记在 HistoryVesta 共享裸仓库中: {projectName}");
         }
 
         return candidate;
@@ -297,6 +370,38 @@ public sealed class ProjectPulseCommands
         return $"{value:0.##} {units[unit]}";
     }
 
+    private static ParameterSpec Text(string name, string description, bool required = false, int? position = null) => new()
+    {
+        Name = name,
+        Description = description,
+        Required = required,
+        Position = position,
+    };
+
+    private static ParameterSpec Int(string name, string description, string defaultValue) => new()
+    {
+        Name = name,
+        Description = description,
+        Type = ParamType.Int,
+        Default = defaultValue,
+    };
+
+    private static ParameterSpec Double(string name, string description, string defaultValue) => new()
+    {
+        Name = name,
+        Description = description,
+        Type = ParamType.Double,
+        Default = defaultValue,
+    };
+
+    private static ParameterSpec Bool(string name, string description, string defaultValue) => new()
+    {
+        Name = name,
+        Description = description,
+        Type = ParamType.Bool,
+        Default = defaultValue,
+    };
+
     private sealed record FileSnapshot(
         string RelativePath,
         string TopDirectory,
@@ -314,4 +419,32 @@ public sealed class ProjectPulseCommands
     private sealed record SizeGroup(string Name, int Files, long Bytes, string Size);
 
     private sealed record FileResult(string Path, long Bytes, string Size, string Modified);
+
+    private sealed record SummaryResult(
+        string Project,
+        string ProjectPath,
+        int Files,
+        long Bytes,
+        string Size,
+        string? LatestWrite,
+        int SkippedDirectories,
+        int UnreadableEntries,
+        IReadOnlyList<SizeGroup> Extensions,
+        IReadOnlyList<SizeGroup> Directories);
+
+    private sealed record RecentResult(
+        string Project,
+        string Since,
+        int Count,
+        IReadOnlyList<FileResult> Files,
+        int SkippedDirectories,
+        int UnreadableEntries);
+
+    private sealed record LargestResult(
+        string Project,
+        double MinimumMb,
+        int Count,
+        IReadOnlyList<FileResult> Files,
+        int SkippedDirectories,
+        int UnreadableEntries);
 }
