@@ -9,7 +9,9 @@ internal static class ModuleCommandTaxonomy
         {
             Name = source.Name,
             Domain = moduleName,
-            CommandClass = string.IsNullOrWhiteSpace(source.CommandClass) ? "core" : source.CommandClass,
+            // 空类原样保留：两段名是该域的无类直接方法（DEC-025），
+            // 这里若替换成 core，无类指令会在命令集里被误报成 core 类。
+            CommandClass = source.CommandClass,
             Summary = source.Summary,
             Example = source.Example,
             Parameters = source.Parameters,

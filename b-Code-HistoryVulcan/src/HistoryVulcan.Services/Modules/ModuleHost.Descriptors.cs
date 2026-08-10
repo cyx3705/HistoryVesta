@@ -40,7 +40,9 @@ public sealed partial class ModuleHost
         {
             Name = commandName,
             Domain = moduleName,
-            CommandClass = method.GetCustomAttribute<ModuleCommandAttribute>()?.CommandClass ?? "core",
+            // 未声明类时留空，交给注册表按名称结构推导（三段取第二段、两段判为无类）。
+            // 固定回退 core 会给两段式直接方法凭空安上一个 core 类。
+            CommandClass = method.GetCustomAttribute<ModuleCommandAttribute>()?.CommandClass ?? string.Empty,
             Summary = summary.Length > 0 ? summary : $"{moduleName} 模块 {type.Name}.{method.Name} 方法",
             Example = example,
             Parameters = parameters,

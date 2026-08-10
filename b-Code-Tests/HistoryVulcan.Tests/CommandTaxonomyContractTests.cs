@@ -129,6 +129,28 @@ public sealed class CommandTaxonomyContractTests
     }
 
     [Fact]
+    public void ModuleCommandProjectionKeepsClasslessCommandsClassless()
+    {
+        // 模块指令跨服务边界投影时曾把空类替换为 "core"，使两段式直接方法
+        // 在命令集里显示为 core 类（mercury.go 曾复现）。空类必须原样穿过投影。
+        var registry = new CommandRegistry();
+        registry.Register(
+            new CommandDescriptor
+            {
+                Name = "fixture.go",
+                Summary = "classless direct method",
+                Handler = CommandDescriptor.Sync(_ => CommandResult.Ok()),
+            },
+            "module:FixtureModule");
+
+        Assert.Equal(string.Empty, registry.GetCommandClass("fixture.go"));
+        Assert.True(CommandClassLabels.IsNone(registry.GetCommandClass("fixture.go")));
+        Assert.Equal(
+            CommandClassLabels.None,
+            CommandClassLabels.Display(registry.GetCommandClass("fixture.go")));
+    }
+
+    [Fact]
     public void ClasslessLabelIsDisplayOnly()
     {
         // 标签只做显示层翻译，不参与类推导，两个方向都必须可逆。
