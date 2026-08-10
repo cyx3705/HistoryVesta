@@ -118,12 +118,79 @@ public sealed class CommandTaxonomyContractTests
     }
 
     [Fact]
-    public void TwoSegmentNamesFallBackToTheFirstSegmentAsClass()
+    public void TwoSegmentNamesAreClasslessDirectMethods()
     {
-        // 「无类」概念已废止：两段名回退到首段，而不是空串。
-        Assert.Equal("fixture", CommandRegistry.LegacyClass("fixture.run"));
+        // DEC-025：两段名是「域.方法」，判为无类；首段是域而不是类。
+        Assert.Equal(string.Empty, CommandRegistry.LegacyClass("mercury.go"));
+        Assert.Equal(string.Empty, CommandRegistry.LegacyClass("arena.cell"));
         Assert.Equal("core", CommandRegistry.LegacyClass("ping"));
         Assert.Equal("ui", CommandRegistry.LegacyClass("vulcan.ui.dock"));
         Assert.Equal("dock", CommandRegistry.GetMethod("vulcan.ui.dock"));
+    }
+
+    [Fact]
+    public void ClasslessLabelIsDisplayOnly()
+    {
+        // 标签只做显示层翻译，不参与类推导，两个方向都必须可逆。
+        Assert.Equal(CommandClassLabels.None, CommandClassLabels.Display(""));
+        Assert.Equal(CommandClassLabels.None, CommandClassLabels.Display(null));
+        Assert.Equal("ui", CommandClassLabels.Display("ui"));
+        Assert.Equal(string.Empty, CommandClassLabels.ToKey(CommandClassLabels.None));
+        Assert.Equal("ui", CommandClassLabels.ToKey("ui"));
+        Assert.True(CommandClassLabels.IsNone(CommandRegistry.LegacyClass("mercury.go")));
+    }
+
+    [Fact]
+    public void RegisteredDomainsComeFromTheRegistryNotAConstantTable()
+    {
+        var registry = new CommandRegistry();
+        Assert.False(registry.IsRegisteredDomain("fixture"));
+
+        registry.Register(
+            new CommandDescriptor
+            {
+                Name = "fixture.go",
+                Summary = "classless direct method",
+                Handler = CommandDescriptor.Sync(_ => CommandResult.Ok()),
+            },
+            "framework");
+
+        // 域随注册出现，不需要任何地方登记常量。
+        Assert.True(registry.IsRegisteredDomain("fixture"));
+        Assert.True(registry.IsRegisteredDomain("FIXTURE"));
+        Assert.Contains("fixture", registry.Domains());
+        Assert.Equal(string.Empty, registry.GetCommandClass("fixture.go"));
+    }
+
+    [Theory]
+    // 未聚焦：原样执行。
+    [InlineData("proj.list", "全部", "proj.list")]
+    // 聚焦 janus：首段不是已注册域 → 补前缀。
+    [InlineData("proj.list", "janus", "janus.proj.list")]
+    [InlineData("gitrule.scan name=x", "janus", "janus.gitrule.scan name=x")]
+    // 聚焦 janus：首段是已注册域 → 绝对名，不补前缀。这就是退出聚焦不需要指令的原因。
+    [InlineData("mercury.go", "janus", "mercury.go")]
+    [InlineData("vulcan.ui.reset", "janus", "vulcan.ui.reset")]
+    [InlineData("janus.proj.list", "janus", "janus.proj.list")]
+    public void DomainFocusResolvesAbsoluteNamesWithoutPrefixing(
+        string input, string focused, string expected)
+    {
+        var registered = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "vulcan", "janus", "mercury",
+        };
+
+        Assert.Equal(expected, DomainFocus.Resolve(input, focused, registered.Contains));
+    }
+
+    [Fact]
+    public void DomainFocusLeavesBlankInputAlone()
+    {
+        var registered = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "janus", "vulcan" };
+        Assert.Equal("", DomainFocus.Resolve("", "janus", registered.Contains));
+        Assert.Equal("   ", DomainFocus.Resolve("   ", "janus", registered.Contains));
+        Assert.False(DomainFocus.WouldPrefix("", "janus", registered.Contains));
+        Assert.True(DomainFocus.WouldPrefix("proj.list", "janus", registered.Contains));
+        Assert.False(DomainFocus.WouldPrefix("vulcan.ui.reset", "janus", registered.Contains));
     }
 }

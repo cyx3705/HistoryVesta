@@ -1,4 +1,3 @@
-﻿#nullable enable
 HistoryVulcan.Core.Input.IGlobalShortcutHost
 HistoryVulcan.Core.Input.IGlobalShortcutHost.CreateOwnerRegistrar(string! owner) -> HistoryVulcan.Core.Input.IGlobalShortcutRegistrar!
 HistoryVulcan.Core.Input.IGlobalShortcutHost.IsEnabled.get -> bool
@@ -92,7 +91,6 @@ HistoryVulcan.Core.Modules.IShellCommandWorkbenchHost.DataDirectory.get -> strin
 HistoryVulcan.Core.Modules.IShellCommandWorkbenchHost.Log.get -> HistoryVulcan.Core.Logging.IShellLog!
 HistoryVulcan.Core.Modules.IShellCommandWorkbenchHost.RefreshCommandCompletionFocus() -> void
 HistoryVulcan.Core.Modules.IShellCommandWorkbenchHost.Settings.get -> HistoryVulcan.Core.Storage.ISettingsService!
-
 HistoryVulcan.Core.Commands.ModuleDomainNaming
 static HistoryVulcan.Core.Commands.ModuleDomainNaming.ToDomain(string! moduleName) -> string!
 static HistoryVulcan.Core.Mcp.McpExposurePolicy.DiagnosticCommandNames.get -> System.Collections.Generic.IReadOnlyCollection<string!>!

@@ -1,6 +1,10 @@
 namespace HistoryVulcan.Core.CommandSurface;
 
 /// <summary>控制台补全候选种类。</summary>
+/// <remarks>
+/// 3.4.0（DEC-025）起命令名补全按域 → 类 → 方法分段推进，每段有自己的种类供界面分组；
+/// <see cref="Command"/> 保留给整名候选。
+/// </remarks>
 public enum ConsoleCompletionKind
 {
     /// <summary>命令名。</summary>
@@ -9,6 +13,12 @@ public enum ConsoleCompletionKind
     Parameter,
     /// <summary>参数值。</summary>
     Value,
+    /// <summary>指令域，补全后落点是 <c>域.</c>。</summary>
+    Domain,
+    /// <summary>指令类，补全后落点是 <c>类.</c>。</summary>
+    Class,
+    /// <summary>指令方法，补全后落点是 <c>方法 </c>（含尾随空格，直接进入参数段）。</summary>
+    Method,
 }
 
 /// <summary>单条控制台补全候选。</summary>

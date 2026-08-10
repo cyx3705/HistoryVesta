@@ -97,6 +97,45 @@ public sealed class CommandRegistry
     }
 
     /// <summary>
+    /// 当前已注册的全部指令域，按序返回。这是域聚焦做绝对名脱固时的**唯一权威源**
+    /// （DEC-025）：域清单随模块装载/卸载变化，任何组件都不得硬编码域名字面量。
+    /// </summary>
+    public IReadOnlyList<string> Domains()
+    {
+        lock (_gate)
+        {
+            return _commands.Values
+                .Select(command => GetDomainLocked(command.Name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(domain => domain, StringComparer.Ordinal)
+                .ToList();
+        }
+    }
+
+    /// <summary>是否为已注册域；域聚焦据此判断输入首段该按绝对名还是拼前缀解析。</summary>
+    public bool IsRegisteredDomain(string? candidate)
+    {
+        if (string.IsNullOrWhiteSpace(candidate))
+            return false;
+        var trimmed = candidate.Trim();
+        lock (_gate)
+        {
+            foreach (var command in _commands.Values)
+            {
+                if (GetDomainLocked(command.Name).Equals(trimmed, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    private string GetDomainLocked(string name)
+        => _commands.TryGetValue(name, out var descriptor)
+            ? ResolveDomain(descriptor, _sources.GetValueOrDefault(name, "framework"))
+            : LegacyDomain(name);
+
+    /// <summary>
     /// 从完整命令名提取一级域。无点号命令本身也是保留域，避免模块以
     /// <c>help.foo</c> 或 <c>future.list</c> 的形式绕过根命令/现有域冲突检查。
     /// </summary>
@@ -147,17 +186,22 @@ public sealed class CommandRegistry
     }
 
     /// <summary>
-    /// 从命令名推导功能类：三段及以上用第二段；两段 <c>类.方法</c> 用首段；
-    /// 单段回退 <c>core</c>。3.3.2 起内置指令一律三段（DEC-023），两段回退只服务
-    /// 未迁移的外部模块。
+    /// 从命令名推导功能类，纯结构判定不做语义猜测（DEC-025）：
+    /// 三段及以上取第二段；两段 <c>域.方法</c> 是该域的无类直接方法，返回空串；
+    /// 单段回退 <c>core</c>。
     /// </summary>
+    /// <remarks>
+    /// 3.4.0 起两段名不再回退首段作为类。两段名的首段是**域**而不是类，
+    /// 把它当类会让 <c>arena.cell</c> 这类指令既占一个域又凭空多出一个同名类。
+    /// 空串即「无类」，由显示层翻译成标签，不参与任何类推导。
+    /// </remarks>
     public static string LegacyClass(string name)
     {
         var parts = name.Trim().Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (parts.Length >= 3)
             return parts[1].ToLowerInvariant();
         if (parts.Length == 2)
-            return parts[0].ToLowerInvariant();
+            return string.Empty;
         return "core";
     }
 

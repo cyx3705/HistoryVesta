@@ -387,8 +387,9 @@ public partial class ConsoleView : UserControl, Core.Modules.IActivatableToolCon
 
         if (_domain != "全部" && !EffectiveDomainOf(row).Equals(_domain, StringComparison.OrdinalIgnoreCase))
             return false;
+        // DEC-025：筛选项存的是显示标签，「无类」要先翻回空串类键再比较。
         if (_commandClass != "全部" && !row.CommandClassKey.Equals(
-                _commandClass,
+                CommandClassLabels.ToKey(_commandClass),
                 StringComparison.OrdinalIgnoreCase))
             return false;
 
@@ -551,6 +552,10 @@ public partial class ConsoleView : UserControl, Core.Modules.IActivatableToolCon
         text = text.Trim();
         if (text.Length == 0)
             return;
+
+        // 域聚焦：首段不是已注册域时补上聚焦域前缀（REQ-CMD-012）。
+        // 权威源是运行期注册表，不是任何常量域清单。
+        text = DomainFocus.Resolve(text, _domain, _bus.Registry.IsRegisteredDomain);
 
         _historyIndex = -1;
         _draft = "";

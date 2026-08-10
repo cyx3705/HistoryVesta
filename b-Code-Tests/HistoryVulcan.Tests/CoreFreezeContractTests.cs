@@ -120,14 +120,16 @@ public sealed class CoreFreezeContractTests
                 CommandBus.ProgressCategory, StringComparison.Ordinal)) == 2,
             TimeSpan.FromSeconds(2)));
 
+        // 类别格式是 cmd:<阶段>:<域>:<类>。这里两条夹具都是两段名，
+        // DEC-025 起判为无类直接方法，故类段为空——域段仍然区分两个并发运行。
         Assert.Contains(log.Entries, entry =>
-            entry.Category == "cmd:progress:alpha:alpha" && entry.Message == "alpha-step");
+            entry.Category == "cmd:progress:alpha:" && entry.Message == "alpha-step");
         Assert.Contains(log.Entries, entry =>
-            entry.Category == "cmd:progress:beta:beta" && entry.Message == "beta-step");
+            entry.Category == "cmd:progress:beta:" && entry.Message == "beta-step");
         Assert.Contains(log.Entries, entry =>
-            entry.Category == "cmd:result:alpha:alpha" && entry.Message.Contains("alpha-done", StringComparison.Ordinal));
+            entry.Category == "cmd:result:alpha:" && entry.Message.Contains("alpha-done", StringComparison.Ordinal));
         Assert.Contains(log.Entries, entry =>
-            entry.Category == "cmd:result:beta:beta" && entry.Message.Contains("beta-done", StringComparison.Ordinal));
+            entry.Category == "cmd:result:beta:" && entry.Message.Contains("beta-done", StringComparison.Ordinal));
         Assert.Equal("cmd:result", CommandBus.ResultCategory);
         Assert.Equal("cmd:progress", CommandBus.ProgressCategory);
     }
@@ -177,8 +179,8 @@ public sealed class CoreFreezeContractTests
         Assert.Equal("win", registry.GetCommandClass("window.inspect"));
         // DEC-023:模块域由 owner 强制并去掉 History 品牌前缀；描述符自填的 Domain 被覆盖。
         Assert.Equal("fixturemodule", registry.GetDomain("fixture.run"));
-        // 两段名回退到首段作为类；「无类」概念已废止。
-        Assert.Equal("fixture", registry.GetCommandClass("fixture.run"));
+        // DEC-025：两段名是该域的无类直接方法，类为空串；首段是域，不再被当作类。
+        Assert.Equal(string.Empty, registry.GetCommandClass("fixture.run"));
     }
 
 

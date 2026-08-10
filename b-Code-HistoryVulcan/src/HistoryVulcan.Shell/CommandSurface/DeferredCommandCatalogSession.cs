@@ -140,13 +140,14 @@ internal sealed class DeferredCommandCatalogSession : ICommandCatalogSession
         if (_registry == null || _localDomain == All)
             return [];
 
+        // DEC-025：无类直接方法参与筛选，用「无类」标签代表空串类键，并排在具体类之后。
         return _registry.All()
             .Where(command => _registry.GetDomain(command.Name)
                 .Equals(_localDomain, StringComparison.OrdinalIgnoreCase))
-            .Select(command => _registry.GetCommandClass(command.Name))
-            .Where(commandClass => !string.IsNullOrWhiteSpace(commandClass))
+            .Select(command => CommandClassLabels.Display(_registry.GetCommandClass(command.Name)))
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(commandClass => commandClass, StringComparer.Ordinal)
+            .OrderBy(commandClass => commandClass == CommandClassLabels.None ? 1 : 0)
+            .ThenBy(commandClass => commandClass, StringComparer.Ordinal)
             .ToList();
     }
 
