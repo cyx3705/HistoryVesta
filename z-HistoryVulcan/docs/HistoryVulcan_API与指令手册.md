@@ -75,9 +75,23 @@ window.Show();
 
 `EnableModules`、`EnableUiModules`、`EnableMcp` 和 `EnableRemoteManagementViews` 均默认 `false`。上例只启动
 Shell 核心、窗口和业务命令；仍保留 `vulcan.command.*`。中央命令集/详情与双 `/` 依赖 HistoryMercury 4.1.0。
-需要可选能力时由消费方明确设置，例如 `EnableModules = true` 或 `EnableMcp = true`。显式启用 MCP 后默认按
-`mcp.autostart` 启动；若只需要装配命令和治理能力而不希望启动时监听，应预先设置 `mcp.autostart=false`，
-之后可执行 `vulcan.mcp.start`。
+需要可选能力时由消费方明确设置，例如 `EnableModules = true` 或 `EnableMcp = true`。
+
+### `EnableMcp` 只是装配，不是监听
+
+`EnableMcp = true` 的含义是**装配网关并注册 `vulcan.mcp.*` 指令**，它本身不打开任何端口。
+是否监听由两个显式开关决定，二者都不硬编码：
+
+| 开关 | 作用域 | 命令 |
+| --- | --- | --- |
+| 本次会话 | 立即开/关端口，不改设置 | `vulcan.mcp.start` / `vulcan.mcp.stop` |
+| 持久 | 是否随宿主启动自动监听 | `vulcan.mcp.autostart enabled=true\|false` |
+
+`mcp.autostart` **缺省为 `false`**：网关会对外开一个回环端口，开不开必须由人显式决定，
+不能因为装配了就默默监听。`vulcan.mcp.start` 只影响本次会话，不会顺手把持久自启动也打开。
+
+HistoryVulcan 桌面宿主自 3.4.0 起 `EnableMcp = true`，因此 `vulcan.mcp.*` 始终可用，
+但默认不监听——要连接先执行 `vulcan.mcp.start`。
 
 ## 3. 命令总线如何消费
 
@@ -202,7 +216,7 @@ WBall           → wball     wball.<类>.<方法>          （无品牌前缀�
 | `command` | 8 | 指令目录、详情、手册、示例与执行原语 |
 | `ui` | 21 | 窗口、布局、面板与文件选择对话框 |
 | `log` | 11 | 控制台日志过滤、导出与承压注入 |
-| `mcp` | 11 | MCP 网关与提案审批 |
+| `mcp` | 12 | MCP 网关（含 start/stop/autostart 开关）与提案审批 |
 | `module` | 4 | 模块发现、装载与管理页 |
 | `prompt` | 8 | 提示词治理、纠正与事故记录 |
 | `svc` | 4 | 后台服务生命周期 |
