@@ -5,6 +5,7 @@ using HistoryVulcan.Services;
 using HistoryVulcan.Services.Mcp;
 using HistoryVulcan.Shell.Mcp;
 using System.Collections.Concurrent;
+using System.IO;
 using Xunit;
 
 namespace HistoryVulcan.Tests;
@@ -184,6 +185,53 @@ public sealed class CoreFreezeContractTests
     }
 
 
+
+    [Fact]
+    public async Task PromptLookupsDegradeForCommandsWithoutALocalProjection()
+    {
+        // 命令集详情页对每条选中指令都会拉一次 vulcan.prompt.get / history。
+        // 提示词投影建立在本进程注册表上，而模块指令注册在服务进程，
+        // 于是点一条 janus.* 就抛 InvalidOperationException——实测累计 156 条红字。
+        // 只读查询必须如实回答「没有本地投影」，不能当成错误。
+        var root = Path.Combine(Path.GetTempPath(), $"HistoryVulcan-prompt-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        try
+        {
+            var registry = new CommandRegistry();
+            registry.Register(new CommandDescriptor
+            {
+                Name = "vulcan.command.list",
+                Domain = "vulcan",
+                CommandClass = "command",
+                Summary = "本进程注册的指令",
+                Handler = CommandDescriptor.Sync(_ => CommandResult.Ok()),
+            });
+
+            var log = new NullLog();
+            var store = new PromptGovernanceStore(root, log);
+            var exporter = new CommandSchemaExporter(registry);
+            PromptGovernanceCommands.RegisterAll(registry, exporter, store);
+            var bus = new CommandBus(registry, log);
+
+            // 本进程有投影：正常返回状态。
+            var local = await bus.ExecuteAsync("vulcan.prompt.get name=vulcan.command.list", "test");
+            Assert.True(local.Success, local.Message);
+
+            // 模块指令没有本地投影：成功返回并说明原因，不得失败、不得抛异常。
+            var moduleGet = await bus.ExecuteAsync("vulcan.prompt.get name=janus.proj.list", "test");
+            Assert.True(moduleGet.Success, moduleGet.Message);
+            Assert.Contains("没有本地 MCP 投影", moduleGet.Message, StringComparison.Ordinal);
+
+            var moduleHistory = await bus.ExecuteAsync("vulcan.prompt.history name=janus.proj.list", "test");
+            Assert.True(moduleHistory.Success, moduleHistory.Message);
+            Assert.Contains("没有本地 MCP 投影", moduleHistory.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
 
     [Fact]
     public async Task PromptCommandsReturnSafeIntegrityValidationErrors()

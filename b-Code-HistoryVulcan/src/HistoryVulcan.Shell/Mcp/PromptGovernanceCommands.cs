@@ -99,7 +99,12 @@ public static class PromptGovernanceCommands
             Parameters = [StringParam("name", "指令名或工具名", required: true, position: 0)],
             Handler = CommandDescriptor.Sync(ctx =>
             {
-                var status = BuildStatus(RequireTool(exporter, ctx.RequireString("name")), store);
+                var name = ctx.RequireString("name").Trim();
+                var tool = exporter.Find(name);
+                if (tool == null)
+                    return CommandResult.Ok(NoLocalProjection(name), null);
+
+                var status = BuildStatus(tool, store);
                 return CommandResult.Ok(FormatStatus(status), status);
             }),
         };
@@ -120,7 +125,11 @@ public static class PromptGovernanceCommands
         ],
             Handler = CommandDescriptor.Sync(ctx =>
             {
-                var tool = RequireTool(exporter, ctx.RequireString("name"));
+                var name = ctx.RequireString("name").Trim();
+                var tool = exporter.Find(name);
+                if (tool == null)
+                    return CommandResult.Ok(NoLocalProjection(name), Array.Empty<PromptRevision>());
+
                 var rows = store.GetRevisions(tool.CommandName, ctx.GetInt("limit", 20));
                 if (rows.Count == 0)
                     return CommandResult.Ok($"{tool.CommandName} 尚无修订，当前使用指令默认描述", rows);
@@ -426,6 +435,20 @@ public static class PromptGovernanceCommands
            $"\n生效描述: {status.EffectiveDescription}" +
            $"\n当前修订: {status.CurrentRevision?.Id ?? "(默认)"}" +
            $"\n待处理提案: {status.OpenProposals}";
+
+    /// <summary>
+    /// 只读查询在指令不在本地 MCP 投影里时的回答。
+    /// </summary>
+    /// <remarks>
+    /// 提示词治理的投影建立在**本进程**注册表之上，而模块指令注册在服务进程，
+    /// 因此 janus/mercury/diana 等模块指令在这里查不到。这不是错误：
+    /// 它们只是没有本地治理记录。以前这里直接抛异常，命令集里点一条模块指令
+    /// 就会弹红字——详情页对每条选中指令都会拉一次 get 和 history。
+    /// 写指令（propose/apply 等）仍走 RequireTool 硬失败：改一条不存在的投影必须报错。
+    /// </remarks>
+    private static string NoLocalProjection(string name)
+        => $"{name} 没有本地 MCP 投影，因而没有可治理的描述记录。"
+           + "模块指令由所属模块进程注册，其描述在模块自己的合同里维护。";
 
     private static McpToolInfo RequireTool(CommandSchemaExporter exporter, string name)
         => exporter.Find(name.Trim())
