@@ -17,6 +17,7 @@ Diana 是 AI 的翻译官（公共文档、巡检、工具中继）。Diana 不�
 | [`b-Office-OneHistory/`](./b-Office-OneHistory/) | **跨项目公共文档区**：OneHistory 定义、命名规范、消费文档索引 |
 | [`b-Office-Diana/`](./b-Office-Diana/) | Diana 自身的项目合同 |
 | [`b-Code/Publish-OneHistoryModule.ps1`](./b-Code/Publish-OneHistoryModule.ps1) | 集中执行已登记模块的候选构建、测试、正式提升和消费文档镜像 |
+| [`b-Code/module-publish.manifest.json`](./b-Code/module-publish.manifest.json) | 普通模块的发布登记与验证步骤；新增普通模块无需修改主发布脚本 |
 
 两个文档区分开的原因：公共区被**别的项目**消费，Diana 的合同只描述 Diana。
 
@@ -57,15 +58,17 @@ dotnet run --project ./b-Code-HistoryDiana/tests/HistoryDiana.Smoke/HistoryDiana
 
 ## 集中发布
 
-已登记两类项目：`HistoryMinerva`（Kind=module）与 `HistoryVulcan`（Kind=host）。两类共用同一条
-管线，差异只在快照形状与验证步骤，由定义表里的 `Kind` 区分；候选构建的调用形状统一为
+已登记四类项目：`HistoryJanus`、`HistoryMercury`、`HistoryMinerva`（Kind=module）与
+`HistoryVulcan`（Kind=host）。普通模块的登记和验证步骤位于
+[`b-Code/module-publish.manifest.json`](./b-Code/module-publish.manifest.json)，共用同一条管线；
+Vulcan 保留宿主快照与门禁特例。候选构建的调用形状统一为
 `-Configuration Release -OutputRoot <候选目录>`。
 
 默认只生成并验证候选；正式提升必须显式加 `-Publish`，脏工作树
 还必须再加 `-AllowDirtySource`，且来源状态会写入 Diana 的消费文档镜像清单。
 
 ```powershell
-.\b-Code\Publish-OneHistoryModule.ps1 -Module HistoryMinerva
+.\b-Code\Publish-OneHistoryModule.ps1 -Module HistoryJanus
 .\b-Code\Publish-OneHistoryModule.ps1 -Module HistoryVulcan -Publish
 ```
 

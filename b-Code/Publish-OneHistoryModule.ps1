@@ -1,7 +1,6 @@
 ﻿[CmdletBinding()]
 param(
-    [ValidateSet('HistoryMinerva', 'HistoryVulcan')]
-    [string]$Module = 'HistoryMinerva',
+    [Parameter(Mandatory = $true)][string]$Module,
     [switch]$Publish,
     [switch]$AllowDirtySource
 )
@@ -15,30 +14,28 @@ $transactionId = [Guid]::NewGuid().ToString('N')
 $stamp = [DateTimeOffset]::UtcNow.ToString('yyyyMMdd-HHmmss')
 $workRoot = Join-Path $dianaRoot "b-Publish\work\module-release-$transactionId"
 
-# Kind 决定快照形状与验证步骤，其余字段两类共用。
-#   module  平铺快照 + module.manifest.json(name/version) + Smoke/UiSmoke 控制台
-#   host    host/ 与 docs/ 多层快照 + manifest.json(product/version) + dotnet test + 门禁
-# 两类的候选构建调用形状是同一个：-Configuration Release -OutputRoot <候选目录>。
-$definitions = @{
-    HistoryMinerva = [ordered]@{
-        Kind = 'module'
-        ProjectDirectory = '2026-024-HistoryMinerva'
-        VersionProps = 'b-Code-HistoryMinerva\build\HistoryMinerva.Version.props'
-        VersionProperty = 'HistoryMinervaVersion'
-        SourceManifest = 'b-Code-HistoryMinerva\module.manifest.json'
-        SnapshotManifest = 'module.manifest.json'
-        IdentityProperty = 'name'
-        CandidateDirectory = 'b-Publish\current\HistoryMinerva'
-        FormalDirectory = 'z-HistoryMinerva'
-        BuildScript = 'b-Code-HistoryMinerva\eng\Build-HistoryMinervaPackage.ps1'
-        PackageDocuments = 'b-Office\package'
-        ContractScript = 'b-Code\Test-ProjectContract.ps1'
-        SmokeProject = 'b-Code-HistoryMinerva-Tests\tests\HistoryMinerva.Smoke\HistoryMinerva.Smoke.csproj'
-        UiSmokeProject = 'b-Code-HistoryMinerva-Tests\tests\HistoryMinerva.UiSmoke\HistoryMinerva.UiSmoke.csproj'
-        TestProject = ''
-        GateScripts = @()
+# 普通 module 的定义与验证步骤由注册表提供；新增普通模块只需新增一项 JSON。
+$registryPath = Join-Path $dianaRoot 'b-Code\module-publish.manifest.json'
+if (-not (Test-Path -LiteralPath $registryPath -PathType Leaf)) {
+    throw "Module publish registry is missing: $registryPath"
+}
+$registry = [IO.File]::ReadAllText($registryPath, [Text.UTF8Encoding]::new($false)) | ConvertFrom-Json
+if ($registry.schemaVersion -ne 1) {
+    throw "Unsupported module publish registry schema: $($registry.schemaVersion)"
+}
+$definitions = @{}
+foreach ($entry in @($registry.modules)) {
+    if ([string]::IsNullOrWhiteSpace([string]$entry.name) -or $entry.kind -ne 'module') {
+        throw 'Every registry module must declare a non-empty name and kind=module.'
     }
-    HistoryVulcan = [ordered]@{
+    if ($definitions.ContainsKey([string]$entry.name)) {
+        throw "Duplicate module publish registry entry: $($entry.name)"
+    }
+    $definitions[[string]$entry.name] = $entry
+}
+
+# Vulcan 是宿主，保留宿主快照与门禁的特例配置。
+$definitions['HistoryVulcan'] = [ordered]@{
         Kind = 'host'
         ProjectDirectory = '2026-023-HistoryVulcan'
         VersionProps = 'b-Code-HistoryVulcan\VulcanVersion.props'
@@ -49,7 +46,7 @@ $definitions = @{
         IdentityProperty = 'product'
         CandidateDirectory = 'b-Publish\current'
         FormalDirectory = 'z-HistoryVulcan'
-        BuildScript = 'b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1'
+        BuildScript = 'b-Code-HistoryVulcan\eng\Build-HistoryVulcanPackage.ps1'
         PackageDocuments = 'b-Office\package'
         ContractScript = ''
         SmokeProject = ''
@@ -59,7 +56,6 @@ $definitions = @{
             'b-Code-HistoryVulcan\eng\Test-QualityGate.ps1',
             'b-Code-HistoryVulcan\eng\Assert-PublicApiBaseline.ps1'
         )
-    }
 }
 
 function Assert-ChildPath {
@@ -102,7 +98,11 @@ function Read-ModuleVersion {
     param([string]$PropsPath, [string]$PropertyName)
 
     [xml]$props = [IO.File]::ReadAllText($PropsPath, [Text.UTF8Encoding]::new($false))
-    $values = @($props.Project.PropertyGroup | ForEach-Object { $_.$PropertyName } | Where-Object { $_ })
+    $values = @($props.Project.PropertyGroup | ForEach-Object {
+        if ($_.PSObject.Properties.Name -contains $PropertyName) {
+            $_.PSObject.Properties[$PropertyName].Value
+        }
+    } | Where-Object { $_ })
     if ($values.Count -ne 1 -or [string]$values[0] -notmatch '^\d+\.\d+\.\d+$') {
         throw "Version source must declare exactly one semantic version property ${PropertyName}: $PropsPath"
     }
@@ -142,22 +142,14 @@ function Assert-ModuleSnapshot {
         $hashes[$Matches.file] = $Matches.hash.ToUpperInvariant()
     }
 
-    # 宿主快照有 host/ 与 docs/ 子目录，SHA256SUMS 用带 / 的相对路径；模块快照是平铺文件名。
+    # Janus and host snapshots have nested directories; flat modules produce the same relative keys as file names.
     $rootPrefix = [IO.Path]::GetFullPath($Root).TrimEnd('\') + '\'
-    $files = if ($Kind -eq 'host') {
-        @(Get-ChildItem -LiteralPath $Root -File -Recurse | Where-Object Name -ne 'SHA256SUMS')
-    } else {
-        @(Get-ChildItem -LiteralPath $Root -File | Where-Object Name -ne 'SHA256SUMS')
-    }
+    $files = @(Get-ChildItem -LiteralPath $Root -File -Recurse | Where-Object Name -ne 'SHA256SUMS')
     if ($files.Count -ne $hashes.Count) {
         throw "SHA256SUMS does not cover the complete snapshot ($($files.Count) files vs $($hashes.Count) entries): $Root"
     }
     foreach ($file in $files) {
-        $key = if ($Kind -eq 'host') {
-            $file.FullName.Substring($rootPrefix.Length).Replace('\', '/')
-        } else {
-            $file.Name
-        }
+        $key = $file.FullName.Substring($rootPrefix.Length).Replace('\', '/')
         $actual = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToUpperInvariant()
         if (-not $hashes.ContainsKey($key) -or $hashes[$key] -ne $actual) {
             throw "Checksum mismatch in ${Root}: $key"
@@ -233,7 +225,65 @@ function Assert-ConsumerDocumentMirror {
     }
 }
 
+function Invoke-ConfiguredModuleValidation {
+    param(
+        [Parameter(Mandatory = $true)][object[]]$Steps,
+        [Parameter(Mandatory = $true)][string]$ProjectRoot
+    )
+
+    foreach ($step in $Steps) {
+        if ([string]::IsNullOrWhiteSpace([string]$step.tool) -or
+            @($step.arguments).Count -eq 0) {
+            throw 'Every module validation step must declare a tool and arguments.'
+        }
+        $configurations = if ($step.PSObject.Properties.Name -contains 'configurations') {
+            @($step.configurations | ForEach-Object { [string]$_ })
+        } else {
+            @('')
+        }
+        foreach ($configuration in $configurations) {
+            $moduleOutput = ''
+            if ($step.PSObject.Properties.Name -contains 'moduleOutputRoot') {
+                $moduleOutput = Join-Path $ProjectRoot "$($step.moduleOutputRoot)\$configuration\net8.0-windows"
+            }
+            $capturePath = Join-Path $workRoot 'ui-smoke-320x680-dark.png'
+            $isolatedOutputBase = if ($step.PSObject.Properties.Name -contains 'isolatedOutputRoot') {
+                Join-Path $ProjectRoot ([string]$step.isolatedOutputRoot)
+            } else {
+                Join-Path $workRoot 'test-output'
+            }
+            $isolatedOutputRoot = $isolatedOutputBase.TrimEnd([IO.Path]::DirectorySeparatorChar) +
+                [IO.Path]::DirectorySeparatorChar
+            $arguments = @($step.arguments | ForEach-Object {
+                ([string]$_).Replace('{configuration}', $configuration).
+                    Replace('{moduleOutput}', $moduleOutput).
+                    Replace('{capturePath}', $capturePath).
+                    Replace('{isolatedOutputRoot}', $isolatedOutputRoot)
+            })
+            $description = ([string]$step.description).Replace('{configuration}', $configuration)
+            try {
+                Invoke-Checked ([string]$step.tool) $arguments $ProjectRoot $description
+            }
+            finally {
+                if ($step.PSObject.Properties.Name -contains 'isolatedOutputRoot' -and
+                    (Test-Path -LiteralPath $isolatedOutputBase)) {
+                    Remove-Item -LiteralPath $isolatedOutputBase -Recurse -Force
+                }
+                $legacyOutputRoot = "$isolatedOutputBase$configuration"
+                if ($step.PSObject.Properties.Name -contains 'isolatedOutputRoot' -and
+                    $legacyOutputRoot -ne $isolatedOutputBase -and
+                    (Test-Path -LiteralPath $legacyOutputRoot)) {
+                    Remove-Item -LiteralPath $legacyOutputRoot -Recurse -Force
+                }
+            }
+        }
+    }
+}
+
 $definition = $definitions[$Module]
+if ($null -eq $definition) {
+    throw "Module '$Module' is not registered. Add a kind=module entry to $registryPath."
+}
 $projectRoot = Assert-ChildPath (Join-Path $projectsRoot $definition.ProjectDirectory) $projectsRoot 'Module project'
 $versionPropsPath = Join-Path $projectRoot $definition.VersionProps
 $sourceManifestPath = Join-Path $projectRoot $definition.SourceManifest
@@ -282,30 +332,19 @@ try {
     Assert-ModuleSnapshot $candidateRoot $Module $moduleVersion $definition.SnapshotManifest $definition.IdentityProperty $definition.Kind
 
     if ($definition.Kind -eq 'module') {
-        Invoke-Checked 'powershell.exe' @(
-            '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $projectRoot $definition.ContractScript),
-            '-Instantiation'
-        ) $projectRoot 'Run project contract checks'
+        Invoke-ConfiguredModuleValidation @($definition.validation) $projectRoot
+    } elseif ($definition.Kind -eq 'host') {
         Invoke-Checked 'dotnet.exe' @(
-            'run', '--project', (Join-Path $projectRoot $definition.SmokeProject), '-c', 'Release',
-            '-p:NuGetAudit=false'
-        ) $projectRoot 'Run module Smoke'
-        Invoke-Checked 'dotnet.exe' @(
-            'run', '--project', (Join-Path $projectRoot $definition.UiSmokeProject), '-c', 'Release',
-            '-p:NuGetAudit=false', '--', '--width', '320', '--height', '680', '--dark',
-            '--capture', (Join-Path $workRoot 'ui-smoke-320x680-dark.png')
-        ) $projectRoot 'Run module UI Smoke'
-    }
-    else {
-        # 宿主的等价验证不是 Smoke 控制台，而是单元测试加两道门禁。
-        Invoke-Checked 'dotnet.exe' @(
-            'test', (Join-Path $projectRoot $definition.TestProject), '-c', 'Release', '--nologo'
+            'test', (Join-Path $projectRoot $definition.TestProject), '-c', 'Release', '--nologo',
+            '--no-restore', '-p:NuGetAudit=false'
         ) $projectRoot 'Run host unit tests'
         foreach ($gate in @($definition.GateScripts)) {
             Invoke-Checked 'powershell.exe' @(
                 '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $projectRoot $gate)
             ) $projectRoot "Run host gate $(Split-Path -Leaf $gate)"
         }
+    } else {
+        throw "Unsupported publish kind: $($definition.Kind)"
     }
 
     $documentStage = Join-Path $workRoot 'consumer-docs'
