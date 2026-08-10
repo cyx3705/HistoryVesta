@@ -21,21 +21,6 @@
             Builds the Janus domain graph inside infrastructure supplied by the AppShell host.
             </summary>
         </member>
-        <member name="T:HistoryJanus.DebugCommands">
-            <summary>
-            debug.* 工具指令：
-            logflood 用于承压回归；sleep 是 --exec 自动化脚本的等待原语。
-            </summary>
-        </member>
-        <member name="M:HistoryJanus.DebugCommands.BuildLogFlood(HistoryVulcan.Core.Logging.IShellLog)">
-            <summary>
-            janus.debug.logflood：按指定速率注入日志以执行承压验证。
-            异步长任务示范:后台线程产出、经 Progress 上报进度、全程不阻塞 UI(§5.2)。
-            </summary>
-        </member>
-        <member name="M:HistoryJanus.DebugCommands.BuildSleep">
-            <summary>janus.debug.sleep:异步等待(自动化脚本用,如 --exec 序列中等待模块热重载生效)。</summary>
-        </member>
         <member name="T:HistoryJanus.Git.BranchHistoryCommands">
             <summary>分支历史、恢复提交、本地硬重置与 lease 强推指令。</summary>
         </member>
