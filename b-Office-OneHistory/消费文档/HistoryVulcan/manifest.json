@@ -3,11 +3,11 @@
     "module":  "HistoryVulcan",
     "version":  "3.4.0",
     "sourceProject":  "2026-023-HistoryVulcan",
-    "sourceCommit":  "ff5d39267f0ac7917d069428634448db999f8d14",
+    "sourceCommit":  "02c7debc405102d67755a36887e3e04cfb9824a5",
     "sourceDirty":  false,
     "sourceDocumentRoot":  "b-Office/package",
     "artifactSnapshot":  "../../../../2026-023-HistoryVulcan/z-HistoryVulcan",
-    "generatedAtUtc":  "2026-08-10T12:57:17.0537800+00:00",
+    "generatedAtUtc":  "2026-08-10T15:21:24.1101047+00:00",
     "documents":  [
                       {
                           "file":  "HistoryVulcan_API与指令手册.md",
