@@ -33,7 +33,7 @@ function Invoke-Dotnet {
 }
 
 function Get-VersionProperties {
-    $output = & dotnet msbuild $ModuleProject -nologo -getProperty:HistoryJanusVersion -getProperty:AssemblyVersion
+    $output = & dotnet msbuild $ModuleProject -nologo -getProperty:HistoryJanusVersion -getProperty:AssemblyVersion -getProperty:RequiredHistoryVulcanVersion
     if ($LASTEXITCODE -ne 0) { throw 'Unable to evaluate Janus version source' }
     return (($output -join "`n") | ConvertFrom-Json).Properties
 }
