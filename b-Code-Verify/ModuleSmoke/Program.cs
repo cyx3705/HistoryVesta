@@ -118,14 +118,15 @@ foreach (var commandName in businessCommands)
     }
 }
 var result = await bus.ExecuteAsync("janus.status", "ModuleSmoke");
-if (!result.Success || !result.Message.Contains("3.6.0", StringComparison.Ordinal))
+if (!result.Success || !result.Message.Contains(expectedVersion, StringComparison.Ordinal))
     throw new InvalidOperationException($"module command failed: {result.Message}");
 
 var projectList = await bus.ExecuteAsync("janus.proj.list", "ModuleSmoke");
 if (!projectList.Success)
     throw new InvalidOperationException($"real project command failed: {projectList.Message}");
 
-var expectedWindows = new[] { "overview", "projops", "github" };
+// github 页已并入项目操作页底部分段，模块只注册两个窗口。
+var expectedWindows = new[] { "overview", "projops" };
 var actualWindows = shellUi.Descriptors.Select(item => item.Id).ToArray();
 if (!expectedWindows.SequenceEqual(actualWindows, StringComparer.Ordinal))
 {
@@ -136,19 +137,16 @@ if (!expectedWindows.SequenceEqual(actualWindows, StringComparer.Ordinal))
 var windowsById = shellUi.Descriptors.ToDictionary(item => item.Id, StringComparer.Ordinal);
 AssertOverviewCenterTool(windowsById["overview"]);
 AssertPlacement(windowsById["projops"], DockSide.Right, 0.28);
-AssertPlacement(windowsById["github"], DockSide.Right, 0.28);
-if (!windowsById["github"].Title.Equals("github", StringComparison.Ordinal))
-    throw new InvalidOperationException("github window keeps the short lowercase title");
 
 if (shellUi.Descriptors.Any(item => item.Title.Equals("HistoryJanus", StringComparison.Ordinal)))
     throw new InvalidOperationException("placeholder main window is still registered");
 
 var pageTypes = ConstructPages(shellUi.Descriptors, bus);
+// GitHubConnectionView 不再是宿主页面，它由 ProjectOperationsView 内嵌为第三个分段。
 var expectedPageTypes = new[]
 {
     "OverviewView",
     "ProjectOperationsView",
-    "GitHubConnectionView",
 };
 if (!expectedPageTypes.SequenceEqual(pageTypes, StringComparer.Ordinal))
     throw new InvalidOperationException($"unexpected page types: [{string.Join(", ", pageTypes)}]");
