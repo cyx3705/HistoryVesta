@@ -606,6 +606,31 @@ public sealed class DockingContractTests
     }
 
     [Fact]
+    public void RuntimeRegistrationResolvesTabTargetDeclaredAfterFollower()
+    {
+        UiTestHost.RunSta(() =>
+        {
+            var manager = new DockingManager();
+            var host = new DockingHost(manager, [], new MemoryLayoutStore(), new NullLog());
+            host.Initialize();
+
+            host.RegisterWindow(new ToolWindowDescriptor
+            {
+                Id = "overview",
+                Title = "项目总览",
+                DefaultSide = DockSide.Tab,
+                DefaultTabTarget = StandardWindowIds.Mcp,
+                ContentFactory = () => new Border(),
+            }, "HistoryJanus");
+            Assert.Equal(DockSide.Right, host.ListWindows().Single(item => item.Id == "overview").Side);
+
+            host.RegisterWindow(Tool(StandardWindowIds.Mcp, DockSide.Center, 1), "HistoryMercury");
+
+            AssertCenterTool(manager, "overview");
+        });
+    }
+
+    [Fact]
     public void RestoredLayoutShowsNewDefaultVisibleCenterPage()
     {
         UiTestHost.RunSta(() =>

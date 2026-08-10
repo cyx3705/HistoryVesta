@@ -1,24 +1,15 @@
 ﻿<#
 .SYNOPSIS
-    构建 HistoryVulcan 宿主快照；可作为 Diana 集中发布合同里的候选构建步骤。
+    构建 HistoryVulcan 宿主候选快照。
 .DESCRIPTION
-    两种调用方式：
-
-      本仓直接发布   -Version 3.4.0 [-DeployToZ]
-      Diana 集中发布 -Configuration Release -OutputRoot <候选目录>
-
-    后者是 Publish-OneHistoryModule.ps1 对 BuildScript 的统一调用形状：只产候选、
-    不提升正式区，版本从 VulcanVersion.props 现读而不由调用方传入。
+    这是 Diana Publish-OneHistoryModule.ps1 对 BuildScript 的统一调用形状：只产候选、
+    不提升正式区。版本从 VulcanVersion.props 现读，不由调用方传入。
     宿主与模块的快照形状不同（host/ 与 docs/ 多层目录、manifest.json 而非
     module.manifest.json、SHA256SUMS 用带 / 的相对路径），差异在 Diana 侧按 Kind 区分。
 #>
 param(
-    [string]$Version,
-    [switch]$DeployToZ,
-
-    # 统一候选构建契约。指定 -OutputRoot 时只产候选，忽略 -DeployToZ。
     [ValidateSet('Release')]
-    [string]$Configuration,
+    [string]$Configuration = 'Release',
     [string]$OutputRoot
 )
 
@@ -33,7 +24,6 @@ $candidateRoot = if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
 } else {
     [IO.Path]::GetFullPath($OutputRoot)
 }
-$formalRoot = Join-Path $repoRoot 'z-HistoryVulcan'
 $project = Join-Path $componentRoot 'src\App\App.csproj'
 $documentRoot = Join-Path $repoRoot 'b-Office\package'
 $releaseRoot = Join-Path $componentRoot 'eng\release'
@@ -44,15 +34,8 @@ if ($LASTEXITCODE -ne 0) {
     throw 'Unable to evaluate HistoryVulcan version source'
 }
 $versionProperties = (($versionOutput -join "`n") | ConvertFrom-Json).Properties
-$sourceVersion = [string]$versionProperties.VulcanVersion
+$Version = [string]$versionProperties.VulcanVersion
 $expectedFileVersion = [string]$versionProperties.FileVersion
-if ([string]::IsNullOrWhiteSpace($Version)) {
-    # 集中发布不传版本：版本源是 VulcanVersion.props，调用方不该也持有一份。
-    $Version = $sourceVersion
-}
-elseif ($sourceVersion -ne $Version) {
-    throw "VulcanVersion.props declares $sourceVersion; requested $Version"
-}
 if ($Version -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') {
     throw "Invalid semantic version: $Version"
 }
@@ -136,14 +119,6 @@ function Assert-Snapshot {
     }
 }
 
-function Copy-DirectoryContent {
-    param([string]$Source, [string]$Destination)
-    New-Item -ItemType Directory -Force -Path $Destination | Out-Null
-    foreach ($item in Get-ChildItem -LiteralPath $Source -Force) {
-        Copy-Item -LiteralPath $item.FullName -Destination $Destination -Recurse
-    }
-}
-
 New-Item -ItemType Directory -Force -Path $publishRoot | Out-Null
 $temporary = Join-Path $publishRoot ('.current-next-' + [Guid]::NewGuid().ToString('N'))
 $candidateBackup = Join-Path $publishRoot ('.current-previous-' + [Guid]::NewGuid().ToString('N'))
@@ -154,9 +129,13 @@ try {
     New-Item -ItemType Directory -Force -Path $temporaryHost, $temporaryDocs | Out-Null
 
     Invoke-Dotnet @(
+        'restore', $project, '-r', 'win-x64', '--locked-mode', '--nologo',
+        '-p:NuGetAudit=false')
+    Invoke-Dotnet @(
         'publish', $project, '-c', 'Release', '--no-restore',
         '--self-contained', 'false', '-r', 'win-x64', '-o', $temporaryHost,
-        ('-p:BaseOutputPath=' + (Join-Path $buildOutputRoot '')))
+        ('-p:BaseOutputPath=' + (Join-Path $buildOutputRoot '')),
+        '-p:NuGetAudit=false')
     Assert-HostDirectory $temporaryHost
 
     foreach ($documentName in $documentNames) {
@@ -252,47 +231,6 @@ Run `host/HistoryVulcan.exe`. Historical releases are stored under `b-Publish/hi
         throw
     }
     Write-Host "Prepared HistoryVulcan $Version host snapshot at $candidateRoot"
-
-    if ($DeployToZ -and -not [string]::IsNullOrWhiteSpace($OutputRoot)) {
-        # 候选构建步骤不得提升正式区：提升由 Diana 的事务统一做，才能和文档镜像一起回滚。
-        throw 'Do not combine -OutputRoot with -DeployToZ; centralized publishing promotes the candidate itself.'
-    }
-
-    if ($DeployToZ) {
-        Assert-Snapshot $candidateRoot
-        $formalParent = Split-Path -Parent $formalRoot
-        $formalLeaf = Split-Path -Leaf $formalRoot
-        $formalTemporary = Join-Path $formalParent (".$formalLeaf.next-" + [Guid]::NewGuid().ToString('N'))
-        $formalBackup = Join-Path $formalParent (".$formalLeaf.previous-" + [Guid]::NewGuid().ToString('N'))
-        $formalMoved = $false
-        $deployed = $false
-        try {
-            Copy-DirectoryContent -Source $candidateRoot -Destination $formalTemporary
-            Assert-Snapshot $formalTemporary
-            if (Test-Path -LiteralPath $formalRoot) {
-                Move-Item -LiteralPath $formalRoot -Destination $formalBackup
-                $formalMoved = $true
-            }
-            Move-Item -LiteralPath $formalTemporary -Destination $formalRoot
-            $deployed = $true
-            if ($formalMoved) {
-                Remove-Item -LiteralPath $formalBackup -Recurse -Force
-            }
-        }
-        catch {
-            if (-not $deployed -and $formalMoved -and -not (Test-Path -LiteralPath $formalRoot) -and
-                (Test-Path -LiteralPath $formalBackup)) {
-                Move-Item -LiteralPath $formalBackup -Destination $formalRoot
-            }
-            throw
-        }
-        finally {
-            if (Test-Path -LiteralPath $formalTemporary) {
-                Remove-Item -LiteralPath $formalTemporary -Recurse -Force -ErrorAction SilentlyContinue
-            }
-        }
-        Write-Host "Deployed HistoryVulcan $Version host snapshot to $formalRoot"
-    }
 }
 finally {
     foreach ($path in @($temporary, $candidateBackup, $buildOutputRoot)) {

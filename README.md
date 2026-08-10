@@ -71,10 +71,10 @@ dotnet format .\HistoryVulcan.sln --verify-no-changes --no-restore
 
 ```powershell
 # 生成 b-Publish/current 下的宿主 + 文档完整候选
-.\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.3.2
+.\b-Code-HistoryVulcan\eng\Build-HistoryVulcanPackage.ps1
 
 # 候选审核通过后，将同一完整快照一次性部署到 z-HistoryVulcan
-.\b-Code-HistoryVulcan\eng\Publish-HistoryVulcanHost.ps1 -Version 3.3.2 -DeployToZ
+powershell -NoProfile -ExecutionPolicy Bypass -File ..\2026-019-HistoryDiana\b-Code\Publish-OneHistoryModule.ps1 -Module HistoryVulcan -Publish
 
 # 从正式 Z 快照生成 Windows 安装包与便携压缩包
 .\b-Code-HistoryVulcan\eng\Pack-HistoryVulcanInstaller.ps1 -Version 3.3.2

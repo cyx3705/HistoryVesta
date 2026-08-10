@@ -298,6 +298,7 @@ public sealed partial class ModuleHost : IDisposable
     private void SwapRegistrations(Snapshot old, Snapshot next)
     {
         DisposeShortcutRegistrations(old);
+        RegisterShortcuts(next);
 
         if (_registry == null)
         {
@@ -359,6 +360,29 @@ public sealed partial class ModuleHost : IDisposable
         }
 
         next.FinalizeMetas();
+    }
+
+    private void RegisterShortcuts(Snapshot snapshot)
+    {
+        if (GlobalShortcuts == null)
+            return;
+
+        foreach (var (module, owner) in snapshot.PendingShortcuts)
+        {
+            IGlobalShortcutRegistrar? registrar = null;
+            try
+            {
+                registrar = GlobalShortcuts.CreateOwnerRegistrar(owner);
+                module.RegisterShortcuts(registrar);
+                snapshot.ShortcutRegistrations.Add(registrar);
+            }
+            catch (Exception ex)
+            {
+                try { registrar?.Dispose(); }
+                catch { }
+                _log.Warn("hotkey", $"模块 {owner} 快捷键注册失败: {ex.Message}");
+            }
+        }
     }
 
     /// <summary>
@@ -573,13 +597,11 @@ public sealed partial class ModuleHost : IDisposable
                 try
                 {
                     var module = (IGlobalShortcutModule)snap.GetInstance(shortcutType);
-                    var registrar = GlobalShortcuts.CreateOwnerRegistrar(owner);
-                    module.RegisterShortcuts(registrar);
-                    snap.ShortcutRegistrations.Add(registrar);
+                    snap.PendingShortcuts.Add((module, owner));
                 }
                 catch (Exception ex)
                 {
-                    _log.Warn("hotkey", $"模块 {owner} 快捷键注册失败: {ex.Message}");
+                    _log.Warn("hotkey", $"实例化模块 {owner} 快捷键入口失败: {ex.Message}");
                 }
             }
         }

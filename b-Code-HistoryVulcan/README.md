@@ -37,14 +37,14 @@ Runtime 的 HistoryVulcan 宿主，不生成 NuGet 包。兼容包合同继续�
 
 ```powershell
 # 可覆盖 current：生成 Release 宿主、UI/消费文档和 SHA-256 清单
-.\eng\Publish-HistoryVulcanHost.ps1 -Version 3.3.2
+.\eng\Build-HistoryVulcanPackage.ps1
 
 # 候选审核通过后部署同一完整快照到 Z
-.\eng\Publish-HistoryVulcanHost.ps1 -Version 3.3.2 -DeployToZ
+powershell -NoProfile -ExecutionPolicy Bypass -File ..\2026-019-HistoryDiana\b-Code\Publish-OneHistoryModule.ps1 -Module HistoryVulcan -Publish
 ```
 
 当前交付物是宿主程序，不生成 NuGet 包。旧 `Publish-AppShell.ps1` 已于 3.3.2 退役（DEC-023），
-`Publish-HistoryVulcanHost.ps1` 是唯一发布入口。
+`Build-HistoryVulcanPackage.ps1` 只生成候选；正式提升入口是 Diana 集中发布脚本。
 脚本不会执行 Git commit/tag/push，也不会推送 NuGet.org。包结构与许可边界见 `PACKAGE.md`。
 完整消费文档由 `../b-Office/package` 生成，候选位于 `../b-Publish/current/docs/`，正式历史位于
 `../b-Publish/history/<版本>/docs/`，并随当前正式快照写入 `../z-HistoryVulcan/docs/`；

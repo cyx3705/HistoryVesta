@@ -49,9 +49,10 @@
       "OneHistory.HistoryVulcan.Services": {
         "type": "Project",
         "dependencies": {
-          "OneHistory.HistoryVulcan.Core": "[3.2.1, )"
+          "OneHistory.HistoryVulcan.Core": "[3.4.0, )"
         }
       }
-    }
+    },
+    "net8.0-windows7.0/win-x64": {}
   }
 }

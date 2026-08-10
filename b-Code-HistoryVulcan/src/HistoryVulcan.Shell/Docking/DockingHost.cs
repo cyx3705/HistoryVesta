@@ -38,6 +38,7 @@ public sealed partial class DockingHost : IDockingService
     private readonly Dictionary<string, ToolWindowDescriptor> _byId = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, object> _contents = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string> _owners = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> _pendingTabTargets = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, LayoutDocument> _centerDocuments = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _hiddenCenterIds = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, OrphanPlacement> _orphanPlacements = new(StringComparer.OrdinalIgnoreCase);
@@ -333,6 +334,7 @@ public sealed partial class DockingHost : IDockingService
         {
             throw new ArgumentOutOfRangeException(nameof(ratio), "比例须严格位于 (0,1)");
         }
+        _pendingTabTargets.Remove(id);
         using (Suppress())
         {
             if (side == DockSide.Center ||
@@ -545,11 +547,24 @@ public sealed partial class DockingHost : IDockingService
             else
             {
                 var anchorable = MoveToAnchorable(descriptor);
-                PlaceAtSide(anchorable, side, placement?.Ratio ?? descriptor.DefaultRatio, target);
+                var targetPending = side == DockSide.Tab && target != null &&
+                                    FindCenterDocument(target) == null &&
+                                    FindAnchorable(target)?.Parent is not LayoutAnchorablePane;
+                if (targetPending)
+                {
+                    _pendingTabTargets[descriptor.Id] = target!;
+                    _log.Info(LayoutSource, $"窗口 {descriptor.Id} 的标签组目标 {target} 尚未注册，暂时右侧停靠");
+                }
+                PlaceAtSide(
+                    anchorable,
+                    targetPending ? DockSide.Right : side,
+                    placement?.Ratio ?? descriptor.DefaultRatio,
+                    targetPending ? null : target);
                 if (hidden)
                     anchorable.Hide();
             }
             EnsureCentralWorkspace();
+            ResolvePendingTabTargets(descriptor.Id);
         }
 
         ScheduleReapplyRatios();
@@ -586,6 +601,7 @@ public sealed partial class DockingHost : IDockingService
             _baseline.Remove(id);
             _preserveDefaultRatioOnSeed.Remove(id);
             _owners.Remove(id);
+            _pendingTabTargets.Remove(id);
             if (_contents.Remove(id, out var content))
                 TryDispose(content, id);
             _manager.Layout.CollectGarbage();

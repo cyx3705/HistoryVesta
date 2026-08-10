@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Text.Json;
 using HistoryVulcan.Core.Commands;
+using HistoryVulcan.Core.Input;
 using HistoryVulcan.Core.Logging;
 using HistoryVulcan.Core.Modules;
 using HistoryVulcan.Core.Storage;
@@ -259,6 +260,8 @@ public sealed partial class ModuleHost
         public List<string> RegisteredNames { get; } = new();
 
         public List<(IUiModule Module, string Owner)> UiModules { get; } = new();
+
+        public List<(IGlobalShortcutModule Module, string Owner)> PendingShortcuts { get; } = new();
 
         public List<IDisposable> ShortcutRegistrations { get; } = new();
 

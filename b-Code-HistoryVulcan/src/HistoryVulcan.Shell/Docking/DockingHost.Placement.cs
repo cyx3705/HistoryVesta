@@ -106,6 +106,49 @@ public sealed partial class DockingHost
         root.CollectGarbage();
     }
 
+    private void ResolvePendingTabTargets(string targetId)
+    {
+        foreach (var (id, pendingTarget) in _pendingTabTargets
+                     .Where(item => item.Value.Equals(targetId, StringComparison.OrdinalIgnoreCase))
+                     .ToArray())
+        {
+            if (!_byId.TryGetValue(id, out var descriptor) ||
+                !TryPlaceAtTabTarget(descriptor, pendingTarget))
+                continue;
+
+            _pendingTabTargets.Remove(id);
+            _log.Info(LayoutSource, $"窗口 {id} 已挂入延迟可用的标签组 {pendingTarget}");
+        }
+    }
+
+    private bool TryPlaceAtTabTarget(ToolWindowDescriptor descriptor, string targetId)
+    {
+        if (FindCenterDocument(targetId) != null)
+        {
+            var anchorable = MoveToAnchorable(descriptor);
+            var hidden = anchorable.IsHidden;
+            ShowAnchorableAsCenterPage(anchorable);
+            if (hidden)
+                anchorable.Hide();
+            return true;
+        }
+
+        var target = FindAnchorable(targetId);
+        if (target?.Parent is not LayoutAnchorablePane pane)
+            return false;
+
+        var item = MoveToAnchorable(descriptor);
+        var wasHidden = item.IsHidden;
+        Detach(item);
+        pane.Children.Add(item);
+        if (wasHidden)
+            item.Hide();
+        else
+            pane.SelectedContentIndex = pane.Children.Count - 1;
+        _manager.Layout.CollectGarbage();
+        return true;
+    }
+
     private LayoutAnchorablePane? FindSidePane(DockSide side, LayoutAnchorable excluded)
         => _manager.Layout.Descendents()
             .OfType<LayoutAnchorable>()
