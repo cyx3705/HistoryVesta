@@ -23,7 +23,7 @@ public sealed class CommandTaxonomyContractTests
     [InlineData("historyjanus", "janus")]
     [InlineData("HISTORYJANUS", "janus")]
     [InlineData("  HistoryJanus  ", "janus")]
-    [InlineData("WBall", "wball")]
+    [InlineData("Fixture", "fixture")]
     [InlineData("History", "history")]
     [InlineData("", "")]
     public void ModuleDomainStripsTheHistoryBrandPrefix(string moduleName, string expected)
@@ -122,7 +122,7 @@ public sealed class CommandTaxonomyContractTests
     {
         // DEC-025：两段名是「域.方法」，判为无类；首段是域而不是类。
         Assert.Equal(string.Empty, CommandRegistry.LegacyClass("mercury.go"));
-        Assert.Equal(string.Empty, CommandRegistry.LegacyClass("arena.cell"));
+        Assert.Equal(string.Empty, CommandRegistry.LegacyClass("fixture.cell"));
         Assert.Equal("core", CommandRegistry.LegacyClass("ping"));
         Assert.Equal("ui", CommandRegistry.LegacyClass("vulcan.ui.dock"));
         Assert.Equal("dock", CommandRegistry.GetMethod("vulcan.ui.dock"));
