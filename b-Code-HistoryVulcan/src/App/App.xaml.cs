@@ -111,8 +111,10 @@ public partial class App : Application
         {
             Id = StandardWindowIds.Modules,
             Title = "模块管理",
-            DefaultSide = DockSide.Right,
-            DefaultRatio = 0.32,
+            // 左侧：右侧默认不再放页面。宽度与其他左侧页取同一个 0.38，
+            // 否则左栏宽度会取决于哪个模块最后装载。
+            DefaultSide = DockSide.Left,
+            DefaultRatio = 0.38,
             // 内容由 Shell 的 ModulesView 接管；这里只声明独立宿主的默认位置。
         });
         // 承压注水是诊断工具,不属于正式命令集(DEC-023):默认不注册,
