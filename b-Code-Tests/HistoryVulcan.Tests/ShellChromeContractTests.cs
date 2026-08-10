@@ -105,6 +105,40 @@ public sealed class ShellChromeContractTests
     }
 
     [Fact]
+    public void PersistedDarkThemeSurvivesDockManagerThemeAssignment()
+    {
+        // 回归：构造函数里先 ApplyTheme 再赋值 DockManager.Theme，后者重新合并 AvalonDock
+        // 自带的浅色主题字典，把深色令牌盖掉——设置里明明是 dark，启动却是浅色，
+        // 手动再切一次才对。这里断言窗口建好后深色令牌仍然生效。
+        var settings = new MemorySettings();
+        settings.Set("ui.theme", "dark");
+
+        RunShell(
+            window =>
+            {
+                // 窗体级资源没问题；出错的是停靠区：HistoryVulcanTheme.xaml 内部合并了浅色
+                // ShellTokens.xaml，若它排在深色令牌之后就会赢，界面整片变浅。
+                var dockSurface = window.DockManager.TryFindResource("Shell.Brush.Surface") as SolidColorBrush;
+                Assert.NotNull(dockSurface);
+                var brightness = (dockSurface!.Color.R + dockSurface.Color.G + dockSurface.Color.B) / 3.0;
+                Assert.True(
+                    brightness < 96,
+                    $"停靠区 Shell.Brush.Surface 应解析为深色令牌，实际 {dockSurface.Color}(亮度 {brightness:0})");
+
+                var sources = window.DockManager.Resources.MergedDictionaries
+                    .Select(dictionary => dictionary.Source?.ToString() ?? string.Empty)
+                    .ToList();
+                var tokenIndex = sources.FindIndex(item => item.EndsWith("ShellTokens.Dark.xaml", StringComparison.Ordinal));
+                var themeIndex = sources.FindIndex(item => item.EndsWith("HistoryVulcanTheme.xaml", StringComparison.Ordinal));
+                Assert.True(tokenIndex >= 0 && themeIndex >= 0, "深色令牌与 AvalonDock 主题字典都应在停靠区资源里");
+                Assert.True(
+                    tokenIndex > themeIndex,
+                    $"深色令牌必须排在主题字典之后才能生效，实际 tokens={tokenIndex} theme={themeIndex}");
+            },
+            settings: settings);
+    }
+
+    [Fact]
     public void CommandFailureOpensConsoleWithoutErrorFlyout()
     {
         RunShell(window =>

@@ -102,6 +102,12 @@ public partial class ShellWindow : Window, IShellCommandWorkbenchHost
         // UI-03:菜单按钮的弹出层;挂到按钮上才能继承窗体资源(菜单项样式)
         MenuButton.ContextMenu = _menu;
 
+        // AvalonDock 主题字典必须先于令牌换位就位：HistoryVulcanTheme.xaml 内部合并了
+        // ShellTokens.xaml(浅色)，而 SwapTokens 是把令牌追加到 MergedDictionaries 末尾、
+        // 且幂等不重排。先换令牌再赋值 Theme 的话，令牌停在索引 0、主题字典排到它后面，
+        // WPF 后者胜出 —— 表现为「设置里是深色，启动却是浅色，手动再切一次才对」。
+        DockManager.Theme = new HistoryVulcanTheme();
+
         // UI-08:上次选择的主题先于任何界面成型生效,避免启动瞬间闪一下浅色
         ApplyTheme(settings.Get(ThemeSettingsKey) ?? ThemeLight, persist: false);
 
@@ -122,7 +128,6 @@ public partial class ShellWindow : Window, IShellCommandWorkbenchHost
         // 窗体尺寸一致才能做到“重启后布局原样恢复”(验收 1 / 3)
         RestoreWindowBounds();
 
-        DockManager.Theme = new HistoryVulcanTheme();
         LoadThemeResources();
         ApplyPaneStyles(chromeless: false);
 
