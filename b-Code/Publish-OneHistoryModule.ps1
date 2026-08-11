@@ -332,8 +332,21 @@ try {
     Assert-ModuleSnapshot $candidateRoot $Module $moduleVersion $definition.SnapshotManifest $definition.IdentityProperty $definition.Kind
 
     if ($definition.Kind -eq 'module') {
+        # 强制对齐：模块合同由 Diana 这一份执行，且不经注册表配置——
+        # 模块无法跳过、替换或"因为本项目特殊"而改写规则。这是收口的约束点本身。
+        Invoke-Checked 'powershell.exe' @(
+            '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+            (Join-Path $PSScriptRoot 'OneHistory.ModuleContract.ps1'),
+            '-ProjectRoot', $projectRoot, '-Instantiation'
+        ) $projectRoot 'Run aligned module contract'
         Invoke-ConfiguredModuleValidation @($definition.validation) $projectRoot
     } elseif ($definition.Kind -eq 'host') {
+        # 宿主合同同样由 Diana 这一份执行；宿主专属门禁（冻结标签、版本源、UI 令牌）在其中。
+        Invoke-Checked 'powershell.exe' @(
+            '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+            (Join-Path $PSScriptRoot 'OneHistory.HostContract.ps1'),
+            '-ProjectRoot', $projectRoot, '-Instantiation'
+        ) $projectRoot 'Run aligned host contract'
         Invoke-Checked 'dotnet.exe' @(
             'test', (Join-Path $projectRoot $definition.TestProject), '-c', 'Release', '--nologo',
             '--no-restore', '-p:NuGetAudit=false'

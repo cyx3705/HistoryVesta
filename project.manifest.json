@@ -61,6 +61,25 @@
     "oneHistoryNaming": "b-Office-OneHistory/定义/目录与命名规范.md",
     "consumerIndex": "b-Office-OneHistory/消费文档索引.md"
   },
+  "contract": {
+    "requiredFiles": [
+      "AGENTS.md",
+      "README.md",
+      ".ignore",
+      "project.manifest.json",
+      "b-Code/README.md",
+      "b-Code/Test-ProjectContract.ps1",
+      "b-Code/OneHistory.ContractCore.ps1",
+      "b-Code/OneHistory.ModuleContract.ps1",
+      "b-Code/OneHistory.HostContract.ps1",
+      "b-Code/Publish-OneHistoryModule.ps1",
+      "b-Code/module-publish.manifest.json"
+    ],
+    "linkCheckExclusions": [
+      "*\\history\\*",
+      "*-References\\*"
+    ]
+  },
   "commands": {
     "setup": "dotnet restore .\\b-Code-HistoryDiana\\HistoryDiana.csproj",
     "build": "dotnet build .\\b-Code-HistoryDiana\\HistoryDiana.csproj -c Release",

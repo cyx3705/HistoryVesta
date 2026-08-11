@@ -1,5 +1,12 @@
 {
   "schemaVersion": 1,
+  "_hostsComment": "宿主的冻结标签期望值由 Diana 持有，刻意不放在宿主自己的 project.manifest.json 里：期望值与被守护值同处一文件时，同一次编辑会一起改动，闸口形同虚设。",
+  "hosts": [
+    {
+      "name": "HistoryVulcan",
+      "freezeTag": "v3.0.3"
+    }
+  ],
   "modules": [
     {
       "name": "HistoryJanus",
@@ -56,11 +63,6 @@
       "packageDocuments": "b-Office\\package",
       "validation": [
         {
-          "tool": "powershell.exe",
-          "arguments": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "b-Code\\Test-ProjectContract.ps1", "-Instantiation"],
-          "description": "Run project contract checks"
-        },
-        {
           "tool": "dotnet.exe",
           "arguments": ["run", "--project", "b-Code-MercuryDock\\tests\\Smoke\\Smoke.csproj", "-c", "Release", "-p:NuGetAudit=false"],
           "description": "Run module Smoke"
@@ -81,11 +83,6 @@
       "buildScript": "b-Code-HistoryMinerva\\eng\\Build-HistoryMinervaPackage.ps1",
       "packageDocuments": "b-Office\\package",
       "validation": [
-        {
-          "tool": "powershell.exe",
-          "arguments": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "b-Code\\Test-ProjectContract.ps1", "-Instantiation"],
-          "description": "Run project contract checks"
-        },
         {
           "tool": "dotnet.exe",
           "configurations": ["Release"],
