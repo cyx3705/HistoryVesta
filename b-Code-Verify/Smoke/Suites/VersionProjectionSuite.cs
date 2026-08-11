@@ -185,7 +185,7 @@ internal static class VersionProjectionSuite
             "candidate build cannot promote a formal snapshot");
         // 宿主契约版本的唯一真源是 JanusVersion.props；这里断言脚本从那里读取，
         // 而不是断言某个具体版本字面量——否则每次宿主升级都要同时改脚本和用例。
-        Contains(build, "RequiredHistoryVulcanVersion",
+        Contains(build, "MinimumHistoryVulcanVersion",
             "candidate build host contract version comes from JanusVersion.props");
 
         True(!File.Exists(Path.Combine(ParentDir, "b-Code-Studio", "eng", "Test-Deploy-Janus.ps1")),

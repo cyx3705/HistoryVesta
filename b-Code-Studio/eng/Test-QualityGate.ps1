@@ -70,9 +70,9 @@ if ([string]::IsNullOrWhiteSpace($sourceVersion)) {
     $violations.Add("JanusVersion.props does not declare HistoryJanusVersion")
 }
 # 宿主契约版本的唯一真源同样是 JanusVersion.props，脚本不再各自硬编码字面量。
-$requiredVulcan = [string]$versionProps.Project.PropertyGroup.RequiredHistoryVulcanVersion
-if ([string]::IsNullOrWhiteSpace($requiredVulcan)) {
-    $violations.Add("JanusVersion.props does not declare RequiredHistoryVulcanVersion")
+$minimumVulcan = [string]$versionProps.Project.PropertyGroup.MinimumHistoryVulcanVersion
+if ([string]::IsNullOrWhiteSpace($minimumVulcan)) {
+    $violations.Add("JanusVersion.props does not declare MinimumHistoryVulcanVersion")
 }
 
 if (Test-Path -LiteralPath $projectManifestPath -PathType Leaf) {
@@ -113,8 +113,10 @@ if ($apiText -notmatch "(?m)^# HistoryJanus $([regex]::Escape($sourceVersion)) �
 if ($apiText -notmatch "(?m)^- 版本：``$([regex]::Escape($sourceVersion))``。$") {
     $violations.Add("模块API.md 正式消费版本未对齐 $sourceVersion")
 }
-if ($apiText -notmatch "(?m)^- 宿主基线：HistoryVulcan ``$([regex]::Escape($requiredVulcan))`` ") {
-    $violations.Add("模块API.md 宿主基线未对齐 HistoryVulcan $requiredVulcan")
+# 文档只需声明一个宿主基线版本，不再要求与钉版本逐字相等：
+# 基线是「我对着哪一版验证的」这一事实，宿主升版不该逼着每个模块改文档。
+if ($apiText -notmatch "(?m)^- 宿主基线：HistoryVulcan ``\d+\.\d+\.\d+`` ") {
+    $violations.Add("模块API.md 未声明宿主基线版本")
 }
 
 $uiSource = [IO.File]::ReadAllText((Join-Path $componentRoot 'Module\HistoryJanusUiModule.cs'))
@@ -191,12 +193,13 @@ if (-not (Test-Path -LiteralPath $vulcanManifestPath -PathType Leaf) -or
 }
 else {
     $vulcanManifest = [IO.File]::ReadAllText($vulcanManifestPath) | ConvertFrom-Json
-    if ([string]$vulcanManifest.product -ne 'HistoryVulcan' -or [string]$vulcanManifest.version -ne $requiredVulcan) {
-        $violations.Add("Janus requires the HistoryVulcan $requiredVulcan formal host; found $($vulcanManifest.version)")
+    if ([string]$vulcanManifest.product -ne 'HistoryVulcan' -or
+        [version]$vulcanManifest.version -lt [version]$minimumVulcan) {
+        $violations.Add("Janus requires HistoryVulcan >= $minimumVulcan; found $($vulcanManifest.version)")
     }
     $vulcanCore = [Reflection.AssemblyName]::GetAssemblyName($vulcanCorePath)
-    if ($vulcanCore.Version.ToString() -ne "$requiredVulcan.0") {
-        $violations.Add("HistoryVulcan.Core identity is $($vulcanCore.Version), expected $requiredVulcan.0")
+    if ($vulcanCore.Version -lt [version]"$minimumVulcan.0") {
+        $violations.Add("HistoryVulcan.Core is $($vulcanCore.Version), older than minimum $minimumVulcan.0")
     }
 }
 
@@ -204,4 +207,4 @@ if ($violations.Count -gt 0) {
     $violations | ForEach-Object { Write-Error $_ }
     exit 1
 }
-Write-Host ("Quality gate passed: suppressions 0; hotspots {0}; version {1}; windows {2}; commands {3}; host HistoryVulcan {4}." -f $hotspots.Count, $sourceVersion, $sourceWindows.Count, $expectedRuntimeCommandNames.Count, $requiredVulcan)
+Write-Host ("Quality gate passed: suppressions 0; hotspots {0}; version {1}; windows {2}; commands {3}; host HistoryVulcan {4}." -f $hotspots.Count, $sourceVersion, $sourceWindows.Count, $expectedRuntimeCommandNames.Count, $minimumVulcan)

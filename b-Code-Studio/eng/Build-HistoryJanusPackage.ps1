@@ -109,14 +109,14 @@ function Assert-ModulePackage {
 }
 
 $versionOutput = & dotnet msbuild $moduleProject -nologo `
-    -getProperty:HistoryJanusVersion -getProperty:RequiredHistoryVulcanVersion
+    -getProperty:HistoryJanusVersion -getProperty:MinimumHistoryVulcanVersion
 if ($LASTEXITCODE -ne 0) {
     throw 'Unable to evaluate Janus version source'
 }
 $versionProperties = (($versionOutput -join "`n") | ConvertFrom-Json).Properties
 $version = [string]$versionProperties.HistoryJanusVersion
-$requiredVulcan = [string]$versionProperties.RequiredHistoryVulcanVersion
-if ($version -notmatch '^\d+\.\d+\.\d+$' -or $requiredVulcan -notmatch '^\d+\.\d+\.\d+$') {
+$minimumVulcan = [string]$versionProperties.MinimumHistoryVulcanVersion
+if ($version -notmatch '^\d+\.\d+\.\d+$' -or $minimumVulcan -notmatch '^\d+\.\d+\.\d+$') {
     throw 'JanusVersion.props must declare valid HistoryJanus and HistoryVulcan versions'
 }
 
@@ -132,9 +132,16 @@ if (-not (Test-Path -LiteralPath $hostManifestPath -PathType Leaf) -or
 }
 $hostManifest = [IO.File]::ReadAllText($hostManifestPath, [Text.UTF8Encoding]::new($false)) | ConvertFrom-Json
 $hostCore = [Reflection.AssemblyName]::GetAssemblyName($hostCorePath)
-if ($hostManifest.product -ne 'HistoryVulcan' -or $hostManifest.version -ne $requiredVulcan -or
-    $hostCore.Version.ToString() -ne "$requiredVulcan.0") {
-    throw "HistoryJanus $version requires the HistoryVulcan $requiredVulcan formal snapshot"
+# 宿主兼容性按**下限**判定，不再要求精确相等。
+# 精确钉曾是 Core 会随每个消费方增长时的合理自保；Core 自 3.9.0 冻结后，模块该信的是
+# 冻结合同而不是版本号相等。否则宿主每发一版，N 个模块全部被迫改钉、重建、重发，
+# 功能上一行不需要动——模块一多这就是瘫痪。
+# 真正的兼容性由本仓的加载器 Smoke 验证：把模块装进 ALC 跑一遍。
+if ($hostManifest.product -ne 'HistoryVulcan') {
+    throw "Not a HistoryVulcan formal snapshot: $historyVulcanRoot"
+}
+if ([version]$hostManifest.version -lt [version]$minimumVulcan) {
+    throw "HistoryJanus $version requires HistoryVulcan >= $minimumVulcan; found $($hostManifest.version)"
 }
 
 $promoted = $false
