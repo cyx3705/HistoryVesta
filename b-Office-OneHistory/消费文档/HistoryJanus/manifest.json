@@ -3,11 +3,11 @@
     "module":  "HistoryJanus",
     "version":  "3.7.2",
     "sourceProject":  "2026-020-HistoryJanus",
-    "sourceCommit":  "59ef932d4db9ce010c820bc63170de601cb203fb",
+    "sourceCommit":  "965064d87a6323f8eeba591bd3a96566c94544c2",
     "sourceDirty":  true,
     "sourceDocumentRoot":  "b-Office/package",
     "artifactSnapshot":  "../../../../2026-020-HistoryJanus/z-HistoryJanus",
-    "generatedAtUtc":  "2026-08-11T15:04:31.5038340+00:00",
+    "generatedAtUtc":  "2026-08-11T15:24:23.9199193+00:00",
     "documents":  [
                       {
                           "file":  "模块API.md",
