@@ -1,9 +1,9 @@
 ﻿<Project>
   <PropertyGroup>
-    <HistoryJanusVersion>3.7.1</HistoryJanusVersion>
+    <HistoryJanusVersion>3.7.2</HistoryJanusVersion>
     <!-- Janus 消费的 HistoryVulcan 正式宿主版本。这是宿主契约的唯一真源：
          发布脚本与质量门禁都从此读取，不再各自硬编码字面量。 -->
-    <RequiredHistoryVulcanVersion>3.4.0</RequiredHistoryVulcanVersion>
+    <RequiredHistoryVulcanVersion>3.5.0</RequiredHistoryVulcanVersion>
     <VersionPrefix>$(HistoryJanusVersion)</VersionPrefix>
     <Version>$(HistoryJanusVersion)</Version>
     <AssemblyVersion>$(HistoryJanusVersion).0</AssemblyVersion>
