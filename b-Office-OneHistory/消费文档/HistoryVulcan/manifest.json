@@ -1,13 +1,13 @@
 {
     "schemaVersion":  1,
     "module":  "HistoryVulcan",
-    "version":  "3.5.0",
+    "version":  "3.9.0",
     "sourceProject":  "2026-023-HistoryVulcan",
-    "sourceCommit":  "44b0ccf51c6c83f2c07dbeffc23b3c3dba70a04f",
+    "sourceCommit":  "d22eb3a8ec8573436dae8b4f72dbb95dfaf298ec",
     "sourceDirty":  false,
     "sourceDocumentRoot":  "b-Office/package",
     "artifactSnapshot":  "../../../../2026-023-HistoryVulcan/z-HistoryVulcan",
-    "generatedAtUtc":  "2026-08-11T08:43:42.6924620+00:00",
+    "generatedAtUtc":  "2026-08-11T14:24:58.5888979+00:00",
     "documents":  [
                       {
                           "file":  "HistoryVulcan_API与指令手册.md",
