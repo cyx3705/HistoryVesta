@@ -1,18 +1,18 @@
 {
     "schemaVersion":  1,
     "module":  "HistoryMinerva",
-    "version":  "4.3.1",
+    "version":  "4.3.2",
     "sourceProject":  "2026-024-HistoryMinerva",
-    "sourceCommit":  "6d19f7e68d266b737d4ec5b586cf1416da750d3d",
-    "sourceDirty":  false,
+    "sourceCommit":  "0393a781011c478d34b9482c585ad4449b50d01d",
+    "sourceDirty":  true,
     "sourceDocumentRoot":  "b-Office/package",
     "artifactSnapshot":  "../../../../2026-024-HistoryMinerva/z-HistoryMinerva",
-    "generatedAtUtc":  "2026-08-11T07:50:41.7428595+00:00",
+    "generatedAtUtc":  "2026-08-11T15:07:01.8474829+00:00",
     "documents":  [
                       {
                           "file":  "模块API.md",
-                          "bytes":  3724,
-                          "sha256":  "CB9AC25F833DC7372C2D7008486236312B2C0A4246E69D46E1F47C890C0A274D"
+                          "bytes":  3730,
+                          "sha256":  "BC497149C3279B65996E3370B0C7F10960CED3E691A098643A64AA0D45DABFFC"
                       }
                   ]
 }

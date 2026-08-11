@@ -1,4 +1,4 @@
-# HistoryJanus 3.7.2 模块 API
+﻿# HistoryJanus 3.7.2 模块 API
 
 本文件是其他模块和项目消费 HistoryJanus 的唯一人工合同。运行时命令目录是参数、确认策略和可用性的最终真值；历史文档和 Janus 内部类型不构成公开 API。
 
@@ -8,7 +8,7 @@
 - 模块名：`HistoryJanus`。
 - 版本：`3.7.2`。
 - 入口：`HistoryJanus.dll`。
-- 宿主基线：HistoryVulcan `3.5.0` current-host 快照，从 `2026-023-HistoryVulcan/z-HistoryVulcan` 消费；该快照的 `sourceDirty` 仍由 HistoryVulcan manifest 如实标记。
+- 宿主基线：HistoryVulcan `3.9.0` current-host 快照，从 `2026-023-HistoryVulcan/z-HistoryVulcan` 消费；该快照的 `sourceDirty` 仍由 HistoryVulcan manifest 如实标记。
 - 主题：页面使用 HistoryVulcan `Shell.Brush.*` 动态资源，跟随宿主深色/浅色切换，不在模块内维护第二套主题。
 - 命令来源：`module:HistoryJanus`。
 - 命令命名：`janus.<类>.<方法>` 三段式全小写（详见 `b-Office/current/指令优化规范.md`）。
