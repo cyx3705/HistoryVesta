@@ -161,7 +161,7 @@ if (($expectedRuntimeCommandNames -join ',') -cne ($apiCommandNames -join ',')) 
 # --- 5. 正式树边界（QA-004 日常化）：z 级快照只允许五类条目 -----------------------------
 $packageRoot = Join-Path $root 'z-HistoryJanus'
 if (Test-Path -LiteralPath $packageRoot) {
-    $allowed = @('HistoryJanus.dll', 'HistoryJanus.xml', 'module.manifest.json', 'SHA256SUMS', 'docs')
+    $allowed = @('HistoryJanus.dll', 'HistoryJanus.xml', 'module.manifest.json', 'SHA256SUMS')
     $unexpected = @(
         Get-ChildItem -LiteralPath $packageRoot |
             Where-Object { $_.Name -notin $allowed }
@@ -169,29 +169,15 @@ if (Test-Path -LiteralPath $packageRoot) {
     foreach ($item in $unexpected) {
         $violations.Add("Unexpected entry in z-HistoryJanus: $($item.Name)")
     }
-    $packageDoc = Join-Path $packageRoot 'docs'
-    if ((Test-Path -LiteralPath $packageDoc) -and
-        @(Get-ChildItem -LiteralPath $packageDoc -File).Count -ne 1) {
-        $violations.Add('z-HistoryJanus/docs must contain exactly one API document')
-    }
+    # 消费文档不再随 z 快照分发：单一真值由 HistoryDiana 的 b-Office-OneHistory 托管，
+    # 发布管线在每次部署后同步镜像，命令面另由宿主自动导出。快照内再放一份只会
+    # 产生第二处会漂移的副本，因此这里只校验 manifest 身份，不再要求 docs/。
     $formalManifestPath = Join-Path $packageRoot 'module.manifest.json'
-    $formalApiPath = Join-Path $packageDoc '模块API.md'
     if (-not (Test-Path -LiteralPath $formalManifestPath -PathType Leaf)) {
         $violations.Add('z-HistoryJanus/module.manifest.json is missing')
     }
-    elseif (-not (Test-Path -LiteralPath $formalApiPath -PathType Leaf)) {
-        $violations.Add('z-HistoryJanus/docs/模块API.md is missing')
-    }
-    else {
-        $formalManifest = [IO.File]::ReadAllText($formalManifestPath) | ConvertFrom-Json
-        $formalVersion = [string]$formalManifest.version
-        $formalApiText = [IO.File]::ReadAllText($formalApiPath)
-        if ($formalApiText -notmatch "(?m)^- 版本：``$([regex]::Escape($formalVersion))``。$") {
-            $violations.Add("z-HistoryJanus 模块 API 版本未对齐其 manifest $formalVersion")
-        }
-        if ($formalVersion -eq $sourceVersion -and $formalApiText -cne $apiText) {
-            $violations.Add('同版本 z-HistoryJanus/docs/模块API.md != b-Office/package/模块API.md')
-        }
+    if (Test-Path -LiteralPath (Join-Path $packageRoot 'docs')) {
+        $violations.Add('z-HistoryJanus/docs 应已随文档托管迁移删除')
     }
 }
 

@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [ValidateSet('Release')]
     [string]$Configuration = 'Release',
@@ -62,7 +62,6 @@ function Assert-ModulePackage {
         'HistoryJanus.dll',
         'HistoryJanus.xml',
         'module.manifest.json',
-        "docs/$apiDocumentName",
         'SHA256SUMS'
     ) | Sort-Object
     $actualFiles = @(Get-ChildItem -LiteralPath $Root -File -Recurse | ForEach-Object {
@@ -148,12 +147,13 @@ try {
     Invoke-Dotnet @('build', 'HistoryJanus.sln', '-c', $Configuration, '--no-restore', '-p:NuGetAudit=false')
 
     $releaseRoot = Join-Path $componentRoot "Module\bin\$Configuration\net8.0-windows"
-    New-Item -ItemType Directory -Force -Path (Join-Path $stage 'docs') | Out-Null
+    New-Item -ItemType Directory -Force -Path $stage | Out-Null
     Copy-Item -LiteralPath (Join-Path $releaseRoot 'HistoryJanus.dll') -Destination $stage
     Copy-Item -LiteralPath (Join-Path $releaseRoot 'HistoryJanus.xml') -Destination $stage
     Copy-Item -LiteralPath $moduleManifestSource -Destination (Join-Path $stage 'module.manifest.json')
-    Copy-Item -LiteralPath $apiDocumentSource -Destination (Join-Path $stage "docs\$apiDocumentName")
-    $relativeFiles = @('HistoryJanus.dll', 'HistoryJanus.xml', 'module.manifest.json', "docs/$apiDocumentName")
+    # 消费文档不再随快照分发：单一真值由 HistoryDiana 的 b-Office-OneHistory 托管，
+    # 发布管线在每次部署后同步镜像。快照内再放一份只会产生第二处会漂移的副本。
+    $relativeFiles = @('HistoryJanus.dll', 'HistoryJanus.xml', 'module.manifest.json')
     $checksumLines = foreach ($relative in $relativeFiles) {
         $path = Join-Path $stage $relative.Replace('/', '\')
         "$((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash)  $relative"

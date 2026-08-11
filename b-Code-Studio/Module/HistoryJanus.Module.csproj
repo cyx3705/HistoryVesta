@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\JanusVersion.props" />
 
   <PropertyGroup>
@@ -17,6 +17,10 @@
   <ItemGroup>
     <Reference Include="HistoryVulcan.Core">
       <HintPath>$(HistoryVulcanHostRoot)\HistoryVulcan.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="HistoryVulcan.Extensibility">
+      <HintPath>$(HistoryVulcanHostRoot)\HistoryVulcan.Extensibility.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="HistoryVulcan.Services">
