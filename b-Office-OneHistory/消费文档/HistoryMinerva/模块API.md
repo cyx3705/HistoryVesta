@@ -1,7 +1,8 @@
 # HistoryMinerva 模块 API
 
-本文件是 HistoryMinerva `4.2.3` 源码、候选与正式包对外消费面的唯一合同。当前正式
-`z-HistoryMinerva` 已发布为 `4.2.3`；旧 `4.2.2` 三命令快照只属于发布历史，不适用本合同。
+本文件是 HistoryMinerva `4.3.1` 源码对外消费面的唯一合同。当前正式 `z-HistoryMinerva` 为
+`4.3.0`，已经包含 SolidWorks 自整备管线，但仍使用上一版 `HistoryMinerva.*` 命令面；
+新 `minerva.*` 命令面只有 4.3.1 正式发布后才对正式消费者生效。
 构建与部署验收命令见 `../current/验证合同.md`；NuGet 打包暂不开放，OHS 旧宿主已停用。
 
 ## 模块身份
@@ -10,11 +11,12 @@
 
 | 项 | 值 |
 | --- | --- |
-| 模块名 / 命令域 / 部署槽 / 数据目录 | `HistoryMinerva` |
+| 模块名 / 部署槽 / 数据目录 | `HistoryMinerva` |
+| 命令域 / MCP 工具前缀 | `minerva` / `minerva_` |
 | 停靠页标题 | `Minerva` |
 | 窗口内部标识 / 日志类别 | `historyminerva` |
 | Worker 可执行文件 | `HistoryMinerva.Worker.exe` |
-| HistoryVulcan 宿主基线 | `3.4.0` 正式快照 |
+| HistoryVulcan 宿主基线 | `3.5.0` 正式快照 |
 
 ## HistoryVulcan 命令面
 
@@ -22,11 +24,15 @@
 
 | 命令 | 位置 | 说明 |
 | --- | --- | --- |
-| `HistoryMinerva.convert` | 仅前端 | 转换当前选择来源；UI 线程、`Readonly=false`、`AllowMcpExecution=false` |
-| `HistoryMinerva.cancel` | 仅前端 | 取消当前转换或探查；元数据同上 |
-| `HistoryMinerva.show` | 双槽 | 占位：SWuse 独立窗口已于 4.2.1 移除，如实说明现状 |
-| `HistoryMinerva.hide` | 双槽 | 占位：无独立窗口可隐藏 |
-| `HistoryMinerva.status` | 双槽 | 报告 `HistoryMinerva.Worker.exe` 是否就绪 |
+| `minerva.conversion.probe` | 仅前端 | 解析当前装配来源；UI 线程、`Readonly=true`、`AllowMcpExecution=false` |
+| `minerva.conversion.run` | 仅前端 | 转换当前选择来源；UI 线程、`Readonly=false`、`AllowMcpExecution=false` |
+| `minerva.conversion.cancel` | 仅前端 | 取消当前转换或探查；UI 线程、禁止 MCP |
+| `minerva.worker.show/hide` | 后台 | 只读报告中央工作区状态，不创建或操作独立窗口 |
+| `minerva.worker.status/path` | 后台/MCP | 报告 Worker 就绪状态与宿主上下文解析出的实际路径 |
+| `minerva.worker.capabilities` | 后台/MCP | 报告合并 Worker 支持的协议能力 |
+
+页面探查、转换和取消不再直接调用 ViewModel 作为失败回退。Worker 事件通过命令上下文的
+`Progress` 进入 Vulcan `cmd:progress:minerva:conversion` 日志与控制台；最终结果由同一命令总线回显。
 
 ## Worker 协议
 
@@ -36,6 +42,17 @@
 | --- | --- | --- |
 | HistoryMinerva 转换 | `<verb> <json> --cancel <signal>` | `--request` 零件批次 / `--import-part` 单件导入 / `--probe-assembly` 装配探查 / `--assembly` 装配构建 |
 | SWuse 构建 | `--request <json>` | Roslyn dry-run 编译 + SolidWorks 零件构建，结果 JSON 写 stdout |
+
+### 源格式（4.3.0 新增）
+
+四个转换请求（`BatchRequest` / `PartImportRequest` / `AssemblyProbeRequest` / `AssemblyBatchRequest`）
+末尾追加可选字段 `sourceFormat`：`0 = SolidEdge`（缺省）、`1 = SolidWorks`。动词、事件与结果
+JSON 形态、退出码语义都不变；**不带该字段的历史请求仍按 Solid Edge 执行**。
+
+取 `SolidWorks` 时：源为 `.SLDASM` / `.SLDPRT`，不产生 `.x_t`，`ConversionJob.xtPath` 不被读取
+（可留空字符串），产物落在输出目录且不得与源文件同路径。装配关系新增 SolidWorks 侧接口名
+`SwFixedComponent` / `SwCoincident` / `SwConcentric` / `SwDistance`，未实测的类型以
+`SwMateType<n>` 形式如实带进报告。
 
 ## SWuse.Api 建模表面
 
