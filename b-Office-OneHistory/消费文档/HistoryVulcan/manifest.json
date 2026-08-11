@@ -3,16 +3,16 @@
     "module":  "HistoryVulcan",
     "version":  "3.5.0",
     "sourceProject":  "2026-023-HistoryVulcan",
-    "sourceCommit":  "3ca240f346098e73f9c16f619501da7c125e93b8",
+    "sourceCommit":  "44b0ccf51c6c83f2c07dbeffc23b3c3dba70a04f",
     "sourceDirty":  false,
     "sourceDocumentRoot":  "b-Office/package",
     "artifactSnapshot":  "../../../../2026-023-HistoryVulcan/z-HistoryVulcan",
-    "generatedAtUtc":  "2026-08-11T02:16:59.8343908+00:00",
+    "generatedAtUtc":  "2026-08-11T08:43:42.6924620+00:00",
     "documents":  [
                       {
                           "file":  "HistoryVulcan_API与指令手册.md",
-                          "bytes":  38755,
-                          "sha256":  "5AA1422E124F1A30CA432C862DAB8BAB6C093A90CBFD4E346CC6A3CE82532443"
+                          "bytes":  39244,
+                          "sha256":  "1EC21C95E80C7F98A9F97C0C51A502B749D84B186C64CAA33B28791B31A368D2"
                       },
                       {
                           "file":  "HistoryVulcan_UI风格与嵌入页面规范.md",
@@ -21,8 +21,8 @@
                       },
                       {
                           "file":  "HistoryVulcan_模块与MCP接入.md",
-                          "bytes":  11547,
-                          "sha256":  "0D70B2148CEF16A4E1DA1B7339D226E06EE6634A8805F3ED3A08A93F5BAC290D"
+                          "bytes":  12747,
+                          "sha256":  "12EE80A14AE1DE6D7D38BE0F7348AA93E72AF062278314DCFF868D12A0457E47"
                       },
                       {
                           "file":  "HistoryVulcan_消费变更摘要.md",
@@ -31,8 +31,8 @@
                       },
                       {
                           "file":  "HistoryVulcan_运行时约束与已知限制.md",
-                          "bytes":  7735,
-                          "sha256":  "49847EC6D948F110BFA2AE9EBD05B4F3A3020415345670836A4C93A14EEBF33E"
+                          "bytes":  7840,
+                          "sha256":  "5FF3AC5615563C8C38918384DA34833EC14B65DA4212410B8E8E41956D9220AC"
                       },
                       {
                           "file":  "README.md",
