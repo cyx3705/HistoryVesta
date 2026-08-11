@@ -1033,7 +1033,7 @@ public sealed class ShellChromeContractTests
                 {
                     "vulcan.log.level", "vulcan.log.source", "vulcan.log.keyword", "vulcan.log.mute", "vulcan.log.autoscroll",
                     "vulcan.log.clear", "vulcan.log.export", "vulcan.log.copy", "vulcan.log.focus",
-                    "vulcan.app.hide", "vulcan.app.show", "vulcan.app.close",
+                    "vulcan.app.hide", "vulcan.app.show", "vulcan.app.focusconsole", "vulcan.app.close",
                     "vulcan.ui.max", "vulcan.log.focus",
                     "vulcan.app.window", "vulcan.ui.autohide", "vulcan.ui.floatstate", "vulcan.command.copyexample",
                     "vulcan.ui.selectfile", "vulcan.ui.selectdirectory",
@@ -1059,14 +1059,8 @@ public sealed class ShellChromeContractTests
     // ---------------------------------------------------------------- ??
 
     private static bool WakeConsole(ShellWindow window)
-    {
-        return window.Commands.ExecuteAsync("vulcan.app.show", "test").GetAwaiter().GetResult().Success
-               && window.Commands.ExecuteAsync($"vulcan.ui.show name={StandardWindowIds.Console}", "test")
-                   .GetAwaiter().GetResult().Success
-               && window.Commands.ExecuteAsync("vulcan.log.focus", "test").GetAwaiter().GetResult().Success
-               && window.Commands.ExecuteAsync($"vulcan.ui.max name={StandardWindowIds.Console}", "test")
-                   .GetAwaiter().GetResult().Success;
-    }
+        => window.Commands.ExecuteAsync("vulcan.app.focusconsole", "test")
+            .GetAwaiter().GetResult().Success;
 
     private static void RunShell(
         Action<ShellWindow> assert,

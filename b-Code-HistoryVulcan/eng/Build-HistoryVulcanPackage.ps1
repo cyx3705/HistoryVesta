@@ -24,6 +24,7 @@ $candidateRoot = if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
 } else {
     [IO.Path]::GetFullPath($OutputRoot)
 }
+$solution = Join-Path $repoRoot 'HistoryVulcan.sln'
 $project = Join-Path $componentRoot 'src\App\App.csproj'
 $documentRoot = Join-Path $repoRoot 'b-Office\package'
 $releaseRoot = Join-Path $componentRoot 'eng\release'
@@ -129,8 +130,11 @@ try {
     New-Item -ItemType Directory -Force -Path $temporaryHost, $temporaryDocs | Out-Null
 
     Invoke-Dotnet @(
-        'restore', $project, '-r', 'win-x64', '--locked-mode', '--nologo',
+        'restore', $solution, '--locked-mode', '--nologo',
         '-p:NuGetAudit=false')
+    Invoke-Dotnet @(
+        'restore', $project, '-r', 'win-x64', '--locked-mode', '--nologo',
+        '-p:NuGetAudit=false', '-p:RestoreRecursive=false')
     Invoke-Dotnet @(
         'publish', $project, '-c', 'Release', '--no-restore',
         '--self-contained', 'false', '-r', 'win-x64', '-o', $temporaryHost,

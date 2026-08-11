@@ -1,14 +1,18 @@
-# HistoryVulcan 3.3.2
+# HistoryVulcan 3.5.0 Candidate
 
 本仓库是 OneHistory HistoryVulcan（原 AppShell，3.2.0 起改名）的独立源码、合同与发布资产真值。
 `3.0.3` 是 V3 冻结基线，冻结标签为 `v3.0.3`；版本线不再与 HistoryJanus 对齐，`0.7.x` 仅保留用于回滚。
 
-当前源码与正式部署版本为 `3.3.2`（DEC-023）：指令类从 13 个收敛为 **9 类**
-（`app`/`command`/`ui`/`log`/`mcp`/`module`/`prompt`/`svc`/`web`），废止「无类」与影子域 `debug`；
+当前源码候选为 `3.5.0`，正式 Z 部署仍为 `3.3.2`。3.5.0 新增稳定语义命令
+`vulcan.app.focusconsole`，由服务端、前端、远程中继和 `--focus-console` 启动共同复用；
+Mercury 的双 `/` 只绑定该命令，`mercury.shortcut.wakeconsole` 仅作为兼容包装。
+3.4.0（DEC-025）恢复受控的两段直接方法与域聚焦，`mercury.go` 是首个正式用例。
+3.3.2（DEC-023）指令类从 13 个收敛为 **9 类**
+（`app`/`command`/`ui`/`log`/`mcp`/`module`/`prompt`/`svc`/`web`），退役影子域 `debug`；
 **模块指令域去掉 `History` 品牌前缀**（模块名仍叫 `HistoryJanus`，指令域是 `janus`）；
 测试项目不再跨仓库引用 HistoryMercury，CI 冻结门禁恢复可通过。
 3.3.0（DEC-022）建立三段式 `vulcan.<类>.<方法>`（Domain=`vulcan`），命令集列为域|类|方法；
-全局快捷键与命令工作台由 HistoryMercury 4.1.0 拥有。3.2.2 完成严格域/类共享状态与 Z manifest 模块发现。
+全局快捷键与命令工作台由 HistoryMercury 拥有。3.2.2 完成严格域/类共享状态与 Z manifest 模块发现。
 `3.1.8` 仅是内部过渡版本，不作为稳定支持版本；`3.1.9` 是旧名 AppShell 的最后快照。
 3.1.10 对“轻松指令”和中央命令集做了内部高内聚重构：
 两种交互共享由 `CommandBus` 驱动的目录快照、详情缓存、检索和选择状态，不新增公开 API 或改变命令语义。

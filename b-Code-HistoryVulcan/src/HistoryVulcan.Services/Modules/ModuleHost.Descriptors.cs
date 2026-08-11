@@ -6,6 +6,7 @@ using System.Text.Json;
 using HistoryVulcan.Core.Commands;
 using HistoryVulcan.Core.Input;
 using HistoryVulcan.Core.Logging;
+using HistoryVulcan.Core.Mcp;
 using HistoryVulcan.Core.Modules;
 using HistoryVulcan.Core.Storage;
 
@@ -198,6 +199,7 @@ public sealed partial class ModuleHost
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
     public void Dispose()
     {
+        UnbindMcpExposurePolicy();
         _watcher?.Dispose();
         _debounce?.Dispose();
         DisposeShortcutRegistrations(_current);
@@ -221,6 +223,20 @@ public sealed partial class ModuleHost
         {
             UnregisterCommands(_current);
         }
+    }
+
+    private void UnbindMcpExposurePolicy()
+    {
+        if (!_mcpPolicyBound)
+            return;
+
+        if (_moduleOfCommandResolver != null
+            && ReferenceEquals(McpExposurePolicy.ModuleOfCommand, _moduleOfCommandResolver))
+            McpExposurePolicy.ModuleOfCommand = _previousModuleOfCommandResolver;
+        if (_moduleExposureResolver != null
+            && ReferenceEquals(McpExposurePolicy.ModuleExposure, _moduleExposureResolver))
+            McpExposurePolicy.ModuleExposure = _previousModuleExposureResolver;
+        _mcpPolicyBound = false;
     }
 
     private void UnregisterCommands(Snapshot snapshot)
@@ -265,6 +281,9 @@ public sealed partial class ModuleHost
 
         public List<IDisposable> ShortcutRegistrations { get; } = new();
 
+        /// <summary>Manifest-declared MCP exposure by module owner for the live snapshot.</summary>
+        public Dictionary<string, string?> McpExposures { get; } = new(StringComparer.OrdinalIgnoreCase);
+
         /// <summary>模块元信息(vulcan.module.list);CommandCount 在注册完成后定稿。</summary>
         public List<(string Name, string Desc, string Author, string Version, bool Open, string File,
             string Slot, bool Ui, string? SourcePath, string? ManifestPath)> Metas
@@ -285,7 +304,7 @@ public sealed partial class ModuleHost
             Modules.Clear();
             foreach (var group in Metas.GroupBy(meta => meta.Name, StringComparer.OrdinalIgnoreCase))
             {
-                var first = group.First();
+            var first = group.First();
                 Modules.Add(new ModuleMeta(
                     first.Name,
                     string.Join("; ", group.Select(meta => meta.Desc).Where(value => value.Length > 0)),

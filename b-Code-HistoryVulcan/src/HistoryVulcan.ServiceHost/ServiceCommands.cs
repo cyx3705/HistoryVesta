@@ -156,6 +156,20 @@ public static class ServiceCommands
     {
         registry.Register(new CommandDescriptor
         {
+            Name = "vulcan.app.focusconsole",
+            Domain = "vulcan",
+            CommandClass = "app",
+            Summary = "显示并聚焦控制台；必要时冷启动前端",
+            Handler = ctx => RelayOrStartAsync(
+                composition,
+                executablePath,
+                "vulcan.app.focusconsole",
+                "--focus-console",
+                ctx),
+        }, source);
+
+        registry.Register(new CommandDescriptor
+        {
             Name = "vulcan.app.show",
             Domain = "vulcan",
             CommandClass = "app",

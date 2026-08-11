@@ -49,7 +49,7 @@
       "OneHistory.HistoryVulcan.Services": {
         "type": "Project",
         "dependencies": {
-          "OneHistory.HistoryVulcan.Core": "[3.4.1, )"
+          "OneHistory.HistoryVulcan.Core": "[3.5.0, )"
         }
       }
     }

@@ -192,11 +192,7 @@ public partial class App : Application
 
         if (e.Args.Any(arg => arg.Equals("--focus-console", StringComparison.OrdinalIgnoreCase)))
         {
-            // Mercury 热键冷启动入口：组合 Vulcan 窗口指令，不引入 mercury.* 耦合命令。
-            startupCommands.Add("vulcan.app.show");
-            startupCommands.Add($"vulcan.ui.show name={HistoryVulcan.Core.Docking.StandardWindowIds.Console}");
-            startupCommands.Add("vulcan.log.focus");
-            startupCommands.Add($"vulcan.ui.max name={HistoryVulcan.Core.Docking.StandardWindowIds.Console}");
+            startupCommands.Add("vulcan.app.focusconsole");
         }
 
         if (startupCommands.Count > 0)

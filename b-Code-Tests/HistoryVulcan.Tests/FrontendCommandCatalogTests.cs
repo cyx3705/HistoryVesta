@@ -4,6 +4,7 @@ using HistoryVulcan.Core.Commands;
 using HistoryVulcan.Core.Logging;
 using HistoryVulcan.Core.Mcp;
 using HistoryVulcan.Core.Storage;
+using HistoryVulcan.ServiceHost;
 using HistoryVulcan.Services.Web;
 using HistoryVulcan.Shell.Mcp;
 using Xunit;
@@ -198,6 +199,40 @@ public sealed class FrontendCommandCatalogTests
 
         Assert.True(result.Success, result.Message);
         Assert.Equal("100000", result.Message);
+    }
+
+    [Fact]
+    public async Task FocusConsoleServiceCommandRelaysToConnectedFrontend()
+    {
+        using var fixture = GatewayFixture.Start();
+        var composition = new ServiceComposition
+        {
+            ServiceName = "HistoryVulcan.Test",
+            Registry = fixture.ServiceRegistry,
+            Bus = fixture.ServiceBus,
+            Settings = new MemorySettings(),
+            Log = new NullLog(),
+            Web = fixture.Gateway,
+        };
+        ServiceCommands.RegisterAll(
+            fixture.ServiceRegistry,
+            composition,
+            requestStop: static () => { },
+            executablePath: "HistoryVulcan.exe");
+
+        Assert.True(fixture.ServiceRegistry.TryGet("vulcan.app.focusconsole", out var serviceCommand));
+        Assert.Equal("app", serviceCommand.CommandClass);
+
+        using var client = fixture.Connect(
+            "FocusFrontend",
+            "vulcan.app.focusconsole",
+            "focused");
+        await WaitUntilAsync(() => fixture.Gateway.ConnectedShells == 1);
+
+        var result = await fixture.ServiceBus.ExecuteAsync("vulcan.app.focusconsole", "Test");
+
+        Assert.True(result.Success, result.Message);
+        Assert.Equal("focused", result.Message);
     }
 
     private static CommandDescriptor FrontendDescriptor(

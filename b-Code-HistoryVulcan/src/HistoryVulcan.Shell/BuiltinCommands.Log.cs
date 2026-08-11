@@ -194,7 +194,7 @@ public static partial class BuiltinCommands
             Summary = "导出控制台当前可见内容",
             Example = "vulcan.log.export path=console.txt",
             RequiresUiThread = true,
-            Parameters = [new ParameterSpec { Name = "path", Description = "目标文件路径；省略时打开保存对话框", Position = 0 }],
+            Parameters = [new ParameterSpec { Name = "path", Description = "目标文件路径；省略时写入默认导出目录", Position = 0 }],
             Handler = CommandDescriptor.Sync(ctx => CommandResult.Ok(s.Console.ExportVisible(ctx.GetString("path")))),
         });
 

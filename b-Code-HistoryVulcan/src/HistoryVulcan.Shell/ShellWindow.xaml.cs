@@ -682,6 +682,26 @@ public partial class ShellWindow : Window, IShellCommandWorkbenchHost
 
         registry.Register(new CommandDescriptor
         {
+            Name = "vulcan.app.focusconsole",
+            Domain = "vulcan",
+            CommandClass = "app",
+            Summary = "显示窗口、打开并聚焦控制台，同时最大化控制台",
+            RequiresUiThread = true,
+            Handler = CommandDescriptor.Sync(_ =>
+            {
+                Show();
+                if (WindowState == WindowState.Minimized)
+                    WindowState = WindowState.Normal;
+                Activate();
+                FocusConsole(resetFilters: false, preserveMaximizedLayout: false);
+                _docking.MaximizeWindow(StandardWindowIds.Console);
+                _console.FocusInput();
+                return CommandResult.Ok("控制台已显示、聚焦并最大化");
+            }),
+        }, FrontendCommandCatalog.Source);
+
+        registry.Register(new CommandDescriptor
+        {
             Name = "vulcan.app.show",
             Domain = "vulcan",
             CommandClass = "app",

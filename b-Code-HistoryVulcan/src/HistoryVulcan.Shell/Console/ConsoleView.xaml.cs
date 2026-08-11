@@ -759,7 +759,17 @@ public partial class ConsoleView : UserControl, Core.Modules.IActivatableToolCon
         Input.Text = text;
         Input.CaretIndex = caret;
         _suppressTextChanged = false;
-        HideCompletions();
+        if (candidate.Kind is ConsoleCompletionKind.Domain
+            or ConsoleCompletionKind.Class
+            or ConsoleCompletionKind.Method)
+        {
+            ClearCompletionVisuals();
+            RefreshCompletions();
+        }
+        else
+        {
+            HideCompletions();
+        }
     }
 
     private void HideCompletions()

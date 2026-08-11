@@ -7,6 +7,7 @@ using System.Xml.Linq;
 using HistoryVulcan.Core.Commands;
 using HistoryVulcan.Core.Input;
 using HistoryVulcan.Core.Logging;
+using HistoryVulcan.Core.Mcp;
 using HistoryVulcan.Core.Modules;
 using HistoryVulcan.Core.Storage;
 
@@ -50,6 +51,13 @@ public sealed partial class ModuleHost : IDisposable
     private Timer? _debounce;
 
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
+    private Func<string, string?>? _moduleOfCommandResolver;
+    private Func<string, string?>? _moduleExposureResolver;
+    private Func<string, string?>? _previousModuleOfCommandResolver;
+    private Func<string, string?>? _previousModuleExposureResolver;
+    private bool _mcpPolicyBound;
+
+    /// <summary>按模块目录与日志建立宿主；装载与命令注册由 Attach/Start 触发。</summary>
     public ModuleHost(string modulesDir, IShellLog log)
     {
         _dir = modulesDir;
@@ -113,7 +121,11 @@ public sealed partial class ModuleHost : IDisposable
     public event Action? ReloadCompleted;
 
     /// <summary>接入指令注册表(ShellWindow 创建后调用,再 Start)。</summary>
-    public void Attach(CommandRegistry registry) => _registry = registry;
+    public void Attach(CommandRegistry registry)
+    {
+        _registry = registry;
+        BindMcpExposurePolicy();
+    }
 
     /// <summary>接入模块业务运行所需的完整宿主上下文。</summary>
     public void Attach(
@@ -134,6 +146,7 @@ public sealed partial class ModuleHost : IDisposable
         _bus = bus;
         _settings = settings;
         _dataDirectory = Path.GetFullPath(dataDirectory);
+        BindMcpExposurePolicy();
     }
 
     /// <summary>Provides this HistoryVulcan public contract member.</summary>
@@ -361,6 +374,40 @@ public sealed partial class ModuleHost : IDisposable
 
         next.FinalizeMetas();
     }
+
+    private void BindMcpExposurePolicy()
+    {
+        if (_moduleOfCommandResolver == null)
+            _moduleOfCommandResolver = ResolveModuleOfCommand;
+        if (_moduleExposureResolver == null)
+            _moduleExposureResolver = ResolveModuleExposure;
+        if (!_mcpPolicyBound)
+        {
+            _previousModuleOfCommandResolver = McpExposurePolicy.ModuleOfCommand;
+            _previousModuleExposureResolver = McpExposurePolicy.ModuleExposure;
+            _mcpPolicyBound = true;
+        }
+
+        // The process-level policy follows the single ModuleHost that owns the
+        // authoritative registry. Both resolvers read live state so a reload
+        // changes exposure without rebuilding the MCP gateway.
+        McpExposurePolicy.ModuleOfCommand = _moduleOfCommandResolver;
+        McpExposurePolicy.ModuleExposure = _moduleExposureResolver;
+    }
+
+    private string? ResolveModuleOfCommand(string commandName)
+    {
+        if (_registry == null || !_registry.TryGet(commandName, out _))
+            return null;
+
+        var source = _registry.GetSource(commandName);
+        return source.StartsWith("module:", StringComparison.OrdinalIgnoreCase)
+            ? source["module:".Length..]
+            : null;
+    }
+
+    private string? ResolveModuleExposure(string moduleName)
+        => _current.McpExposures.GetValueOrDefault(moduleName);
 
     private void RegisterShortcuts(Snapshot snapshot)
     {
@@ -656,6 +703,8 @@ public sealed partial class ModuleHost : IDisposable
                 continue;
             var moduleName = discovered?.Name ?? declaredName;
             var commandPrefix = GetProp(info, "CommandPrefix") as string ?? moduleName;
+            if (discovered != null)
+                snap.McpExposures[moduleName] = discovered.McpExposure;
             if (!contextAttached)
             {
                 AttachModuleContexts(snap, types, moduleName);
