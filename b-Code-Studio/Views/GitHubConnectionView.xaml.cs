@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using HistoryVulcan.Core.Commands;
 using HistoryJanus.GitHub;
 
 namespace HistoryJanus.Views;
@@ -7,13 +8,15 @@ namespace HistoryJanus.Views;
 public partial class GitHubConnectionView : UserControl
 {
     private readonly Func<GitHubConnectionService?> _serviceAccessor;
+    private readonly Func<CommandBus?> _busAccessor;
     private bool _busy;
     private IReadOnlyList<GitHubDiagnosticStep> _diagnosticSteps = [];
 
-    public GitHubConnectionView(Func<GitHubConnectionService?> serviceAccessor)
+    public GitHubConnectionView(Func<GitHubConnectionService?> serviceAccessor, Func<CommandBus?> busAccessor)
     {
         InitializeComponent();
         _serviceAccessor = serviceAccessor;
+        _busAccessor = busAccessor;
         ViewKit.RunOnceOnLoaded(this, RefreshAsync);
     }
 
@@ -72,17 +75,10 @@ public partial class GitHubConnectionView : UserControl
 
     private async void OnLoginClick(object sender, RoutedEventArgs e)
     {
-        if (!Confirm("确认在服务器本机启动 Git Credential Manager 登录？"))
-            return;
-        var succeeded = false;
-        await RunAsync(async service =>
-        {
-            var result = await service.LoginAsync(null);
-            if (!result.Success)
-                throw new InvalidOperationException(result.CombinedOutput);
-            succeeded = true;
-        });
-        if (succeeded) await RefreshAsync();
+        var account = AccountsBox.SelectedItem is GitCredentialAccount selected ? selected.Account : null;
+        var command = "janus.github.login" +
+                      (string.IsNullOrWhiteSpace(account) ? "" : $" account={CommandParser.QuoteArg(account)}");
+        if (await ExecuteCommandAsync(command)) await RefreshAsync();
     }
 
     private async void OnLogoutClick(object sender, RoutedEventArgs e)
@@ -92,15 +88,8 @@ public partial class GitHubConnectionView : UserControl
             Notify("请先选择要注销的 GCM 账号");
             return;
         }
-        if (!Confirm($"确认注销服务器 GCM 账号 {account.Account}？"))
-            return;
-        var succeeded = false;
-        await RunAsync(async service =>
-        {
-            await service.LogoutAsync(account.Account, apply: true);
-            succeeded = true;
-        });
-        if (succeeded) await RefreshAsync();
+        if (await ExecuteCommandAsync($"janus.github.logout account={CommandParser.QuoteArg(account.Account)}"))
+            await RefreshAsync();
     }
 
     private void OnKeySelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -118,60 +107,52 @@ public partial class GitHubConnectionView : UserControl
 
     private async void OnIdentityPreviewClick(object sender, RoutedEventArgs e)
     {
-        await RunAsync(async service =>
-        {
-            var result = await service.SetIdentityAsync(
-                IdentityName.Text, IdentityEmail.Text, IdentityScopeValue(), apply: false);
-            Notify($"{result.Action}：{result.Before.Name} <{result.Before.Email}> → " +
-                   $"{result.After.Name} <{result.After.Email}> [{result.After.Source}]");
-        });
+        await ExecuteCommandAsync(BuildIdentityCommand(apply: false));
     }
 
     private async void OnIdentityApplyClick(object sender, RoutedEventArgs e)
     {
-        GitHubMutationResult<GitIdentityInfo>? preview = null;
-        await RunAsync(async service => preview = await service.SetIdentityAsync(
-            IdentityName.Text, IdentityEmail.Text, IdentityScopeValue(), apply: false));
-        if (preview == null || !Confirm(
-                $"确认修改服务器 Git 提交身份？\n\n" +
-                $"{preview.Before.Name} <{preview.Before.Email}>\n→\n" +
-                $"{preview.After.Name} <{preview.After.Email}> [{preview.After.Source}]"))
-            return;
-        var succeeded = false;
-        await RunAsync(async service =>
-        {
-            await service.SetIdentityAsync(
-                IdentityName.Text, IdentityEmail.Text, IdentityScopeValue(), apply: true);
-            succeeded = true;
-        });
-        if (succeeded) await RefreshAsync();
+        if (await ExecuteCommandAsync(BuildIdentityCommand(apply: true))) await RefreshAsync();
     }
 
     private async void OnRemotePreviewClick(object sender, RoutedEventArgs e)
     {
-        await RunAsync(async service =>
-        {
-            var result = await service.SetRemoteAsync(FetchUrl.Text, PushUrl.Text, apply: false);
-            Notify($"{result.Action}：{result.Before.FetchUrl} → {result.After.FetchUrl}");
-        });
+        await ExecuteCommandAsync(BuildRemoteCommand(apply: false));
     }
 
     private async void OnRemoteApplyClick(object sender, RoutedEventArgs e)
     {
-        GitHubMutationResult<GitRemoteInfo>? preview = null;
-        await RunAsync(async service => preview = await service.SetRemoteAsync(
-            FetchUrl.Text, PushUrl.Text, apply: false));
-        if (preview == null || !Confirm(
-                $"确认修改服务器 origin？\n\nFetch: {preview.Before.FetchUrl}\n→ {preview.After.FetchUrl}\n\n" +
-                $"Push: {preview.Before.PushUrl}\n→ {preview.After.PushUrl}"))
-            return;
-        var succeeded = false;
-        await RunAsync(async service =>
+        if (await ExecuteCommandAsync(BuildRemoteCommand(apply: true))) await RefreshAsync();
+    }
+
+    private string BuildIdentityCommand(bool apply)
+        => $"janus.github.identity name={CommandParser.QuoteArg(IdentityName.Text.Trim())} " +
+           $"email={CommandParser.QuoteArg(IdentityEmail.Text.Trim())} " +
+           $"scope={IdentityScopeValue()} apply={apply.ToString().ToLowerInvariant()}";
+
+    private string BuildRemoteCommand(bool apply)
+        => $"janus.github.remote fetch={CommandParser.QuoteArg(FetchUrl.Text.Trim())} " +
+           $"push={CommandParser.QuoteArg(PushUrl.Text.Trim())} apply={apply.ToString().ToLowerInvariant()}";
+
+    private async Task<bool> ExecuteCommandAsync(string command)
+    {
+        if (_busy || _busAccessor() is not { } bus)
+            return false;
+        SetBusy(true);
+        try
         {
-            await service.SetRemoteAsync(FetchUrl.Text, PushUrl.Text, apply: true);
-            succeeded = true;
-        });
-        if (succeeded) await RefreshAsync();
+            var result = await bus.ExecuteAsync(command, "UI");
+            return result.Success;
+        }
+        catch (Exception ex)
+        {
+            Notify(GitHubRedactor.Redact(ex.Message), MessageBoxImage.Warning);
+            return false;
+        }
+        finally
+        {
+            SetBusy(false);
+        }
     }
 
     private async Task RunAsync(Func<GitHubConnectionService, Task> operation)
@@ -202,10 +183,4 @@ public partial class GitHubConnectionView : UserControl
     private static void Notify(string message, MessageBoxImage image = MessageBoxImage.Information)
         => MessageBox.Show(message, "github", MessageBoxButton.OK, image);
 
-    private static bool Confirm(string message)
-        => MessageBox.Show(
-            message,
-            "github",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning) == MessageBoxResult.Yes;
 }

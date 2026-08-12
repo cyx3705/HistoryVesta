@@ -94,7 +94,7 @@ public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleCont
                 IsSingleton = true,
                 // 底部同一行分段切换 Git 文件规则 / 分支历史 / GitHub，三者都内嵌于本页；
                 // 没有独立 github 窗口。
-                ContentFactory = () => new ProjectOperationsView(
+                    ContentFactory = () => new ProjectOperationsView(
                     busAccessor,
                     selection,
                     isProtected,

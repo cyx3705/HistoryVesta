@@ -16,8 +16,8 @@ public sealed class CommandCatalogContractTests
     // 组合根注册的 31 条业务命令；第 32 条 janus.status 由模块宿主从
     // [ModuleCommand] 投影，不在组合根内（QA-001 的 32 = 31 + Status）。
     // 3.5.0 全部指令改为 janus.<类>.<方法> 三段式全小写命名。
-    // 3.7.0（DEC-008）debug 类整体退役、meta 类并入 proj，33 → 31。
-    private const int ExpectedCommandCount = 31;
+    // 3.8.0 新增 GitHub 登录、注销、身份和 origin 的总线命令，31 → 35。
+    private const int ExpectedCommandCount = 35;
 
     // DEC-008：janus 域内只有这四个类，新增类需同级决策。
     private static readonly string[] ExpectedClasses =
@@ -33,6 +33,7 @@ public sealed class CommandCatalogContractTests
 
     private static readonly string[] ConfirmedCommands =
     [
+        "janus.github.login", "janus.github.logout", "janus.github.identity", "janus.github.remote",
         "janus.proj.delete", "janus.proj.commitall", "janus.proj.pushall", "janus.proj.repair",
         "janus.history.rollback", "janus.history.reset", "janus.history.forcepush",
         "janus.gitrule.sync", "janus.gitrule.set", "janus.gitrule.batchset", "janus.gitrule.remove",

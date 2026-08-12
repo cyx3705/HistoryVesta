@@ -30,7 +30,7 @@ public partial class ProjectOperationsView : UserControl
         _selection = selection;
         HistoryPanel.Content = new BranchHistoryView(busAccessor, selection, isProtected);
         // GitHub 连接治理是本页第三个分段，不是宿主级独立窗口。
-        GitHubPanel.Content = new GitHubConnectionView(gitHubAccessor);
+        GitHubPanel.Content = new GitHubConnectionView(gitHubAccessor, busAccessor);
         SelectedCommitMessageBox.Text = "一键推送更新";
         RuleGrid.ItemsSource = _rules;
         InitializeRuleDeferredSave();

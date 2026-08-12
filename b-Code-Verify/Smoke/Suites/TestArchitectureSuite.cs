@@ -244,11 +244,9 @@ internal static class TestArchitectureSuite
             Contains(commands, retained,
                 $"merged github: readonly command stays registered: {retained}");
         }
-        True(!commands.Contains("janus.github.login", StringComparison.Ordinal)
-             && !commands.Contains("janus.github.logout", StringComparison.Ordinal)
-             && !commands.Contains("janus.github.identity", StringComparison.Ordinal)
-             && !commands.Contains("janus.github.remote", StringComparison.Ordinal),
-            "merged github: mutations stay UI-only and never enter the command bus");
+        foreach (var mutation in new[] { "janus.github.login", "janus.github.logout", "janus.github.identity", "janus.github.remote" })
+            Contains(commands, $"\"{mutation}\"",
+                $"merged github: mutation is registered through the command bus: {mutation}");
 
         var composition = File.ReadAllText(Path.Combine(RepoRoot, "StudioBusinessComposition.cs"));
         Contains(composition, "GitHubCommands.RegisterAll",

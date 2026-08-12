@@ -165,6 +165,11 @@ internal static class GitHubSuite
         True(accounts.Success, "janus.github.accounts executes through the bus");
         var invalid = await bus.ExecuteAsync("janus.github.test transport=bogus", "Smoke");
         True(!invalid.Success, "janus.github.test rejects an unknown transport");
+        foreach (var name in new[] { "janus.github.login", "janus.github.logout", "janus.github.identity", "janus.github.remote" })
+        {
+            True(registry.TryGet(name, out var mutation) && mutation.ConfirmPrompt != null,
+                $"{name} is registered with a confirmation gate");
+        }
     }
 
     private static IReadOnlyList<string> StripRepository(IReadOnlyList<string> arguments)

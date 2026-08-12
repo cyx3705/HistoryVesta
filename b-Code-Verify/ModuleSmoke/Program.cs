@@ -68,7 +68,7 @@ if (!File.Exists(manifestPath))
 
 using var manifestJson = System.Text.Json.JsonDocument.Parse(File.ReadAllText(manifestPath));
 var expectedVersion = manifestJson.RootElement.GetProperty("version").GetString();
-const int expectedRuntimeCommandCount = 32;
+const int expectedRuntimeCommandCount = 36;
 
 var meta = host.Modules[0];
 if (!meta.ModuleName.Equals("HistoryJanus", StringComparison.Ordinal)
@@ -109,6 +109,10 @@ var businessCommands = new[]
     "janus.github.status",
     "janus.github.accounts",
     "janus.github.test",
+    "janus.github.login",
+    "janus.github.logout",
+    "janus.github.identity",
+    "janus.github.remote",
 };
 foreach (var commandName in businessCommands)
 {
