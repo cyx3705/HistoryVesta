@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using HistoryJanus.Git;
 using static HistoryJanus.Smoke.SmokeKit;
 
 namespace HistoryJanus.Smoke.Suites;
@@ -10,7 +12,7 @@ internal static class TestArchitectureSuite
     private const int MaximumProductFileLines = 700;
     private const int MaximumSuiteFileLines = 550;
 
-    public static Task RunAsync(string[] args)
+    public static async Task RunAsync(string[] args)
     {
         True(Directory.Exists(VerifyRoot), "verification has a root-level b-Code component");
         True(!Directory.Exists(Path.Combine(RepoRoot, "tests")),
@@ -34,6 +36,7 @@ internal static class TestArchitectureSuite
         VerifyMergedOverviewBoundary(separator);
         VerifyEmbeddedHistoryBoundary(separator);
         VerifyThemeBoundary();
+        VerifyGitExecutionBoundary();
 
         var smokeRoot = Path.Combine(VerifyRoot, "Smoke");
         var suitesRoot = Path.Combine(smokeRoot, "Suites");
@@ -99,7 +102,8 @@ internal static class TestArchitectureSuite
         Contains(kit, "Path.GetTempPath()",
             "test architecture centralizes temporary data outside the source tree");
 
-        return Task.CompletedTask;
+        await VerifyGitRunnerFailureAsync();
+        await VerifyGitRunnerCancellationAsync();
     }
 
     private static void VerifyV3HostBoundary()
@@ -134,6 +138,64 @@ internal static class TestArchitectureSuite
             "module boundary: legacy connection tree is absent");
         True(!Directory.Exists(Path.Combine(RepoRoot, "Service")),
             "module boundary: legacy service tree is absent");
+    }
+
+    private static void VerifyGitExecutionBoundary()
+    {
+        var gitRoot = Path.Combine(RepoRoot, "Git");
+        var runner = File.ReadAllText(Path.Combine(gitRoot, "GitRunner.cs"));
+        True(!runner.Contains("timeoutSeconds", StringComparison.Ordinal)
+             && !runner.Contains("CancellationTokenSource(TimeSpan", StringComparison.Ordinal)
+             && !runner.Contains("git 命令超时", StringComparison.Ordinal),
+            "product GitRunner delegates timeout decisions to Git and Git LFS");
+        Contains(runner, "WaitForExitAsync(cancellation)",
+            "product GitRunner still responds to caller cancellation");
+        Contains(runner, "Kill(entireProcessTree: true)",
+            "caller cancellation still reclaims the complete Git process tree");
+
+        foreach (var name in new[] { "ProjectService.Commit.cs", "BranchHistoryService.cs" })
+        {
+            var source = File.ReadAllText(Path.Combine(gitRoot, name));
+            True(!source.Contains("timeoutSeconds:", StringComparison.Ordinal),
+                $"product Git call sites carry no application wall-clock timeout: {name}");
+        }
+
+        var githubRunner = File.ReadAllText(Path.Combine(RepoRoot, "GitHub", "ToolProcessRunner.cs"));
+        Contains(githubRunner, "timeoutSeconds",
+            "GitHub diagnostics retain their explicit user-facing timeout");
+        var smokeRunner = File.ReadAllText(Path.Combine(VerifyRoot, "Smoke", "SmokeRunner.cs"));
+        Contains(smokeRunner, "SuiteTimeout",
+            "test suites retain their independent hang-detection timeout");
+    }
+
+    private static async Task VerifyGitRunnerCancellationAsync()
+    {
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(250));
+        var watch = Stopwatch.StartNew();
+        var result = await GitRunner.RunAsync(RepoRoot,
+            [
+                "-c",
+                "alias.januswait=!powershell -NoProfile -NonInteractive -Command Start-Sleep -Seconds 30",
+                "januswait",
+            ],
+            cancellation.Token);
+        watch.Stop();
+
+        True(!result.Success && result.Output.Contains("git 命令已取消", StringComparison.Ordinal),
+            "caller cancellation remains distinguishable from a Git failure");
+        True(watch.Elapsed < TimeSpan.FromSeconds(5),
+            "caller cancellation promptly reclaims a long-running Git process tree");
+    }
+
+    private static async Task VerifyGitRunnerFailureAsync()
+    {
+        const string missingCommand = "janus-command-that-does-not-exist";
+        var result = await GitRunner.RunAsync(RepoRoot, [missingCommand]);
+
+        True(result.ExitCode != 0 && !result.Success,
+            "a real Git failure retains its nonzero exit code");
+        True(result.Output.Contains(missingCommand, StringComparison.Ordinal),
+            "a real Git failure retains Git's own diagnostic output");
     }
 
     private static void VerifyGitHubMerge(char separator)

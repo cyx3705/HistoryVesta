@@ -27,7 +27,7 @@ dotnet run --project .\b-Code-Verify\ModuleSmoke\ModuleSmoke.csproj -c Debug -- 
 ```
 
 日常开发执行质量门禁、相关 Contracts、Debug 构建、定向功能 Smoke 与 ModuleSmoke；`Test-QualityGate.ps1`
-把抑制标记、千行文件、版本链一致性、模块 API 投影、正式树边界和宿主合同六项漂移检查日常化（代码管道化条件 4：
+把抑制标记、千行文件、版本链一致性、Git/规则交互、模块 API 投影、正式树边界和宿主合同七项漂移检查日常化（代码管道化条件 4：
 漂移由检查自动阻断，不积累到发布）。推送到 `2026-020-HistoryJanus` 分支时，GitHub Actions 门禁
 （`.github/workflows/historyjanus-gate.yml`）并行复验锁定还原、双配置构建、Contracts、格式与同一门禁脚本。
 正式发布才执行 Debug/Release 全量门禁、正式包、双槽部署和回滚验证；正式提升由
@@ -38,7 +38,9 @@ dotnet run --project .\b-Code-Verify\ModuleSmoke\ModuleSmoke.csproj -c Debug -- 
 powershell -NoProfile -ExecutionPolicy Bypass -File ..\2026-019-HistoryDiana\b-Code\Publish-OneHistoryModule.ps1 -Module HistoryJanus -Publish
 ```
 
-正式包只含 `HistoryJanus.dll`、XML、module manifest、checksum 和 `package/模块API.md`，不含 Janus EXE 或 HistoryVulcan 运行库。脚本不测试开机自启动，也不启动 HistoryVulcan。
+正式快照只含 `HistoryJanus.dll`、XML、module manifest 和 checksum；模块 API 由源码
+`b-Office/package` 与 HistoryDiana 的消费文档镜像托管，不复制进 z 快照。正式包不含 Janus EXE
+或 HistoryVulcan 运行库。脚本不测试开机自启动，也不启动 HistoryVulcan。
 
 ## AI 工作边界
 

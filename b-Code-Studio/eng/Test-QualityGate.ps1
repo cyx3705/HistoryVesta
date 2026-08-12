@@ -104,7 +104,37 @@ if ($statusSource -match '"[^"]*\d+\.\d+\.\d+[^"]*"') {
     $violations.Add('HistoryJanusCommands.cs contains a hardcoded version literal; project from the assembly instead')
 }
 
-# --- 4. 消费合同投影：API 版本、窗口和命令必须与当前源码事实一致 --------------------------
+# --- 4. Git 与规则交互：产品不自决超时，规则只在离页时批量保存 ----------------------------
+$gitRunnerText = [IO.File]::ReadAllText((Join-Path $componentRoot 'Git\GitRunner.cs'))
+if ($gitRunnerText -match 'timeoutSeconds|CancellationTokenSource\(TimeSpan|git 命令超时') {
+    $violations.Add('GitRunner.cs must not impose an application wall-clock timeout')
+}
+if ($gitRunnerText -notmatch 'WaitForExitAsync\(cancellation\)' -or
+    $gitRunnerText -notmatch 'Kill\(entireProcessTree: true\)') {
+    $violations.Add('GitRunner.cs must retain caller cancellation and whole-process-tree cleanup')
+}
+foreach ($relativePath in @('Git\ProjectService.Commit.cs', 'Git\BranchHistoryService.cs')) {
+    $sourceText = [IO.File]::ReadAllText((Join-Path $componentRoot $relativePath))
+    if ($sourceText -match 'timeoutSeconds\s*:') {
+        $violations.Add("Product Git call site still declares a wall-clock timeout: $relativePath")
+    }
+}
+
+$ruleViewText = [IO.File]::ReadAllText((Join-Path $componentRoot 'Views\ProjectOperationsView.Rules.cs'))
+if ($ruleViewText -match 'DispatcherTimer|ScheduleRuleAutoSave|OnRuleAutoSaveTick' -or
+    $ruleViewText -notmatch 'RulePanel\.IsVisibleChanged' -or
+    $ruleViewText -notmatch 'SaveRulesOnPageLeaveAsync' -or
+    $ruleViewText -notmatch '_ruleSaveTask') {
+    $violations.Add('Git file rules must use one serialized page-leave save instead of edit-time autosave')
+}
+
+$gitHubRunnerText = [IO.File]::ReadAllText((Join-Path $componentRoot 'GitHub\ToolProcessRunner.cs'))
+$smokeRunnerText = [IO.File]::ReadAllText((Join-Path $root 'b-Code-Verify\Smoke\SmokeRunner.cs'))
+if ($gitHubRunnerText -notmatch 'timeoutSeconds' -or $smokeRunnerText -notmatch 'SuiteTimeout') {
+    $violations.Add('GitHub diagnostics and Smoke hang-detection timeouts must remain explicit')
+}
+
+# --- 5. 消费合同投影：API 版本、窗口和命令必须与当前源码事实一致 --------------------------
 $apiPath = Join-Path $root 'b-Office\package\模块API.md'
 $apiText = [IO.File]::ReadAllText($apiPath)
 if ($apiText -notmatch "(?m)^# HistoryJanus $([regex]::Escape($sourceVersion)) 模块 API$") {
@@ -160,7 +190,7 @@ if (($expectedRuntimeCommandNames -join ',') -cne ($apiCommandNames -join ',')) 
     $violations.Add("模块API.md 命令清单与源码不一致：API $($apiCommandNames.Count)，运行时 $($expectedRuntimeCommandNames.Count)")
 }
 
-# --- 5. 正式树边界（QA-004 日常化）：z 级快照只允许五类条目 -----------------------------
+# --- 6. 正式树边界（QA-004 日常化）：z 级快照只允许四类条目 -----------------------------
 $packageRoot = Join-Path $root 'z-HistoryJanus'
 if (Test-Path -LiteralPath $packageRoot) {
     $allowed = @('HistoryJanus.dll', 'HistoryJanus.xml', 'module.manifest.json', 'SHA256SUMS')
@@ -183,7 +213,7 @@ if (Test-Path -LiteralPath $packageRoot) {
     }
 }
 
-# --- 6. 宿主合同预检：发布脚本同源检查日常化 --------------------------------------------
+# --- 7. 宿主合同预检：发布脚本同源检查日常化 --------------------------------------------
 $vulcanRoot = [IO.Path]::GetFullPath((Join-Path $root '..\2026-023-HistoryVulcan\z-HistoryVulcan'))
 $vulcanManifestPath = Join-Path $vulcanRoot 'manifest.json'
 $vulcanCorePath = Join-Path $vulcanRoot 'host\HistoryVulcan.Core.dll'

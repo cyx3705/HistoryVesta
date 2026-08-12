@@ -322,10 +322,12 @@ internal static class RepositoryTargetsSuite
 
         var rulesCode = File.ReadAllText(Path.Combine(
             RepoRoot, "Views", "ProjectOperationsView.Rules.cs"));
-        True(rulesCode.Contains("DispatcherTimer", StringComparison.Ordinal)
-             && rulesCode.Contains("TimeSpan.FromMilliseconds(600)", StringComparison.Ordinal)
-             && rulesCode.Contains("ScheduleRuleAutoSave", StringComparison.Ordinal),
-            "rule edits use one debounced automatic save coordinator");
+        True(!rulesCode.Contains("DispatcherTimer", StringComparison.Ordinal)
+             && !rulesCode.Contains("ScheduleRuleAutoSave", StringComparison.Ordinal)
+             && rulesCode.Contains("RulePanel.IsVisibleChanged", StringComparison.Ordinal)
+             && rulesCode.Contains("SaveRulesOnPageLeaveAsync", StringComparison.Ordinal)
+             && rulesCode.Contains("_ruleSaveTask", StringComparison.Ordinal),
+            "rule edits defer one serialized batch save until the rules page is left");
         True(!rulesCode.Contains("OnSaveRuleClick", StringComparison.Ordinal)
              && !rulesCode.Contains("MessageBox.Show", StringComparison.Ordinal),
             "manual save entry and unsaved-change dialog are removed");

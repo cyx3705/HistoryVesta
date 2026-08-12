@@ -366,7 +366,7 @@ public sealed partial class ProjectService
         }
 
         var result = await GitRunner.RunAsync(worktreePath, ["push", "origin", name],
-            timeoutSeconds: 600, cancellation: cancellation);
+            cancellation: cancellation);
         return result.Success
             ? new PushReport(true, $"已推送到 GitHub(origin/{name})\n{result.Output}".Trim(),
                 true, entries, Target: target)
@@ -417,7 +417,7 @@ public sealed partial class ProjectService
         }
 
         var result = await GitRunner.RunAsync(BareRepo, ["push", "--all", "origin"],
-            timeoutSeconds: 1800, cancellation: cancellation);
+            cancellation: cancellation);
         return result.Success
             ? new BatchPushReport(true, $"已推送全部分支到 GitHub\n{result.Output}".Trim(),
                 true, entries, Target: target)
@@ -496,7 +496,7 @@ public sealed partial class ProjectService
         foreach (var (_, link) in items)
         {
             var result = await GitRunner.RunAsync(link.FullPath,
-                ["push", "origin", link.Branch], timeoutSeconds: 600, cancellation: cancellation);
+                ["push", "origin", link.Branch], cancellation: cancellation);
             var entry = new SubmoduleOperationEntry(link.RelativePath, link.Branch,
                 link.HeadSha, link.HeadSha,
                 result.Success ? SubmoduleOperationOutcome.Success : SubmoduleOperationOutcome.Failed,

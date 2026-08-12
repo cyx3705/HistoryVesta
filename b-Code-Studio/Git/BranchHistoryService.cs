@@ -156,7 +156,7 @@ public sealed class BranchHistoryService
             var fetch = await GitRunner.RunAsync(_projects.BareRepo,
                 ["fetch", "--no-tags", "origin",
                     $"+refs/heads/{name}:refs/remotes/origin/{name}"],
-                timeoutSeconds: 600, cancellation: cancellation);
+                cancellation: cancellation);
             if (!fetch.Success)
                 remoteWarning = fetch.Output;
         }
@@ -419,7 +419,7 @@ public sealed class BranchHistoryService
         var push = await GitRunner.RunAsync(worktree.Worktree.WorktreePath,
             ["push", $"--force-with-lease=refs/heads/{name}:{remote}", "origin",
                 $"refs/heads/{name}:refs/heads/{name}"],
-            timeoutSeconds: 600, cancellation: cancellation);
+            cancellation: cancellation);
         if (!push.Success)
             return FailMutation(name, local, $"--force-with-lease 推送失败:\n{push.Output}", remote);
         return new BranchMutationReport(true, true, name, local, remote, local,

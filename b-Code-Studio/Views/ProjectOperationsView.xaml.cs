@@ -33,7 +33,7 @@ public partial class ProjectOperationsView : UserControl
         GitHubPanel.Content = new GitHubConnectionView(gitHubAccessor);
         SelectedCommitMessageBox.Text = "一键推送更新";
         RuleGrid.ItemsSource = _rules;
-        InitializeRuleAutoSave();
+        InitializeRuleDeferredSave();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         ViewKit.RunOnceOnLoaded(this, () => RefreshProjectsAsync(_selection.CurrentProjectName));
@@ -84,17 +84,21 @@ public partial class ProjectOperationsView : UserControl
 
         if (_loadedRuleProject is { Length: > 0 } loaded
             && !string.Equals(selected, loaded, StringComparison.OrdinalIgnoreCase)
-            && !await EnsureDirtyRulesHandledAsync())
+            && !await SaveRulesOnPageLeaveAsync())
         {
             _selection.CurrentProjectName = loaded;
             return;
         }
 
         UpdateProjectActions();
-        if (selected != null)
+        if (selected != null
+            && !string.Equals(selected, _loadedRuleProject, StringComparison.OrdinalIgnoreCase))
             await LoadRulesAsync(selected);
         else
-            ClearRules();
+        {
+            if (selected == null)
+                ClearRules();
+        }
     }
 
     private void OnNewProjectNameChanged(object sender, TextChangedEventArgs e)

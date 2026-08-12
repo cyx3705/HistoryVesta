@@ -9,7 +9,7 @@ public sealed record GitResult(int ExitCode, string Output)
 }
 
 /// <summary>
-/// 统一 git 进程封装：固定 -C 工作目录、UTF-8 输出、超时与异常兜底。
+/// 统一 git 进程封装：固定 -C 工作目录、UTF-8 输出、外部取消与异常兜底。
 /// 全项目禁止在此之外散落 Process.Start("git")。
 /// </summary>
 public static class GitRunner
@@ -17,24 +17,21 @@ public static class GitRunner
     public static async Task<GitResult> RunAsync(
         string gitDir,
         IReadOnlyList<string> arguments,
-        int timeoutSeconds = 300,
         CancellationToken cancellation = default)
-        => await RunCoreAsync(gitDir, arguments, null, timeoutSeconds, cancellation).ConfigureAwait(false);
+        => await RunCoreAsync(gitDir, arguments, null, cancellation).ConfigureAwait(false);
 
     public static async Task<GitResult> RunWithInputAsync(
         string gitDir,
         IReadOnlyList<string> arguments,
         string standardInput,
-        int timeoutSeconds = 300,
         CancellationToken cancellation = default)
-        => await RunCoreAsync(gitDir, arguments, standardInput, timeoutSeconds, cancellation)
+        => await RunCoreAsync(gitDir, arguments, standardInput, cancellation)
             .ConfigureAwait(false);
 
     private static async Task<GitResult> RunCoreAsync(
         string gitDir,
         IReadOnlyList<string> arguments,
         string? standardInput,
-        int timeoutSeconds,
         CancellationToken cancellation)
     {
         try
@@ -63,18 +60,15 @@ public static class GitRunner
             var outputTask = process.StandardOutput.ReadToEndAsync(CancellationToken.None);
             var errorTask = process.StandardError.ReadToEndAsync(CancellationToken.None);
 
-            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(
-                timeoutCts.Token, cancellation);
             try
             {
                 if (standardInput != null)
                 {
-                    await process.StandardInput.WriteAsync(standardInput.AsMemory(), cts.Token)
+                    await process.StandardInput.WriteAsync(standardInput.AsMemory(), cancellation)
                         .ConfigureAwait(false);
                     process.StandardInput.Close();
                 }
-                await process.WaitForExitAsync(cts.Token).ConfigureAwait(false);
+                await process.WaitForExitAsync(cancellation).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -96,11 +90,8 @@ public static class GitRunner
                     // 仅用于回收已取消的子进程
                 }
 
-                var reason = cancellation.IsCancellationRequested
-                    ? "git 命令已取消"
-                    : $"git 命令超时({timeoutSeconds}s)";
                 return new GitResult(-1,
-                    $"{reason}: git -C {FormatArgument(gitDir)} {FormatArguments(arguments)}");
+                    $"git 命令已取消: git -C {FormatArgument(gitDir)} {FormatArguments(arguments)}");
             }
 
             var output = (await outputTask.ConfigureAwait(false) + "\n"

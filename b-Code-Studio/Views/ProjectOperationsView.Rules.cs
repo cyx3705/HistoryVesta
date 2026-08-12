@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Windows.Controls;
-using System.Windows.Threading;
 using HistoryVulcan.Core.Commands;
 using HistoryJanus.Git;
 
@@ -10,13 +9,37 @@ namespace HistoryJanus.Views;
 
 public partial class ProjectOperationsView
 {
-    private readonly DispatcherTimer _ruleAutoSaveTimer = new()
-    {
-        Interval = TimeSpan.FromMilliseconds(600),
-    };
+    private Task<bool>? _ruleSaveTask;
+    private bool _rulePageWasVisible;
 
-    private void InitializeRuleAutoSave()
-        => _ruleAutoSaveTimer.Tick += OnRuleAutoSaveTick;
+    private void InitializeRuleDeferredSave()
+    {
+        _rulePageWasVisible = RulePanel.IsVisible;
+        RulePanel.IsVisibleChanged += OnRulePanelIsVisibleChanged;
+    }
+
+    private async void OnRulePanelIsVisibleChanged(
+        object sender, System.Windows.DependencyPropertyChangedEventArgs e)
+    {
+        if (RulePanel.IsVisible)
+        {
+            _rulePageWasVisible = true;
+            return;
+        }
+        if (!_rulePageWasVisible)
+            return;
+
+        _rulePageWasVisible = false;
+        await SaveRulesOnPageLeaveAsync();
+    }
+
+    private async Task<bool> SaveRulesOnPageLeaveAsync()
+    {
+        var saved = await EnsureDirtyRulesHandledAsync();
+        if (!saved)
+            RulesPageButton.IsChecked = true;
+        return saved;
+    }
 
     private async Task LoadRulesAsync(string project, bool refresh = false)
     {
@@ -101,13 +124,30 @@ public partial class ProjectOperationsView
         RuleGrid.SelectedItem = draft;
         RuleGrid.ScrollIntoView(draft);
         UpdateRuleActions();
-        ScheduleRuleAutoSave();
     }
 
     private void OnRuleSelected(object sender, SelectionChangedEventArgs e)
         => UpdateRuleActions();
 
     private async Task<bool> SaveDirtyRulesAsync(string project)
+    {
+        if (_ruleSaveTask is { } running)
+            return await running;
+
+        var saveTask = SaveDirtyRulesCoreAsync(project);
+        _ruleSaveTask = saveTask;
+        try
+        {
+            return await saveTask;
+        }
+        finally
+        {
+            if (ReferenceEquals(_ruleSaveTask, saveTask))
+                _ruleSaveTask = null;
+        }
+    }
+
+    private async Task<bool> SaveDirtyRulesCoreAsync(string project)
     {
         if (_busAccessor() is not { } bus || string.IsNullOrWhiteSpace(project))
             return false;
@@ -157,23 +197,23 @@ public partial class ProjectOperationsView
     }
 
     private async void OnDeleteRuleClick(object sender, System.Windows.RoutedEventArgs e)
+        => await DeleteSelectedRuleAsync();
+
+    private async Task DeleteSelectedRuleAsync()
     {
         if (RuleGrid.SelectedItem is not RuleEditRow rule || CurrentProjectName() is not { Length: > 0 } project
             || _busAccessor() is not { } bus)
             return;
         if (rule.IsDraft)
         {
-            _ruleAutoSaveTimer.Stop();
             rule.PropertyChanged -= OnRuleRowChanged;
             _rules.Remove(rule);
             UpdateRuleActions();
-            if (_rules.Any(row => row.CanEdit && row.IsDirty))
-                ScheduleRuleAutoSave();
             return;
         }
         if (!rule.IsDeclared)
             return;
-        if (!await EnsureDirtyRulesHandledAsync())
+        if (!await SaveRulesOnPageLeaveAsync())
             return;
         var command = $"janus.gitrule.remove name={CommandParser.QuoteArg(project)} " +
                       $"pattern={CommandParser.QuoteArg(rule.Pattern)}";
@@ -189,10 +229,13 @@ public partial class ProjectOperationsView
 
     /// <summary>强制重扫本项目，并把台账与声明规则原子替换进表格。</summary>
     private async void OnRefreshRulesClick(object sender, System.Windows.RoutedEventArgs e)
+        => await RefreshRulesAsync();
+
+    private async Task RefreshRulesAsync()
     {
         if (CurrentProjectName() is not { Length: > 0 } project)
             return;
-        if (!await EnsureDirtyRulesHandledAsync())
+        if (!await SaveRulesOnPageLeaveAsync())
             return;
         await LoadRulesAsync(project, refresh: true);
     }
@@ -213,7 +256,6 @@ public partial class ProjectOperationsView
 
     private async Task<bool> EnsureDirtyRulesHandledAsync()
     {
-        _ruleAutoSaveTimer.Stop();
         RuleGrid.CommitEdit(DataGridEditingUnit.Cell, true);
         RuleGrid.CommitEdit(DataGridEditingUnit.Row, true);
         var count = _rules.Count(row => row.CanEdit && row.IsDirty);
@@ -223,30 +265,7 @@ public partial class ProjectOperationsView
     }
 
     private void OnRuleRowChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        UpdateRuleActions();
-        if (sender is RuleEditRow { IsDirty: true })
-            ScheduleRuleAutoSave();
-    }
-
-    private void ScheduleRuleAutoSave()
-    {
-        _ruleAutoSaveTimer.Stop();
-        _ruleAutoSaveTimer.Start();
-    }
-
-    private async void OnRuleAutoSaveTick(object? sender, EventArgs e)
-    {
-        _ruleAutoSaveTimer.Stop();
-        if (_ruleOperationRunning)
-        {
-            ScheduleRuleAutoSave();
-            return;
-        }
-        if (_rules.All(row => !row.CanEdit || !row.IsDirty))
-            return;
-        await SaveDirtyRulesAsync(_loadedRuleProject ?? CurrentProjectName());
-    }
+        => UpdateRuleActions();
 
     private void UpdateRuleActions()
     {

@@ -15,7 +15,7 @@
       "appshell-module"
     ],
     "status": "active",
-    "version": "3.7.2",
+    "version": "3.7.0",
     "branch": "2026-020-HistoryJanus"
   },
   "paths": {
@@ -67,7 +67,7 @@
     "package": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\b-Code-Studio\\eng\\Build-HistoryJanusPackage.ps1"
   },
   "externalDependencies": [
-    "HistoryVulcan 3.4.0 host snapshot from ../2026-023-HistoryVulcan/z-HistoryVulcan",
+    "HistoryVulcan >= 3.9.0 host snapshot from ../2026-023-HistoryVulcan/z-HistoryVulcan",
     ".NET 8 SDK and Windows Desktop Runtime",
     "Git command-line client"
   ],
