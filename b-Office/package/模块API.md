@@ -66,6 +66,10 @@ if (!result.Success)
 | `janus.github.status` | 只读 | 服务器 Git、GCM、提交身份、origin 和 SSH 状态 |
 | `janus.github.accounts` | 只读 | 列出 GCM 中已知的 GitHub HTTPS 凭据账号 |
 | `janus.github.test` | 只读 | 检测 GitHub SSH/HTTPS 连接（`transport=auto\|ssh\|https`，`timeout=1..120`），不执行 push |
+| `janus.github.login` | 确认写入 | 启动服务器本机 Git Credential Manager 登录流程 |
+| `janus.github.logout` | 确认写入 | 注销指定 GitHub HTTPS 凭据账号 |
+| `janus.github.identity` | 预览/确认写入 | 预览或修改 repository/global Git 提交身份；`apply=true` 触发确认 |
+| `janus.github.remote` | 预览/确认写入 | 预览或修改 origin fetch/push URL；`apply=true` 触发确认 |
 
 ### 项目写操作
 
