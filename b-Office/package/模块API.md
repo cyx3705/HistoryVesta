@@ -1,4 +1,4 @@
-﻿# HistoryJanus 3.7.0 模块 API
+# HistoryJanus 3.8.0 模块 API
 
 本文件是其他模块和项目消费 HistoryJanus 的唯一人工合同。运行时命令目录是参数、确认策略和可用性的最终真值；历史文档和 Janus 内部类型不构成公开 API。
 
