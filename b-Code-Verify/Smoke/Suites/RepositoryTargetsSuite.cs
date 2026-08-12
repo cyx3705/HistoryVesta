@@ -228,10 +228,16 @@ internal static class RepositoryTargetsSuite
         var overviewColumns = overview.Descendants()
             .Where(element => element.Name.LocalName == "GridViewColumn")
             .ToArray();
-        Equal(4, overviewColumns.Length, "overview is a four-column navigator");
+        Equal(5, overviewColumns.Length, "overview is a five-column navigator");
         True(overviewColumns.Select(column => column.Attribute("Header")?.Value)
-                .SequenceEqual(["#", "分支 / 项目", "元文件夹", "最近提交"]),
-            "overview columns are number, branch/project, meta folders, then latest commit");
+                .SequenceEqual(["#", "工作树", "分支 / 项目", "元文件夹", "最近提交"]),
+            "overview columns are number, worktree status, branch/project, meta folders, then latest commit");
+        True(overview.ToString().Contains("CleanStatusGlyph", StringComparison.Ordinal)
+             && overview.ToString().Contains("CleanStatusToolTip", StringComparison.Ordinal),
+            "overview worktree column projects the clean/dirty glyph and diagnostic tooltip");
+        var overviewCode = File.ReadAllText(Path.Combine(RepoRoot, "Views", "OverviewView.xaml.cs"));
+        Contains(overviewCode, "janus.proj.list status=true",
+            "overview explicitly requests worktree status without taxing other project-list consumers");
         var overviewMarkup = overview.ToString();
         foreach (var token in new[]
                  {
@@ -351,6 +357,31 @@ internal static class RepositoryTargetsSuite
 
         var (listGit, worktrees) = await service.ListWorktreesAsync();
         True(listGit.Success, "worktree list feeds the overview merge");
+        var cleanRows = await service.ReadWorktreeStatusesAsync(
+            [worktrees.Single(row => row.BranchName == noChildBranch)]);
+        True(cleanRows.Single().IsClean == true, "overview status marks a clean worktree with a check");
+
+        await File.AppendAllTextAsync(Path.Combine(noChild, "README.md"), "tracked change\n");
+        var trackedDirtyRows = await service.ReadWorktreeStatusesAsync(cleanRows);
+        True(trackedDirtyRows.Single().IsClean == false,
+            "overview status marks a tracked modification with a cross");
+        Ensure(await GitRunner.RunAsync(noChild, ["restore", "--", "README.md"]),
+            "restore overview status fixture");
+
+        var untrackedPath = Path.Combine(noChild, "untracked-status.tmp");
+        await File.WriteAllTextAsync(untrackedPath, "untracked\n");
+        var untrackedDirtyRows = await service.ReadWorktreeStatusesAsync(cleanRows);
+        True(untrackedDirtyRows.Single().IsClean == false,
+            "overview status includes untracked files in the dirty state");
+        File.Delete(untrackedPath);
+        var restoredRows = await service.ReadWorktreeStatusesAsync(cleanRows);
+        True(restoredRows.Single().IsClean == true,
+            "overview status returns to clean after tracked and untracked changes are removed");
+        var unknownRows = await service.ReadWorktreeStatusesAsync(
+            [new WorktreeInfo("missing", Path.Combine(Path.GetDirectoryName(noChild)!, "missing-worktree"))]);
+        True(unknownRows.Single().IsClean == null,
+            "overview status keeps a missing worktree unknown instead of guessing clean or dirty");
+
         var mergedRows = OverviewMetaMerge.Merge(worktrees, metas);
         var parentRow = mergedRows.Single(row => row.BranchName == parentBranch);
         var noChildRow = mergedRows.Single(row => row.BranchName == noChildBranch);
@@ -360,6 +391,15 @@ internal static class RepositoryTargetsSuite
         True(!noChildRow.HasMeta && !noChildRow.HasAdditionalMeta
              && noChildRow.PrimaryMetaName == "-" && noChildRow.MoreMetaLabel.Length == 0,
             "project without meta shows the placeholder");
+        var cleanOverviewRow = OverviewMetaMerge.Merge(restoredRows, []).Single();
+        Equal("✓", cleanOverviewRow.CleanStatusGlyph,
+            "overview row projects the clean worktree check glyph");
+        var dirtyOverviewRow = OverviewMetaMerge.Merge(untrackedDirtyRows, []).Single();
+        Equal("×", dirtyOverviewRow.CleanStatusGlyph,
+            "overview row projects the dirty worktree cross glyph");
+        var unknownOverviewRow = OverviewMetaMerge.Merge(unknownRows, []).Single();
+        Equal("?", unknownOverviewRow.CleanStatusGlyph,
+            "overview row projects the unknown worktree question glyph");
         var singleRow = OverviewMetaMerge.Merge(
                 worktrees, metas.Where(meta => meta.MetaName == "z-alpha").ToList())
             .Single(row => row.BranchName == parentBranch);

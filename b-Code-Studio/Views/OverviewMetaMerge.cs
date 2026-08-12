@@ -29,6 +29,8 @@ public static class OverviewMetaMerge
             item.LastCommitMessage,
             item.HasNameMismatch,
             item.FolderName,
+            item.IsClean,
+            item.WorktreeStatusMessage,
             metasByProject.GetValueOrDefault(item.BranchName) ?? [])).ToList();
     }
 

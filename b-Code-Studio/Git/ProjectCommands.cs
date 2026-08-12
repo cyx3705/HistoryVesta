@@ -117,6 +117,13 @@ public static class ProjectCommands
                 Description = "分支名关键字过滤(包含匹配,忽略大小写)",
                 Position = 0,
             },
+            new ParameterSpec
+            {
+                Name = "status",
+                Description = "true 时并行读取各工作树的干净状态",
+                Type = ParamType.Bool,
+                Default = "false",
+            },
         ],
         Handler = async ctx =>
         {
@@ -132,6 +139,10 @@ public static class ProjectCommands
                     .ToList();
             }
 
+            var includeStatus = ctx.GetBool("status");
+            if (includeStatus)
+                worktrees = await projects.ReadWorktreeStatusesAsync(worktrees, ctx.Cancellation);
+
             if (worktrees.Count == 0)
                 return CommandResult.Ok("没有匹配的工作树", worktrees);
 
@@ -146,7 +157,13 @@ public static class ProjectCommands
                     : "";
                 var state = Directory.Exists(w.WorktreePath) ? "" : "  ⚠目录缺失(疑似断链,可 janus.proj.repair)";
                 var tip = w.LastCommitMessage.Length > 0 ? $"  | {w.LastCommitMessage}" : "";
-                sb.Append($"\n  {i + 1,3}. {w.BranchName}{time}{mismatch}{tip}  →  {w.WorktreePath}{state}");
+                var clean = !includeStatus ? "" : w.IsClean switch
+                {
+                    true => "  ✓干净",
+                    false => "  ×有改动",
+                    _ => "  ?状态未知",
+                };
+                sb.Append($"\n  {i + 1,3}. {w.BranchName}{time}{clean}{mismatch}{tip}  →  {w.WorktreePath}{state}");
             }
 
             return CommandResult.Ok(sb.ToString(), worktrees);

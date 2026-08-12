@@ -32,6 +32,8 @@ public partial class OverviewView : UserControl
         string LastCommitMessage,
         bool HasNameMismatch,
         string FolderName,
+        bool? IsClean,
+        string WorktreeStatusMessage,
         IReadOnlyList<MetaFolderInfo> MetaFolders)
     {
         public MetaFolderInfo? PrimaryMeta => MetaFolders.FirstOrDefault();
@@ -44,6 +46,15 @@ public partial class OverviewView : UserControl
             ? $"分支名是唯一权威值，但目录名为 {FolderName}，不合规则。请将分支改名为与目录一致。\n{WorktreePath}"
             : WorktreePath;
         public string CommitDisplay => string.IsNullOrWhiteSpace(LastCommitMessage) ? "-" : LastCommitMessage;
+        public string CleanStatusGlyph => IsClean switch
+        {
+            true => "✓",
+            false => "×",
+            _ => "?",
+        };
+        public string CleanStatusToolTip => string.IsNullOrWhiteSpace(WorktreeStatusMessage)
+            ? "工作树状态未知"
+            : WorktreeStatusMessage;
     }
 
     private async void OnLoaded(object sender, System.Windows.RoutedEventArgs e)
@@ -74,7 +85,7 @@ public partial class OverviewView : UserControl
         RefreshButton.IsEnabled = false;
         try
         {
-            var projectsTask = bus.ExecuteAsync("janus.proj.list", "UI");
+            var projectsTask = bus.ExecuteAsync("janus.proj.list status=true", "UI");
             var metasTask = bus.ExecuteAsync("janus.proj.metas", "UI");
             await Task.WhenAll(projectsTask, metasTask);
 

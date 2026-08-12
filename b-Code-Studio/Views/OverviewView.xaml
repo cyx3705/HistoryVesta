@@ -61,6 +61,16 @@
             <ListView.View>
                 <GridView ColumnHeaderContainerStyle="{DynamicResource Shell.GridHeader}">
                     <GridViewColumn Header="#" Width="44" DisplayMemberBinding="{Binding Index}" />
+                    <GridViewColumn Header="工作树" Width="58">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding CleanStatusGlyph}"
+                                           ToolTip="{Binding CleanStatusToolTip}"
+                                           FontSize="15" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                     <GridViewColumn Header="分支 / 项目" Width="210">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>

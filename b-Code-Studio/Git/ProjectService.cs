@@ -8,7 +8,9 @@ public sealed record WorktreeInfo(
     string BranchName,
     string WorktreePath,
     string LastCommitTime = "",
-    string LastCommitMessage = "")
+    string LastCommitMessage = "",
+    bool? IsClean = null,
+    string WorktreeStatusMessage = "")
 {
     /// <summary>工作树目录名（路径权威侧的文件夹名，可能与分支名不一致）。</summary>
     public string FolderName
@@ -209,6 +211,48 @@ public sealed partial class ProjectService
         }
 
         return (result, list);
+    }
+
+    /// <summary>并行读取项目总览所需的工作树状态；单个仓库失败时保留该行并标记为未知。</summary>
+    public async Task<List<WorktreeInfo>> ReadWorktreeStatusesAsync(
+        IReadOnlyList<WorktreeInfo> worktrees,
+        CancellationToken cancellation = default)
+    {
+        var tasks = worktrees.Select(async worktree =>
+        {
+            if (!Directory.Exists(worktree.WorktreePath))
+            {
+                return worktree with
+                {
+                    IsClean = null,
+                    WorktreeStatusMessage = "工作树目录不存在",
+                };
+            }
+
+            var status = await GitRunner.RunAsync(
+                worktree.WorktreePath,
+                ["status", "--porcelain=v1", "--untracked-files=all"],
+                cancellation).ConfigureAwait(false);
+            if (!status.Success)
+            {
+                return worktree with
+                {
+                    IsClean = null,
+                    WorktreeStatusMessage = string.IsNullOrWhiteSpace(status.Output)
+                        ? "工作树状态检查失败"
+                        : status.Output,
+                };
+            }
+
+            var isClean = string.IsNullOrWhiteSpace(status.Output);
+            return worktree with
+            {
+                IsClean = isClean,
+                WorktreeStatusMessage = isClean ? "工作树干净" : "工作树有未提交或未跟踪的文件",
+            };
+        });
+
+        return [.. await Task.WhenAll(tasks).ConfigureAwait(false)];
     }
 
     /// <summary>按登记分支解析工作树，并强制其仍是受管根下的直接、非重解析点子目录。</summary>
