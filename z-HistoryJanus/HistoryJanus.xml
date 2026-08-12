@@ -266,6 +266,9 @@
         <member name="M:HistoryJanus.Git.ProjectService.EnsureDefaultSettings">
             <summary>首启把默认配置写入 settings.json,使 app.get 可见、app.set 可改。</summary>
         </member>
+        <member name="M:HistoryJanus.Git.ProjectService.ReadWorktreeStatusesAsync(System.Collections.Generic.IReadOnlyList{HistoryJanus.Git.WorktreeInfo},System.Threading.CancellationToken)">
+            <summary>并行读取项目总览所需的工作树状态；单个仓库失败时保留该行并标记为未知。</summary>
+        </member>
         <member name="M:HistoryJanus.Git.ProjectService.ResolveWorktreeAsync(System.String)">
             <summary>按登记分支解析工作树，并强制其仍是受管根下的直接、非重解析点子目录。</summary>
         </member>
