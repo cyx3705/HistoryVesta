@@ -21,6 +21,43 @@
             Builds the Janus domain graph inside infrastructure supplied by the AppShell host.
             </summary>
         </member>
+        <member name="T:HistoryJanus.Git.AiWorktreeStatus">
+            <summary>AI 工作树任务状态。JSON 线名见 <see cref="M:HistoryJanus.Git.AiWorktreeStateMachine.FormatStatus(HistoryJanus.Git.AiWorktreeStatus)"/>。</summary>
+        </member>
+        <member name="T:HistoryJanus.Git.AiWorktreeBranchName">
+            <summary>已解析的 AI 分支名：<c>ai/&lt;项目&gt;/&lt;短SHA&gt;-&lt;序号&gt;-&lt;slug&gt;</c>。</summary>
+        </member>
+        <member name="M:HistoryJanus.Git.AiWorktreeBranchName.#ctor(System.String,System.String,System.Int32,System.String)">
+            <summary>已解析的 AI 分支名：<c>ai/&lt;项目&gt;/&lt;短SHA&gt;-&lt;序号&gt;-&lt;slug&gt;</c>。</summary>
+        </member>
+        <member name="P:HistoryJanus.Git.AiWorktreeBranchName.FolderName">
+            <summary>工作树目录名，不含斜杠。</summary>
+        </member>
+        <member name="T:HistoryJanus.Git.AiWorktreeRecord">
+            <summary>
+            AI 工作树注册记录。注册表文件本身属于 Phase 2；本类型冻结字段合同。
+            </summary>
+        </member>
+        <member name="P:HistoryJanus.Git.AiWorktreeRecord.BoundHeadSha">
+            <summary>在 ready/verified/approved 绑定的完整 HEAD；HEAD 变化后验证与审批失效。</summary>
+        </member>
+        <member name="T:HistoryJanus.Git.AiWorktreeJson">
+            <summary>与 <see cref="T:HistoryJanus.Git.HistoryRecorder"/> 相同的 camelCase JSON 选项，供后续注册表使用。</summary>
+        </member>
+        <member name="T:HistoryJanus.Git.AiWorktreeStateMachine">
+            <summary>
+            AI 工作树状态机：纯函数，不访问 Git、不读写文件。
+            合法正向：active → ready → verified → approved → merged → cleaned；
+            active/ready 可转入 failed/abandoned；后续状态必要时可转入 failed；
+            merged/abandoned 清理失败转入 cleanupFailed（保留现场，不得报已清空）。
+            </summary>
+        </member>
+        <member name="M:HistoryJanus.Git.AiWorktreeStateMachine.RequiresFullHeadBind(HistoryJanus.Git.AiWorktreeStatus)">
+            <summary>verified / approved / merged 以及锁定点 ready 必须绑定完整 HEAD。</summary>
+        </member>
+        <member name="M:HistoryJanus.Git.AiWorktreeStateMachine.TryFormatWorktreeFolderName(System.String,System.Int32,System.String,System.String@,System.String@)">
+            <summary>工作树目录名 <c>{shortSha}-{n}-{slug}</c>，禁止斜杠。</summary>
+        </member>
         <member name="T:HistoryJanus.Git.BranchHistoryCommands">
             <summary>分支历史、恢复提交、本地硬重置与 lease 强推指令。</summary>
         </member>
@@ -202,6 +239,70 @@
             <summary>
             统一 git 进程封装：固定 -C 工作目录、UTF-8 输出、外部取消与异常兜底。
             全项目禁止在此之外散落 Process.Start("git")。
+            </summary>
+        </member>
+        <member name="T:HistoryJanus.Git.GraphCommands">
+            <summary>只读 DAG 图谱指令；无 ConfirmPrompt，不改写仓库。</summary>
+        </member>
+        <member name="T:HistoryJanus.Git.BranchKind">
+            <summary>图谱分支分类：编号主线、仍可能出现的继承标记、平行（含 ai/）工作分支。</summary>
+        </member>
+        <member name="T:HistoryJanus.Git.GraphRef">
+            <summary>本地或远端 ref；不含布局坐标。</summary>
+        </member>
+        <member name="P:HistoryJanus.Git.GraphRef.IsOpen">
+            <summary>未合并的平行分支为 true；已合并仍保留历史行，但右侧不再画端点。</summary>
+        </member>
+        <member name="T:HistoryJanus.Git.GraphCommitNode">
+            <summary>
+            提交节点。列表页 FileSummary / ReleaseId / ReleaseStatus 可为空；
+            证据槽留给后续 Diana 版本，Phase 1 保持空字符串。
+            </summary>
+        </member>
+        <member name="T:HistoryJanus.Git.GraphEdge">
+            <summary>
+            提交 DAG 边：FromSha 为父提交，ToSha 为子提交。
+            IsMergeParent 为 true 表示该父提交不是子提交的第一父。
+            </summary>
+        </member>
+        <member name="T:HistoryJanus.Git.GraphPage">
+            <summary>janus.graph.commits 分页游标。</summary>
+        </member>
+        <member name="T:HistoryJanus.Git.GraphBranchRelation">
+            <summary>分支与其父/基线关系，供 janus.graph.branches 使用。</summary>
+        </member>
+        <member name="T:HistoryJanus.Git.GraphSummary">
+            <summary>janus.graph.summary 返回合同：项目、分支、HEAD、节点数与 dirty。</summary>
+        </member>
+        <member name="T:HistoryJanus.Git.GraphBranchesReport">
+            <summary>janus.graph.branches 返回合同：编号主线 + 平行分支（含已合并历史）。</summary>
+        </member>
+        <member name="T:HistoryJanus.Git.GraphCommitsReport">
+            <summary>janus.graph.commits 返回合同。</summary>
+        </member>
+        <member name="P:HistoryJanus.Git.GraphCommitsReport.Lanes">
+            <summary>第 0 条为主线，其后为平行分支；<see cref="P:HistoryJanus.Git.GraphRef.IsOpen"/> 决定右侧是否画 tip。</summary>
+        </member>
+        <member name="T:HistoryJanus.Git.GraphNodeDetail">
+            <summary>janus.graph.node 返回合同：单提交、父边、差异摘要与空证据槽。</summary>
+        </member>
+        <member name="T:HistoryJanus.Git.GraphService">
+            <summary>
+            当前编号项目窗口内的只读提交 DAG。
+            主线是编号分支本身；提交从相对父分支/模板的分叉点截断。
+            平行分支（主要是 ai/P/）含未合并与已合并历史；已合并行不在右侧画 tip。
+            git log --parents --date-order，不用 --first-parent，也不加载整个裸仓。
+            </summary>
+        </member>
+        <member name="M:HistoryJanus.Git.GraphService.GetCommitsAsync(System.String,System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            提交按 --date-order 新→旧排列；skip 从最新端跳过，与 GraphPage 一致。
+            </summary>
+        </member>
+        <member name="M:HistoryJanus.Git.GraphService.DiscoverMergedHistoriesAsync(System.String,System.String,System.Collections.Generic.HashSet{System.String},System.Collections.Generic.HashSet{System.String},System.Threading.CancellationToken)">
+            <summary>
+            已删除但仍被 --no-ff 合并提交第二父指向的历史：ref 没了，提交对象还在主线可达集里。
+            squash / fast-forward 没有第二父，无法还原平行行。
             </summary>
         </member>
         <member name="T:HistoryJanus.Git.HistoryRecorder">
@@ -608,6 +709,23 @@
             </summary>
         </member>
         <member name="M:HistoryJanus.Views.GitHubConnectionView.InitializeComponent">
+            <summary>
+            InitializeComponent
+            </summary>
+        </member>
+        <member name="T:HistoryJanus.Views.GraphLayout">
+            <summary>
+            提交图谱时间轴泳道布局。X 为提交时间（左旧右新），Y 按主线与平行分支动态分行。
+            已合并平行行保留合并前节点，右侧不画 tip。纯计算：不引用 WPF，不发指令。
+            </summary>
+        </member>
+        <member name="T:HistoryJanus.Views.GraphView">
+            <summary>独立窗口提交图谱：时间轴泳道 + 可视窗口裁剪。</summary>
+            <summary>
+            GraphView
+            </summary>
+        </member>
+        <member name="M:HistoryJanus.Views.GraphView.InitializeComponent">
             <summary>
             InitializeComponent
             </summary>

@@ -45,4 +45,7 @@
   <ItemGroup>
     <None Update="module.manifest.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Smoke" />
+  </ItemGroup>
 </Project>

@@ -71,7 +71,7 @@ internal static class TestArchitectureSuite
         string[] expected =
         [
             "VersionProjection", "TestArchitecture", "GitRules", "BranchHistory",
-            "SubmoduleSafety", "RepositoryTargets", "ProjectOperations", "GitHub",
+            "BranchGraph", "SubmoduleSafety", "RepositoryTargets", "ProjectOperations", "GitHub",
         ];
         True(registered.SequenceEqual(expected),
             "test runner registers the reviewed functional suite order");
@@ -253,6 +253,8 @@ internal static class TestArchitectureSuite
             "merged github: commands register through the module composition");
         Contains(composition, "projects.BareRepo",
             "merged github: repository path shares the proj.barerepo setting");
+        Contains(composition, "GraphCommands.RegisterAll",
+            "graph commands register through the module composition");
     }
 
     private static void VerifyMergedOverviewBoundary(char separator)
@@ -282,8 +284,8 @@ internal static class TestArchitectureSuite
             .Select(match => match.Groups["id"].Value)
             .ToArray();
         // DEC-008：github 窗口退役，GitHub 面板是 projops 的第三个分段。
-        True(windowIds.SequenceEqual(new[] { "overview", "projops" }),
-            "page consolidation: module registers exactly overview and projops");
+        True(windowIds.SequenceEqual(new[] { "overview", "graph", "projops" }),
+            "page consolidation: module registers overview, graph, and projops");
         Contains(
             File.ReadAllText(Path.Combine(RepoRoot, "Views", "ProjectOperationsView.xaml.cs")),
             "GitHubPanel.Content = new GitHubConnectionView",
@@ -343,7 +345,7 @@ internal static class TestArchitectureSuite
 
         var primaryViews = new[]
         {
-            "OverviewView.xaml", "BranchHistoryView.xaml", "ProjectOperationsView.xaml",
+            "OverviewView.xaml", "GraphView.xaml", "BranchHistoryView.xaml", "ProjectOperationsView.xaml",
             "GitHubConnectionView.xaml",
         };
         foreach (var name in primaryViews)
@@ -357,7 +359,7 @@ internal static class TestArchitectureSuite
 
         foreach (var name in new[]
                  {
-                     "OverviewView.xaml", "BranchHistoryView.xaml", "ProjectOperationsView.xaml",
+                     "OverviewView.xaml", "GraphView.xaml", "BranchHistoryView.xaml", "ProjectOperationsView.xaml",
                      "GitHubConnectionView.xaml",
                  })
         {

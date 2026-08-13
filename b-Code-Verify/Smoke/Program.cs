@@ -1,4 +1,4 @@
-using HistoryVulcan.Core;
+﻿using HistoryVulcan.Core;
 using HistoryJanus.Smoke;
 using HistoryJanus.Smoke.Suites;
 
@@ -18,10 +18,12 @@ var suites = new (string Name, Func<string[], Task> Run)[]
     ("TestArchitecture", TestArchitectureSuite.RunAsync),
     ("GitRules", GitRulesSuite.RunAsync),
     ("BranchHistory", BranchHistorySuite.RunAsync),
+    ("BranchGraph", BranchGraphSuite.RunAsync),
     ("SubmoduleSafety", SubmoduleSafetySuite.RunAsync),
     ("RepositoryTargets", RepositoryTargetsSuite.RunAsync),
     ("ProjectOperations", ProjectOperationsSuite.RunAsync),
     ("GitHub", GitHubSuite.RunAsync),
+    ("WorktreeBareMarker", WorktreeBareMarkerSuite.RunAsync),
 };
 
 var selected = ReadSuiteName(args);

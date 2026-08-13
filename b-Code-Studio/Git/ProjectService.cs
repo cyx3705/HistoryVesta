@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using HistoryVulcan.Core.Storage;
 
@@ -75,6 +75,7 @@ public sealed partial class ProjectService
     // 设置键：首启写入默认值，此后 app.set / app.get 可读写。
     public const string KeyBareRepo = "proj.barerepo";
     public const string KeyWorktreeRoot = "proj.worktreeroot";
+    public const string KeyAiWorktreeRoot = "proj.aiworktreeroot";
     public const string KeyBaseBranch = "proj.basebranch";
     public const string KeyWarnMb = "proj.warnmb";
     public const string KeyRejectMb = "proj.rejectmb";
@@ -118,6 +119,9 @@ public sealed partial class ProjectService
     public string WorktreeRoot =>
         _settings.Get(KeyWorktreeRoot) ?? @"C:\OneHistory\HistoryVesta";
 
+    public string AiWorktreeRoot =>
+        _settings.Get(KeyAiWorktreeRoot) ?? @"F:\ai工作区";
+
     public string BaseBranch => _settings.Get(KeyBaseBranch) ?? "0000-000-Template";
 
     public long WarnBytes => _settings.GetInt(KeyWarnMb, 50) * 1024L * 1024;
@@ -142,6 +146,7 @@ public sealed partial class ProjectService
     {
         SetIfMissing(KeyBareRepo, @"C:\OneHistory\HistoryVesta\HistoryVesta.git");
         SetIfMissing(KeyWorktreeRoot, @"C:\OneHistory\HistoryVesta");
+        SetIfMissing(KeyAiWorktreeRoot, @"F:\ai工作区");
         SetIfMissing(KeyBaseBranch, "0000-000-Template");
         SetIfMissing(KeyWarnMb, "50");
         SetIfMissing(KeyRejectMb, "100");
@@ -160,6 +165,7 @@ public sealed partial class ProjectService
         sb.AppendLine("proj.* 当前配置(app.set 键=值 可修改,即时生效):");
         sb.AppendLine($"  {KeyBareRepo}     = {BareRepo}");
         sb.AppendLine($"  {KeyWorktreeRoot} = {WorktreeRoot}");
+        sb.AppendLine($"  {KeyAiWorktreeRoot} = {AiWorktreeRoot}");
         sb.AppendLine($"  {KeyBaseBranch}   = {BaseBranch}");
         sb.AppendLine($"  {KeyWarnMb}       = {WarnBytes / 1024 / 1024} MB(警告阈值)");
         sb.AppendLine($"  {KeyRejectMb}     = {RejectBytes / 1024 / 1024} MB(LFS 阈值)");
@@ -348,6 +354,17 @@ public sealed partial class ProjectService
         {
             return (false,
                 $"工作树创建失败(分支 {name} 已创建,可能残留,请手动清理):\n{addWorktree.Output}");
+        }
+
+        // 裸仓开着 extensions.worktreeConfig，新工作树若没有自己的 config.worktree 就会被
+        // 当成裸仓，status 与规则扫描一律失败。git 不保证在这里替我们写，所以自己补一次。
+        var marker = WorktreeBareMarker.Ensure(targetPath);
+        if (!marker.Success)
+        {
+            return (true,
+                $"项目已就绪: {targetPath}(分支 {name},基于 {baseBranch})\n"
+                + $"注意: 裸标记覆盖未能写入({marker.Message})，该项目的规则扫描可能报 must be run in a work tree，"
+                + "可执行 janus.proj.repair 重试");
         }
 
         return (true, $"项目已就绪: {targetPath}(分支 {name},基于 {baseBranch})");

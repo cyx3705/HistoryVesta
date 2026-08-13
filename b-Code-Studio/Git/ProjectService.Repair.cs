@@ -105,7 +105,24 @@ public sealed partial class ProjectService
             }
         }
 
-        // 4. 全量复测 git status
+        // 4. 补齐裸标记覆盖。裸仓开着 extensions.worktreeConfig，重建出来的工作树若缺
+        //    config.worktree 就会被当成裸仓，下一步的 status 复测必然失败。
+        var markerWritten = 0;
+        var markerFailed = new List<string>();
+        var (markerListResult, markerList) = await ListWorktreesAsync();
+        if (markerListResult.Success)
+        {
+            foreach (var wt in markerList)
+            {
+                var marker = WorktreeBareMarker.Ensure(wt.WorktreePath);
+                if (!marker.Success)
+                    markerFailed.Add($"{wt.BranchName}: {marker.Message}");
+                else if (marker.Written)
+                    markerWritten++;
+            }
+        }
+
+        // 5. 全量复测 git status
         var broken = new List<string>();
         var (verifyResult, verifyList) = await ListWorktreesAsync();
         if (verifyResult.Success)
@@ -120,12 +137,16 @@ public sealed partial class ProjectService
 
         var sb = new StringBuilder();
         sb.Append($"修复完成: 移除 {removed} 个旧目录,重建 {rebuilt}/{branches.Count} 个 worktree");
+        if (markerWritten > 0)
+            sb.Append($"\n✓ 补写裸标记覆盖 {markerWritten} 个");
+        if (markerFailed.Count > 0)
+            sb.Append($"\n✗ 裸标记覆盖失败: {string.Join(", ", markerFailed)}");
         if (failedList.Count > 0)
             sb.Append($"\n✗ 重建失败: {string.Join(", ", failedList)}");
         sb.Append(broken.Count == 0
             ? "\n✓ 全量 git status 复测通过"
             : $"\n✗ 复测仍异常: {string.Join(", ", broken)}");
 
-        return (failedList.Count == 0 && broken.Count == 0, sb.ToString());
+        return (failedList.Count == 0 && broken.Count == 0 && markerFailed.Count == 0, sb.ToString());
     }
 }

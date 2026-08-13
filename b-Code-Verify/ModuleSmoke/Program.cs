@@ -68,7 +68,7 @@ if (!File.Exists(manifestPath))
 
 using var manifestJson = System.Text.Json.JsonDocument.Parse(File.ReadAllText(manifestPath));
 var expectedVersion = manifestJson.RootElement.GetProperty("version").GetString();
-const int expectedRuntimeCommandCount = 36;
+const int expectedRuntimeCommandCount = 40;
 
 var meta = host.Modules[0];
 if (!meta.ModuleName.Equals("HistoryJanus", StringComparison.Ordinal)
@@ -113,6 +113,8 @@ var businessCommands = new[]
     "janus.github.logout",
     "janus.github.identity",
     "janus.github.remote",
+    "janus.graph.summary",
+    "janus.graph.commits",
 };
 foreach (var commandName in businessCommands)
 {
@@ -130,8 +132,8 @@ var projectList = await bus.ExecuteAsync("janus.proj.list", "ModuleSmoke");
 if (!projectList.Success)
     throw new InvalidOperationException($"real project command failed: {projectList.Message}");
 
-// github 页已并入项目操作页底部分段，模块只注册两个窗口。
-var expectedWindows = new[] { "overview", "projops" };
+// github 页已并入项目操作页底部分段；图谱独占 graph 窗口。
+var expectedWindows = new[] { "overview", "graph", "projops" };
 var actualWindows = shellUi.Descriptors.Select(item => item.Id).ToArray();
 if (!expectedWindows.SequenceEqual(actualWindows, StringComparer.Ordinal))
 {
@@ -141,6 +143,7 @@ if (!expectedWindows.SequenceEqual(actualWindows, StringComparer.Ordinal))
 
 var windowsById = shellUi.Descriptors.ToDictionary(item => item.Id, StringComparer.Ordinal);
 AssertOverviewCenterTool(windowsById["overview"]);
+AssertGraphJoinsConsole(windowsById["graph"]);
 AssertPlacement(windowsById["projops"], DockSide.Left, 0.38);
 
 if (shellUi.Descriptors.Any(item => item.Title.Equals("HistoryJanus", StringComparison.Ordinal)))
@@ -151,6 +154,7 @@ var pageTypes = ConstructPages(shellUi.Descriptors, bus);
 var expectedPageTypes = new[]
 {
     "OverviewView",
+    "GraphView",
     "ProjectOperationsView",
 };
 if (!expectedPageTypes.SequenceEqual(pageTypes, StringComparer.Ordinal))
@@ -288,6 +292,16 @@ static void AssertOverviewCenterTool(ToolWindowDescriptor descriptor)
     {
         throw new InvalidOperationException(
             $"overview must dock to the center with no tab target, got {descriptor.DefaultSide} target={descriptor.DefaultTabTarget}");
+    }
+}
+
+static void AssertGraphJoinsConsole(ToolWindowDescriptor descriptor)
+{
+    if (descriptor.DefaultSide != DockSide.Tab
+        || !string.Equals(descriptor.DefaultTabTarget, StandardWindowIds.Console, StringComparison.Ordinal))
+    {
+        throw new InvalidOperationException(
+            $"graph must join the host console tab group, got {descriptor.DefaultSide} target={descriptor.DefaultTabTarget}");
     }
 }
 

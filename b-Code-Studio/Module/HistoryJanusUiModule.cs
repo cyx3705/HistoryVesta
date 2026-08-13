@@ -86,6 +86,17 @@ public sealed class HistoryJanusUiModule : IUiModule, IShellUiAware, IModuleCont
             },
             new ToolWindowDescriptor
             {
+                Id = "graph",
+                Title = "分支图谱",
+                // 并入宿主控制台标签组：控制台由 HistoryVulcan 自己注册，始终先于模块存在，
+                // 不像 DefaultTabTarget=mcp 会依赖 Mercury 装载顺序。
+                DefaultSide = DockSide.Tab,
+                DefaultTabTarget = StandardWindowIds.Console,
+                IsSingleton = true,
+                ContentFactory = () => new GraphView(busAccessor, selection),
+            },
+            new ToolWindowDescriptor
+            {
                 Id = "projops",
                 Title = "项目操作",
                 // 左侧：与中央区的总览左右分工，宽度要放得下分段行与规则表格。

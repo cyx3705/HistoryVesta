@@ -18,7 +18,8 @@ public sealed class StudioBusinessComposition
         GitFileRuleService gitRules,
         BranchHistoryService branchHistory,
         FormatInventoryService formatInventory,
-        GitHubConnectionService gitHub)
+        GitHubConnectionService gitHub,
+        GraphService graph)
     {
         Projects = projects;
         History = history;
@@ -26,6 +27,7 @@ public sealed class StudioBusinessComposition
         BranchHistory = branchHistory;
         FormatInventory = formatInventory;
         GitHub = gitHub;
+        Graph = graph;
     }
 
     public ProjectService Projects { get; }
@@ -39,6 +41,8 @@ public sealed class StudioBusinessComposition
     public FormatInventoryService FormatInventory { get; }
 
     public GitHubConnectionService GitHub { get; }
+
+    public GraphService Graph { get; }
 }
 
 /// <summary>
@@ -74,11 +78,13 @@ public static class StudioBusinessCompositionFactory
         var formatInventory = new FormatInventoryService(projects, log, dataDirectory);
         // GitHub 事实读取与项目库共用同一 proj.barerepo 配置源，现读现生效
         var gitHub = new GitHubConnectionService(() => projects.BareRepo);
+        var graph = new GraphService(projects);
 
         ProjectCommands.RegisterAll(registry, projects, history, commandSource);
         BranchHistoryCommands.RegisterAll(registry, branchHistory, history, commandSource);
         GitRuleCommands.RegisterAll(registry, gitRules, formatInventory, projects, commandSource);
         GitHubCommands.RegisterAll(registry, gitHub, commandSource);
+        GraphCommands.RegisterAll(registry, graph, commandSource);
         // 业务模块不注册诊断或自动化辅助指令：日志承压由宿主 vulcan.log.flood 承担，
         // 不在此重复实现。
 
@@ -88,6 +94,7 @@ public static class StudioBusinessCompositionFactory
             gitRules,
             branchHistory,
             formatInventory,
-            gitHub);
+            gitHub,
+            graph);
     }
 }

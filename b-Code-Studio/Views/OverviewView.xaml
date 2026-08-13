@@ -4,20 +4,21 @@
              Background="{DynamicResource Shell.Brush.Surface}"
              Foreground="{DynamicResource Shell.Brush.TextPrimary}">
     <DockPanel Margin="6">
-        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
-            <Button x:Name="RefreshButton" DockPanel.Dock="Right" Content="刷新项目"
-                    Padding="12,3" Margin="8,0,0,0" Click="OnRefreshClick" />
-            <TextBlock Text="搜索:" VerticalAlignment="Center" Margin="0,0,6,0"
-                       Foreground="{DynamicResource Shell.Brush.TextSecondary}" />
-            <TextBox x:Name="SearchBox" VerticalContentAlignment="Center" TextChanged="OnSearchChanged" />
-        </DockPanel>
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                <Button x:Name="RefreshButton" DockPanel.Dock="Right" Content="刷新项目"
+                        Padding="12,3" Margin="8,0,0,0" Click="OnRefreshClick" />
+                <TextBlock Text="搜索:" VerticalAlignment="Center" Margin="0,0,6,0"
+                           Foreground="{DynamicResource Shell.Brush.TextSecondary}" />
+                <TextBox x:Name="SearchBox" VerticalContentAlignment="Center" TextChanged="OnSearchChanged" />
+            </DockPanel>
 
-        <ListView x:Name="WorktreeList"
-                  Background="{DynamicResource Shell.Brush.Surface}"
-                  Foreground="{DynamicResource Shell.Brush.TextPrimary}"
-                  BorderBrush="{DynamicResource Shell.Brush.Hairline}"
-                  SelectionChanged="OnProjectSelected"
-                  MouseDoubleClick="OnRowDoubleClick">
+            <ListView x:Name="WorktreeList"
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                      Background="{DynamicResource Shell.Brush.Surface}"
+                      Foreground="{DynamicResource Shell.Brush.TextPrimary}"
+                      BorderBrush="{DynamicResource Shell.Brush.Hairline}"
+                      SelectionChanged="OnProjectSelected"
+                      MouseDoubleClick="OnRowDoubleClick">
             <ListView.ItemContainerStyle>
                 <!-- 本地模板复刻宿主 Shell.Item.Base 行为：选中 AccentSoft、悬停 SurfaceHover。
                      不用 BasedOn StaticResource 的原因：模块页在无宿主资源的环境(模块冒烟)也要可构造。 -->
