@@ -436,6 +436,33 @@
             lfsThresholdBytes 取 proj.rejectmb(默认 100MB):最大单件超阈即建议 LFS。
             </summary>
         </member>
+        <member name="T:HistoryJanus.Git.WorktreeBareMarker">
+             <summary>
+             工作树的裸标记覆盖：确保 <c>&lt;裸仓&gt;/worktrees/&lt;名&gt;/config.worktree</c> 里有
+             <c>[core] bare = false</c>。
+             </summary>
+             <remarks>
+             本项目库的裸仓同时开着 <c>core.bare = true</c> 与 <c>extensions.worktreeConfig = true</c>。
+             这种组合下每个工作树都必须自带一份 config.worktree 来覆盖 bare，否则 git 会沿用公共配置
+             把工作树当成裸仓，<c>status</c>、<c>ls-files --others/--ignored</c> 等一律报
+             "this operation must be run in a work tree"，Janus 在该项目上的规则扫描与格式台账整片失效。
+            
+             admin 目录不按工作树目录名推算，而是读工作树里的 <c>.git</c> 指针：目录改过名而 admin 目录
+             未同步时，按名推算会写到不存在的路径上，看起来成功却什么也没修。
+             </remarks>
+        </member>
+        <member name="M:HistoryJanus.Git.WorktreeBareMarker.Ensure(System.String)">
+            <summary>
+            确保该工作树带有裸标记覆盖。已存在且正确时不写盘。
+            </summary>
+            <returns>
+            Written 为 true 表示本次补写了标记；Message 在失败时说明原因，成功时为空。
+            找不到 admin 目录（例如传入的不是工作树）时返回 Success=false。
+            </returns>
+        </member>
+        <member name="M:HistoryJanus.Git.WorktreeBareMarker.ResolveAdminDirectory(System.String)">
+            <summary>读取工作树 <c>.git</c> 文件里的 <c>gitdir:</c> 指针，得到 admin 目录绝对路径。</summary>
+        </member>
         <member name="T:HistoryJanus.GitHub.GitHubCommands">
             <summary>
             janus.github.* 类注册（宿主域为模块名 HistoryJanus，类为 github）。

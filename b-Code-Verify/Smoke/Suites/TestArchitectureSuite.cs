@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using HistoryJanus.Git;
@@ -72,6 +72,7 @@ internal static class TestArchitectureSuite
         [
             "VersionProjection", "TestArchitecture", "GitRules", "BranchHistory",
             "BranchGraph", "SubmoduleSafety", "RepositoryTargets", "ProjectOperations", "GitHub",
+            "WorktreeBareMarker",
         ];
         True(registered.SequenceEqual(expected),
             "test runner registers the reviewed functional suite order");

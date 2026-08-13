@@ -1,4 +1,4 @@
-# HistoryJanus 3.9.2 模块 API
+# HistoryJanus 3.9.3 模块 API
 
 本文件是其他模块和项目消费 HistoryJanus 的唯一人工合同。运行时命令目录是参数、确认策略和可用性的最终真值；历史文档和 Janus 内部类型不构成公开 API。
 
@@ -6,7 +6,7 @@
 
 - 正式快照：`z-HistoryJanus`。
 - 模块名：`HistoryJanus`。
-- 版本：`3.9.2`。
+- 版本：`3.9.3`。
 - 入口：`HistoryJanus.dll`。
 - 宿主基线：HistoryVulcan `3.9.0` current-host 快照，从 `2026-023-HistoryVulcan/z-HistoryVulcan` 消费；该快照的 `sourceDirty` 仍由 HistoryVulcan manifest 如实标记。
 - 主题：页面使用 HistoryVulcan `Shell.Brush.*` 动态资源，跟随宿主深色/浅色切换，不在模块内维护第二套主题。
@@ -15,7 +15,7 @@
 - UI：启用。
 - MCP：只读投影。
 
-本文件描述活动源的 `3.9.2` 候选合同；只有用户另行授权正式发布后，同版本 manifest 和二进制才会提升到
+本文件描述活动源的 `3.9.3` 候选合同；只有用户另行授权正式发布后，同版本 manifest 和二进制才会提升到
 `z-HistoryJanus`。发布前，z 快照自身的 manifest 与 checksum 仍是正式运行版本的真值。
 其他项目从本文件或 HistoryDiana 的消费文档镜像读取 API，从 z 快照读取 `module.manifest.json`、二进制和
 `SHA256SUMS`；不要从 `b-Publish`、Janus 的 `bin/obj`、HistoryVulcan 工作树或 Janus 历史文档建立依赖。
@@ -121,3 +121,4 @@ if (!result.Success)
 - V3.9.0：新增 `graph` 类四条只读 DAG 命令；总览右侧内嵌提交图谱（`GraphView`）；业务命令 39 条、运行时总计 40 条。
 - V3.9.1：图谱改为独立 `graph` 窗口；主线为当前编号分支；平行泳道保留已合并历史行，右侧不再画端点。
 - V3.9.2：图谱并入控制台标签组；从合并第二父还原已删除平行分支的历史行；去掉左侧泳道图例。
+- V3.9.3：新建/修复工作树时补齐裸标记覆盖（DEC-014）；图谱改为拖动背景平移，不再用滚轮。

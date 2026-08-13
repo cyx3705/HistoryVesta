@@ -201,6 +201,18 @@ internal static class BranchGraphSuite
 
         True(!graphView.Contains("LaneLegend", StringComparison.Ordinal),
             "GraphView has no left-side lane legend");
+        Contains(graphView, "HorizontalScrollBarVisibility=\"Hidden\"",
+            "graph hides the horizontal scrollbar and pans by dragging");
+        Contains(graphView, "VerticalScrollBarVisibility=\"Hidden\"",
+            "graph hides the vertical scrollbar and pans by dragging");
+        Contains(graphView, "PreviewMouseWheel",
+            "graph swallows the mouse wheel instead of scrolling");
+
+        var graphViewCode = File.ReadAllText(Path.Combine(RepoRoot, "Views", "GraphView.xaml.cs"));
+        Contains(graphViewCode, "CaptureMouse",
+            "graph pans the canvas by dragging the background");
+        Contains(graphViewCode, "HitGraphNode",
+            "graph drag-pan does not steal commit node clicks");
 
         var layoutSource = File.ReadAllText(Path.Combine(RepoRoot, "Views", "GraphLayout.cs"));
         Contains(layoutSource, "IsOpenTip",

@@ -25,6 +25,10 @@ public partial class GraphView : UserControl
     private string? _loadedProject;
     private long _loadVersion;
     private bool _rendering;
+    private bool _panning;
+    private Point _panOrigin;
+    private double _panOffsetX;
+    private double _panOffsetY;
 
     public GraphView(Func<CommandBus?> busAccessor, ProjectSelectionState selection)
     {
@@ -175,6 +179,58 @@ public partial class GraphView : UserControl
 
     private void OnViewportSizeChanged(object sender, SizeChangedEventArgs e)
         => RenderVisible();
+
+    private void OnViewportPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        => e.Handled = true;
+
+    private void OnViewportPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (HitGraphNode(e.OriginalSource as DependencyObject))
+            return;
+        _panning = true;
+        _panOrigin = e.GetPosition(Viewport);
+        _panOffsetX = Viewport.HorizontalOffset;
+        _panOffsetY = Viewport.VerticalOffset;
+        Viewport.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void OnViewportPreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_panning)
+            return;
+        var now = e.GetPosition(Viewport);
+        Viewport.ScrollToHorizontalOffset(_panOffsetX - (now.X - _panOrigin.X));
+        Viewport.ScrollToVerticalOffset(_panOffsetY - (now.Y - _panOrigin.Y));
+        e.Handled = true;
+    }
+
+    private void OnViewportPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        => EndPan();
+
+    private void OnViewportLostMouseCapture(object sender, MouseEventArgs e)
+        => EndPan();
+
+    private void EndPan()
+    {
+        if (!_panning)
+            return;
+        _panning = false;
+        if (Viewport.IsMouseCaptured)
+            Viewport.ReleaseMouseCapture();
+    }
+
+    private static bool HitGraphNode(DependencyObject? source)
+    {
+        while (source != null)
+        {
+            if (source is FrameworkElement { Tag: string })
+                return true;
+            source = VisualTreeHelper.GetParent(source);
+        }
+
+        return false;
+    }
 
     private void RenderVisible()
     {
