@@ -19,7 +19,7 @@ public partial class GraphView : UserControl
     private readonly Func<CommandBus?> _busAccessor;
     private readonly ProjectSelectionState _selection;
     private readonly DoubleCollection _mergeDash = new() { 4, 3 };
-    private CancellationTokenSource? _loadCancellation;
+    private readonly DebouncedAction _selectionLoad;
     private GraphLayout.Result? _layout;
     private GraphSummary? _summary;
     private string? _loadedProject;
@@ -35,25 +35,26 @@ public partial class GraphView : UserControl
         InitializeComponent();
         _busAccessor = busAccessor;
         _selection = selection;
+        _selectionLoad = new DebouncedAction(() => _ = LoadSelectionAsync());
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }
 
-    private async void OnLoaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object sender, RoutedEventArgs e)
     {
         _selection.Changed -= OnProjectSelectionChanged;
         _selection.Changed += OnProjectSelectionChanged;
-        await LoadSelectionAsync();
+        _selectionLoad.Schedule();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         _selection.Changed -= OnProjectSelectionChanged;
-        _loadCancellation?.Cancel();
+        _selectionLoad.Stop();
     }
 
     private void OnProjectSelectionChanged(object? sender, EventArgs e)
-        => Dispatcher.BeginInvoke(async () => await LoadSelectionAsync());
+        => _selectionLoad.Schedule();
 
     private async Task LoadSelectionAsync()
     {
@@ -64,13 +65,13 @@ public partial class GraphView : UserControl
             return;
         }
 
+        if (_layout != null &&
+            string.Equals(_loadedProject, project, StringComparison.OrdinalIgnoreCase))
+            return;
+
         if (_busAccessor() is not { } bus)
             return;
 
-        _loadCancellation?.Cancel();
-        _loadCancellation?.Dispose();
-        _loadCancellation = new CancellationTokenSource();
-        var cancellation = _loadCancellation.Token;
         var version = ++_loadVersion;
         CaptionText.Text = project;
         PlaceholderText.Text = "正在读取提交图谱...";
@@ -81,15 +82,16 @@ public partial class GraphView : UserControl
         {
             var quoted = CommandParser.QuoteArg(project);
             var commitsTask = bus.ExecuteAsync(
-                $"janus.graph.commits name={quoted} limit={PageLimit}", "UI", cancellation);
+                $"janus.graph.commits name={quoted} limit={PageLimit}", "UI");
             var summaryTask = bus.ExecuteAsync(
-                $"janus.graph.summary name={quoted}", "UI", cancellation);
+                $"janus.graph.summary name={quoted}", "UI");
             await Task.WhenAll(commitsTask, summaryTask);
-            if (cancellation.IsCancellationRequested || version != _loadVersion ||
-                !IsCurrentProject(project))
+            if (version != _loadVersion || !IsLoaded || !IsCurrentProject(project))
                 return;
 
             var commitsResult = await commitsTask;
+            if (IsCancelled(commitsResult))
+                return;
             if (!commitsResult.Success ||
                 !ModuleResultData.TryRead(commitsResult.Data, out GraphCommitsReport? report) ||
                 report == null)
@@ -151,9 +153,11 @@ public partial class GraphView : UserControl
         return $"{project} · HEAD {head} · {dirty} · {lanes} 条泳道 · {nodes} 个节点";
     }
 
+    private static bool IsCancelled(CommandResult result)
+        => !result.Success && result.Message.Contains("指令已取消", StringComparison.Ordinal);
+
     private void ShowPlaceholder(string message, string? caption = null)
     {
-        _loadCancellation?.Cancel();
         _layout = null;
         _summary = null;
         _loadedProject = null;

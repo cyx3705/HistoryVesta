@@ -213,6 +213,10 @@ internal static class BranchGraphSuite
             "graph pans the canvas by dragging the background");
         Contains(graphViewCode, "HitGraphNode",
             "graph drag-pan does not steal commit node clicks");
+        Contains(graphViewCode, "DebouncedAction",
+            "graph coalesces overview selection instead of cancelling in-flight HTTP");
+        True(!graphViewCode.Contains("\"UI\", cancellation)", StringComparison.Ordinal),
+            "graph loads do not pass a cancellation token that aborts the host HTTP write");
 
         var layoutSource = File.ReadAllText(Path.Combine(RepoRoot, "Views", "GraphLayout.cs"));
         Contains(layoutSource, "IsOpenTip",

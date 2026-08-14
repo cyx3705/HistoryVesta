@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Threading;
 using HistoryVulcan.Core.Commands;
 
 namespace HistoryJanus.Views;
@@ -28,4 +29,31 @@ internal static class ViewKit
             await action();
         };
     }
+}
+
+/// <summary>
+/// 把连续的选中/Loaded 合成一次加载，避免取消正在进行的宿主 HTTP 请求。
+/// </summary>
+internal sealed class DebouncedAction
+{
+    public const int DefaultDelayMs = 280;
+    private readonly DispatcherTimer _timer;
+
+    public DebouncedAction(Action action, int milliseconds = DefaultDelayMs)
+    {
+        _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(milliseconds) };
+        _timer.Tick += (_, _) =>
+        {
+            _timer.Stop();
+            action();
+        };
+    }
+
+    public void Schedule()
+    {
+        _timer.Stop();
+        _timer.Start();
+    }
+
+    public void Stop() => _timer.Stop();
 }

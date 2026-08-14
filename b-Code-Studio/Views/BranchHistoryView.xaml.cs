@@ -17,7 +17,7 @@ public partial class BranchHistoryView : UserControl
     private readonly Func<CommandBus?> _busAccessor;
     private readonly ProjectSelectionState _selection;
     private readonly Func<string, bool> _isProtected;
-    private CancellationTokenSource? _loadCancellation;
+    private readonly DebouncedAction _selectionLoad;
     private BranchHistoryReport? _report;
     private int _loadedOwnCommits;
     private long _loadVersion;
@@ -31,25 +31,26 @@ public partial class BranchHistoryView : UserControl
         _busAccessor = busAccessor;
         _selection = selection;
         _isProtected = isProtected;
+        _selectionLoad = new DebouncedAction(() => _ = LoadSelectionAsync(resetLimit: true, reuseCurrent: true));
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }
 
-    private async void OnLoaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object sender, RoutedEventArgs e)
     {
         _selection.Changed -= OnProjectSelectionChanged;
         _selection.Changed += OnProjectSelectionChanged;
-        await LoadSelectionAsync(resetLimit: true);
+        _selectionLoad.Schedule();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         _selection.Changed -= OnProjectSelectionChanged;
-        _loadCancellation?.Cancel();
+        _selectionLoad.Stop();
     }
 
     private void OnProjectSelectionChanged(object? sender, EventArgs e)
-        => Dispatcher.BeginInvoke(async () => await LoadSelectionAsync(resetLimit: true));
+        => _selectionLoad.Schedule();
 
     private async void OnRefreshClick(object sender, RoutedEventArgs e)
         => await LoadSelectionAsync(resetLimit: true);
@@ -63,7 +64,8 @@ public partial class BranchHistoryView : UserControl
     private async Task LoadSelectionAsync(
         bool resetLimit,
         bool refreshRemote = false,
-        bool loadEarlier = false)
+        bool loadEarlier = false,
+        bool reuseCurrent = false)
     {
         var project = _selection.CurrentProjectName;
         if (project == null)
@@ -73,14 +75,18 @@ public partial class BranchHistoryView : UserControl
         }
         if (_busAccessor() is not { } bus)
             return;
+        if (reuseCurrent
+            && resetLimit
+            && !refreshRemote
+            && !loadEarlier
+            && _report != null
+            && string.Equals(_report.Branch, project, StringComparison.OrdinalIgnoreCase))
+            return;
+
         if (resetLimit)
             _loadedOwnCommits = 0;
         var skip = loadEarlier ? _loadedOwnCommits : 0;
 
-        _loadCancellation?.Cancel();
-        _loadCancellation?.Dispose();
-        _loadCancellation = new CancellationTokenSource();
-        var cancellation = _loadCancellation.Token;
         var version = ++_loadVersion;
 
         SetBusy(true);
@@ -90,9 +96,10 @@ public partial class BranchHistoryView : UserControl
             var command = $"janus.history.list name={CommandParser.QuoteArg(project)} " +
                           $"limit={PageSize} skip={skip}" +
                           (refreshRemote ? " remote=true" : "");
-            var result = await bus.ExecuteAsync(command, "UI", cancellation);
-            if (cancellation.IsCancellationRequested || version != _loadVersion ||
-                !IsCurrentProject(project))
+            var result = await bus.ExecuteAsync(command, "UI");
+            if (version != _loadVersion || !IsLoaded || !IsCurrentProject(project))
+                return;
+            if (!result.Success && result.Message.Contains("指令已取消", StringComparison.Ordinal))
                 return;
             if (!result.Success || !ModuleResultData.TryRead(result.Data, out BranchHistoryReport? report))
             {
@@ -161,7 +168,6 @@ public partial class BranchHistoryView : UserControl
 
     private void Clear(string status)
     {
-        _loadCancellation?.Cancel();
         _report = null;
         _loadedOwnCommits = 0;
         HistoryList.ItemsSource = null;

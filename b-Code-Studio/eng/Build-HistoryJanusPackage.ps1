@@ -158,8 +158,7 @@ try {
     Copy-Item -LiteralPath (Join-Path $releaseRoot 'HistoryJanus.dll') -Destination $stage
     Copy-Item -LiteralPath (Join-Path $releaseRoot 'HistoryJanus.xml') -Destination $stage
     Copy-Item -LiteralPath $moduleManifestSource -Destination (Join-Path $stage 'module.manifest.json')
-    # 消费文档不再随快照分发：单一真值由 HistoryDiana 的 b-Office-OneHistory 托管，
-    # 发布管线在每次部署后同步镜像。快照内再放一份只会产生第二处会漂移的副本。
+    # 候选只含运行四件。消费 Markdown 由 Diana 发布管线在校验后写入 docs/ 并重写 SHA256SUMS。
     $relativeFiles = @('HistoryJanus.dll', 'HistoryJanus.xml', 'module.manifest.json')
     $checksumLines = foreach ($relative in $relativeFiles) {
         $path = Join-Path $stage $relative.Replace('/', '\')

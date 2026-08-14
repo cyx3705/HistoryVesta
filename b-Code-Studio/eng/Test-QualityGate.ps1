@@ -190,10 +190,10 @@ if (($expectedRuntimeCommandNames -join ',') -cne ($apiCommandNames -join ',')) 
     $violations.Add("模块API.md 命令清单与源码不一致：API $($apiCommandNames.Count)，运行时 $($expectedRuntimeCommandNames.Count)")
 }
 
-# --- 6. 正式树边界（QA-004 日常化）：z 级快照只允许四类条目 -----------------------------
+# --- 6. 正式树边界（QA-004 日常化）：运行四件 + 可选 docs/*.md -----------------------------
 $packageRoot = Join-Path $root 'z-HistoryJanus'
 if (Test-Path -LiteralPath $packageRoot) {
-    $allowed = @('HistoryJanus.dll', 'HistoryJanus.xml', 'module.manifest.json', 'SHA256SUMS')
+    $allowed = @('HistoryJanus.dll', 'HistoryJanus.xml', 'module.manifest.json', 'SHA256SUMS', 'docs')
     $unexpected = @(
         Get-ChildItem -LiteralPath $packageRoot |
             Where-Object { $_.Name -notin $allowed }
@@ -201,15 +201,22 @@ if (Test-Path -LiteralPath $packageRoot) {
     foreach ($item in $unexpected) {
         $violations.Add("Unexpected entry in z-HistoryJanus: $($item.Name)")
     }
-    # 消费文档不再随 z 快照分发：单一真值由 HistoryDiana 的 b-Office-OneHistory 托管，
-    # 发布管线在每次部署后同步镜像，命令面另由宿主自动导出。快照内再放一份只会
-    # 产生第二处会漂移的副本，因此这里只校验 manifest 身份，不再要求 docs/。
     $formalManifestPath = Join-Path $packageRoot 'module.manifest.json'
     if (-not (Test-Path -LiteralPath $formalManifestPath -PathType Leaf)) {
         $violations.Add('z-HistoryJanus/module.manifest.json is missing')
     }
-    if (Test-Path -LiteralPath (Join-Path $packageRoot 'docs')) {
-        $violations.Add('z-HistoryJanus/docs 应已随文档托管迁移删除')
+    $docsRoot = Join-Path $packageRoot 'docs'
+    if (Test-Path -LiteralPath $docsRoot) {
+        if (-not (Test-Path -LiteralPath $docsRoot -PathType Container)) {
+            $violations.Add('z-HistoryJanus/docs must be a directory of Markdown')
+        }
+        else {
+            foreach ($item in @(Get-ChildItem -LiteralPath $docsRoot -Recurse -File)) {
+                if ([IO.Path]::GetExtension($item.Name) -ne '.md') {
+                    $violations.Add("z-HistoryJanus/docs may contain only Markdown: $($item.Name)")
+                }
+            }
+        }
     }
 }
 

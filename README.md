@@ -38,8 +38,8 @@ dotnet run --project .\b-Code-Verify\ModuleSmoke\ModuleSmoke.csproj -c Debug -- 
 powershell -NoProfile -ExecutionPolicy Bypass -File ..\2026-019-HistoryDiana\b-Code\Publish-OneHistoryModule.ps1 -Module HistoryJanus -Publish
 ```
 
-正式快照只含 `HistoryJanus.dll`、XML、module manifest 和 checksum；模块 API 由源码
-`b-Office/package` 与 HistoryDiana 的消费文档镜像托管，不复制进 z 快照。正式包不含 Janus EXE
+正式快照含 `HistoryJanus.dll`、XML、module manifest、checksum 与 `docs/` 中已发布 Markdown；
+模块 API 的编辑源是 `b-Office/package`，跨项目读取走 `diana.docs.janus`。正式包不含 Janus EXE
 或 HistoryVulcan 运行库。脚本不测试开机自启动，也不启动 HistoryVulcan。
 
 ## AI 工作边界

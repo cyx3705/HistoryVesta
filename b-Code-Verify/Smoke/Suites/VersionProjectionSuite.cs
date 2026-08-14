@@ -291,14 +291,17 @@ internal static class VersionProjectionSuite
             var formalPackageFiles = Directory.EnumerateFiles(formalRoot, "*", SearchOption.AllDirectories)
                 .Select(path => Path.GetRelativePath(formalRoot, path).Replace('\\', '/'))
                 .ToHashSet(StringComparer.Ordinal);
-            // 消费文档不再随 z 快照分发：单一真值由 HistoryDiana 的 b-Office-OneHistory 托管，
-            // 发布管线在每次部署后同步镜像，命令面另由宿主自动导出。快照内再放一份只会
-            // 产生第二处会漂移的副本。
-            True(formalPackageFiles.SetEquals([
-                    "HistoryJanus.dll", "HistoryJanus.xml", "module.manifest.json",
-                    "SHA256SUMS",
-                ]),
-                "version projection: formal package is the minimal module snapshot");
+            var required = new[]
+            {
+                "HistoryJanus.dll", "HistoryJanus.xml", "module.manifest.json", "SHA256SUMS",
+            };
+            True(required.All(formalPackageFiles.Contains),
+                "version projection: formal package has the runtime snapshot files");
+            True(formalPackageFiles.All(path =>
+                    required.Contains(path, StringComparer.Ordinal)
+                    || (path.StartsWith("docs/", StringComparison.Ordinal)
+                        && path.EndsWith(".md", StringComparison.OrdinalIgnoreCase))),
+                "version projection: formal package is runtime files plus optional Markdown docs");
         }
 
         var start = new ProcessStartInfo("git")
